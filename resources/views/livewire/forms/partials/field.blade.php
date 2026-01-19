@@ -14,7 +14,8 @@ $label = str_replace('{state_name}', $stateName, $field['label'] ?? ucwords(str_
 @break
 
 @case('email')
-@include('livewire.forms.partials.fields.text', array_merge(compact('fieldKey', 'field', 'wireModel', 'needsLive', 'label'), ['inputType' => 'email']))
+@include('livewire.forms.partials.fields.text', array_merge(compact('fieldKey', 'field', 'wireModel', 'needsLive',
+'label'), ['inputType' => 'email']))
 @break
 
 @case('select')

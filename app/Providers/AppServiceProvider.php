@@ -1,0 +1,84 @@
+<?php
+
+namespace App\Providers;
+
+use App\Domains\Business\Models\Business;
+use App\Domains\Forms\Engine\ConditionEvaluator;
+use App\Domains\Forms\Engine\Validation\CrossFieldValidatorRegistry;
+use App\Domains\Forms\Engine\Validation\Rules\OwnershipTotals100;
+use App\Domains\Forms\Models\FormApplication;
+use App\Domains\Portal\Policies\BusinessPolicy;
+use App\Domains\Portal\Policies\FormApplicationPolicy;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
+use Livewire\Livewire;
+
+class AppServiceProvider extends ServiceProvider
+{
+    /**
+     * Register any application services.
+     */
+    public function register(): void
+    {
+        // Bind ConditionEvaluator as transient (non-singleton) to prevent state leaking
+        $this->app->bind(ConditionEvaluator::class);
+
+        // Register CrossFieldValidatorRegistry as singleton
+        $this->app->singleton(CrossFieldValidatorRegistry::class, function () {
+            $registry = new CrossFieldValidatorRegistry;
+            $registry->register(new OwnershipTotals100);
+
+            return $registry;
+        });
+    }
+
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
+    {
+        $this->configureDefaults();
+        $this->configurePolicies();
+        $this->configureLivewire();
+    }
+
+    protected function configureLivewire(): void
+    {
+        // Register Livewire components from Domains directory
+        Livewire::component('business.business-dropdown', \App\Domains\Business\Livewire\BusinessDropdown::class);
+        Livewire::component('business.business-switcher', \App\Domains\Business\Livewire\BusinessSwitcher::class);
+        Livewire::component('business.onboarding-wizard', \App\Domains\Business\Livewire\OnboardingWizard::class);
+        Livewire::component('billing.checkout', \App\Domains\Billing\Livewire\Checkout::class);
+        Livewire::component('forms.state-selector', \App\Domains\Forms\Livewire\StateSelector::class);
+        Livewire::component('forms.multi-state-form-runner', \App\Domains\Forms\Livewire\MultiStateFormRunner::class);
+    }
+
+    protected function configurePolicies(): void
+    {
+        Gate::policy(Business::class, BusinessPolicy::class);
+        Gate::policy(FormApplication::class, FormApplicationPolicy::class);
+    }
+
+    protected function configureDefaults(): void
+    {
+        Date::use(CarbonImmutable::class);
+
+        DB::prohibitDestructiveCommands(
+            app()->isProduction(),
+        );
+
+        Password::defaults(fn (): ?Password => app()->isProduction()
+            ? Password::min(12)
+                ->mixedCase()
+                ->letters()
+                ->numbers()
+                ->symbols()
+                ->uncompromised()
+            : null
+        );
+    }
+}

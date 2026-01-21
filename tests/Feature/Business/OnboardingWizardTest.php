@@ -9,20 +9,18 @@ use App\Models\User;
 use Livewire\Livewire;
 
 describe('OnboardingWizard', function () {
-    it('saves legal name to business on step 1', function () {
+    it('sets legal_name from name on mount if not already set', function () {
         $user = User::factory()->create();
-        $business = Business::create(['name' => '']);
+        $business = Business::create(['name' => 'Acme Corporation']);
         $user->businesses()->attach($business->id, ['role' => 'owner']);
+
+        expect($business->legal_name)->toBeNull();
 
         Livewire::actingAs($user)
             ->withSession(['current_business_id' => $business->id])
-            ->test(OnboardingWizard::class)
-            ->set('legalName', 'Acme Corporation')
-            ->call('nextStep')
-            ->assertHasNoErrors();
+            ->test(OnboardingWizard::class);
 
         $business->refresh();
-        expect($business->name)->toBe('Acme Corporation');
         expect($business->legal_name)->toBe('Acme Corporation');
     });
 
@@ -52,6 +50,40 @@ describe('OnboardingWizard', function () {
             'zip' => '90001',
         ]);
         expect($business->isOnboardingComplete())->toBeTrue();
+    });
+
+    it('redirects to liens portal when user signed up from liens page', function () {
+        $user = User::factory()->create(['signup_landing_path' => '/liens']);
+        $business = Business::create(['name' => 'Lien Business', 'legal_name' => 'Lien Business']);
+        $user->businesses()->attach($business->id, ['role' => 'owner']);
+
+        Livewire::actingAs($user)
+            ->withSession(['current_business_id' => $business->id])
+            ->test(OnboardingWizard::class)
+            ->set('businessAddress.line1', '123 Lien Street')
+            ->set('businessAddress.city', 'Miami')
+            ->set('businessAddress.state', 'FL')
+            ->set('businessAddress.zip', '33101')
+            ->call('complete')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('lien.projects.index'));
+    });
+
+    it('redirects to dashboard when user signed up from other pages', function () {
+        $user = User::factory()->create(['signup_landing_path' => '/']);
+        $business = Business::create(['name' => 'Regular Business', 'legal_name' => 'Regular Business']);
+        $user->businesses()->attach($business->id, ['role' => 'owner']);
+
+        Livewire::actingAs($user)
+            ->withSession(['current_business_id' => $business->id])
+            ->test(OnboardingWizard::class)
+            ->set('businessAddress.line1', '456 Regular Ave')
+            ->set('businessAddress.city', 'Chicago')
+            ->set('businessAddress.state', 'IL')
+            ->set('businessAddress.zip', '60601')
+            ->call('complete')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('dashboard'));
     });
 
     it('omits empty line2 from address JSON', function () {
@@ -101,7 +133,7 @@ describe('OnboardingWizard', function () {
             ]);
     });
 
-    it('loads existing data on mount', function () {
+    it('loads existing address data on mount', function () {
         $user = User::factory()->create();
         $business = Business::create([
             'name' => 'Existing Business',
@@ -119,28 +151,26 @@ describe('OnboardingWizard', function () {
             ->withSession(['current_business_id' => $business->id])
             ->test(OnboardingWizard::class);
 
-        expect($component->get('legalName'))->toBe('Existing Legal Name');
         expect($component->get('businessAddress.line1'))->toBe('789 Pine St');
         expect($component->get('businessAddress.city'))->toBe('Seattle');
         expect($component->get('businessAddress.state'))->toBe('WA');
         expect($component->get('businessAddress.zip'))->toBe('98101');
-        expect($component->get('step'))->toBe(2); // Should skip to step 2 since name exists
     });
 
-    it('falls back to name if legal_name is not set', function () {
+    it('sets legal_name from name if legal_name is not set', function () {
         $user = User::factory()->create();
         $business = Business::create([
             'name' => 'My Business Name',
-            // legal_name is null - should fallback to name
+            // legal_name is null - should be set from name
         ]);
         $user->businesses()->attach($business->id, ['role' => 'owner']);
 
-        $component = Livewire::actingAs($user)
+        Livewire::actingAs($user)
             ->withSession(['current_business_id' => $business->id])
             ->test(OnboardingWizard::class);
 
-        expect($component->get('legalName'))->toBe('My Business Name');
-        expect($component->get('step'))->toBe(2); // Should skip to step 2 since name exists
+        $business->refresh();
+        expect($business->legal_name)->toBe('My Business Name');
     });
 });
 

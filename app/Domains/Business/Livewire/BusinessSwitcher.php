@@ -60,8 +60,6 @@ class BusinessSwitcher extends Component
         Auth::user()->businesses()->attach($business->id, ['role' => 'owner']);
 
         session(['current_business_id' => $business->id]);
-        $this->newBusinessName = '';
-        $this->loadBusinesses();
 
         return $this->redirect(route('portal.onboarding'), navigate: true);
     }

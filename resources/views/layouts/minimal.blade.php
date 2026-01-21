@@ -7,9 +7,8 @@
         <div class="flex min-h-screen flex-col">
             {{-- Simple header with logo --}}
             <header class="border-b border-border px-6 py-4">
-                <a href="{{ route('home') }}" class="flex items-center gap-2" wire:navigate>
-                    <x-app-logo-icon class="size-8 fill-current text-text-primary" />
-                    <span class="font-semibold text-text-primary">{{ config('app.name') }}</span>
+                <a href="{{ route('home') }}" class="flex items-center" wire:navigate>
+                    <span class="text-lg font-semibold text-zinc-900" style="font-family: 'Inter', sans-serif;">eRegister</span>
                 </a>
             </header>
 

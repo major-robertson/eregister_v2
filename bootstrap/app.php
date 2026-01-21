@@ -13,9 +13,14 @@ return Application::configure(basePath: dirname(__DIR__))
         then: function (): void {
             Route::middleware('web')->group(base_path('routes/portal.php'));
             Route::middleware('web')->group(base_path('routes/forms.php'));
+            Route::middleware('web')->group(base_path('routes/lien.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [
+            \App\Http\Middleware\TrackSignupAttribution::class,
+        ]);
+
         $middleware->alias([
             'business.selected' => \App\Domains\Portal\Http\Middleware\EnsureBusinessSelected::class,
             'business.current' => \App\Domains\Portal\Http\Middleware\ResolveCurrentBusiness::class,

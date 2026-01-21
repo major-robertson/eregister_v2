@@ -3,6 +3,7 @@
 namespace App\Domains\Business\Models;
 
 use App\Domains\Forms\Models\FormApplication;
+use App\Domains\Lien\Models\LienProject;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +26,7 @@ class Business extends Model implements HasMedia
         'mailing_address',
         'responsible_people',
         'onboarding_completed_at',
+        'timezone',
     ];
 
     protected function casts(): array
@@ -61,6 +63,11 @@ class Business extends Model implements HasMedia
     public function applications(): HasMany
     {
         return $this->formApplications();
+    }
+
+    public function lienProjects(): HasMany
+    {
+        return $this->hasMany(LienProject::class);
     }
 
     public function hasAccessTo(string $code): bool

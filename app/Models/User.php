@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Domains\Business\Models\Business;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -23,9 +24,20 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
         'email',
         'password',
+        'signup_landing_path',
+        'signup_landing_url',
+        'signup_referrer',
+        'signup_utm_source',
+        'signup_utm_medium',
+        'signup_utm_campaign',
+        'signup_utm_term',
+        'signup_utm_content',
+        'signup_ip',
+        'signup_user_agent',
     ];
 
     /**
@@ -54,15 +66,23 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the user's initials
+     * Get the user's full name.
+     */
+    public function name(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => trim($this->first_name.' '.$this->last_name),
+        );
+    }
+
+    /**
+     * Get the user's initials.
      */
     public function initials(): string
     {
-        return Str::of($this->name)
-            ->explode(' ')
-            ->take(2)
-            ->map(fn ($word) => Str::substr($word, 0, 1))
-            ->implode('');
+        return Str::upper(
+            Str::substr($this->first_name, 0, 1).Str::substr($this->last_name, 0, 1)
+        );
     }
 
     public function businesses(): BelongsToMany

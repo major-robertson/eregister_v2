@@ -7,6 +7,10 @@ use App\Domains\Forms\Engine\ConditionEvaluator;
 use App\Domains\Forms\Engine\Validation\CrossFieldValidatorRegistry;
 use App\Domains\Forms\Engine\Validation\Rules\OwnershipTotals100;
 use App\Domains\Forms\Models\FormApplication;
+use App\Domains\Lien\Models\LienFiling;
+use App\Domains\Lien\Models\LienProject;
+use App\Domains\Lien\Policies\LienFilingPolicy;
+use App\Domains\Lien\Policies\LienProjectPolicy;
 use App\Domains\Portal\Policies\BusinessPolicy;
 use App\Domains\Portal\Policies\FormApplicationPolicy;
 use Carbon\CarbonImmutable;
@@ -55,12 +59,23 @@ class AppServiceProvider extends ServiceProvider
         Livewire::component('billing.checkout', \App\Domains\Billing\Livewire\Checkout::class);
         Livewire::component('forms.state-selector', \App\Domains\Forms\Livewire\StateSelector::class);
         Livewire::component('forms.multi-state-form-runner', \App\Domains\Forms\Livewire\MultiStateFormRunner::class);
+
+        // Lien domain components
+        Livewire::component('lien.project-list', \App\Domains\Lien\Livewire\ProjectList::class);
+        Livewire::component('lien.project-form', \App\Domains\Lien\Livewire\ProjectForm::class);
+        Livewire::component('lien.project-show', \App\Domains\Lien\Livewire\ProjectShow::class);
+        Livewire::component('lien.party-manager', \App\Domains\Lien\Livewire\PartyManager::class);
+        Livewire::component('lien.filing-wizard', \App\Domains\Lien\Livewire\FilingWizard::class);
+        Livewire::component('lien.filing-show', \App\Domains\Lien\Livewire\FilingShow::class);
+        Livewire::component('lien.filing-checkout', \App\Domains\Lien\Livewire\FilingCheckout::class);
     }
 
     protected function configurePolicies(): void
     {
         Gate::policy(Business::class, BusinessPolicy::class);
         Gate::policy(FormApplication::class, FormApplicationPolicy::class);
+        Gate::policy(LienProject::class, LienProjectPolicy::class);
+        Gate::policy(LienFiling::class, LienFilingPolicy::class);
     }
 
     protected function configureDefaults(): void

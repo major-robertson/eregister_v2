@@ -1,13 +1,23 @@
 <div class="w-full max-w-lg">
     @if ($businesses->isEmpty())
-        {{-- No businesses - show create form --}}
-        <div class="text-center">
-            <h1 class="text-5xl font-bold tracking-tight text-text-primary sm:text-6xl lg:text-7xl">
-                What's your business called?
-            </h1>
+        {{-- No businesses - show create form (typeform style) --}}
+
+        {{-- Minimal progress dots (step 1 of 2) --}}
+        <div class="mb-16 flex justify-center gap-2">
+            <div class="h-2 w-2 rounded-full bg-primary"></div>
+            <div class="h-2 w-2 rounded-full bg-zinc-200"></div>
         </div>
 
-        <form wire:submit="createBusiness" class="mt-12 space-y-6">
+        <div class="text-center">
+            <h1 class="text-3xl font-bold tracking-tight text-text-primary sm:text-4xl">
+                What's your business name?
+            </h1>
+            <p class="mt-4 text-lg text-text-secondary">
+                We'll use this to set up your account.
+            </p>
+        </div>
+
+        <form wire:submit="createBusiness" class="mt-12 space-y-8">
             <div>
                 <input
                     type="text"
@@ -21,9 +31,11 @@
                 @enderror
             </div>
 
-            <flux:button type="submit" variant="primary" class="w-full py-3 text-lg">
-                Continue
-            </flux:button>
+            <div class="flex justify-end">
+                <flux:button type="submit" variant="primary" icon-trailing="arrow-right">
+                    Continue
+                </flux:button>
+            </div>
         </form>
 
         @error('business')

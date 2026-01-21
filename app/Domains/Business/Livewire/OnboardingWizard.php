@@ -12,12 +12,7 @@ class OnboardingWizard extends Component
 {
     public Business $business;
 
-    public int $step = 1;
-
-    // Step 1: Business name
-    public string $legalName = '';
-
-    // Step 2: Address (JSON structure for Google Maps compatibility)
+    // Address (JSON structure for Google Maps compatibility)
     public array $businessAddress = [
         'line1' => '',
         'line2' => '',
@@ -40,8 +35,10 @@ class OnboardingWizard extends Component
 
         $this->business = $business;
 
-        // Load existing data
-        $this->legalName = $business->legal_name ?? $business->name ?? '';
+        // Ensure legal_name is set from the business name
+        if (! $business->legal_name && $business->name) {
+            $business->update(['legal_name' => $business->name]);
+        }
 
         // Load existing address from JSON or initialize empty
         $existingAddress = $business->business_address ?? [];
@@ -52,34 +49,6 @@ class OnboardingWizard extends Component
             'state' => $existingAddress['state'] ?? '',
             'zip' => $existingAddress['zip'] ?? '',
         ];
-
-        // If legal name is already set, go to step 2
-        if ($this->legalName) {
-            $this->step = 2;
-        }
-    }
-
-    public function nextStep(): void
-    {
-        if ($this->step === 1) {
-            $this->validate([
-                'legalName' => ['required', 'string', 'min:2', 'max:120'],
-            ]);
-
-            $this->business->update([
-                'name' => $this->legalName,
-                'legal_name' => $this->legalName,
-            ]);
-
-            $this->step = 2;
-        }
-    }
-
-    public function previousStep(): void
-    {
-        if ($this->step > 1) {
-            $this->step--;
-        }
     }
 
     public function complete(): mixed
@@ -106,13 +75,18 @@ class OnboardingWizard extends Component
 
         $this->business->completeOnboarding();
 
-        return $this->redirect(route('dashboard'), navigate: true);
+        // Redirect to liens portal if user signed up from the liens landing page
+        $redirectRoute = Auth::user()->signup_landing_path === '/liens'
+            ? route('lien.projects.index')
+            : route('dashboard');
+
+        return $this->redirect($redirectRoute, navigate: true);
     }
 
     public function render(): View
     {
         return view('livewire.business.onboarding-wizard', [
             'states' => config('states'),
-        ])->layout('layouts.app', ['title' => 'Business Setup']);
+        ])->layout('layouts.minimal', ['title' => 'Business Setup']);
     }
 }

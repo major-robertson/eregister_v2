@@ -27,13 +27,9 @@
             </p>
 
             <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                <a href="{{ route('register') }}" class="group inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-semibold text-zinc-900 transition hover:bg-zinc-100">
-                    Start filing free
+                <a href="{{ route('register') }}" class="group inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-semibold text-zinc-900 shadow-lg transition hover:scale-105 hover:bg-zinc-50 hover:shadow-xl">
+                    File a Lien Now
                     <svg class="h-4 w-4 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-                </a>
-                <a href="#demo" class="inline-flex items-center gap-2 text-zinc-400 transition hover:text-white">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Watch demo
                 </a>
             </div>
         </div>
@@ -51,7 +47,7 @@
                         <div class="h-3 w-3 rounded-full bg-zinc-300"></div>
                     </div>
                     <div class="ml-4 flex-1 rounded-md bg-zinc-100 px-3 py-1.5 text-xs text-zinc-400">
-                        app.eregister.com/liens
+                        eregister.com/liens
                     </div>
                 </div>
 
@@ -143,10 +139,10 @@
                 <div class="grid gap-6 sm:grid-cols-2">
                     <div class="group">
                         <div class="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 text-amber-600 transition group-hover:bg-amber-500 group-hover:text-white">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                         </div>
-                        <h3 class="font-semibold text-zinc-900">Instant generation</h3>
-                        <p class="mt-1 text-sm text-zinc-600">Generate state-compliant lien forms in seconds</p>
+                        <h3 class="font-semibold text-zinc-900">Expert preparation</h3>
+                        <p class="mt-1 text-sm text-zinc-600">Our team reviews and prepares your documents</p>
                     </div>
 
                     <div class="group">
@@ -244,30 +240,33 @@
                 <h2 class="text-3xl font-bold text-zinc-900">Three steps to protect your payment</h2>
             </div>
 
-            <div class="mt-16 grid gap-8 lg:grid-cols-3">
-                <div class="relative text-center">
-                    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-xl font-bold text-white">1</div>
-                    <h3 class="mt-6 text-xl font-semibold text-zinc-900">Enter project details</h3>
-                    <p class="mt-2 text-zinc-600">Add the property address, owner info, and amount owed. Takes 2 minutes.</p>
-                    <div class="absolute right-0 top-7 hidden h-0.5 w-full translate-x-1/2 bg-gradient-to-r from-zinc-300 to-transparent lg:block"></div>
-                </div>
+            <div class="relative mt-16">
+                {{-- Connector line behind circles --}}
+                <div class="absolute top-7 hidden h-0.5 bg-zinc-300 lg:block" style="left: calc(16.67% + 1.75rem); right: calc(16.67% + 1.75rem);"></div>
 
-                <div class="relative text-center">
-                    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-xl font-bold text-white">2</div>
-                    <h3 class="mt-6 text-xl font-semibold text-zinc-900">Select your state</h3>
-                    <p class="mt-2 text-zinc-600">We automatically use the correct form for your state's requirements.</p>
-                    <div class="absolute right-0 top-7 hidden h-0.5 w-full translate-x-1/2 bg-gradient-to-r from-zinc-300 to-transparent lg:block"></div>
-                </div>
+                <div class="grid gap-8 lg:grid-cols-3">
+                    <div class="relative text-center">
+                        <div class="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-xl font-bold text-white">1</div>
+                        <h3 class="mt-6 text-xl font-semibold text-zinc-900">Enter project details</h3>
+                        <p class="mt-2 text-zinc-600">Add the property address, owner info, and amount owed. Takes 2 minutes.</p>
+                    </div>
 
-                <div class="text-center">
-                    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-xl font-bold text-white">3</div>
-                    <h3 class="mt-6 text-xl font-semibold text-zinc-900">Download & file</h3>
-                    <p class="mt-2 text-zinc-600">Get your completed PDF instantly. File with your county recorder.</p>
+                    <div class="relative text-center">
+                        <div class="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-xl font-bold text-white">2</div>
+                        <h3 class="mt-6 text-xl font-semibold text-zinc-900">Select your state</h3>
+                        <p class="mt-2 text-zinc-600">We automatically use the correct form for your state's requirements.</p>
+                    </div>
+
+                    <div class="text-center">
+                        <div class="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-xl font-bold text-white">3</div>
+                        <h3 class="mt-6 text-xl font-semibold text-zinc-900">Download & file</h3>
+                        <p class="mt-2 text-zinc-600">Receive your documents within 1-3 business days, or let us handle everything and file on your behalf.</p>
+                    </div>
                 </div>
             </div>
 
             <div class="mt-12 text-center">
-                <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-8 py-4 font-semibold text-white transition hover:bg-zinc-800">
+                <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-8 py-4 font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-zinc-800 hover:shadow-xl">
                     Start your first lien
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                 </a>
@@ -341,16 +340,18 @@
     </section>
 
     {{-- CTA --}}
-    <section class="bg-gradient-to-br from-zinc-900 to-zinc-800 py-20">
-        <div class="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-            <h2 class="text-3xl font-bold text-white sm:text-4xl">Ready to get paid?</h2>
-            <p class="mt-4 text-lg text-zinc-400">
-                File your first lien in under 5 minutes. No credit card required.
-            </p>
-            <a href="{{ route('register') }}" class="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 font-semibold text-zinc-900 transition hover:bg-zinc-100">
-                Start filing free
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-            </a>
+    <section class="mx-auto mb-16 max-w-5xl px-4 sm:px-6 lg:px-8">
+        <div class="overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-800 py-20">
+            <div class="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
+                <h2 class="text-3xl font-bold text-white sm:text-4xl">Ready to protect your payment?</h2>
+                <p class="mt-4 text-lg text-zinc-400">
+                    File your first lien in under 5 minutes. No credit card required.
+                </p>
+                <a href="{{ route('register') }}" class="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 font-semibold text-zinc-900 shadow-lg transition hover:scale-105 hover:bg-zinc-50 hover:shadow-xl">
+                    File a Lien Now
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                </a>
+            </div>
         </div>
     </section>
 @endsection

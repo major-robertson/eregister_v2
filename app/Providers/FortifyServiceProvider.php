@@ -49,9 +49,40 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::verifyEmailView(fn () => view('pages::auth.verify-email'));
         Fortify::twoFactorChallengeView(fn () => view('pages::auth.two-factor-challenge'));
         Fortify::confirmPasswordView(fn () => view('pages::auth.confirm-password'));
-        Fortify::registerView(fn () => view('pages::auth.register'));
+        Fortify::registerView(function () {
+            $this->captureLandingPath();
+
+            return view('pages::auth.register');
+        });
         Fortify::resetPasswordView(fn () => view('pages::auth.reset-password'));
         Fortify::requestPasswordResetLinkView(fn () => view('pages::auth.forgot-password'));
+    }
+
+    /**
+     * Capture the landing path and URL when the user visits the register page.
+     */
+    private function captureLandingPath(): void
+    {
+        // Only capture if not already set
+        if (session()->has('signup_landing_path')) {
+            return;
+        }
+
+        $referer = request()->header('referer');
+
+        if (! $referer) {
+            return;
+        }
+
+        $refererPath = parse_url($referer, PHP_URL_PATH);
+        $refererHost = parse_url($referer, PHP_URL_HOST);
+        $currentHost = request()->getHost();
+
+        // Only capture internal landing paths (from our own domain)
+        if ($refererHost === $currentHost && $refererPath && $refererPath !== '/register') {
+            session()->put('signup_landing_path', $refererPath);
+            session()->put('signup_landing_url', $referer);
+        }
     }
 
     /**

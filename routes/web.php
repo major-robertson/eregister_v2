@@ -18,4 +18,9 @@ Route::view('styleguide', 'pages.styleguide')
     ->middleware(['auth'])
     ->name('styleguide');
 
+Route::view('privacy-policy', 'pages.privacy-policy')->name('privacy-policy');
+Route::view('terms-of-service', 'pages.terms-of-service')->name('terms-of-service');
+Route::view('refund-policy', 'pages.refund-policy')->name('refund-policy');
+Route::view('contact', 'pages.contact')->name('contact');
+
 require __DIR__.'/settings.php';

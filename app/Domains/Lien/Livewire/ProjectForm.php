@@ -5,6 +5,7 @@ namespace App\Domains\Lien\Livewire;
 use App\Domains\Lien\Engine\DeadlineCalculator;
 use App\Domains\Lien\Enums\ClaimantType;
 use App\Domains\Lien\Models\LienProject;
+use App\Services\GooglePlacesService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -35,6 +36,17 @@ class ProjectForm extends Component
     public ?string $jobsite_zip = null;
 
     public ?string $jobsite_county = null;
+
+    // Geo fields from Google Places
+    public ?string $jobsite_county_google = null;
+
+    public ?string $jobsite_place_id = null;
+
+    public ?string $jobsite_formatted_address = null;
+
+    public ?float $jobsite_lat = null;
+
+    public ?float $jobsite_lng = null;
 
     public ?string $legal_description = null;
 
@@ -73,6 +85,11 @@ class ProjectForm extends Component
         $this->jobsite_state = $this->project->jobsite_state ?? '';
         $this->jobsite_zip = $this->project->jobsite_zip;
         $this->jobsite_county = $this->project->jobsite_county;
+        $this->jobsite_county_google = $this->project->jobsite_county_google;
+        $this->jobsite_place_id = $this->project->jobsite_place_id;
+        $this->jobsite_formatted_address = $this->project->jobsite_formatted_address;
+        $this->jobsite_lat = $this->project->jobsite_lat;
+        $this->jobsite_lng = $this->project->jobsite_lng;
         $this->legal_description = $this->project->legal_description;
         $this->apn = $this->project->apn;
         $this->project_type = $this->project->project_type;
@@ -81,6 +98,27 @@ class ProjectForm extends Component
         $this->last_furnish_date = $this->project->last_furnish_date?->format('Y-m-d');
         $this->completion_date = $this->project->completion_date?->format('Y-m-d');
         $this->noc_recorded_date = $this->project->noc_recorded_date?->format('Y-m-d');
+    }
+
+    /**
+     * Update address fields from Google Maps autocomplete.
+     */
+    public function updateAddressFromAutocomplete(array $addressData): void
+    {
+        $this->jobsite_address1 = $addressData['line1'] ?? null;
+        $this->jobsite_city = $addressData['city'] ?? null;
+        $this->jobsite_state = $addressData['state'] ?? '';
+        $this->jobsite_zip = $addressData['zip'] ?? null;
+
+        // Store Google's county in both fields - user can edit jobsite_county
+        $googleCounty = $addressData['county'] ?? null;
+        $this->jobsite_county = $googleCounty;
+        $this->jobsite_county_google = $googleCounty;
+
+        $this->jobsite_place_id = $addressData['place_id'] ?? null;
+        $this->jobsite_formatted_address = $addressData['formatted_address'] ?? null;
+        $this->jobsite_lat = $addressData['lat'] ?? null;
+        $this->jobsite_lng = $addressData['lng'] ?? null;
     }
 
     public function rules(): array
@@ -110,6 +148,11 @@ class ProjectForm extends Component
     {
         $this->validate();
 
+        // If no place_id (user didn't use autocomplete), try to geocode the address
+        if (empty($this->jobsite_place_id) && ! empty($this->jobsite_address1)) {
+            $this->geocodeAddress();
+        }
+
         $business = Auth::user()->currentBusiness();
 
         $data = [
@@ -122,6 +165,11 @@ class ProjectForm extends Component
             'jobsite_state' => strtoupper($this->jobsite_state),
             'jobsite_zip' => $this->jobsite_zip,
             'jobsite_county' => $this->jobsite_county,
+            'jobsite_county_google' => $this->jobsite_county_google,
+            'jobsite_place_id' => $this->jobsite_place_id,
+            'jobsite_formatted_address' => $this->jobsite_formatted_address,
+            'jobsite_lat' => $this->jobsite_lat,
+            'jobsite_lng' => $this->jobsite_lng,
             'legal_description' => $this->legal_description,
             'apn' => $this->apn,
             'project_type' => $this->project_type,
@@ -149,6 +197,44 @@ class ProjectForm extends Component
             : 'Project created successfully.');
 
         $this->redirect(route('lien.projects.show', $project));
+    }
+
+    /**
+     * Geocode the address using Google Places API.
+     * Used as fallback when user manually enters address without autocomplete.
+     */
+    protected function geocodeAddress(): void
+    {
+        $address = implode(', ', array_filter([
+            $this->jobsite_address1,
+            $this->jobsite_city,
+            $this->jobsite_state,
+            $this->jobsite_zip,
+        ]));
+
+        if (empty($address)) {
+            return;
+        }
+
+        $googlePlaces = app(GooglePlacesService::class);
+        $geoData = $googlePlaces->geocodeAddress($address);
+
+        if ($geoData) {
+            $this->jobsite_place_id = $geoData['place_id'];
+            $this->jobsite_formatted_address = $geoData['formatted_address'];
+            $this->jobsite_lat = $geoData['lat'];
+            $this->jobsite_lng = $geoData['lng'];
+
+            // Always store Google's county for reference
+            if (! empty($geoData['county'])) {
+                $this->jobsite_county_google = $geoData['county'];
+
+                // Only update user-facing county if not already set
+                if (empty($this->jobsite_county)) {
+                    $this->jobsite_county = $geoData['county'];
+                }
+            }
+        }
     }
 
     public function render(): View

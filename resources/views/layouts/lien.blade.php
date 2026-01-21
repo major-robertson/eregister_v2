@@ -6,7 +6,7 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-bg-light">
-        <flux:sidebar sticky collapsible class="border-e border-amber-200 bg-amber-50">
+        <flux:sidebar sticky collapsible class="border-e border-border bg-amber-50/30">
             <flux:sidebar.header>
                 <x-app-logo :sidebar="true" href="{{ route('lien.projects.index') }}" badge="Liens" wire:navigate />
                 <flux:sidebar.collapse class="lg:hidden" />
@@ -35,7 +35,7 @@
         </flux:sidebar>
 
         <!-- Mobile User Menu -->
-        <flux:header class="lg:hidden border-b border-amber-200 bg-amber-50">
+        <flux:header class="lg:hidden border-b border-border bg-amber-50/30">
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
             <x-app-logo href="{{ route('lien.projects.index') }}" badge="Liens" wire:navigate />

@@ -45,7 +45,7 @@
             <div class="space-y-4">
                 <flux:field>
                     <flux:label>Street Address</flux:label>
-                    <flux:input wire:model="jobsite_address1" placeholder="123 Main Street" />
+                    <flux:input id="jobsite-autocomplete" wire:model="jobsite_address1" placeholder="Start typing to search..." autocomplete="off" />
                     <flux:error name="jobsite_address1" />
                 </flux:field>
 
@@ -83,7 +83,13 @@
                 <flux:field>
                     <flux:label>County</flux:label>
                     <flux:input wire:model="jobsite_county" placeholder="e.g., Los Angeles County" />
-                    <flux:description>Important for recording liens in the correct jurisdiction.</flux:description>
+                    @if($jobsite_county_google && $jobsite_county !== $jobsite_county_google)
+                        <flux:description class="text-warning">
+                            Modified from Google Maps: {{ $jobsite_county_google }}
+                        </flux:description>
+                    @else
+                        <flux:description>Important for recording liens in the correct jurisdiction.</flux:description>
+                    @endif
                     <flux:error name="jobsite_county" />
                 </flux:field>
             </div>
@@ -161,4 +167,96 @@
             </flux:button>
         </div>
     </form>
+
+    @script
+    <script>
+        (function() {
+            var livewireComponent = $wire;
+
+            // Define the callback function globally for Google Maps
+            window.initJobsiteAutocomplete = function() {
+                var input = document.getElementById('jobsite-autocomplete');
+                if (!input) {
+                    return;
+                }
+
+                var autocomplete = new google.maps.places.Autocomplete(input, {
+                    types: ['address'],
+                    componentRestrictions: { country: 'us' },
+                    fields: ['place_id', 'geometry', 'address_components', 'formatted_address']
+                });
+
+                autocomplete.addListener('place_changed', function() {
+                    var place = autocomplete.getPlace();
+
+                    if (!place.address_components) {
+                        return;
+                    }
+
+                    // Parse address components
+                    var streetNumber = '';
+                    var route = '';
+                    var city = '';
+                    var state = '';
+                    var zip = '';
+                    var county = '';
+
+                    place.address_components.forEach(function(component) {
+                        var types = component.types;
+
+                        if (types.includes('street_number')) {
+                            streetNumber = component.long_name;
+                        }
+                        if (types.includes('route')) {
+                            route = component.long_name;
+                        }
+                        if (types.includes('locality')) {
+                            city = component.long_name;
+                        }
+                        if (types.includes('administrative_area_level_1')) {
+                            state = component.short_name;
+                        }
+                        if (types.includes('postal_code')) {
+                            zip = component.long_name;
+                        }
+                        if (types.includes('administrative_area_level_2')) {
+                            county = component.long_name;
+                        }
+                    });
+
+                    // Build address line 1
+                    var line1 = [streetNumber, route].filter(Boolean).join(' ');
+
+                    // Extract geo data
+                    var lat = place.geometry && place.geometry.location ? place.geometry.location.lat() : null;
+                    var lng = place.geometry && place.geometry.location ? place.geometry.location.lng() : null;
+
+                    // Update Livewire component with all fields
+                    livewireComponent.updateAddressFromAutocomplete({
+                        line1: line1,
+                        city: city,
+                        state: state,
+                        zip: zip,
+                        county: county || null,
+                        place_id: place.place_id || null,
+                        formatted_address: place.formatted_address || null,
+                        lat: lat,
+                        lng: lng
+                    });
+                });
+            };
+
+            // Load Google Maps API with callback
+            if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+                var script = document.createElement('script');
+                script.src = 'https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_api_key') }}&libraries=places&callback=initJobsiteAutocomplete';
+                script.async = true;
+                script.defer = true;
+                document.head.appendChild(script);
+            } else {
+                window.initJobsiteAutocomplete();
+            }
+        })();
+    </script>
+    @endscript
 </div>

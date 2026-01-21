@@ -16,14 +16,16 @@
     </div>
 
     <form wire:submit="complete" class="mt-12 space-y-6">
-        {{-- Street Address --}}
+        {{-- Street Address with Google Places Autocomplete --}}
         <div>
             <label class="mb-2 block text-sm font-medium text-text-secondary">Street Address</label>
             <input
+                id="autocomplete-address"
                 type="text"
                 wire:model="businessAddress.line1"
                 placeholder="123 Main Street"
                 autofocus
+                autocomplete="off"
                 class="w-full border-0 border-b-2 border-border bg-transparent px-0 py-3 text-xl font-medium text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none focus:ring-0"
             />
             @error('businessAddress.line1')
@@ -93,4 +95,102 @@
             </flux:button>
         </div>
     </form>
+
+    @script
+    <script>
+        (function() {
+            var livewireComponent = $wire;
+
+            // Define the callback function globally for Google Maps
+            window.initAutocomplete = function() {
+                var input = document.getElementById('autocomplete-address');
+                if (!input) {
+                    return;
+                }
+
+                var autocomplete = new google.maps.places.Autocomplete(input, {
+                    types: ['address'],
+                    componentRestrictions: { country: 'us' },
+                    fields: ['place_id', 'geometry', 'address_components', 'formatted_address']
+                });
+
+                autocomplete.addListener('place_changed', function() {
+                    var place = autocomplete.getPlace();
+
+                    if (!place.address_components) {
+                        return;
+                    }
+
+                    // Parse address components
+                    var streetNumber = '';
+                    var route = '';
+                    var city = '';
+                    var state = '';
+                    var zip = '';
+                    var county = '';
+                    var country = '';
+
+                    place.address_components.forEach(function(component) {
+                        var types = component.types;
+
+                        if (types.includes('street_number')) {
+                            streetNumber = component.long_name;
+                        }
+                        if (types.includes('route')) {
+                            route = component.long_name;
+                        }
+                        if (types.includes('locality')) {
+                            city = component.long_name;
+                        }
+                        if (types.includes('administrative_area_level_1')) {
+                            state = component.short_name;
+                        }
+                        if (types.includes('postal_code')) {
+                            zip = component.long_name;
+                        }
+                        if (types.includes('administrative_area_level_2')) {
+                            county = component.long_name;
+                        }
+                        if (types.includes('country')) {
+                            country = component.short_name;
+                        }
+                    });
+
+                    // Build address line 1
+                    var line1 = [streetNumber, route].filter(Boolean).join(' ');
+
+                    // Extract geo data
+                    var lat = place.geometry && place.geometry.location ? place.geometry.location.lat() : null;
+                    var lng = place.geometry && place.geometry.location ? place.geometry.location.lng() : null;
+
+                    // Update Livewire component with all fields
+                    livewireComponent.updateAddressFromAutocomplete({
+                        line1: line1,
+                        line2: '',
+                        city: city,
+                        state: state,
+                        zip: zip,
+                        place_id: place.place_id || null,
+                        formatted_address: place.formatted_address || null,
+                        lat: lat,
+                        lng: lng,
+                        county: county || null,
+                        country: country || null
+                    });
+                });
+            };
+
+            // Load Google Maps API with callback
+            if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+                var script = document.createElement('script');
+                script.src = 'https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_api_key') }}&libraries=places&callback=initAutocomplete';
+                script.async = true;
+                script.defer = true;
+                document.head.appendChild(script);
+            } else {
+                window.initAutocomplete();
+            }
+        })();
+    </script>
+    @endscript
 </div>

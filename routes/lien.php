@@ -5,6 +5,7 @@ use App\Domains\Lien\Http\Controllers\StripeWebhookController;
 use App\Domains\Lien\Livewire\FilingCheckout;
 use App\Domains\Lien\Livewire\FilingShow;
 use App\Domains\Lien\Livewire\FilingWizard;
+use App\Domains\Lien\Livewire\LienOnboarding;
 use App\Domains\Lien\Livewire\ProjectForm;
 use App\Domains\Lien\Livewire\ProjectList;
 use App\Domains\Lien\Livewire\ProjectShow;
@@ -20,8 +21,13 @@ use Illuminate\Support\Facades\Route;
 Route::post('/webhooks/lien-stripe', [StripeWebhookController::class, 'handle'])
     ->name('lien.webhooks.stripe');
 
-// Authenticated lien routes
+// Lien onboarding (must be before the lien.onboarding middleware group)
 Route::middleware(['auth', 'business.current', 'business.complete'])
+    ->get('/portal/liens/onboarding', LienOnboarding::class)
+    ->name('lien.onboarding');
+
+// Authenticated lien routes (with lien onboarding check)
+Route::middleware(['auth', 'business.current', 'business.complete', 'lien.onboarding'])
     ->prefix('/portal/liens')
     ->group(function (): void {
         // Project routes

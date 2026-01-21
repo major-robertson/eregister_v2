@@ -59,7 +59,7 @@ class LienProjectFactory extends Factory
     public function asSupplier(): static
     {
         return $this->state(fn () => [
-            'claimant_type' => ClaimantType::Supplier,
+            'claimant_type' => ClaimantType::SupplierToContractor,
         ]);
     }
 

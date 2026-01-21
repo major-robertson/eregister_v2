@@ -24,3 +24,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         )
         ->name('two-factor.show');
 });
+
+Route::middleware(['auth', 'business.current'])->group(function () {
+    Route::livewire('settings/business', 'pages::settings.business')->name('business.edit');
+});

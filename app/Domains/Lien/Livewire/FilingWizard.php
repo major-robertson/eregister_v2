@@ -70,7 +70,14 @@ class FilingWizard extends Component
         }
 
         // Populate from existing filing
-        $this->amount_claimed = $this->filing->amount_claimed_cents ? $this->filing->amount_claimed_cents / 100 : null;
+        if ($this->filing->amount_claimed_cents) {
+            $this->amount_claimed = $this->filing->amount_claimed_cents / 100;
+        } elseif ($this->project->hasFinancialData()) {
+            // Pre-populate from project's calculated balance due
+            $balanceDueCents = $this->project->balanceDueCents();
+            $this->amount_claimed = $balanceDueCents !== null ? $balanceDueCents / 100 : null;
+        }
+
         $this->description_of_work = $this->filing->description_of_work;
         $this->service_level = $this->filing->service_level?->value ?? 'self_serve';
     }

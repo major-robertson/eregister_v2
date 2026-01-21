@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'business.current' => \App\Domains\Portal\Http\Middleware\ResolveCurrentBusiness::class,
             'business.complete' => \App\Domains\Portal\Http\Middleware\EnsureBusinessProfileComplete::class,
             'application.access' => \App\Domains\Portal\Http\Middleware\EnsureHasAccess::class,
+            'lien.onboarding' => \App\Domains\Lien\Http\Middleware\EnsureLienOnboardingComplete::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

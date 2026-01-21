@@ -69,17 +69,20 @@
                         @foreach($projects as $project)
                             <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
                                 <td class="px-4 py-4 whitespace-nowrap">
-                                    <div>
-                                        <a href="{{ route('lien.projects.show', $project) }}"
+                                    <div class="flex items-center gap-2">
+                                        <a href="{{ $project->isDraft() ? route('lien.projects.edit', $project) : route('lien.projects.show', $project) }}"
                                            class="font-medium text-zinc-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400">
                                             {{ $project->name }}
                                         </a>
+                                        @if($project->isDraft())
+                                            <flux:badge color="amber" size="sm">Draft</flux:badge>
+                                        @endif
                                         @if($project->job_number)
-                                            <span class="ml-2 text-xs text-zinc-500">{{ $project->job_number }}</span>
+                                            <span class="text-xs text-zinc-500">{{ $project->job_number }}</span>
                                         @endif
                                     </div>
                                     <div class="text-sm text-zinc-500">
-                                        {{ $project->claimant_type->label() }}
+                                        {{ $project->claimant_type?->label() ?? 'Not set' }}
                                     </div>
                                 </td>
                                 <td class="px-4 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
@@ -114,9 +117,15 @@
                                     {{ $project->created_at->format('M j, Y') }}
                                 </td>
                                 <td class="px-4 py-4 whitespace-nowrap text-right text-sm">
-                                    <flux:button href="{{ route('lien.projects.show', $project) }}" variant="ghost" size="sm">
-                                        View
-                                    </flux:button>
+                                    @if($project->isDraft())
+                                        <flux:button href="{{ route('lien.projects.edit', $project) }}" variant="primary" size="sm">
+                                            Continue
+                                        </flux:button>
+                                    @else
+                                        <flux:button href="{{ route('lien.projects.show', $project) }}" variant="ghost" size="sm">
+                                            View
+                                        </flux:button>
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach

@@ -5,6 +5,7 @@ namespace App\Domains\Business\Models;
 use App\Domains\Forms\Models\FormApplication;
 use App\Domains\Lien\Models\LienProject;
 use App\Models\User;
+use Database\Factories\Business\BusinessFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -17,6 +18,11 @@ class Business extends Model implements HasMedia
 {
     use Billable, HasFactory, InteractsWithMedia;
 
+    protected static function newFactory(): BusinessFactory
+    {
+        return BusinessFactory::new();
+    }
+
     protected $fillable = [
         'name',
         'legal_name',
@@ -24,8 +30,12 @@ class Business extends Model implements HasMedia
         'entity_type',
         'business_address',
         'mailing_address',
+        'phone',
+        'state_of_incorporation',
+        'contractor_license_number',
         'responsible_people',
         'onboarding_completed_at',
+        'lien_onboarding_completed_at',
         'timezone',
     ];
 
@@ -36,6 +46,7 @@ class Business extends Model implements HasMedia
             'mailing_address' => 'array',
             'responsible_people' => 'array',
             'onboarding_completed_at' => 'datetime',
+            'lien_onboarding_completed_at' => 'datetime',
             'trial_ends_at' => 'datetime',
         ];
     }
@@ -87,5 +98,84 @@ class Business extends Model implements HasMedia
     public function completeOnboarding(): void
     {
         $this->update(['onboarding_completed_at' => now()]);
+    }
+
+    public function isLienOnboardingComplete(): bool
+    {
+        return $this->lien_onboarding_completed_at !== null;
+    }
+
+    public function completeLienOnboarding(): void
+    {
+        $this->update(['lien_onboarding_completed_at' => now()]);
+    }
+
+    /**
+     * Get the responsible person data for a specific user.
+     *
+     * @return array{user_id: int, name: string, title: string, can_sign_liens: bool}|null
+     */
+    public function getResponsiblePersonForUser(int $userId): ?array
+    {
+        $people = $this->responsible_people ?? [];
+
+        foreach ($people as $person) {
+            if (($person['user_id'] ?? null) === $userId) {
+                return $person;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Update or add a responsible person entry for a user.
+     */
+    public function setResponsiblePersonForUser(int $userId, string $name, string $title, bool $canSignLiens = true): void
+    {
+        $people = $this->responsible_people ?? [];
+        $found = false;
+
+        foreach ($people as $index => $person) {
+            if (($person['user_id'] ?? null) === $userId) {
+                $people[$index] = [
+                    'user_id' => $userId,
+                    'name' => $name,
+                    'title' => $title,
+                    'can_sign_liens' => $canSignLiens,
+                ];
+                $found = true;
+                break;
+            }
+        }
+
+        if (! $found) {
+            $people[] = [
+                'user_id' => $userId,
+                'name' => $name,
+                'title' => $title,
+                'can_sign_liens' => $canSignLiens,
+            ];
+        }
+
+        $this->update(['responsible_people' => $people]);
+    }
+
+    /**
+     * Get the full business address as a single line.
+     */
+    public function businessAddressLine(): string
+    {
+        $address = $this->business_address ?? [];
+
+        $parts = array_filter([
+            $address['line1'] ?? null,
+            $address['line2'] ?? null,
+            $address['city'] ?? null,
+            $address['state'] ?? null,
+            $address['zip'] ?? null,
+        ]);
+
+        return implode(', ', $parts);
     }
 }

@@ -233,4 +233,30 @@ class LienProject extends Model
     {
         $this->update(['wizard_completed_at' => now()]);
     }
+
+    /**
+     * Check if a filing has been completed for a specific document type.
+     */
+    public function hasCompletedFilingForType(string $documentTypeSlug): bool
+    {
+        $deadline = $this->getDeadlineForType($documentTypeSlug);
+
+        if (! $deadline) {
+            return false;
+        }
+
+        return $deadline->completed_filing_id !== null;
+    }
+
+    /**
+     * Get the deadline for a specific document type.
+     */
+    public function getDeadlineForType(string $documentTypeSlug): ?LienProjectDeadline
+    {
+        return $this->deadlines()
+            ->whereHas('documentType', function ($query) use ($documentTypeSlug) {
+                $query->where('slug', $documentTypeSlug);
+            })
+            ->first();
+    }
 }

@@ -132,4 +132,141 @@ class LienProjectDeadline extends Model
     {
         return ! empty($this->missing_fields_json);
     }
+
+    /**
+     * Check if filing can be started for this deadline.
+     */
+    public function canFile(): bool
+    {
+        // Already completed - cannot file again
+        if ($this->status === DeadlineStatus::Completed) {
+            return false;
+        }
+
+        $slug = $this->documentType?->slug;
+
+        // Preliminary notice: always available unless already filed
+        // Can file even with missing dates - user can enter them during filing
+        if ($slug === 'prelim_notice') {
+            return true;
+        }
+
+        // For other document types, check additional requirements
+
+        // Missing required fields blocks filing for non-prelim documents
+        if ($this->hasMissingFields()) {
+            return false;
+        }
+
+        // Not applicable deadlines cannot be filed
+        if ($this->status === DeadlineStatus::NotApplicable) {
+            return false;
+        }
+
+        // Lien release: requires mechanics lien to be filed first
+        if ($slug === 'lien_release') {
+            return $this->hasPriorFilingCompleted();
+        }
+
+        // NOI and mechanics lien: no special restrictions beyond status checks
+        return true;
+    }
+
+    /**
+     * Get the reason why filing is blocked, or null if filing is available.
+     */
+    public function getFilingBlockerReason(): ?string
+    {
+        // Already completed
+        if ($this->status === DeadlineStatus::Completed) {
+            return 'Already Filed';
+        }
+
+        $slug = $this->documentType?->slug;
+
+        // Preliminary notice: always available unless already filed
+        if ($slug === 'prelim_notice') {
+            return null;
+        }
+
+        // For other document types, check additional requirements
+
+        // Missing required fields blocks filing for non-prelim documents
+        if ($this->hasMissingFields()) {
+            return 'Needs Info';
+        }
+
+        // Not applicable
+        if ($this->status === DeadlineStatus::NotApplicable) {
+            return 'Not Applicable';
+        }
+
+        // Lien release: check if mechanics lien is filed
+        if ($slug === 'lien_release' && ! $this->hasPriorFilingCompleted()) {
+            return 'Lien Required';
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if this deadline requires a prior filing (e.g., lien release requires lien).
+     */
+    public function requiresPriorFiling(): bool
+    {
+        return $this->documentType?->slug === 'lien_release';
+    }
+
+    /**
+     * Check if the required prior filing has been completed.
+     * For lien release, this checks if a mechanics lien has been filed.
+     */
+    public function hasPriorFilingCompleted(): bool
+    {
+        if (! $this->requiresPriorFiling()) {
+            return true;
+        }
+
+        // Lien release requires mechanics lien to be filed
+        return $this->project->hasCompletedFilingForType('mechanics_lien');
+    }
+
+    /**
+     * Get the filing status label for display.
+     */
+    public function getFilingStatusLabel(): string
+    {
+        if ($this->status === DeadlineStatus::Completed) {
+            return 'Filed';
+        }
+
+        $blocker = $this->getFilingBlockerReason();
+        if ($blocker) {
+            return $blocker;
+        }
+
+        return 'Ready';
+    }
+
+    /**
+     * Get the appropriate color for the filing status badge.
+     */
+    public function getFilingStatusColor(): string
+    {
+        if ($this->status === DeadlineStatus::Completed) {
+            return 'green';
+        }
+
+        $blocker = $this->getFilingBlockerReason();
+        if ($blocker) {
+            // "Needs Info" and "Lien Required" get amber, "Not Applicable" gets zinc
+            if ($blocker === 'Not Applicable') {
+                return 'zinc';
+            }
+
+            return 'amber';
+        }
+
+        return 'blue';
+    }
 }

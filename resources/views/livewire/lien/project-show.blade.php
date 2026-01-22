@@ -25,6 +25,7 @@
             $daysRemaining = $nextDeadline->daysRemaining();
             $isOverdue = $daysRemaining !== null && $daysRemaining < 0;
             $isDueSoon = $daysRemaining !== null && $daysRemaining >= 0 && $daysRemaining <= 7;
+            $canFileNext = $nextDeadline->canFile();
         @endphp
         <flux:callout
             :color="$isOverdue ? 'red' : ($isDueSoon ? 'amber' : 'blue')"
@@ -42,13 +43,17 @@
                     @else
                         is due in {{ $daysRemaining }} days ({{ $nextDeadline->due_date->format('M j, Y') }})
                     @endif
+                    @if(!$canFileNext && $nextDeadline->getFilingBlockerReason())
+                        <span class="text-sm opacity-75">({{ $nextDeadline->getFilingBlockerReason() }})</span>
+                    @endif
                 </div>
                 <flux:button
                     wire:click="startFiling({{ $nextDeadline->id }})"
-                    :variant="$isOverdue || $isDueSoon ? 'primary' : 'ghost'"
+                    :variant="($isOverdue || $isDueSoon) && $canFileNext ? 'primary' : 'ghost'"
+                    :disabled="!$canFileNext"
                     size="sm"
                 >
-                    Start Filing
+                    {{ $canFileNext ? 'Start Filing' : 'File' }}
                 </flux:button>
             </div>
         </flux:callout>
@@ -121,7 +126,13 @@
                 <x-slot:header>Filing Timeline</x-slot:header>
 
                 @if($deadlines->isEmpty())
-                    <p class="text-zinc-500">No deadlines calculated. Add a jobsite state and dates to see your timeline.</p>
+                    @if(!$project->jobsite_state)
+                        <p class="text-zinc-500">No deadlines calculated. Add a jobsite state to see your timeline.</p>
+                    @else
+                        <flux:callout color="amber" icon="exclamation-triangle">
+                            No deadline rules found for {{ $project->jobsite_state }}. Please contact support or run the deadline rule seeder.
+                        </flux:callout>
+                    @endif
                 @else
                     @php
                         $hasPlaceholder = $deadlines->contains(fn($d) => $d->isPlaceholder());
@@ -158,11 +169,16 @@
                                 </div>
 
                                 <div class="flex items-center gap-3">
-                                    {{-- Status Badge --}}
+                                    @php
+                                        $canFile = $deadline->canFile();
+                                        $blockerReason = $deadline->getFilingBlockerReason();
+                                    @endphp
+
+                                    {{-- Deadline Status Badge (timing-related) --}}
                                     @if($deadline->status->value === 'completed')
-                                        <flux:badge color="green">Complete</flux:badge>
+                                        {{-- No timing badge needed when completed --}}
                                     @elseif($deadline->status->value === 'not_applicable')
-                                        <flux:badge color="zinc">N/A</flux:badge>
+                                        {{-- No timing badge needed when N/A --}}
                                     @elseif($deadline->isOverdue())
                                         <flux:badge color="red">Overdue</flux:badge>
                                     @elseif($deadline->isDueSoon())
@@ -171,22 +187,28 @@
                                         <flux:badge color="zinc">{{ $deadline->daysRemaining() }} days</flux:badge>
                                     @endif
 
-                                    {{-- Action Button --}}
-                                    @if($deadline->status->value === 'pending' && !$deadline->hasMissingFields())
-                                        <flux:button
-                                            wire:click="startFiling({{ $deadline->id }})"
-                                            size="sm"
-                                            variant="primary"
-                                        >
-                                            Start Filing
-                                        </flux:button>
-                                    @elseif($deadline->completedFiling)
+                                    {{-- Filing Status Badge --}}
+                                    <flux:badge size="sm" :color="$deadline->getFilingStatusColor()">
+                                        {{ $deadline->getFilingStatusLabel() }}
+                                    </flux:badge>
+
+                                    {{-- Action Button - always visible --}}
+                                    @if($deadline->completedFiling)
                                         <flux:button
                                             href="{{ route('lien.filings.show', $deadline->completedFiling) }}"
                                             size="sm"
                                             variant="ghost"
                                         >
                                             View Filing
+                                        </flux:button>
+                                    @else
+                                        <flux:button
+                                            wire:click="startFiling({{ $deadline->id }})"
+                                            size="sm"
+                                            :variant="$canFile ? 'primary' : 'ghost'"
+                                            :disabled="!$canFile"
+                                        >
+                                            {{ $canFile ? 'Start Filing' : 'File' }}
                                         </flux:button>
                                     @endif
                                 </div>

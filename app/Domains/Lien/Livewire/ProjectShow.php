@@ -2,6 +2,7 @@
 
 namespace App\Domains\Lien\Livewire;
 
+use App\Domains\Lien\Engine\DeadlineCalculator;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienProject;
@@ -19,6 +20,11 @@ class ProjectShow extends Component
     {
         Gate::authorize('view', $project);
         $this->project = $project;
+
+        // Ensure deadlines are calculated if they don't exist
+        if ($this->project->jobsite_state && $this->project->deadlines()->count() === 0) {
+            app(DeadlineCalculator::class)->calculateForProject($this->project);
+        }
     }
 
     public function startFiling(int $deadlineId): void

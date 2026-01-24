@@ -4,6 +4,7 @@ namespace App\Domains\Lien\Models;
 
 use App\Domains\Lien\Concerns\BelongsToBusiness;
 use App\Domains\Lien\Enums\DeadlineStatus;
+use Database\Factories\Lien\LienProjectDeadlineFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +14,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class LienProjectDeadline extends Model
 {
     use BelongsToBusiness, HasFactory;
+
+    protected static function newFactory(): LienProjectDeadlineFactory
+    {
+        return LienProjectDeadlineFactory::new();
+    }
 
     protected $fillable = [
         'business_id',

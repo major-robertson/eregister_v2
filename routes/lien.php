@@ -2,7 +2,10 @@
 
 use App\Domains\Lien\Http\Controllers\FilingDownloadController;
 use App\Domains\Lien\Http\Controllers\FilingPaymentController;
+use App\Domains\Lien\Livewire\Dashboard;
+use App\Domains\Lien\Livewire\DeadlineList;
 use App\Domains\Lien\Livewire\FilingCheckout;
+use App\Domains\Lien\Livewire\FilingList;
 use App\Domains\Lien\Livewire\FilingShow;
 use App\Domains\Lien\Livewire\FilingWizard;
 use App\Domains\Lien\Livewire\LienOnboarding;
@@ -26,8 +29,11 @@ Route::middleware(['auth', 'business.current', 'business.complete'])
 Route::middleware(['auth', 'business.current', 'business.complete', 'lien.onboarding'])
     ->prefix('/portal/liens')
     ->group(function (): void {
+        // Dashboard
+        Route::get('/', Dashboard::class)->name('lien.dashboard');
+
         // Project routes
-        Route::get('/', ProjectList::class)->name('lien.projects.index');
+        Route::get('/projects', ProjectList::class)->name('lien.projects.index');
         Route::get('/projects/create', ProjectForm::class)->name('lien.projects.create');
         Route::get('/projects/{project}', ProjectShow::class)->name('lien.projects.show');
         Route::get('/projects/{project}/edit', ProjectForm::class)->name('lien.projects.edit');
@@ -41,6 +47,16 @@ Route::middleware(['auth', 'business.current', 'business.complete', 'lien.onboar
             ->name('lien.filings.payment-confirmation');
         Route::get('/filings/{filing}/download', [FilingDownloadController::class, 'download'])
             ->name('lien.filings.download');
+
+        // Filings list
+        Route::get('/filings', FilingList::class)->name('lien.filings.index');
+
+        // Deadlines list
+        Route::get('/deadlines', DeadlineList::class)->name('lien.deadlines.index');
+
+        // Placeholder routes - redirect to dashboard until implemented
+        Route::get('/parties', fn () => redirect()->route('lien.dashboard'))->name('lien.parties.index');
+        Route::get('/payments', fn () => redirect()->route('lien.dashboard'))->name('lien.payments.index');
     });
 
 // API route for payment status polling

@@ -8,14 +8,23 @@
     <body class="min-h-screen bg-bg-light">
         <flux:sidebar sticky collapsible class="border-e border-border bg-amber-50/30">
             <flux:sidebar.header>
-                <x-app-logo :sidebar="true" href="{{ route('lien.projects.index') }}" badge="Liens" wire:navigate />
+                <x-app-logo :sidebar="true" href="{{ route('lien.dashboard') }}" badge="Liens" wire:navigate />
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 
             <flux:sidebar.nav>
                 <flux:sidebar.group :heading="__('Lien Management')">
+                    <flux:sidebar.item icon="home" :href="route('lien.dashboard')" :current="request()->routeIs('lien.dashboard')" wire:navigate>
+                        {{ __('Dashboard') }}
+                    </flux:sidebar.item>
                     <flux:sidebar.item icon="folder" :href="route('lien.projects.index')" :current="request()->routeIs('lien.projects.*')" wire:navigate>
                         {{ __('Projects') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="document-text" :href="route('lien.filings.index')" :current="request()->routeIs('lien.filings.index')" wire:navigate>
+                        {{ __('Filings') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="calendar" :href="route('lien.deadlines.index')" :current="request()->routeIs('lien.deadlines.*')" wire:navigate>
+                        {{ __('Deadlines') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
@@ -38,7 +47,7 @@
         <flux:header class="lg:hidden border-b border-border bg-amber-50/30">
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
-            <x-app-logo href="{{ route('lien.projects.index') }}" badge="Liens" wire:navigate />
+            <x-app-logo href="{{ route('lien.dashboard') }}" badge="Liens" wire:navigate />
 
             <flux:spacer />
 

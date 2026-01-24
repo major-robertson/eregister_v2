@@ -1,8 +1,18 @@
 <div class="w-full max-w-lg">
-    {{-- Minimal progress dots (step 2 of 2 - address is the final step) --}}
+    {{-- Progress dots: 2/4 if from liens + first business (continuous flow), 2/2 otherwise --}}
+    @php
+        $user = auth()->user();
+        $isFromLiens = $user->signup_landing_path === '/liens';
+        $isFirstBusiness = $user->businesses()->count() === 1;
+        $isContinuousFlow = $isFromLiens && $isFirstBusiness;
+    @endphp
     <div class="mb-16 flex justify-center gap-2">
         <div class="h-2 w-2 rounded-full bg-primary"></div>
         <div class="h-2 w-2 rounded-full bg-primary"></div>
+        @if ($isContinuousFlow)
+            <div class="h-2 w-2 rounded-full bg-zinc-300 dark:bg-zinc-600"></div>
+            <div class="h-2 w-2 rounded-full bg-zinc-300 dark:bg-zinc-600"></div>
+        @endif
     </div>
 
     {{-- Business Address (typeform style) --}}
@@ -90,9 +100,15 @@
         </div>
 
         <div class="flex justify-end pt-6">
-            <flux:button type="submit" variant="primary" icon-trailing="check">
-                Complete Setup
-            </flux:button>
+            @if ($isContinuousFlow)
+                <flux:button type="submit" variant="primary" icon-trailing="arrow-right">
+                    Continue
+                </flux:button>
+            @else
+                <flux:button type="submit" variant="primary" icon-trailing="check">
+                    Complete Setup
+                </flux:button>
+            @endif
         </div>
     </form>
 

@@ -4,6 +4,7 @@ namespace Database\Factories\Lien;
 
 use App\Domains\Business\Models\Business;
 use App\Domains\Lien\Enums\ClaimantType;
+use App\Domains\Lien\Enums\NocStatus;
 use App\Domains\Lien\Models\LienProject;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -32,6 +33,7 @@ class LienProjectFactory extends Factory
             'jobsite_county' => fake()->city().' County',
             'first_furnish_date' => fake()->optional()->dateTimeBetween('-6 months', '-1 month'),
             'last_furnish_date' => fake()->optional()->dateTimeBetween('-1 month', 'now'),
+            'noc_status' => NocStatus::Unknown,
         ];
     }
 
@@ -66,9 +68,16 @@ class LienProjectFactory extends Factory
     public function withDates(): static
     {
         return $this->state(fn () => [
-            'contract_date' => fake()->dateTimeBetween('-1 year', '-6 months'),
             'first_furnish_date' => fake()->dateTimeBetween('-6 months', '-3 months'),
             'last_furnish_date' => fake()->dateTimeBetween('-3 months', '-1 month'),
+        ]);
+    }
+
+    public function withNocRecorded(): static
+    {
+        return $this->state(fn () => [
+            'noc_status' => NocStatus::Yes,
+            'noc_recorded_at' => fake()->dateTimeBetween('-1 month', '-1 week'),
         ]);
     }
 }

@@ -80,7 +80,7 @@ class ProjectShow extends Component
         $this->project->load([
             'parties',
             'deadlines' => function ($query) {
-                $query->with(['documentType', 'rule', 'completedFiling'])
+                $query->with(['documentType', 'rule', 'completedFiling', 'draftFiling'])
                     ->orderBy('due_date');
             },
             'filings' => function ($query) {

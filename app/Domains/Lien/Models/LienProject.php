@@ -4,6 +4,7 @@ namespace App\Domains\Lien\Models;
 
 use App\Domains\Lien\Concerns\BelongsToBusiness;
 use App\Domains\Lien\Enums\ClaimantType;
+use App\Domains\Lien\Enums\NocStatus;
 use App\Models\User;
 use Database\Factories\Lien\LienProjectFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -49,11 +50,11 @@ class LienProject extends Model
         'credits_deductions_cents',
         'payments_received_cents',
         'uncompleted_work_cents',
-        'contract_date',
         'first_furnish_date',
         'last_furnish_date',
         'completion_date',
-        'noc_recorded_date',
+        'noc_status',
+        'noc_recorded_at',
         'wizard_completed_at',
     ];
 
@@ -68,11 +69,11 @@ class LienProject extends Model
             'credits_deductions_cents' => 'integer',
             'payments_received_cents' => 'integer',
             'uncompleted_work_cents' => 'integer',
-            'contract_date' => 'date',
             'first_furnish_date' => 'date',
             'last_furnish_date' => 'date',
             'completion_date' => 'date',
-            'noc_recorded_date' => 'date',
+            'noc_status' => NocStatus::class,
+            'noc_recorded_at' => 'date',
             'wizard_completed_at' => 'datetime',
         ];
     }
@@ -258,5 +259,60 @@ class LienProject extends Model
                 $query->where('slug', $documentTypeSlug);
             })
             ->first();
+    }
+
+    /**
+     * Get the alerts status based on furnish dates.
+     * Returns 'paused', 'limited', or 'active'.
+     */
+    public function getAlertsStatus(): string
+    {
+        $hasFirst = $this->first_furnish_date !== null;
+        $hasLast = $this->last_furnish_date !== null;
+
+        if (! $hasFirst && ! $hasLast) {
+            return 'paused';
+        }
+        if ($hasFirst && $hasLast) {
+            return 'active';
+        }
+
+        return 'limited';
+    }
+
+    /**
+     * Get the human-readable label for alerts status.
+     */
+    public function getAlertsStatusLabel(): string
+    {
+        return match ($this->getAlertsStatus()) {
+            'paused' => 'Alerts Paused',
+            'limited' => 'Alerts Limited',
+            'active' => 'Alerts Active',
+        };
+    }
+
+    /**
+     * Get the color for alerts status badge.
+     */
+    public function getAlertsStatusColor(): string
+    {
+        return match ($this->getAlertsStatus()) {
+            'paused' => 'zinc',
+            'limited' => 'amber',
+            'active' => 'green',
+        };
+    }
+
+    /**
+     * Get the tooltip text for alerts status.
+     */
+    public function getAlertsStatusTooltip(): string
+    {
+        return match ($this->getAlertsStatus()) {
+            'paused' => 'No reminders available — add furnish dates to enable',
+            'limited' => 'Some reminders available — add missing dates for full coverage',
+            'active' => 'All reminders enabled',
+        };
     }
 }

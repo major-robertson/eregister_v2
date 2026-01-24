@@ -219,7 +219,8 @@ class LienProjectDeadline extends Model
 
     /**
      * Check if the required prior filing has been completed.
-     * For lien release, this checks if a mechanics lien has been filed.
+     * For lien release, this checks if a mechanics lien has been RECORDED
+     * (not just submitted - must have recorded_at timestamp set).
      */
     public function hasPriorFilingCompleted(): bool
     {
@@ -227,8 +228,11 @@ class LienProjectDeadline extends Model
             return true;
         }
 
-        // Lien release requires mechanics lien to be filed
-        return $this->project->hasCompletedFilingForType('mechanics_lien');
+        // Lien release requires mechanics lien to be RECORDED (not just submitted)
+        return $this->project->filings()
+            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
+            ->whereNotNull('recorded_at')
+            ->exists();
     }
 
     /**
@@ -268,5 +272,72 @@ class LienProjectDeadline extends Model
         }
 
         return 'blue';
+    }
+
+    /**
+     * Get the status label for display.
+     * Returns: Filed, Not Applicable, Needs Info, or Ready.
+     */
+    public function getStatusLabel(): string
+    {
+        if ($this->status === DeadlineStatus::Completed) {
+            return 'Filed';
+        }
+        if ($this->status === DeadlineStatus::NotApplicable) {
+            return 'Not Applicable';
+        }
+        if ($this->hasMissingFields()) {
+            return 'Needs Info';
+        }
+
+        return 'Ready';
+    }
+
+    /**
+     * Get the status color based on status/condition (not label text).
+     * This avoids brittle code where label changes break colors.
+     */
+    public function getStatusColor(): string
+    {
+        if ($this->status === DeadlineStatus::Completed) {
+            return 'green';
+        }
+        if ($this->status === DeadlineStatus::NotApplicable) {
+            return 'zinc';
+        }
+        if ($this->hasMissingFields()) {
+            return 'amber';
+        }
+
+        return 'blue';
+    }
+
+    /**
+     * Get the button text based on current state.
+     */
+    public function getButtonText(): string
+    {
+        if ($this->completedFiling) {
+            return 'View Filing';
+        }
+        if ($this->draftFiling()->exists()) {
+            return 'Continue';
+        }
+        if ($this->hasMissingFields()) {
+            return "Start filing (we'll ask a few questions)";
+        }
+
+        return 'Start Filing';
+    }
+
+    /**
+     * Check if filing can be started for this deadline.
+     * "Needs Info" does NOT block starting - the wizard collects missing info.
+     * Only Completed and NotApplicable block starting.
+     */
+    public function canStart(): bool
+    {
+        return $this->status !== DeadlineStatus::Completed
+            && $this->status !== DeadlineStatus::NotApplicable;
     }
 }

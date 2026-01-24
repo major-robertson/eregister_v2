@@ -63,11 +63,6 @@ class FortifyServiceProvider extends ServiceProvider
      */
     private function captureLandingPath(): void
     {
-        // Only capture if not already set
-        if (session()->has('signup_landing_path')) {
-            return;
-        }
-
         $referer = request()->header('referer');
 
         if (! $referer) {

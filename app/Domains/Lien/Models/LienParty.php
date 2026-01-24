@@ -82,4 +82,16 @@ class LienParty extends Model
             'phone' => $this->phone,
         ];
     }
+
+    /**
+     * Check if the party has a complete mailing address.
+     * Requires at least name and basic address components.
+     */
+    public function hasMailingAddress(): bool
+    {
+        $hasName = ! empty($this->name) || ! empty($this->company_name);
+        $hasAddress = ! empty($this->address1) && ! empty($this->city) && ! empty($this->state);
+
+        return $hasName && $hasAddress;
+    }
 }

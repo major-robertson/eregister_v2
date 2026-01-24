@@ -4,8 +4,8 @@ namespace App\Domains\Lien\Enums;
 
 enum ServiceLevel: string
 {
-    case SelfServe = 'self_serve';
     case FullService = 'full_service';
+    case SelfServe = 'self_serve';
 
     public function label(): string
     {

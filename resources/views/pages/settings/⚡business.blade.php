@@ -150,31 +150,31 @@ new class extends Component {
 
     <flux:heading class="sr-only">{{ __('Business Settings') }}</flux:heading>
 
-    <x-pages::settings.layout :heading="__('Business')" :subheading="__('Manage your business and lien signer information')">
+    <x-pages::settings.layout :heading="__('Business')"
+        :subheading="__('Manage your business and lien signer information')">
         @if($business)
-            <form wire:submit="updateBusinessInfo" class="my-6 w-full space-y-6">
-                <flux:heading size="sm">{{ __('Business Details') }}</flux:heading>
+        <form wire:submit="updateBusinessInfo" class="my-6 w-full space-y-6">
+            <flux:heading size="sm">{{ __('Business Details') }}</flux:heading>
 
-                <flux:input wire:model="legal_name" :label="__('Legal Business Name')" type="text" required />
+            <flux:input wire:model="legal_name" :label="__('Legal Business Name')" type="text" required />
 
-                <flux:select wire:model.live="entity_type" :label="__('Entity Type')" required>
-                    <option value="">Select entity type...</option>
-                    @foreach($this->getEntityTypes() as $value => $label)
-                        <option value="{{ $value }}">{{ $label }}</option>
-                    @endforeach
-                </flux:select>
+            <flux:select wire:model.live="entity_type" :label="__('Entity Type')" required>
+                <option value="">Select entity type...</option>
+                @foreach($this->getEntityTypes() as $value => $label)
+                <option value="{{ $value }}">{{ $label }}</option>
+                @endforeach
+            </flux:select>
 
-                @if($this->requiresStateOfIncorporation())
-                    <flux:select wire:model="state_of_incorporation" :label="__('State of Incorporation')" required>
-                        <option value="">Select state...</option>
-                        @foreach($this->getStates() as $code => $name)
-                            <option value="{{ $code }}">{{ $code }} - {{ $name }}</option>
-                        @endforeach
-                    </flux:select>
-                @endif
+            @if($this->requiresStateOfIncorporation())
+            <flux:select wire:model="state_of_incorporation" :label="__('State of Incorporation')" required>
+                <option value="">Select state...</option>
+                @foreach($this->getStates() as $code => $name)
+                <option value="{{ $code }}">{{ $code }} - {{ $name }}</option>
+                @endforeach
+            </flux:select>
+            @endif
 
-                <div
-                    x-data="{
+            <div x-data="{
                         phone: @js($this->formatPhoneForDisplay($phone)),
                         formatPhone() {
                             let digits = this.phone.replace(/\D/g, '').substring(0, 10);
@@ -189,48 +189,49 @@ new class extends Component {
                             }
                             $wire.set('phone', digits);
                         }
-                    }"
-                >
-                    <flux:field>
-                        <flux:label>{{ __('Business Phone') }}</flux:label>
-                        <flux:input type="tel" x-model="phone" x-on:input="formatPhone()" required />
-                    </flux:field>
-                </div>
-
-                <flux:input wire:model="contractor_license_number" :label="__('Contractor License Number')" type="text" :description="__('Optional - required for liens in some states')" />
-
-                <flux:separator />
-
-                <flux:heading size="sm">{{ __('Person Signing Lien Documents') }}</flux:heading>
-                <flux:text class="text-sm text-zinc-500 mb-4">
-                    {{ __('This person will be listed as the authorized signer on all lien filings.') }}
-                </flux:text>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <flux:input wire:model="signer_first_name" :label="__('First Name')" type="text" required />
-                    <flux:input wire:model="signer_last_name" :label="__('Last Name')" type="text" required />
-                </div>
-
-                <flux:input wire:model="signer_title" :label="__('Title')" type="text" required placeholder="President, Owner, Manager, etc." />
-
-                <div class="flex items-center gap-4">
-                    <div class="flex items-center justify-end">
-                        <flux:button variant="primary" type="submit" class="w-full">
-                            {{ __('Save') }}
-                        </flux:button>
-                    </div>
-
-                    <x-action-message class="me-3" on="business-updated">
-                        {{ __('Saved.') }}
-                    </x-action-message>
-                </div>
-            </form>
-        @else
-            <div class="my-6">
-                <flux:callout color="amber" icon="exclamation-triangle">
-                    {{ __('No business selected. Please select a business to manage settings.') }}
-                </flux:callout>
+                    }">
+                <flux:field>
+                    <flux:label>{{ __('Business Phone') }}</flux:label>
+                    <flux:input type="tel" x-model="phone" x-on:input="formatPhone()" required />
+                </flux:field>
             </div>
+
+            <flux:input wire:model="contractor_license_number" :label="__('Contractor License Number')" type="text"
+                :description="__('Optional - required for liens in some states')" />
+
+            <flux:separator />
+
+            <flux:heading size="sm">{{ __('Person Signing Lien Documents') }}</flux:heading>
+            <flux:text class="text-sm text-zinc-500 mb-4">
+                {{ __('This person will be listed as the authorized signer on all lien filings.') }}
+            </flux:text>
+
+            <div class="grid grid-cols-2 gap-4">
+                <flux:input wire:model="signer_first_name" :label="__('First Name')" type="text" required />
+                <flux:input wire:model="signer_last_name" :label="__('Last Name')" type="text" required />
+            </div>
+
+            <flux:input wire:model="signer_title" :label="__('Title')" type="text" required
+                placeholder="President, Owner, Manager, etc." />
+
+            <div class="flex items-center gap-4">
+                <div class="flex items-center justify-end">
+                    <flux:button variant="primary" type="submit" class="w-full">
+                        {{ __('Save') }}
+                    </flux:button>
+                </div>
+
+                <x-action-message class="me-3" on="business-updated">
+                    {{ __('Saved.') }}
+                </x-action-message>
+            </div>
+        </form>
+        @else
+        <div class="my-6">
+            <flux:callout color="amber" icon="exclamation-triangle">
+                {{ __('No business selected. Please select a business to manage settings.') }}
+            </flux:callout>
+        </div>
         @endif
     </x-pages::settings.layout>
 </section>

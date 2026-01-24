@@ -4,8 +4,7 @@ namespace App\Domains\Lien\Livewire;
 
 use App\Domains\Lien\Engine\DeadlineCalculator;
 use App\Domains\Lien\Enums\ClaimantType;
-use App\Domains\Lien\Enums\PartyRole;
-use App\Domains\Lien\Models\LienParty;
+use App\Domains\Lien\Enums\NocStatus;
 use App\Domains\Lien\Models\LienProject;
 use App\Services\GooglePlacesService;
 use Illuminate\Contracts\View\View;
@@ -23,7 +22,7 @@ class ProjectForm extends Component
     // Wizard state
     public int $step = 1;
 
-    public int $totalSteps = 6;
+    public int $totalSteps = 3;
 
     // Step 1: Project Info
     public string $name = '';
@@ -56,56 +55,17 @@ class ProjectForm extends Component
 
     public ?float $jobsite_lng = null;
 
-    // Step 3: Property Details
-    public ?string $legal_description = null;
-
-    public ?string $apn = null;
-
-    public ?string $project_type = null;
-
-    public bool $owner_is_tenant = false;
-
-    // Step 4: Parties (managed separately - we'll show a summary)
-    // Claimant party data (pre-populated from business)
-    public string $claimant_company_name = '';
-
-    public string $claimant_name = '';
-
-    public ?string $claimant_address1 = null;
-
-    public ?string $claimant_city = null;
-
-    public ?string $claimant_state = null;
-
-    public ?string $claimant_zip = null;
-
-    public ?string $claimant_phone = null;
-
-    public ?string $claimant_email = null;
-
-    // Step 5: Contract Details
-    public ?string $has_written_contract = null;
-
-    public ?string $base_contract_amount = null;
-
-    public ?string $change_orders = null;
-
-    public ?string $credits_deductions = null;
-
-    public ?string $payments_received = null;
-
-    public ?string $uncompleted_work = null;
-
-    // Step 6: Important Dates
-    public ?string $contract_date = null;
-
+    // Step 3: Important Dates
     public ?string $first_furnish_date = null;
 
     public ?string $last_furnish_date = null;
 
-    public ?string $completion_date = null;
+    public string $noc_status = 'unknown';
 
-    public ?string $noc_recorded_date = null;
+    public ?string $noc_recorded_at = null;
+
+    // States that show NOC question
+    private const NOC_STATES = ['CA', 'NV', 'AZ', 'OR'];
 
     public function mount(?LienProject $project = null): void
     {
@@ -114,40 +74,7 @@ class ProjectForm extends Component
             $this->project = $project;
             $this->isEditing = true;
             $this->fillFromProject();
-        } else {
-            // Pre-populate claimant from business profile
-            $this->prefillClaimantFromBusiness();
         }
-    }
-
-    private function prefillClaimantFromBusiness(): void
-    {
-        $business = Auth::user()->currentBusiness();
-
-        if (! $business) {
-            return;
-        }
-
-        $this->claimant_company_name = $business->legal_name ?? $business->name ?? '';
-        $this->claimant_phone = $business->phone ?? null;
-
-        $address = $business->business_address ?? [];
-        $this->claimant_address1 = $address['line1'] ?? null;
-        $this->claimant_city = $address['city'] ?? null;
-        $this->claimant_state = $address['state'] ?? null;
-        $this->claimant_zip = $address['zip'] ?? null;
-
-        // Get signer name from responsible_people
-        $user = Auth::user();
-        $responsiblePerson = $business->getResponsiblePersonForUser($user->id);
-
-        if ($responsiblePerson) {
-            $this->claimant_name = $responsiblePerson['name'] ?? $user->name ?? '';
-        } else {
-            $this->claimant_name = $user->name ?? '';
-        }
-
-        $this->claimant_email = $user->email ?? null;
     }
 
     private function fillFromProject(): void
@@ -171,52 +98,10 @@ class ProjectForm extends Component
         $this->jobsite_lng = $this->project->jobsite_lng;
 
         // Step 3
-        $this->legal_description = $this->project->legal_description;
-        $this->apn = $this->project->apn;
-        $this->project_type = $this->project->project_type;
-        $this->owner_is_tenant = (bool) $this->project->owner_is_tenant;
-
-        // Step 4: Load claimant party
-        $claimantParty = $this->project->claimantParty();
-        if ($claimantParty) {
-            $this->claimant_company_name = $claimantParty->company_name ?? '';
-            $this->claimant_name = $claimantParty->name ?? '';
-            $this->claimant_address1 = $claimantParty->address1;
-            $this->claimant_city = $claimantParty->city;
-            $this->claimant_state = $claimantParty->state;
-            $this->claimant_zip = $claimantParty->zip;
-            $this->claimant_phone = $claimantParty->phone;
-            $this->claimant_email = $claimantParty->email;
-        } else {
-            $this->prefillClaimantFromBusiness();
-        }
-
-        // Step 5
-        $this->has_written_contract = $this->project->has_written_contract !== null
-            ? ($this->project->has_written_contract ? '1' : '0')
-            : null;
-        $this->base_contract_amount = $this->project->base_contract_amount_cents !== null
-            ? number_format($this->project->base_contract_amount_cents / 100, 2, '.', '')
-            : null;
-        $this->change_orders = $this->project->change_orders_cents !== null
-            ? number_format($this->project->change_orders_cents / 100, 2, '.', '')
-            : null;
-        $this->credits_deductions = $this->project->credits_deductions_cents !== null
-            ? number_format($this->project->credits_deductions_cents / 100, 2, '.', '')
-            : null;
-        $this->payments_received = $this->project->payments_received_cents !== null
-            ? number_format($this->project->payments_received_cents / 100, 2, '.', '')
-            : null;
-        $this->uncompleted_work = $this->project->uncompleted_work_cents !== null
-            ? number_format($this->project->uncompleted_work_cents / 100, 2, '.', '')
-            : null;
-
-        // Step 6
-        $this->contract_date = $this->project->contract_date?->format('Y-m-d');
         $this->first_furnish_date = $this->project->first_furnish_date?->format('Y-m-d');
         $this->last_furnish_date = $this->project->last_furnish_date?->format('Y-m-d');
-        $this->completion_date = $this->project->completion_date?->format('Y-m-d');
-        $this->noc_recorded_date = $this->project->noc_recorded_date?->format('Y-m-d');
+        $this->noc_status = $this->project->noc_status?->value ?? 'unknown';
+        $this->noc_recorded_at = $this->project->noc_recorded_at?->format('Y-m-d');
     }
 
     public function nextStep(): void
@@ -241,6 +126,20 @@ class ProjectForm extends Component
         // Only allow going back to completed steps
         if ($step < $this->step && $step >= 1) {
             $this->step = $step;
+        }
+    }
+
+    /**
+     * Skip step 3 (Important Dates) - saves without requiring dates.
+     */
+    public function skipStep(): void
+    {
+        if ($this->step === 3) {
+            $this->saveProgress();
+            $this->project->markWizardComplete();
+
+            session()->flash('message', 'Project saved successfully.');
+            $this->redirect(route('lien.projects.show', $this->project));
         }
     }
 
@@ -269,39 +168,46 @@ class ProjectForm extends Component
                 'jobsite_zip' => ['nullable', 'string', 'max:10'],
                 'jobsite_county' => ['nullable', 'string', 'max:255'],
             ],
-            3 => [
-                'legal_description' => ['nullable', 'string'],
-                'apn' => ['nullable', 'string', 'max:100'],
-                'project_type' => ['nullable', 'string', 'max:50'],
-                'owner_is_tenant' => ['boolean'],
-            ],
-            4 => [
-                'claimant_company_name' => ['required', 'string', 'max:255'],
-                'claimant_name' => ['nullable', 'string', 'max:255'],
-                'claimant_address1' => ['nullable', 'string', 'max:255'],
-                'claimant_city' => ['nullable', 'string', 'max:255'],
-                'claimant_state' => ['nullable', 'string', 'size:2'],
-                'claimant_zip' => ['nullable', 'string', 'max:10'],
-                'claimant_phone' => ['nullable', 'string', 'max:20'],
-                'claimant_email' => ['nullable', 'email', 'max:255'],
-            ],
-            5 => [
-                'has_written_contract' => ['nullable', 'in:0,1'],
-                'base_contract_amount' => ['nullable', 'numeric', 'min:0'],
-                'change_orders' => ['nullable', 'numeric'],
-                'credits_deductions' => ['nullable', 'numeric', 'min:0'],
-                'payments_received' => ['nullable', 'numeric', 'min:0'],
-                'uncompleted_work' => ['nullable', 'numeric', 'min:0'],
-            ],
-            6 => [
-                'contract_date' => ['nullable', 'date'],
-                'first_furnish_date' => ['nullable', 'date'],
-                'last_furnish_date' => ['nullable', 'date'],
-                'completion_date' => ['nullable', 'date'],
-                'noc_recorded_date' => ['nullable', 'date'],
-            ],
+            3 => $this->getStep3Rules(),
             default => [],
         };
+    }
+
+    /**
+     * Build step 3 validation rules properly (no empty strings in array).
+     */
+    private function getStep3Rules(): array
+    {
+        // Build last_furnish_date rules properly
+        $lastFurnishRules = ['nullable', 'date', 'before_or_equal:today'];
+        if ($this->first_furnish_date) {
+            $lastFurnishRules[] = 'after_or_equal:first_furnish_date';
+        }
+
+        $rules = [
+            'first_furnish_date' => ['nullable', 'date', 'before_or_equal:today'],
+            'last_furnish_date' => $lastFurnishRules,
+        ];
+
+        // Only validate NOC fields for states that require it
+        if ($this->showNocQuestion()) {
+            $rules['noc_status'] = ['required', Rule::enum(NocStatus::class)];
+            $rules['noc_recorded_at'] = [
+                Rule::requiredIf($this->noc_status === 'yes'),
+                'nullable',
+                'date',
+            ];
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Check if NOC question should be shown based on state.
+     */
+    public function showNocQuestion(): bool
+    {
+        return in_array(strtoupper($this->jobsite_state), self::NOC_STATES);
     }
 
     /**
@@ -336,40 +242,6 @@ class ProjectForm extends Component
         session()->flash('message', 'Project saved successfully.');
 
         $this->redirect(route('lien.projects.show', $this->project));
-    }
-
-    protected function saveClaimantParty(LienProject $project, int $businessId): void
-    {
-        $claimantData = [
-            'business_id' => $businessId,
-            'project_id' => $project->id,
-            'role' => PartyRole::Claimant->value,
-            'company_name' => $this->claimant_company_name,
-            'name' => $this->claimant_name,
-            'address1' => $this->claimant_address1,
-            'city' => $this->claimant_city,
-            'state' => $this->claimant_state,
-            'zip' => $this->claimant_zip,
-            'phone' => $this->claimant_phone,
-            'email' => $this->claimant_email,
-        ];
-
-        $existingClaimant = $project->claimantParty();
-
-        if ($existingClaimant) {
-            $existingClaimant->update($claimantData);
-        } else {
-            LienParty::create($claimantData);
-        }
-    }
-
-    protected function dollarsToCents(?string $dollars): ?int
-    {
-        if ($dollars === null || $dollars === '') {
-            return null;
-        }
-
-        return (int) round((float) $dollars * 100);
     }
 
     /**
@@ -438,21 +310,10 @@ class ProjectForm extends Component
             'jobsite_formatted_address' => $this->jobsite_formatted_address,
             'jobsite_lat' => $this->jobsite_lat,
             'jobsite_lng' => $this->jobsite_lng,
-            'legal_description' => $this->legal_description,
-            'apn' => $this->apn,
-            'project_type' => $this->project_type,
-            'owner_is_tenant' => $this->owner_is_tenant,
-            'has_written_contract' => $this->has_written_contract !== null ? (bool) $this->has_written_contract : null,
-            'base_contract_amount_cents' => $this->dollarsToCents($this->base_contract_amount),
-            'change_orders_cents' => $this->dollarsToCents($this->change_orders),
-            'credits_deductions_cents' => $this->dollarsToCents($this->credits_deductions),
-            'payments_received_cents' => $this->dollarsToCents($this->payments_received),
-            'uncompleted_work_cents' => $this->dollarsToCents($this->uncompleted_work),
-            'contract_date' => $this->contract_date ?: null,
             'first_furnish_date' => $this->first_furnish_date ?: null,
             'last_furnish_date' => $this->last_furnish_date ?: null,
-            'completion_date' => $this->completion_date ?: null,
-            'noc_recorded_date' => $this->noc_recorded_date ?: null,
+            'noc_status' => $this->noc_status,
+            'noc_recorded_at' => $this->noc_recorded_at ?: null,
         ];
 
         if ($this->project && $this->project->exists) {
@@ -466,31 +327,8 @@ class ProjectForm extends Component
             $this->isEditing = true;
         }
 
-        // Save or update claimant party
-        $this->saveClaimantParty($this->project, $business->id);
-
         // Recalculate deadlines
         app(DeadlineCalculator::class)->calculateForProject($this->project->fresh());
-    }
-
-    /**
-     * Calculate the balance due for display.
-     */
-    public function getCalculatedBalanceDueProperty(): ?string
-    {
-        if ($this->base_contract_amount === null || $this->base_contract_amount === '') {
-            return null;
-        }
-
-        $base = (float) ($this->base_contract_amount ?? 0);
-        $changes = (float) ($this->change_orders ?? 0);
-        $credits = (float) ($this->credits_deductions ?? 0);
-        $payments = (float) ($this->payments_received ?? 0);
-        $uncompleted = (float) ($this->uncompleted_work ?? 0);
-
-        $balance = $base + $changes - $credits - $payments - $uncompleted;
-
-        return number_format($balance, 2);
     }
 
     public function render(): View
@@ -498,8 +336,8 @@ class ProjectForm extends Component
         return view('livewire.lien.project-form', [
             'claimantTypes' => ClaimantType::cases(),
             'states' => $this->getUsStates(),
-            'projectTypes' => $this->getProjectTypes(),
             'stepTitles' => $this->getStepTitles(),
+            'nocStatuses' => NocStatus::cases(),
         ])->layout('layouts.lien', [
             'title' => $this->isEditing ? 'Edit Project' : 'Create Project',
         ]);
@@ -510,20 +348,7 @@ class ProjectForm extends Component
         return [
             1 => 'Project Info',
             2 => 'Jobsite Address',
-            3 => 'Property Details',
-            4 => 'Claimant Info',
-            5 => 'Contract Details',
-            6 => 'Important Dates',
-        ];
-    }
-
-    private function getProjectTypes(): array
-    {
-        return [
-            'private' => 'Private',
-            'public' => 'Public',
-            'residential' => 'Residential',
-            'commercial' => 'Commercial',
+            3 => 'Important Dates',
         ];
     }
 

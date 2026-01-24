@@ -14,19 +14,26 @@ class LienOnboarding extends Component
 
     public int $step = 1;
 
-    public int $totalSteps = 3;
+    public int $totalSteps = 2;
 
-    // Step 1: Entity info
-    public string $entityType = '';
+    /**
+     * Whether this is a continuous flow from business onboarding (from liens signup, first business).
+     * Determines if we show 4 unified dots or 2 standalone dots.
+     */
+    public bool $isContinuousFlow = false;
 
-    public string $stateOfIncorporation = '';
+    /**
+     * Offset for unified progress display across business + lien onboarding.
+     * 2 for continuous flow (steps 3-4 of 4), 0 for standalone (steps 1-2 of 2).
+     */
+    public int $stepOffset = 0;
 
-    // Step 2: Business contact
+    // Step 1: Business contact
     public string $phone = '';
 
     public string $contractorLicenseNumber = '';
 
-    // Step 3: Signer info (for responsible_people)
+    // Step 2: Signer info (for responsible_people)
     public string $signerFirstName = '';
 
     public string $signerLastName = '';
@@ -48,13 +55,16 @@ class LienOnboarding extends Component
         $this->business = $business;
 
         // Pre-fill from existing business data
-        $this->entityType = $business->entity_type ?? '';
-        $this->stateOfIncorporation = $business->state_of_incorporation ?? '';
         $this->phone = $business->phone ?? '';
         $this->contractorLicenseNumber = $business->contractor_license_number ?? '';
 
         // Pre-fill signer info from responsible_people or user
         $user = Auth::user();
+
+        // Determine if this is continuous flow (from liens signup, first business)
+        $this->isContinuousFlow = $user->signup_landing_path === '/liens'
+            && $user->businesses()->count() === 1;
+        $this->stepOffset = $this->isContinuousFlow ? 2 : 0;
         $responsiblePerson = $business->getResponsiblePersonForUser($user->id);
 
         if ($responsiblePerson && ! empty($responsiblePerson['name'])) {
@@ -89,20 +99,6 @@ class LienOnboarding extends Component
     protected function validateStep(): void
     {
         if ($this->step === 1) {
-            $rules = [
-                'entityType' => ['required', 'string', 'max:50'],
-            ];
-
-            // Only require state of incorporation for entity types that need it
-            if ($this->requiresStateOfIncorporation()) {
-                $rules['stateOfIncorporation'] = ['required', 'string', 'size:2'];
-            }
-
-            $this->validate($rules, [], [
-                'entityType' => 'entity type',
-                'stateOfIncorporation' => 'state of incorporation',
-            ]);
-        } elseif ($this->step === 2) {
             $this->validate([
                 'phone' => ['required', 'string', 'max:20'],
                 'contractorLicenseNumber' => ['nullable', 'string', 'max:50'],
@@ -110,7 +106,7 @@ class LienOnboarding extends Component
                 'phone' => 'phone number',
                 'contractorLicenseNumber' => 'contractor license number',
             ]);
-        } elseif ($this->step === 3) {
+        } elseif ($this->step === 2) {
             $this->validate([
                 'signerFirstName' => ['required', 'string', 'max:50'],
                 'signerLastName' => ['required', 'string', 'max:50'],
@@ -128,20 +124,10 @@ class LienOnboarding extends Component
         $this->validateStep();
 
         // Save all data
-        $updateData = [
-            'entity_type' => $this->entityType,
+        $this->business->update([
             'phone' => $this->phone,
             'contractor_license_number' => $this->contractorLicenseNumber ?: null,
-        ];
-
-        // Only save state of incorporation for entity types that need it
-        if ($this->requiresStateOfIncorporation()) {
-            $updateData['state_of_incorporation'] = $this->stateOfIncorporation;
-        } else {
-            $updateData['state_of_incorporation'] = null;
-        }
-
-        $this->business->update($updateData);
+        ]);
 
         // Update responsible person for current user
         $fullName = trim($this->signerFirstName.' '.$this->signerLastName);
@@ -161,24 +147,7 @@ class LienOnboarding extends Component
     {
         return view('livewire.lien.lien-onboarding', [
             'states' => config('states'),
-            'entityTypes' => $this->getEntityTypes(),
         ])->layout('layouts.minimal', ['title' => 'Lien Setup']);
-    }
-
-    protected function getEntityTypes(): array
-    {
-        return [
-            'sole_proprietorship' => 'Sole Proprietorship',
-            'llc' => 'Limited Liability Company (LLC)',
-            'corporation' => 'C Corporation',
-            'partnership' => 'Partnership',
-            's_corp' => 'S Corporation',
-        ];
-    }
-
-    public function requiresStateOfIncorporation(): bool
-    {
-        return in_array($this->entityType, ['llc', 'corporation', 's_corp'], true);
     }
 
     /**

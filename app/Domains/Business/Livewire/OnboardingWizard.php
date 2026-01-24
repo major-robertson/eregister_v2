@@ -124,9 +124,13 @@ class OnboardingWizard extends Component
 
         $this->business->completeOnboarding();
 
-        // Redirect to liens portal if user signed up from the liens landing page
-        $redirectRoute = Auth::user()->signup_landing_path === '/liens'
-            ? route('lien.projects.index')
+        // Only redirect to lien onboarding if from liens AND this is their first business
+        $user = Auth::user();
+        $isFromLiens = $user->signup_landing_path === '/liens';
+        $isFirstBusiness = $user->businesses()->count() === 1;
+
+        $redirectRoute = ($isFromLiens && $isFirstBusiness)
+            ? route('lien.onboarding')
             : route('dashboard');
 
         return $this->redirect($redirectRoute, navigate: true);

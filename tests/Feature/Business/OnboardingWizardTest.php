@@ -54,7 +54,7 @@ describe('OnboardingWizard', function () {
         expect($business->isOnboardingComplete())->toBeTrue();
     });
 
-    it('redirects to liens portal when user signed up from liens page', function () {
+    it('redirects to lien onboarding when user signed up from liens page with first business', function () {
         $user = User::factory()->create(['signup_landing_path' => '/liens']);
         $business = Business::create(['name' => 'Lien Business', 'legal_name' => 'Lien Business']);
         $user->businesses()->attach($business->id, ['role' => 'owner']);
@@ -69,7 +69,31 @@ describe('OnboardingWizard', function () {
             ->set('businessAddress.zip', '33101')
             ->call('complete')
             ->assertHasNoErrors()
-            ->assertRedirect(route('lien.projects.index'));
+            ->assertRedirect(route('lien.onboarding'));
+    });
+
+    it('redirects to dashboard when user from liens adds second business', function () {
+        $user = User::factory()->create(['signup_landing_path' => '/liens']);
+
+        // User already has a first business
+        $firstBusiness = Business::create(['name' => 'First Business', 'legal_name' => 'First Business']);
+        $user->businesses()->attach($firstBusiness->id, ['role' => 'owner']);
+
+        // Now adding a second business
+        $secondBusiness = Business::create(['name' => 'Second Business', 'legal_name' => 'Second Business']);
+        $user->businesses()->attach($secondBusiness->id, ['role' => 'owner']);
+
+        $this->actingAs($user)
+            ->withSession(['current_business_id' => $secondBusiness->id]);
+
+        Livewire::test(OnboardingWizard::class)
+            ->set('businessAddress.line1', '456 Second Street')
+            ->set('businessAddress.city', 'Orlando')
+            ->set('businessAddress.state', 'FL')
+            ->set('businessAddress.zip', '32801')
+            ->call('complete')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('dashboard'));
     });
 
     it('redirects to dashboard when user signed up from other pages', function () {

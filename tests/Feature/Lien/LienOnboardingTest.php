@@ -43,18 +43,13 @@ it('can view lien onboarding page', function () {
 
 it('can complete lien onboarding wizard', function () {
     Livewire::test(LienOnboarding::class)
-        // Step 1: Entity Info
+        // Step 1: Business Contact
         ->assertSet('step', 1)
-        ->set('entityType', 'llc')
-        ->set('stateOfIncorporation', 'CA')
-        ->call('nextStep')
-        ->assertSet('step', 2)
-        // Step 2: Business Contact
         ->set('phone', '5551234567')
         ->set('contractorLicenseNumber', 'ABC123456')
         ->call('nextStep')
-        ->assertSet('step', 3)
-        // Step 3: Authorized Signer
+        ->assertSet('step', 2)
+        // Step 2: Authorized Signer
         ->set('signerFirstName', 'John')
         ->set('signerLastName', 'Smith')
         ->set('signerTitle', 'Owner')
@@ -63,8 +58,6 @@ it('can complete lien onboarding wizard', function () {
 
     $this->business->refresh();
 
-    expect($this->business->entity_type)->toBe('llc');
-    expect($this->business->state_of_incorporation)->toBe('CA');
     expect($this->business->phone)->toBe('5551234567');
     expect($this->business->contractor_license_number)->toBe('ABC123456');
     expect($this->business->isLienOnboardingComplete())->toBeTrue();
@@ -77,51 +70,20 @@ it('can complete lien onboarding wizard', function () {
 });
 
 it('validates step 1 before proceeding', function () {
-    // Create business without entity type set
-    $this->business->update([
-        'entity_type' => null,
-        'state_of_incorporation' => null,
-    ]);
-
     Livewire::test(LienOnboarding::class)
         ->assertSet('step', 1)
-        ->set('entityType', '') // Clear any pre-populated value
-        ->call('nextStep')
-        ->assertHasErrors(['entityType'])
-        ->assertSet('step', 1);
-});
-
-it('requires state of incorporation for LLC', function () {
-    Livewire::test(LienOnboarding::class)
-        ->assertSet('step', 1)
-        ->set('entityType', 'llc')
-        ->set('stateOfIncorporation', '')
-        ->call('nextStep')
-        ->assertHasErrors(['stateOfIncorporation'])
-        ->assertSet('step', 1);
-});
-
-it('validates step 2 before proceeding', function () {
-    Livewire::test(LienOnboarding::class)
-        ->set('entityType', 'llc')
-        ->set('stateOfIncorporation', 'CA')
-        ->call('nextStep')
-        ->assertSet('step', 2)
         ->set('phone', '')
         ->call('nextStep')
         ->assertHasErrors(['phone'])
-        ->assertSet('step', 2);
+        ->assertSet('step', 1);
 });
 
-it('validates step 3 before completing', function () {
+it('validates step 2 before completing', function () {
     Livewire::test(LienOnboarding::class)
-        ->set('entityType', 'llc')
-        ->set('stateOfIncorporation', 'CA')
-        ->call('nextStep')
-        ->assertSet('step', 2)
+        ->assertSet('step', 1)
         ->set('phone', '5551234567')
         ->call('nextStep')
-        ->assertSet('step', 3)
+        ->assertSet('step', 2)
         ->set('signerFirstName', '')
         ->set('signerLastName', '')
         ->set('signerTitle', '')
@@ -131,13 +93,9 @@ it('validates step 3 before completing', function () {
 
 it('pre-populates from existing business data', function () {
     $this->business->update([
-        'entity_type' => 'corporation',
-        'state_of_incorporation' => 'NY',
         'phone' => '5559998888',
     ]);
 
     Livewire::test(LienOnboarding::class)
-        ->assertSet('entityType', 'corporation')
-        ->assertSet('stateOfIncorporation', 'NY')
         ->assertSet('phone', '5559998888');
 });

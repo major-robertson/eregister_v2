@@ -340,4 +340,20 @@ class LienProjectDeadline extends Model
         return $this->status !== DeadlineStatus::Completed
             && $this->status !== DeadlineStatus::NotApplicable;
     }
+
+    /**
+     * Check if this deadline is required (not optional).
+     */
+    public function isRequired(): bool
+    {
+        return $this->rule?->is_required ?? true;
+    }
+
+    /**
+     * Check if this deadline is optional.
+     */
+    public function isOptional(): bool
+    {
+        return ! $this->isRequired();
+    }
 }

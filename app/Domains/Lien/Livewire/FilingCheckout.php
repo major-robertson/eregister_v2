@@ -3,18 +3,34 @@
 namespace App\Domains\Lien\Livewire;
 
 use App\Domains\Business\Models\Business;
-use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Models\LienFiling;
+use App\Domains\Lien\Services\LienPaymentService;
+use App\Enums\PaymentStatus;
+use App\Models\Payment;
+use App\Models\Price;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
+use Stripe\PaymentIntent;
+use Stripe\StripeClient;
 
 class FilingCheckout extends Component
 {
     public Business $business;
 
     public LienFiling $filing;
+
+    public string $paymentIntentId = '';
+
+    public string $clientSecret = '';
+
+    public int $amountCents = 0;
+
+    public string $paymentId = '';
+
+    public bool $isReady = false;
 
     public function mount(LienFiling $filing): void
     {
@@ -34,81 +50,102 @@ class FilingCheckout extends Component
 
         $this->business = $business;
         $this->filing = $filing;
+
+        $this->initializePayment();
     }
 
-    public function checkout(): void
+    protected function initializePayment(): void
     {
-        $slug = $this->filing->documentType->slug;
-        $suffix = $this->filing->isFullService() ? '_full' : '_self';
-        $priceId = config('lien.stripe_prices.'.$slug.$suffix);
+        // 1. Get pricing from single source of truth
+        $price = Price::resolve(
+            'lien',
+            $this->filing->documentType->slug,
+            $this->filing->service_level->value,
+            'one_time'
+        );
+        $this->amountCents = $price->amount_cents;
 
-        // If no price configured, use stub checkout for development
-        if (empty($priceId)) {
-            $this->stubCheckout();
+        // 2. Ensure Business has Stripe Customer (idempotent)
+        $this->business->createOrGetStripeCustomer();
+
+        // 3. Find latest retryable payment row (with lock for concurrency safety)
+        $payment = DB::transaction(function () use ($price) {
+            $payment = Payment::findRetryableForWithLock($this->filing);
+
+            if (! $payment) {
+                $payment = Payment::create([
+                    'purchasable_type' => $this->filing->getMorphClass(),
+                    'purchasable_id' => $this->filing->id,
+                    'business_id' => $this->business->id,
+                    'price_id' => $price->id,
+                    'amount_cents' => $price->amount_cents,
+                    'currency' => 'usd',
+                    'status' => PaymentStatus::Initiated,
+                    'provider' => 'stripe',
+                    'livemode' => Payment::isLiveMode(),
+                ]);
+            }
+
+            return $payment;
+        });
+
+        $this->paymentId = $payment->id;
+        $this->amountCents = $payment->amount_cents;
+
+        // 4. If PaymentIntent exists, check its status
+        if ($payment->stripe_payment_intent_id) {
+            $stripe = new StripeClient(config('cashier.secret'));
+            $pi = $stripe->paymentIntents->retrieve($payment->stripe_payment_intent_id);
+
+            if ($pi->status === 'succeeded') {
+                // PI already succeeded - mark DB and redirect to success
+                app(LienPaymentService::class)->markSucceeded($payment, $pi);
+                $this->redirect(route('lien.filings.payment-confirmation', $this->filing));
+
+                return;
+            }
+
+            // Reuse existing PI
+            $this->paymentIntentId = $pi->id;
+            $this->clientSecret = $pi->client_secret;
+            $this->isReady = true;
 
             return;
         }
 
-        // Real Stripe checkout
-        $session = $this->business->checkout([$priceId => 1], [
-            'success_url' => route('lien.filings.show', $this->filing).'?checkout=success',
-            'cancel_url' => route('lien.filings.checkout', $this->filing),
+        // 5. Create new PaymentIntent with idempotency key
+        $stripe = new StripeClient(config('cashier.secret'));
+        $pi = $stripe->paymentIntents->create([
+            'amount' => $payment->amount_cents,
+            'currency' => 'usd',
+            'customer' => $this->business->stripeId(),
+            'payment_method_types' => ['card'], // Card only - avoids redirect complexity
             'metadata' => [
-                'filing_id' => $this->filing->id,
-                'filing_public_id' => $this->filing->public_id,
-                'document_type' => $this->filing->documentType->slug,
+                'app_payment_id' => $payment->id,
+                'app_domain' => 'lien',
+                'lien_filing_id' => $this->filing->id,
+                'lien_filing_public_id' => $this->filing->public_id,
+                'lien_document_type' => $this->filing->documentType->slug,
+                'lien_service_level' => $this->filing->service_level->value,
             ],
+        ], [
+            // Include created_at timestamp to avoid conflicts after DB resets
+            'idempotency_key' => 'payment_'.$payment->id.'_'.$payment->created_at->timestamp,
         ]);
 
-        $this->filing->update(['stripe_checkout_session_id' => $session->id]);
+        // 6. Persist PaymentIntent ID
+        $payment->update(['stripe_payment_intent_id' => $pi->id]);
 
-        $this->redirect($session->url);
-    }
-
-    protected function stubCheckout(): void
-    {
-        // Development stub: mark as paid immediately
-        if ($this->filing->status === FilingStatus::AwaitingPayment) {
-            $this->filing->transitionTo(FilingStatus::Paid);
-        }
-
-        // For full-service, transition to in_fulfillment
-        if ($this->filing->isFullService() && $this->filing->status === FilingStatus::Paid) {
-            $this->filing->transitionTo(FilingStatus::InFulfillment);
-
-            // Create fulfillment task
-            $this->filing->fulfillmentTask()->firstOrCreate([
-                'business_id' => $this->filing->business_id,
-            ], [
-                'status' => 'queued',
-            ]);
-        }
-
-        // Mark deadline as completed
-        if ($this->filing->projectDeadline) {
-            $this->filing->projectDeadline->update([
-                'status' => 'completed',
-                'completed_filing_id' => $this->filing->id,
-            ]);
-        }
-
-        $this->redirect(route('lien.filings.show', $this->filing).'?checkout=success');
+        $this->paymentIntentId = $pi->id;
+        $this->clientSecret = $pi->client_secret;
+        $this->isReady = true;
     }
 
     public function render(): View
     {
-        $pricing = config('lien.pricing.'.$this->filing->documentType->slug, [
-            'self_serve' => 4900,
-            'full_service' => 9900,
-        ]);
-
-        $price = $this->filing->isFullService()
-            ? $pricing['full_service']
-            : $pricing['self_serve'];
-
         return view('livewire.lien.filing-checkout', [
-            'price' => $price,
-            'formattedPrice' => '$'.number_format($price / 100, 2),
-        ])->layout('layouts.lien', ['title' => 'Checkout']);
+            'formattedPrice' => '$'.number_format($this->amountCents / 100, 2),
+            'returnUrl' => route('lien.filings.payment-confirmation', $this->filing),
+        ])->layout('layouts.minimal', ['title' => 'Checkout']);
     }
 }

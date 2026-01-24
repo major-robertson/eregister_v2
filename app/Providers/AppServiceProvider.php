@@ -14,6 +14,7 @@ use App\Domains\Lien\Policies\LienProjectPolicy;
 use App\Domains\Portal\Policies\BusinessPolicy;
 use App\Domains\Portal\Policies\FormApplicationPolicy;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -45,9 +46,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->configureMorphMap();
         $this->configureDefaults();
         $this->configurePolicies();
         $this->configureLivewire();
+    }
+
+    protected function configureMorphMap(): void
+    {
+        Relation::enforceMorphMap([
+            'lien_filing' => \App\Domains\Lien\Models\LienFiling::class,
+            // Future:
+            // 'llc_filing' => \App\Domains\Llc\Models\LlcFiling::class,
+            // 'subscription' => \App\Models\Subscription::class,
+        ]);
     }
 
     protected function configureLivewire(): void

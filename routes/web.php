@@ -1,6 +1,11 @@
 <?php
 
+use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
+
+// Stripe webhook (no auth, CSRF excluded in bootstrap/app.php)
+Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle'])
+    ->name('webhooks.stripe');
 
 Route::get('/', function () {
     return view('landing');

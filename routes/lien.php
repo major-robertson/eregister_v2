@@ -1,7 +1,7 @@
 <?php
 
 use App\Domains\Lien\Http\Controllers\FilingDownloadController;
-use App\Domains\Lien\Http\Controllers\StripeWebhookController;
+use App\Domains\Lien\Http\Controllers\FilingPaymentController;
 use App\Domains\Lien\Livewire\FilingCheckout;
 use App\Domains\Lien\Livewire\FilingShow;
 use App\Domains\Lien\Livewire\FilingWizard;
@@ -16,10 +16,6 @@ use Illuminate\Support\Facades\Route;
 | Lien Routes
 |--------------------------------------------------------------------------
 */
-
-// Webhook route (no auth required)
-Route::post('/webhooks/lien-stripe', [StripeWebhookController::class, 'handle'])
-    ->name('lien.webhooks.stripe');
 
 // Lien onboarding (must be before the lien.onboarding middleware group)
 Route::middleware(['auth', 'business.current', 'business.complete'])
@@ -41,6 +37,13 @@ Route::middleware(['auth', 'business.current', 'business.complete', 'lien.onboar
             ->name('lien.filings.start');
         Route::get('/filings/{filing}', FilingShow::class)->name('lien.filings.show');
         Route::get('/filings/{filing}/checkout', FilingCheckout::class)->name('lien.filings.checkout');
+        Route::get('/filings/{filing}/payment-confirmation', [FilingPaymentController::class, 'confirmation'])
+            ->name('lien.filings.payment-confirmation');
         Route::get('/filings/{filing}/download', [FilingDownloadController::class, 'download'])
             ->name('lien.filings.download');
     });
+
+// API route for payment status polling
+Route::middleware(['auth:sanctum'])
+    ->get('/api/lien/filings/{filing}/payment-status', [FilingPaymentController::class, 'status'])
+    ->name('lien.api.payment-status');

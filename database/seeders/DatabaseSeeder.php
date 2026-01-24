@@ -27,5 +27,10 @@ class DatabaseSeeder extends Seeder
             LienDocumentTemplateSeeder::class,
             LienDeadlineRuleSeeder::class,
         ]);
+
+        // Billing / Pricing seeders
+        $this->call([
+            PriceSeeder::class,
+        ]);
     }
 }

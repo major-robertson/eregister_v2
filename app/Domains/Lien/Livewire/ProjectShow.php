@@ -90,9 +90,11 @@ class ProjectShow extends Component
             },
         ]);
 
+        // Find the next pending REQUIRED deadline that can be filed for the top banner
         $nextDeadline = $this->project->deadlines
             ->where('status.value', 'pending')
             ->whereNotNull('due_date')
+            ->filter(fn ($d) => $d->isRequired() && $d->canFile())
             ->sortBy('due_date')
             ->first();
 

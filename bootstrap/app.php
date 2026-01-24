@@ -21,6 +21,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\TrackSignupAttribution::class,
         ]);
 
+        // Exclude Stripe webhook from CSRF verification
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/stripe',
+        ]);
+
         $middleware->alias([
             'business.selected' => \App\Domains\Portal\Http\Middleware\EnsureBusinessSelected::class,
             'business.current' => \App\Domains\Portal\Http\Middleware\ResolveCurrentBusiness::class,

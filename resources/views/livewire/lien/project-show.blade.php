@@ -126,31 +126,15 @@
                         @endif
                         @else
                         @php
-                            // Find the first pending deadline (next step)
-                            $nextStepId = $deadlines->first(fn($d) => $d->status->value === 'pending' && $d->canStart())?->id;
+                            // Find the first pending REQUIRED deadline that can be filed (next step)
+                            $nextRequiredStepId = $deadlines->first(fn($d) => $d->status->value === 'pending' && $d->canFile() && $d->isRequired())?->id;
 
-                            // Step descriptions and badges
-                            $stepInfo = [
-                                'prelim_notice' => [
-                                    'description' => 'Preserves your rights early.',
-                                    'badge' => 'Required',
-                                    'badge_color' => 'blue',
-                                ],
-                                'noi' => [
-                                    'description' => "If you're still unpaid, send an NOI.",
-                                    'badge' => 'Optional',
-                                    'badge_color' => 'zinc',
-                                ],
-                                'mechanics_lien' => [
-                                    'description' => 'If still unpaid after NOI, file the lien.',
-                                    'badge' => null,
-                                    'badge_color' => null,
-                                ],
-                                'lien_release' => [
-                                    'description' => 'If you get paid, release the lien.',
-                                    'badge' => null,
-                                    'badge_color' => null,
-                                ],
+                            // Step descriptions
+                            $stepDescriptions = [
+                                'prelim_notice' => 'Preserves your rights early.',
+                                'noi' => "If you're still unpaid, send an NOI.",
+                                'mechanics_lien' => 'If still unpaid after NOI, file the lien.',
+                                'lien_release' => 'If you get paid, release the lien.',
                             ];
                         @endphp
 
@@ -158,9 +142,17 @@
                             @foreach($deadlines as $index => $deadline)
                             @php
                                 $slug = $deadline->documentType->slug;
-                                $info = $stepInfo[$slug] ?? ['description' => '', 'badge' => null, 'badge_color' => null];
-                                $isNextStep = $deadline->id === $nextStepId;
+                                $description = $stepDescriptions[$slug] ?? '';
                                 $isCompleted = $deadline->status->value === 'completed';
+                                $isPending = $deadline->status->value === 'pending';
+                                $isNextRequiredStep = $deadline->id === $nextRequiredStepId;
+
+                                // Check if all PRIOR required steps (before this one) are completed
+                                $priorDeadlines = $deadlines->take($loop->index);
+                                $hasPendingPriorRequired = $priorDeadlines->contains(fn($d) => $d->isRequired() && $d->status->value !== 'completed');
+
+                                // Optional step is only "available" (blue button) if all prior required steps are done
+                                $isOptionalAvailable = $isPending && $deadline->canFile() && $deadline->isOptional() && !$hasPendingPriorRequired;
                                 $stepNumber = $loop->iteration;
                             @endphp
 
@@ -171,7 +163,7 @@
                                     <div class="relative z-10 flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium shrink-0
                                         @if($isCompleted)
                                             bg-green-500 text-white
-                                        @elseif($isNextStep)
+                                        @elseif($isNextRequiredStep)
                                             bg-blue-500 text-white
                                         @else
                                             bg-white dark:bg-zinc-800 border-2 border-zinc-300 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400
@@ -199,10 +191,10 @@
                                 {{-- Step content --}}
                                 <div class="flex-1 min-w-0 pb-2">
                                     <div class="flex items-start justify-between gap-4 p-4 rounded-lg -mt-1
-                                        @if($isNextStep)
-                                            bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800
-                                        @elseif($isCompleted)
+                                        @if($isCompleted)
                                             bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800
+                                        @elseif($isNextRequiredStep)
+                                            bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800
                                         @else
                                             border border-zinc-200 dark:border-zinc-700
                                         @endif
@@ -210,11 +202,13 @@
                                         <div class="flex-1 min-w-0">
                                             <div class="flex items-center gap-2 flex-wrap">
                                                 <span class="font-semibold text-zinc-900 dark:text-white">{{ $deadline->documentType->name }}</span>
-                                                @if($info['badge'])
-                                                    <flux:badge size="sm" :color="$info['badge_color']">{{ $info['badge'] }}</flux:badge>
+                                                @if($isCompleted)
+                                                    <flux:badge size="sm" color="green">Submitted</flux:badge>
+                                                @elseif($deadline->isOptional())
+                                                    <flux:badge size="sm" color="zinc">Optional</flux:badge>
                                                 @endif
                                             </div>
-                                            <p class="text-sm text-zinc-500 dark:text-zinc-400 mt-1">{{ $info['description'] }}</p>
+                                            <p class="text-sm text-zinc-500 dark:text-zinc-400 mt-1">{{ $description }}</p>
                                             @if($deadline->hasMissingFields())
                                             <p class="text-sm text-amber-600 dark:text-amber-400 mt-1">
                                                 Needs: {{ implode(', ', array_map(fn($f) => str_replace('_', ' ', $f), $deadline->missing_fields_json)) }}
@@ -233,7 +227,7 @@
                                         <div class="flex items-center gap-3 shrink-0">
                                             {{-- Status badges --}}
                                             @if($deadline->status->value === 'completed')
-                                            {{-- Shown via green styling --}}
+                                            {{-- Shown via green styling and Submitted badge --}}
                                             @elseif($deadline->isOverdue())
                                             <flux:badge color="red" size="sm">Overdue</flux:badge>
                                             @elseif($deadline->isDueSoon())
@@ -242,10 +236,10 @@
 
                                             {{-- Action Button --}}
                                             @if($deadline->completedFiling)
-                                            <flux:button href="{{ route('lien.filings.show', $deadline->completedFiling) }}" size="sm" variant="ghost">
+                                            <flux:button href="{{ route('lien.filings.show', $deadline->completedFiling) }}" size="sm" variant="outline">
                                                 View
                                             </flux:button>
-                                            @elseif($isNextStep)
+                                            @elseif($isNextRequiredStep || $isOptionalAvailable)
                                             <flux:button wire:click="startFiling({{ $deadline->id }})" size="sm" variant="primary">
                                                 {{ $deadline->draftFiling ? 'Continue' : 'Start' }}
                                             </flux:button>

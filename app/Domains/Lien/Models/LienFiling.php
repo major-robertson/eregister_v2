@@ -7,11 +7,14 @@ use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Enums\ServiceLevel;
 use App\Domains\Lien\Exceptions\InvalidStatusTransitionException;
 use App\Models\User;
+use Database\Factories\Lien\LienFilingFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -19,6 +22,11 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class LienFiling extends Model implements HasMedia
 {
     use BelongsToBusiness, HasFactory, InteractsWithMedia;
+
+    protected static function newFactory(): LienFilingFactory
+    {
+        return LienFilingFactory::new();
+    }
 
     protected $fillable = [
         'public_id',
@@ -117,9 +125,14 @@ class LienFiling extends Model implements HasMedia
         return $this->hasMany(LienFilingEvent::class, 'filing_id');
     }
 
-    public function payment(): HasOne
+    public function payment(): MorphOne
     {
-        return $this->hasOne(LienPayment::class, 'filing_id');
+        return $this->morphOne(\App\Models\Payment::class, 'purchasable')->latestOfMany();
+    }
+
+    public function payments(): MorphMany
+    {
+        return $this->morphMany(\App\Models\Payment::class, 'purchasable');
     }
 
     public function fulfillmentTask(): HasOne

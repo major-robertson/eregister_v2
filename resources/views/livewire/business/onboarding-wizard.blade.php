@@ -1,3 +1,14 @@
+@if (session('just_registered'))
+@push('scripts')
+<!-- Google Ads Conversion Tracking - Create Account -->
+<script>
+    gtag('event', 'conversion', {
+        send_to: "AW-984288380/XDg5CMWk_7oZEPyYrNUD"
+    });
+</script>
+@endpush
+@endif
+
 <div class="w-full max-w-lg">
     {{-- Progress dots: 2/4 if from liens + first business (continuous flow), 2/2 otherwise --}}
     @php

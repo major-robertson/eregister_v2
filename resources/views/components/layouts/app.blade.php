@@ -91,5 +91,6 @@
         <x-ui.toast-container />
 
         @fluxScripts
+        @stack('scripts')
     </body>
 </html>

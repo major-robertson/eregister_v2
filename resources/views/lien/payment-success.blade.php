@@ -1,3 +1,17 @@
+@push('scripts')
+<!-- Google Ads Conversion Tracking -->
+<script>
+    gtag('event', 'conversion', {
+        send_to: "{{ $payment->billing_type === 'subscription'
+            ? 'AW-984288380/_vCOCIitwbgZEPyYrNUD'
+            : 'AW-984288380/7C62CMuqrbYBEPyYrNUD' }}",
+        value: {{ number_format($payment->amount_cents / 100, 2, '.', '') }},
+        currency: "USD",
+        transaction_id: "{{ $payment->id }}"
+    });
+</script>
+@endpush
+
 <x-layouts.lien title="Payment Successful">
     <div class="max-w-lg mx-auto space-y-6">
         <x-ui.page-header title="Payment Successful">

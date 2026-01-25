@@ -6,6 +6,7 @@
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
   gtag('config', 'G-KNE1XS2NKF');
+  gtag('config', 'AW-984288380');
 </script>
 @endunless
 

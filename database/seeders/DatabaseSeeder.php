@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             LienDocumentTypeSeeder::class,
             LienDocumentTemplateSeeder::class,
+            LienStateRuleSeeder::class,
             LienDeadlineRuleSeeder::class,
         ]);
 

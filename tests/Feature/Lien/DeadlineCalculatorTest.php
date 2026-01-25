@@ -5,9 +5,11 @@ use App\Domains\Lien\Engine\DeadlineCalculator;
 use App\Domains\Lien\Enums\DeadlineStatus;
 use App\Domains\Lien\Models\LienProject;
 use App\Models\User;
+use Carbon\Carbon;
 
 beforeEach(function () {
     $this->artisan('db:seed', ['--class' => 'LienDocumentTypeSeeder']);
+    $this->artisan('db:seed', ['--class' => 'LienStateRuleSeeder']);
     $this->artisan('db:seed', ['--class' => 'LienDeadlineRuleSeeder']);
 
     $this->user = User::factory()->create();
@@ -120,4 +122,184 @@ it('preserves completed status when recalculating', function () {
     $this->calculator->calculateForProject($project->fresh());
 
     expect($project->fresh()->deadlines()->first()->status)->toBe(DeadlineStatus::Completed);
+});
+
+// Texas tests - month_day_after_month_of_date calculation
+it('calculates TX residential deadline as 15th of 3rd month', function () {
+    $lastFurnishDate = Carbon::create(2026, 1, 15); // Jan 15
+
+    $project = LienProject::factory()->forBusiness($this->business)->create([
+        'jobsite_state' => 'TX',
+        'last_furnish_date' => $lastFurnishDate,
+        'project_type' => 'residential',
+    ]);
+
+    $this->calculator->calculateForProject($project);
+
+    $lienDeadline = $project->deadlines()
+        ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
+        ->first();
+
+    expect($lienDeadline)->not->toBeNull();
+    // Start of Jan (Jan 1) + 3 months = Apr 1, then set day to 15 = Apr 15
+    expect($lienDeadline->due_date->toDateString())->toBe('2026-04-15');
+});
+
+it('calculates TX commercial deadline as 15th of 4th month', function () {
+    $lastFurnishDate = Carbon::create(2026, 1, 15); // Jan 15
+
+    $project = LienProject::factory()->forBusiness($this->business)->create([
+        'jobsite_state' => 'TX',
+        'last_furnish_date' => $lastFurnishDate,
+        'project_type' => 'commercial',
+    ]);
+
+    $this->calculator->calculateForProject($project);
+
+    $lienDeadline = $project->deadlines()
+        ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
+        ->first();
+
+    expect($lienDeadline)->not->toBeNull();
+    // Start of Jan (Jan 1) + 4 months = May 1, then set day to 15 = May 15
+    expect($lienDeadline->due_date->toDateString())->toBe('2026-05-15');
+});
+
+it('handles TX edge case with Jan 31 anchor date', function () {
+    $lastFurnishDate = Carbon::create(2026, 1, 31); // Jan 31
+
+    $project = LienProject::factory()->forBusiness($this->business)->create([
+        'jobsite_state' => 'TX',
+        'last_furnish_date' => $lastFurnishDate,
+        'project_type' => 'residential',
+    ]);
+
+    $this->calculator->calculateForProject($project);
+
+    $lienDeadline = $project->deadlines()
+        ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
+        ->first();
+
+    expect($lienDeadline)->not->toBeNull();
+    // Start of Jan (Jan 1) + 3 months = Apr 1, then set day to 15 = Apr 15 (NOT Apr 30)
+    expect($lienDeadline->due_date->toDateString())->toBe('2026-04-15');
+});
+
+// New York tests - months_after_date calculation
+it('calculates NY residential deadline as 4 months', function () {
+    $lastFurnishDate = Carbon::create(2026, 1, 15); // Jan 15
+
+    $project = LienProject::factory()->forBusiness($this->business)->create([
+        'jobsite_state' => 'NY',
+        'last_furnish_date' => $lastFurnishDate,
+        'project_type' => 'residential',
+    ]);
+
+    $this->calculator->calculateForProject($project);
+
+    $lienDeadline = $project->deadlines()
+        ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
+        ->first();
+
+    expect($lienDeadline)->not->toBeNull();
+    // Jan 15 + 4 months = May 15
+    expect($lienDeadline->due_date->toDateString())->toBe('2026-05-15');
+});
+
+it('calculates NY commercial deadline as 8 months', function () {
+    $lastFurnishDate = Carbon::create(2026, 1, 15); // Jan 15
+
+    $project = LienProject::factory()->forBusiness($this->business)->create([
+        'jobsite_state' => 'NY',
+        'last_furnish_date' => $lastFurnishDate,
+        'project_type' => 'commercial',
+    ]);
+
+    $this->calculator->calculateForProject($project);
+
+    $lienDeadline = $project->deadlines()
+        ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
+        ->first();
+
+    expect($lienDeadline)->not->toBeNull();
+    // Jan 15 + 8 months = Sep 15
+    expect($lienDeadline->due_date->toDateString())->toBe('2026-09-15');
+});
+
+it('handles NY edge case with Jan 31 anchor date', function () {
+    $lastFurnishDate = Carbon::create(2026, 1, 31); // Jan 31
+
+    $project = LienProject::factory()->forBusiness($this->business)->create([
+        'jobsite_state' => 'NY',
+        'last_furnish_date' => $lastFurnishDate,
+        'project_type' => 'residential',
+    ]);
+
+    $this->calculator->calculateForProject($project);
+
+    $lienDeadline = $project->deadlines()
+        ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
+        ->first();
+
+    expect($lienDeadline)->not->toBeNull();
+    // Jan 31 + 4 months with no overflow = May 31
+    expect($lienDeadline->due_date->toDateString())->toBe('2026-05-31');
+});
+
+// Virginia tests - days_after_end_of_month_of_date calculation
+it('calculates VA deadline as 90 days from end of month', function () {
+    $lastFurnishDate = Carbon::create(2026, 1, 15); // Jan 15
+
+    $project = LienProject::factory()->forBusiness($this->business)->create([
+        'jobsite_state' => 'VA',
+        'last_furnish_date' => $lastFurnishDate,
+    ]);
+
+    $this->calculator->calculateForProject($project);
+
+    $lienDeadline = $project->deadlines()
+        ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
+        ->first();
+
+    expect($lienDeadline)->not->toBeNull();
+    // Jan 15 -> end of Jan (Jan 31) + 90 days = May 1
+    expect($lienDeadline->due_date->toDateString())->toBe('2026-05-01');
+});
+
+it('calculates VA deadline correctly when anchor is end of month', function () {
+    $lastFurnishDate = Carbon::create(2026, 1, 31); // Jan 31
+
+    $project = LienProject::factory()->forBusiness($this->business)->create([
+        'jobsite_state' => 'VA',
+        'last_furnish_date' => $lastFurnishDate,
+    ]);
+
+    $this->calculator->calculateForProject($project);
+
+    $lienDeadline = $project->deadlines()
+        ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
+        ->first();
+
+    expect($lienDeadline)->not->toBeNull();
+    // Jan 31 -> end of Jan (Jan 31) + 90 days = May 1 (same result)
+    expect($lienDeadline->due_date->toDateString())->toBe('2026-05-01');
+});
+
+it('calculates VA deadline for February correctly', function () {
+    $lastFurnishDate = Carbon::create(2026, 2, 1); // Feb 1
+
+    $project = LienProject::factory()->forBusiness($this->business)->create([
+        'jobsite_state' => 'VA',
+        'last_furnish_date' => $lastFurnishDate,
+    ]);
+
+    $this->calculator->calculateForProject($project);
+
+    $lienDeadline = $project->deadlines()
+        ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
+        ->first();
+
+    expect($lienDeadline)->not->toBeNull();
+    // Feb 1 -> end of Feb (Feb 28, 2026 is not leap year) + 90 days = May 29
+    expect($lienDeadline->due_date->toDateString())->toBe('2026-05-29');
 });

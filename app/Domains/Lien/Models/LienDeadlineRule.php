@@ -2,6 +2,7 @@
 
 namespace App\Domains\Lien\Models;
 
+use App\Domains\Lien\Enums\CalcMethod;
 use App\Domains\Lien\Enums\ClaimantType;
 use App\Domains\Lien\Enums\DeadlineTrigger;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,19 +19,27 @@ class LienDeadlineRule extends Model
         'document_type_id',
         'claimant_type',
         'trigger_event',
+        'calc_method',
         'offset_days',
+        'offset_months',
+        'day_of_month',
         'is_required',
+        'effective_scope',
         'is_placeholder',
         'conditions_json',
         'notes',
+        'data_source',
     ];
 
     protected function casts(): array
     {
         return [
-            'claimant_type' => ClaimantType::class,
+            // claimant_type is string to allow 'any' for rules that apply to all claimant types
             'trigger_event' => DeadlineTrigger::class,
+            'calc_method' => CalcMethod::class,
             'offset_days' => 'integer',
+            'offset_months' => 'integer',
+            'day_of_month' => 'integer',
             'is_required' => 'boolean',
             'is_placeholder' => 'boolean',
             'conditions_json' => 'array',
@@ -47,19 +56,37 @@ class LienDeadlineRule extends Model
         return $this->hasMany(LienProjectDeadline::class, 'deadline_rule_id');
     }
 
-    /**
-     * Get all rules applicable to a given state and claimant type.
-     */
-    public static function forStateAndClaimant(string $state, ?ClaimantType $claimantType = null): \Illuminate\Database\Eloquent\Collection
+    public function stateRule(): BelongsTo
     {
-        return static::where('state', $state)
-            ->where(function ($query) use ($claimantType) {
-                $query->whereNull('claimant_type');
+        return $this->belongsTo(LienStateRule::class, 'state', 'state');
+    }
+
+    /**
+     * Get all rules applicable to a given state, claimant type, and scope.
+     * Selection order: claimant_type exact match first, then 'any'; effective_scope exact match first, then 'both'.
+     */
+    public static function forStateAndClaimant(
+        string $state,
+        ?ClaimantType $claimantType = null,
+        ?string $effectiveScope = null
+    ): \Illuminate\Database\Eloquent\Collection {
+        $query = static::where('state', $state)
+            ->where(function ($q) use ($claimantType) {
                 if ($claimantType) {
-                    $query->orWhere('claimant_type', $claimantType);
+                    $q->where('claimant_type', $claimantType->value)
+                        ->orWhere('claimant_type', 'any');
+                } else {
+                    $q->where('claimant_type', 'any');
                 }
-            })
-            ->with('documentType')
-            ->get();
+            });
+
+        if ($effectiveScope) {
+            $query->where(function ($q) use ($effectiveScope) {
+                $q->where('effective_scope', $effectiveScope)
+                    ->orWhere('effective_scope', 'both');
+            });
+        }
+
+        return $query->with('documentType')->get();
     }
 }

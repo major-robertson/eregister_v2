@@ -55,6 +55,8 @@ class AppServiceProvider extends ServiceProvider
     protected function configureMorphMap(): void
     {
         Relation::enforceMorphMap([
+            'user' => \App\Models\User::class,
+            'business' => \App\Domains\Business\Models\Business::class,
             'lien_filing' => \App\Domains\Lien\Models\LienFiling::class,
             // Future:
             // 'llc_filing' => \App\Domains\Llc\Models\LlcFiling::class,
@@ -80,6 +82,10 @@ class AppServiceProvider extends ServiceProvider
         Livewire::component('lien.filing-wizard', \App\Domains\Lien\Livewire\FilingWizard::class);
         Livewire::component('lien.filing-show', \App\Domains\Lien\Livewire\FilingShow::class);
         Livewire::component('lien.filing-checkout', \App\Domains\Lien\Livewire\FilingCheckout::class);
+
+        // Lien admin components
+        Livewire::component('lien.admin.board', \App\Domains\Lien\Admin\Livewire\LienBoard::class);
+        Livewire::component('lien.admin.filing-detail', \App\Domains\Lien\Admin\Livewire\LienFilingDetail::class);
     }
 
     protected function configurePolicies(): void

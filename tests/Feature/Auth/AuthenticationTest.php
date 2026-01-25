@@ -19,7 +19,43 @@ test('users can authenticate using the login screen', function () {
 
     $response
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('dashboard', absolute: false));
+        ->assertRedirect(config('fortify.home'));
+
+    $this->assertAuthenticated();
+});
+
+test('users with admin roles are redirected to admin dashboard after login', function () {
+    $this->artisan('db:seed', ['--class' => 'PermissionsSeeder']);
+
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $response = $this->post(route('login.store'), [
+        'email' => $admin->email,
+        'password' => 'password',
+    ]);
+
+    $response
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('admin.home'));
+
+    $this->assertAuthenticated();
+});
+
+test('users with any admin level role are redirected to admin dashboard', function () {
+    $this->artisan('db:seed', ['--class' => 'PermissionsSeeder']);
+
+    $lienAgent = User::factory()->create();
+    $lienAgent->assignRole('lien_agent');
+
+    $response = $this->post(route('login.store'), [
+        'email' => $lienAgent->email,
+        'password' => 'password',
+    ]);
+
+    $response
+        ->assertSessionHasNoErrors()
+        ->assertRedirect(route('admin.home'));
 
     $this->assertAuthenticated();
 });

@@ -12,6 +12,11 @@ class LienFilingPolicy
      */
     public function viewAny(User $user): bool
     {
+        // Admin users can view all filings
+        if ($this->hasAdminPermission($user, 'lien.view')) {
+            return true;
+        }
+
         return $user->currentBusiness() !== null;
     }
 
@@ -20,6 +25,11 @@ class LienFilingPolicy
      */
     public function view(User $user, LienFiling $filing): bool
     {
+        // Admin users can view any filing
+        if ($this->hasAdminPermission($user, 'lien.view')) {
+            return true;
+        }
+
         return $this->belongsToBusiness($user, $filing);
     }
 
@@ -36,7 +46,12 @@ class LienFilingPolicy
      */
     public function update(User $user, LienFiling $filing): bool
     {
-        // Can only update if belongs to business and not yet paid
+        // Admin users can update any filing
+        if ($this->hasAdminPermission($user, 'lien.update')) {
+            return true;
+        }
+
+        // Regular users can only update if belongs to business and not yet paid
         return $this->belongsToBusiness($user, $filing) && ! $filing->isPaid();
     }
 
@@ -68,6 +83,14 @@ class LienFilingPolicy
     }
 
     /**
+     * Determine if the user can change the filing status (admin only).
+     */
+    public function changeStatus(User $user, LienFiling $filing): bool
+    {
+        return $this->hasAdminPermission($user, 'lien.change_status');
+    }
+
+    /**
      * Check if the filing belongs to the user's current business.
      */
     private function belongsToBusiness(User $user, LienFiling $filing): bool
@@ -75,5 +98,14 @@ class LienFilingPolicy
         $business = $user->currentBusiness();
 
         return $business && $filing->business_id === $business->id;
+    }
+
+    /**
+     * Check if the user has an admin permission.
+     * Note: Admin role bypasses via Gate::before, this is for explicit permission checks.
+     */
+    private function hasAdminPermission(User $user, string $permission): bool
+    {
+        return $user->hasPermissionTo($permission);
     }
 }

@@ -36,6 +36,7 @@ class LienFiling extends Model implements HasMedia
         'project_deadline_id',
         'service_level',
         'status',
+        'needs_review',
         'jurisdiction_state',
         'jurisdiction_county',
         'amount_claimed_cents',
@@ -57,6 +58,7 @@ class LienFiling extends Model implements HasMedia
         return [
             'service_level' => ServiceLevel::class,
             'status' => FilingStatus::class,
+            'needs_review' => 'boolean',
             'amount_claimed_cents' => 'integer',
             'payload_json' => 'array',
             'parties_snapshot_json' => 'array',

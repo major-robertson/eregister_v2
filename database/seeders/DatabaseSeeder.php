@@ -33,5 +33,10 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PriceSeeder::class,
         ]);
+
+        // Admin permissions and roles
+        $this->call([
+            PermissionsSeeder::class,
+        ]);
     }
 }

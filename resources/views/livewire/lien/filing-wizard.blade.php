@@ -669,7 +669,7 @@
                         <div class="flex items-center justify-between">
                             <flux:label>Address</flux:label>
                             @if($partyRole === 'owner' && !$ownerAddressSource)
-                                <flux:button type="button" wire:click="useJobsiteAddress" size="sm" variant="ghost" icon="map-pin" class="border border-zinc-200 dark:border-zinc-600">
+                                <flux:button type="button" wire:click="useJobsiteAddress" size="sm" variant="primary" icon="map-pin">
                                     Use Jobsite Address
                                 </flux:button>
                             @endif

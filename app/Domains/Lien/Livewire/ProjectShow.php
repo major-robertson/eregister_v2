@@ -3,11 +3,12 @@
 namespace App\Domains\Lien\Livewire;
 
 use App\Domains\Lien\Engine\DeadlineCalculator;
+use App\Domains\Lien\Engine\StepStatusCalculator;
+use App\Domains\Lien\Enums\DeadlineStatus;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienProjectDeadline;
-use App\Domains\Lien\Models\LienStateRule;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -82,7 +83,7 @@ class ProjectShow extends Component
             'parties',
             'deadlines' => function ($query) {
                 $query->with(['documentType', 'rule', 'completedFiling', 'draftFiling'])
-                    ->orderBy('due_date');
+                    ->orderBy('document_type_id');
             },
             'filings' => function ($query) {
                 $query->with('documentType')
@@ -91,22 +92,27 @@ class ProjectShow extends Component
             },
         ]);
 
-        // Load state rule ONCE for entire project
-        $stateRule = LienStateRule::where('state', $this->project->jobsite_state)->first();
+        // Use StepStatusCalculator for computed step statuses
+        $stepCalculator = app(StepStatusCalculator::class);
+        $steps = $stepCalculator->forProject($this->project);
 
-        // Find the next pending REQUIRED deadline that can be filed for the top banner
-        $nextDeadline = $this->project->deadlines
-            ->where('status.value', 'pending')
-            ->whereNotNull('due_date')
-            ->filter(fn ($d) => $d->isRequired() && $d->canFile())
-            ->sortBy('due_date')
+        // Find the next actionable deadline for the top banner
+        $nextDeadline = collect($steps)
+            ->filter(fn ($step) => in_array($step->status, [
+                DeadlineStatus::NotStarted,
+                DeadlineStatus::DueSoon,
+                DeadlineStatus::Missed,
+                DeadlineStatus::InDraft,
+                DeadlineStatus::AwaitingPayment,
+            ], true))
+            ->filter(fn ($step) => $step->isRequired() && $step->canStart)
+            ->sortBy(fn ($step) => $step->deadlineDate ?? now()->addYears(10))
             ->first();
 
         return view('livewire.lien.project-show', [
             'parties' => $this->project->parties,
-            'deadlines' => $this->project->deadlines,
+            'steps' => $steps,
             'filings' => $this->project->filings,
-            'stateRule' => $stateRule,
             'nextDeadline' => $nextDeadline,
         ])->layout('layouts.lien', ['title' => $this->project->name]);
     }

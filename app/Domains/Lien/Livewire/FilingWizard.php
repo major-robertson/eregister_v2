@@ -141,7 +141,7 @@ class FilingWizard extends Component
     private function populateFromProject(): void
     {
         // Populate saved values from the project
-        $this->project_type_category = $this->project->project_type;
+        $this->project_type_category = $this->project->property_class;
         $this->legal_description = $this->project->legal_description;
         $this->apn = $this->project->apn;
         $this->owner_is_tenant = (bool) $this->project->owner_is_tenant;
@@ -353,7 +353,7 @@ class FilingWizard extends Component
             'legal_description' => $this->has_legal_description === 'yes' ? $this->legal_description : null,
             'apn' => $this->has_apn === 'yes' ? $this->apn : null,
             'owner_is_tenant' => $this->owner_is_tenant,
-            'project_type' => $this->project_type_category,
+            'property_class' => $this->project_type_category,
         ]);
 
         // Update filing

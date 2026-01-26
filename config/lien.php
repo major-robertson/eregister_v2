@@ -123,5 +123,26 @@ return [
         'tenant_project_restrictions' => 'Tenant lien restrictions apply.',
         'owner_occupied_restrictions' => 'Owner-occupied property restrictions apply.',
         'unknown_property_type' => 'Confirm property type - restrictions may apply.',
+        'purchase_conflict' => 'This step is locked due to a purchase conflict.',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Missing Field Labels
+    |--------------------------------------------------------------------------
+    |
+    | Maps field names to human-readable labels for the "deadline unknown" message.
+    |
+    */
+    'missing_field_labels' => [
+        'first_furnish_date' => 'first furnish date',
+        'last_furnish_date' => 'last furnish date',
+        'completion_date' => 'completion date',
+        'noc_recorded_date' => 'NOC recorded date',
+        'noc_filed_date' => 'NOC filed date',
+        'contract_date' => 'contract date',
+        'lien_recorded_date' => 'lien recorded date',
+        'lien_filing_date' => 'lien filing date',
+        'prelim_sent_date' => 'prelim notice sent date',
     ],
 ];

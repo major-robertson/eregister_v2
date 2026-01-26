@@ -46,6 +46,8 @@ class ProjectForm extends Component
 
     public ?string $jobsite_county = null;
 
+    public ?string $property_class = null;
+
     // Geo fields from Google Places
     public ?string $jobsite_county_google = null;
 
@@ -94,6 +96,7 @@ class ProjectForm extends Component
         $this->jobsite_state = $this->project->jobsite_state ?? '';
         $this->jobsite_zip = $this->project->jobsite_zip;
         $this->jobsite_county = $this->project->jobsite_county;
+        $this->property_class = $this->project->property_class;
         $this->jobsite_county_google = $this->project->jobsite_county_google;
         $this->jobsite_place_id = $this->project->jobsite_place_id;
         $this->jobsite_formatted_address = $this->project->jobsite_formatted_address;
@@ -170,6 +173,7 @@ class ProjectForm extends Component
                 'jobsite_state' => ['required', 'string', 'size:2'],
                 'jobsite_zip' => ['nullable', 'string', 'max:10'],
                 'jobsite_county' => ['nullable', 'string', 'max:255'],
+                'property_class' => ['required', 'in:residential,commercial,government'],
             ],
             3 => $this->getStep3Rules(),
             default => [],
@@ -303,6 +307,7 @@ class ProjectForm extends Component
             'job_number' => $this->job_number,
             'claimant_type' => $this->claimant_type,
             'property_context' => $this->property_context,
+            'property_class' => $this->property_class,
             'jobsite_address1' => $this->jobsite_address1,
             'jobsite_address2' => $this->jobsite_address2,
             'jobsite_city' => $this->jobsite_city,

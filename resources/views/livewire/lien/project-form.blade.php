@@ -129,6 +129,18 @@
             @endif
             <flux:error name="jobsite_county" />
         </flux:field>
+
+        <flux:field>
+            <flux:label>Property Type *</flux:label>
+            <flux:select wire:model="property_class">
+                <option value="">Select...</option>
+                <option value="residential">Residential</option>
+                <option value="commercial">Commercial</option>
+                <option value="government">Government / Public</option>
+            </flux:select>
+            <flux:description>Helps determine applicable lien rules.</flux:description>
+            <flux:error name="property_class" />
+        </flux:field>
     </div>
 
     @elseif($step === 3)

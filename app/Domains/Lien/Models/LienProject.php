@@ -42,7 +42,7 @@ class LienProject extends Model
         'jobsite_lng',
         'legal_description',
         'apn',
-        'project_type',
+        'property_class',
         'owner_is_tenant',
         'has_written_contract',
         'base_contract_amount_cents',

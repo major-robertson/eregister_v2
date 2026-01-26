@@ -1,6 +1,5 @@
 @php
     use App\Domains\Lien\Enums\DeadlineStatus;
-    use Illuminate\Support\Str;
 @endphp
 
 <div class="space-y-6">
@@ -43,356 +42,328 @@
 
     {{-- Next Deadline Alert --}}
     @if($nextDeadline)
-    @php
-    $daysRemaining = $nextDeadline->daysRemaining();
-    $isOverdue = $daysRemaining !== null && $daysRemaining < 0; $isDueSoon=$daysRemaining !==null && $daysRemaining>= 0
-        && $daysRemaining <= 7; $canStartNext=$nextDeadline->canStart();
-            @endphp
-            <flux:callout :color="$isOverdue ? 'red' : ($isDueSoon ? 'amber' : 'blue')"
-                :icon="$isOverdue ? 'exclamation-triangle' : 'clock'">
-                <div class="flex items-center justify-between w-full">
-                    <div>
-                        <strong>{{ $nextDeadline->documentType->name }}</strong>
-                        @if($isOverdue)
+        @php
+            $daysRemaining = $nextDeadline->daysUntilDue;
+            $isOverdue = $nextDeadline->isOverdue;
+            $isDueSoon = $nextDeadline->status === DeadlineStatus::DueSoon;
+        @endphp
+        <flux:callout :color="$isOverdue ? 'red' : ($isDueSoon ? 'amber' : 'blue')"
+            :icon="$isOverdue ? 'exclamation-triangle' : 'clock'">
+            <div class="flex items-center justify-between w-full">
+                <div>
+                    <strong>{{ $nextDeadline->getDocumentTypeName() }}</strong>
+                    @if($isOverdue && $daysRemaining !== null)
                         is overdue by {{ abs($daysRemaining) }} days!
-                        @elseif($daysRemaining === 0)
+                    @elseif($daysRemaining === 0)
                         is due today!
-                        @elseif($daysRemaining === 1)
+                    @elseif($daysRemaining === 1)
                         is due tomorrow!
-                        @else
-                        is due in {{ $daysRemaining }} days ({{ $nextDeadline->due_date->format('M j, Y') }})
-                        @endif
-                        @if($nextDeadline->hasMissingFields())
-                        <span class="text-sm opacity-75">({{ $nextDeadline->getStatusLabel() }})</span>
-                        @endif
-                    </div>
-                    <flux:button wire:click="startFiling({{ $nextDeadline->id }})"
-                        :variant="$canStartNext ? 'danger' : 'ghost'" :disabled="!$canStartNext" size="sm">
-                        {{ $nextDeadline->getButtonText() }}
-                    </flux:button>
+                    @elseif($daysRemaining !== null && $nextDeadline->deadlineDate)
+                        is due in {{ $daysRemaining }} days ({{ $nextDeadline->deadlineDate->format('M j, Y') }})
+                    @else
+                        deadline unknown
+                    @endif
                 </div>
-            </flux:callout>
-            @endif
+                @if($nextDeadline->canStart)
+                <flux:button wire:click="startFiling({{ $nextDeadline->deadline->id }})"
+                    :variant="$isOverdue ? 'danger' : 'primary'" size="sm">
+                    {{ $nextDeadline->getActionButtonText() }}
+                </flux:button>
+                @endif
+            </div>
+        </flux:callout>
+    @endif
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {{-- Main Content --}}
-                <div class="lg:col-span-2 space-y-6">
-                    {{-- Project Details --}}
-                    <x-ui.card>
-                        <x-slot:header>Project Details</x-slot:header>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {{-- Main Content --}}
+        <div class="lg:col-span-2 space-y-6">
+            {{-- Project Details --}}
+            <x-ui.card>
+                <x-slot:header>Project Details</x-slot:header>
 
-                        <x-ui.info-list>
-                            <x-ui.info-list.item label="Claimant Type">
-                                {{ $project->claimant_type->label() }}
-                            </x-ui.info-list.item>
-                            @if($project->job_number)
-                            <x-ui.info-list.item label="Job Number">
-                                {{ $project->job_number }}
-                            </x-ui.info-list.item>
-                            @endif
-                            <x-ui.info-list.item label="Jobsite Address">
-                                {{ $project->jobsiteAddressLine() }}
-                            </x-ui.info-list.item>
-                            @if($project->jobsite_county)
-                            <x-ui.info-list.item label="County">
-                                {{ $project->jobsite_county }}
-                            </x-ui.info-list.item>
-                            @endif
-                            @if($project->legal_description)
-                            <x-ui.info-list.item label="Legal Description">
-                                {{ $project->legal_description }}
-                            </x-ui.info-list.item>
-                            @endif
-                            @if($project->apn)
-                            <x-ui.info-list.item label="APN">
-                                {{ $project->apn }}
-                            </x-ui.info-list.item>
-                            @endif
-                        </x-ui.info-list>
-                    </x-ui.card>
+                <x-ui.info-list>
+                    <x-ui.info-list.item label="Claimant Type">
+                        {{ $project->claimant_type->label() }}
+                    </x-ui.info-list.item>
+                    @if($project->job_number)
+                    <x-ui.info-list.item label="Job Number">
+                        {{ $project->job_number }}
+                    </x-ui.info-list.item>
+                    @endif
+                    <x-ui.info-list.item label="Jobsite Address">
+                        {{ $project->jobsiteAddressLine() }}
+                    </x-ui.info-list.item>
+                    @if($project->jobsite_county)
+                    <x-ui.info-list.item label="County">
+                        {{ $project->jobsite_county }}
+                    </x-ui.info-list.item>
+                    @endif
+                    @if($project->legal_description)
+                    <x-ui.info-list.item label="Legal Description">
+                        {{ $project->legal_description }}
+                    </x-ui.info-list.item>
+                    @endif
+                    @if($project->apn)
+                    <x-ui.info-list.item label="APN">
+                        {{ $project->apn }}
+                    </x-ui.info-list.item>
+                    @endif
+                </x-ui.info-list>
+            </x-ui.card>
 
-                    {{-- Payment Protection Steps Timeline --}}
-                    <x-ui.card>
-                        <div class="mb-6">
-                            <h2 class="text-lg font-semibold text-zinc-900 dark:text-white">Payment Protection Steps
-                            </h2>
-                            <p class="text-sm text-zinc-500 dark:text-zinc-400">{{ $project->jobsite_state ?? 'Unknown'
-                                }} lien path</p>
-                            <p class="text-sm text-zinc-400 dark:text-zinc-500">Order and timing vary by state.</p>
-                        </div>
+            {{-- Payment Protection Steps Timeline --}}
+            <x-ui.card>
+                <div class="mb-6">
+                    <h2 class="text-lg font-semibold text-zinc-900 dark:text-white">Payment Protection Steps</h2>
+                    <p class="text-sm text-zinc-500 dark:text-zinc-400">{{ $project->jobsite_state ?? 'Unknown' }} lien path</p>
+                    <p class="text-sm text-zinc-400 dark:text-zinc-500">Order and timing vary by state.</p>
+                </div>
 
-                        @if($deadlines->isEmpty())
-                        @if(!$project->jobsite_state)
-                        <p class="text-zinc-500">No deadlines calculated. Add a jobsite state to see your timeline.</p>
-                        @else
-                        <flux:callout color="amber" icon="exclamation-triangle">
-                            No deadline rules found for {{ $project->jobsite_state }}. Please contact support or run the
-                            deadline rule seeder.
-                        </flux:callout>
-                        @endif
-                        @else
-                        @php
-                        // Find the first pending REQUIRED deadline that can be filed (next step)
-                        $nextRequiredStepId = $deadlines->first(fn($d) => $d->status->value === 'pending' &&
-                        $d->canFile() && $d->isRequired())?->id;
-
+                @if(empty($steps))
+                    @if(!$project->jobsite_state)
+                    <p class="text-zinc-500">No deadlines calculated. Add a jobsite state to see your timeline.</p>
+                    @else
+                    <flux:callout color="amber" icon="exclamation-triangle">
+                        No deadline rules found for {{ $project->jobsite_state }}. Please contact support or run the deadline rule seeder.
+                    </flux:callout>
+                    @endif
+                @else
+                    @php
                         // Step descriptions
                         $stepDescriptions = [
-                        'prelim_notice' => 'Preserves your rights early.',
-                        'noi' => "If you're still unpaid, send an NOI.",
-                        'mechanics_lien' => 'If still unpaid after NOI, file the lien.',
-                        'lien_release' => 'If you get paid, release the lien.',
+                            'prelim_notice' => 'Preserves your rights early.',
+                            'noi' => "If you're still unpaid, send an NOI.",
+                            'mechanics_lien' => 'If still unpaid after NOI, file the lien.',
+                            'lien_release' => 'If you get paid, release the lien.',
                         ];
 
-                        // Helper to format field values nicely
-                        $formatField = fn($value) => Str::of($value)->replace('_', ' ')->title();
-                        @endphp
+                        // Convert to array for iteration
+                        $stepsArray = is_array($steps) ? array_values($steps) : $steps->values()->all();
+                    @endphp
 
-                        <div class="relative">
-                            @foreach($deadlines as $index => $deadline)
-                                            @php
-                            $slug = $deadline->documentType->slug;
-                            $description = $stepDescriptions[$slug] ?? '';
-                            $isCompleted = $deadline->status->value === 'completed';
-                            $isPending = $deadline->status->value === 'pending';
-                            $isBlocked = $deadline->status === DeadlineStatus::Blocked;
-                            $isWarning = $deadline->status === DeadlineStatus::Warning;
-                            $isNotApplicable = $deadline->status === DeadlineStatus::NotApplicable;
-                            $isNextRequiredStep = $deadline->id === $nextRequiredStepId;
+                    <div class="relative">
+                        @foreach($stepsArray as $index => $step)
+                            @php
+                                $deadline = $step->deadline;
+                                $slug = $step->getDocumentTypeSlug();
+                                $description = $stepDescriptions[$slug] ?? '';
+                                $isCompleted = $step->status === DeadlineStatus::Completed;
+                                $isNotApplicable = $step->status === DeadlineStatus::NotApplicable;
+                                $isLocked = $step->status === DeadlineStatus::Locked;
+                                $isMissed = $step->status === DeadlineStatus::Missed;
+                                $isDueSoon = $step->status === DeadlineStatus::DueSoon;
+                                $isDeadlineUnknown = $step->status === DeadlineStatus::DeadlineUnknown;
+                                $isInDraft = $step->status === DeadlineStatus::InDraft;
+                                $isAwaitingPayment = $step->status === DeadlineStatus::AwaitingPayment;
+                                $isPurchased = $step->status === DeadlineStatus::Purchased;
+                                $isInFulfillment = $step->status === DeadlineStatus::InFulfillment;
+                                $isNotStarted = $step->status === DeadlineStatus::NotStarted;
+                                $stepNumber = $index + 1;
+                                $isFirst = $index === 0;
+                                $isLast = $index === count($stepsArray) - 1;
 
-                            // Check if all PRIOR required steps (before this one) are completed
-                            $priorDeadlines = $deadlines->take($loop->index);
-                            $hasPendingPriorRequired = $priorDeadlines->contains(fn($d) => $d->isRequired() &&
-                            $d->status->value !== 'completed');
-
-                            // Optional step is only "available" (blue button) if all prior required steps are done
-                            $isOptionalAvailable = $isPending && $deadline->canFile() && $deadline->isOptional() &&
-                            !$hasPendingPriorRequired;
-                            $stepNumber = $loop->iteration;
+                                // Check for property warnings in status_meta
+                                $hasPropertyWarning = is_array($step->statusMeta) && ($step->statusMeta['has_property_warning'] ?? false);
                             @endphp
 
-                            <div class="relative flex gap-4 {{ !$loop->last ? 'pb-6' : '' }}">
+                            <div class="relative flex gap-4 {{ !$isLast ? 'pb-6' : '' }}">
                                 {{-- Step indicator with connecting line --}}
                                 <div class="flex flex-col items-center">
                                     {{-- Circle --}}
-                                    <div class="relative z-10 flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium shrink-0
+                                    <div @class([
+                                        'relative z-10 flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium shrink-0',
+                                        'bg-green-500 text-white' => $isCompleted,
+                                        'bg-red-500 text-white' => $isMissed,
+                                        'bg-amber-500 text-white' => $isDueSoon || $isAwaitingPayment,
+                                        'bg-zinc-400 text-white' => $isNotApplicable || $isLocked || $isDeadlineUnknown,
+                                        'bg-blue-500 text-white' => $step->isNextStep && $isNotStarted,
+                                        'bg-sky-500 text-white' => $isPurchased || $isInFulfillment,
+                                        'bg-white dark:bg-zinc-800 border-2 border-zinc-300 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400' => $isInDraft || ($isNotStarted && !$step->isNextStep),
+                                    ])>
                                         @if($isCompleted)
-                                            bg-green-500 text-white
-                                        @elseif($isBlocked)
-                                            bg-red-500 text-white
+                                            <flux:icon name="check" class="size-4" />
+                                        @elseif($isLocked)
+                                            <flux:icon name="lock-closed" class="size-4" />
                                         @elseif($isNotApplicable)
-                                            bg-zinc-400 text-white
-                                        @elseif($isNextRequiredStep)
-                                            bg-blue-500 text-white
+                                            <flux:icon name="minus" class="size-4" />
                                         @else
-                                            bg-white dark:bg-zinc-800 border-2 border-zinc-300 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400
-                                        @endif
-                                    ">
-                                        @if($isCompleted)
-                                        <flux:icon name="check" class="size-4" />
-                                        @elseif($isBlocked)
-                                        <flux:icon name="x-mark" class="size-4" />
-                                        @elseif($isNotApplicable)
-                                        <flux:icon name="minus" class="size-4" />
-                                        @else
-                                        {{ $stepNumber }}
+                                            {{ $stepNumber }}
                                         @endif
                                     </div>
 
                                     {{-- Connecting line --}}
-                                    @if(!$loop->last)
-                                    <div class="w-0.5 flex-1 mt-2 border-l-2 border-dashed
-                                        @if($isCompleted)
-                                            border-green-300 dark:border-green-700
-                                        @else
-                                            border-zinc-300 dark:border-zinc-600
-                                        @endif
-                                    "></div>
+                                    @if(!$isLast)
+                                    <div @class([
+                                        'w-0.5 flex-1 mt-2 border-l-2 border-dashed',
+                                        'border-green-300 dark:border-green-700' => $isCompleted,
+                                        'border-zinc-300 dark:border-zinc-600' => !$isCompleted,
+                                    ])></div>
                                     @endif
                                 </div>
 
                                 {{-- Step content --}}
                                 <div class="flex-1 min-w-0 pb-2">
-                                        <div class="flex items-start justify-between gap-4 p-4 rounded-lg -mt-1
-                                        @if($isCompleted)
-                                            bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800
-                                        @elseif($isBlocked)
-                                            bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800
-                                        @elseif($isNotApplicable)
-                                            bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 opacity-60
-                                        @elseif($isWarning)
-                                            bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800
-                                        @elseif($isNextRequiredStep)
-                                            bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800
-                                        @else
-                                            border border-zinc-200 dark:border-zinc-700
-                                        @endif
-                                    ">
+                                    <div @class([
+                                        'flex items-start justify-between gap-4 p-4 rounded-lg -mt-1 border',
+                                        'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' => $isCompleted,
+                                        'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' => $isMissed,
+                                        'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800' => $isDueSoon || $isAwaitingPayment || $hasPropertyWarning,
+                                        'bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 opacity-60' => $isNotApplicable,
+                                        'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800' => $isPurchased || $isInFulfillment,
+                                        'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' => $step->isNextStep && $isNotStarted && !$hasPropertyWarning,
+                                        'border-zinc-200 dark:border-zinc-700' => $isInDraft || $isLocked || $isDeadlineUnknown || ($isNotStarted && !$step->isNextStep),
+                                    ])>
                                         <div class="flex-1 min-w-0">
                                             <div class="flex items-center gap-2 flex-wrap">
-                                                <span class="font-semibold text-zinc-900 dark:text-white">{{
-                                                    $deadline->documentType->name }}</span>
+                                                <span class="font-semibold text-zinc-900 dark:text-white">{{ $step->getDocumentTypeName() }}</span>
                                                 @if($isCompleted)
-                                                <flux:badge size="sm" color="green">Submitted</flux:badge>
-                                                @elseif($deadline->isOptional())
-                                                <flux:badge size="sm" color="zinc">Optional</flux:badge>
+                                                    <flux:badge size="sm" color="green">
+                                                        {{ $deadline->wasCompletedExternally() ? 'Filed Myself' : 'Submitted' }}
+                                                    </flux:badge>
+                                                @elseif($step->isOptional())
+                                                    <flux:badge size="sm" color="zinc">Optional</flux:badge>
                                                 @endif
                                             </div>
-                                            <p class="text-sm text-zinc-500 dark:text-zinc-400 mt-1">{{ $description }}
-                                            </p>
+                                            <p class="text-sm text-zinc-500 dark:text-zinc-400 mt-1">{{ $description }}</p>
 
-                                            {{-- Blocked/Warning/NotApplicable status messages --}}
-                                            @if($isBlocked)
-                                            <p class="text-sm text-red-600 dark:text-red-400 mt-2">
-                                                {{ $deadline->getFriendlyStatusReason() }}
-                                            </p>
-                                            @elseif($isWarning)
-                                            <p class="text-sm text-amber-600 dark:text-amber-400 mt-2">
-                                                {{ $deadline->getFriendlyStatusReason() }}
-                                            </p>
-                                            @elseif($isNotApplicable && $deadline->status_reason)
-                                            <p class="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
-                                                {{ $deadline->getFriendlyStatusReason() }}
-                                            </p>
+                                            {{-- Status-specific messages --}}
+                                            @if($isNotApplicable && $step->statusReason)
+                                                <p class="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
+                                                    {{ config("lien.status_reasons.{$step->statusReason}", $step->statusReason) }}
+                                                </p>
+                                            @endif
+
+                                            @if($isLocked && $step->lockedReason)
+                                                <p class="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
+                                                    {{ $step->lockedReason }}
+                                                </p>
+                                            @endif
+
+                                            @if($hasPropertyWarning)
+                                                <p class="text-sm text-amber-600 dark:text-amber-400 mt-2">
+                                                    {{ config("lien.status_reasons." . ($step->statusMeta['property_warning_reason'] ?? ''), 'Property restrictions may apply.') }}
+                                                </p>
                                             @endif
 
                                             {{-- NOC shortening indicator --}}
-                                            @if(is_array($deadline->status_meta) && ($deadline->status_meta['noc_shortened'] ?? false))
-                                            <p class="text-sm text-amber-600 dark:text-amber-400 mt-2">
-                                                Deadline shortened by NOC (was {{ \Carbon\Carbon::parse($deadline->status_meta['original_due_date'])->format('M j, Y') }})
-                                            </p>
+                                            @if(is_array($step->statusMeta) && ($step->statusMeta['noc_shortened'] ?? false))
+                                                <p class="text-sm text-amber-600 dark:text-amber-400 mt-2">
+                                                    Deadline shortened by NOC (was {{ \Carbon\Carbon::parse($step->statusMeta['original_due_date'])->format('M j, Y') }})
+                                                </p>
                                             @endif
 
-                                            @if($deadline->hasMissingFields())
-                                            <p class="text-sm text-amber-600 dark:text-amber-400 mt-1">
-                                                Needs: {{ implode(', ', array_map(fn($f) => str_replace('_', ' ', $f),
-                                                $deadline->missing_fields_json)) }}
-                                            </p>
-                                            @endif
-                                            @if($deadline->due_date)
-                                            <p class="text-sm text-zinc-400 dark:text-zinc-500 mt-1">
-                                                Due {{ $deadline->due_date->format('M j, Y') }}
-                                                @if($deadline->daysRemaining() !== null)
-                                                <span class="text-zinc-500 dark:text-zinc-400">({{
-                                                    $deadline->daysRemaining() }} days)</span>
-                                                @endif
-                                            </p>
+                                            {{-- Deadline unknown - neutral message --}}
+                                            @if($isDeadlineUnknown && !empty($step->missingFieldLabels))
+                                                <p class="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                                                    Add {{ implode(', ', $step->missingFieldLabels) }} to see deadline
+                                                </p>
                                             @endif
 
-                                            {{-- State-specific filing requirements --}}
-                                            @if($stateRule && !$isBlocked && !$isNotApplicable)
-                                                @if($slug === 'prelim_notice')
-                                                <div class="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-700 text-xs text-zinc-500 dark:text-zinc-400 space-y-1">
-                                                    @if($stateRule->prelim_delivery_method && $stateRule->prelim_delivery_method !== 'any')
-                                                    <p><strong>Delivery:</strong> {{ $formatField($stateRule->prelim_delivery_method) }}</p>
+                                            {{-- Due date --}}
+                                            @if($step->deadlineDate)
+                                                <p class="text-sm text-zinc-400 dark:text-zinc-500 mt-1">
+                                                    Due {{ $step->deadlineDate->format('M j, Y') }}
+                                                    @if($step->daysUntilDue !== null)
+                                                        <span class="text-zinc-500 dark:text-zinc-400">({{ $step->daysUntilDue }} days)</span>
                                                     @endif
-                                                    @if($stateRule->prelim_recipients && $stateRule->prelim_recipients !== 'owner')
-                                                    <p><strong>Recipients:</strong> {{ $formatField($stateRule->prelim_recipients) }}</p>
-                                                    @endif
-                                                </div>
-                                                @elseif($slug === 'mechanics_lien')
-                                                <div class="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-700 text-xs text-zinc-500 dark:text-zinc-400 space-y-1">
-                                                    @if($stateRule->filing_location)
-                                                    <p><strong>File at:</strong> {{ $formatField($stateRule->filing_location) }}</p>
-                                                    @endif
-                                                    @if($stateRule->verification_type && $stateRule->verification_type !== 'none')
-                                                    <p><strong>Verification:</strong> {{ $formatField($stateRule->verification_type) }}</p>
-                                                    @endif
-                                                    @if($stateRule->notarization_required)
-                                                    <p class="text-amber-600 dark:text-amber-400"><strong>Notarization required</strong></p>
-                                                    @endif
-                                                    @if($stateRule->statute_url)
-                                                    <p><a href="{{ $stateRule->statute_url }}" target="_blank" rel="noopener" class="text-blue-600 hover:underline">View statute &rarr;</a></p>
-                                                    @endif
-                                                </div>
-                                                @endif
+                                                </p>
                                             @endif
+
                                         </div>
 
-                                        <div class="flex items-center gap-3 shrink-0">
+                                        <div class="flex flex-col items-end gap-2 shrink-0">
                                             {{-- Status badges --}}
-                                            @if($deadline->status->value === 'completed')
-                                            {{-- Shown via green styling and Submitted badge --}}
-                                            @elseif($isBlocked)
-                                            <flux:badge color="red" size="sm">Blocked</flux:badge>
+                                            @if($isCompleted)
+                                                {{-- Shown via green styling --}}
                                             @elseif($isNotApplicable)
-                                            <flux:badge color="zinc" size="sm">N/A</flux:badge>
-                                            @elseif($isWarning)
-                                            <flux:badge color="amber" size="sm">Warning</flux:badge>
-                                            @elseif($deadline->isOverdue())
-                                            <flux:badge color="red" size="sm">Overdue</flux:badge>
-                                            @elseif($deadline->isDueSoon())
-                                            <flux:badge color="amber" size="sm">Due Soon</flux:badge>
+                                                <flux:badge color="zinc" size="sm">N/A</flux:badge>
+                                            @elseif($isLocked)
+                                                <flux:badge color="zinc" size="sm">
+                                                    <flux:icon name="lock-closed" class="size-3 mr-1" />
+                                                    Locked
+                                                </flux:badge>
+                                            @elseif($isMissed)
+                                                <flux:badge color="red" size="sm">Overdue</flux:badge>
+                                            @elseif($isDueSoon)
+                                                <flux:badge color="amber" size="sm">Due Soon</flux:badge>
+                                            @elseif($isDeadlineUnknown)
+                                                <flux:badge color="zinc" size="sm">Deadline Unknown</flux:badge>
+                                            @elseif($isAwaitingPayment)
+                                                <flux:badge color="amber" size="sm">Awaiting Payment</flux:badge>
+                                            @elseif($isPurchased || $isInFulfillment)
+                                                <flux:badge color="sky" size="sm">In Progress</flux:badge>
+                                            @elseif($isInDraft)
+                                                <flux:badge color="zinc" size="sm">Draft</flux:badge>
                                             @endif
 
-                                            {{-- Action Button --}}
-                                            @if($deadline->completedFiling)
-                                            <flux:button
-                                                href="{{ route('lien.filings.show', $deadline->completedFiling) }}"
-                                                size="sm" variant="outline">
-                                                View
-                                            </flux:button>
-                                            @elseif($isNextRequiredStep || $isOptionalAvailable)
-                                            <flux:button wire:click="startFiling({{ $deadline->id }})" size="sm"
-                                                variant="primary">
-                                                {{ $deadline->draftFiling ? 'Continue' : 'Start' }}
-                                            </flux:button>
-                                            @elseif($deadline->canStart())
-                                            <flux:button wire:click="startFiling({{ $deadline->id }})" size="sm"
-                                                variant="outline">
-                                                {{ $deadline->draftFiling ? 'Continue' : 'Start' }}
-                                            </flux:button>
-                                            @endif
+                                            {{-- Action Buttons --}}
+                                            <div class="flex items-center gap-2">
+                                                @if($isCompleted && $deadline->completedFiling)
+                                                    <flux:button href="{{ route('lien.filings.show', $deadline->completedFiling) }}" size="sm" variant="outline">
+                                                        View
+                                                    </flux:button>
+                                                @elseif($isPurchased || $isInFulfillment)
+                                                    @if($step->activeFiling)
+                                                        <flux:button href="{{ route('lien.filings.show', $step->activeFiling) }}" size="sm" variant="outline">
+                                                            View
+                                                        </flux:button>
+                                                    @endif
+                                                @elseif($step->shouldShowActionButton())
+                                                    <flux:button wire:click="startFiling({{ $deadline->id }})" size="sm"
+                                                        :variant="$isMissed || $isDueSoon ? 'primary' : 'outline'">
+                                                        {{ $step->getActionButtonText() }}
+                                                    </flux:button>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            @endforeach
-                        </div>
+                        @endforeach
+                    </div>
+                @endif
+            </x-ui.card>
+        </div>
 
-                        @endif
-                    </x-ui.card>
-                </div>
+        {{-- Sidebar --}}
+        <div class="space-y-6">
+            {{-- Parties --}}
+            <x-ui.card>
+                <x-slot:header>
+                    <div class="flex items-center justify-between">
+                        <span>Parties</span>
+                        <flux:button size="sm" variant="ghost" icon="plus">Add</flux:button>
+                    </div>
+                </x-slot:header>
 
-                {{-- Sidebar --}}
-                <div class="space-y-6">
-                    {{-- Parties --}}
-                    <x-ui.card>
-                        <x-slot:header>
-                            <div class="flex items-center justify-between">
-                                <span>Parties</span>
-                                <flux:button size="sm" variant="ghost" icon="plus">Add</flux:button>
-                            </div>
-                        </x-slot:header>
-
-                        @if($parties->isEmpty())
-                        <p class="text-sm text-zinc-500">No parties added yet.</p>
-                        @else
-                        <div class="space-y-3">
-                            @foreach($parties as $party)
+                @if($parties->isEmpty())
+                    <p class="text-sm text-zinc-500">No parties added yet.</p>
+                @else
+                    <div class="space-y-3">
+                        @foreach($parties as $party)
                             <div class="text-sm">
                                 <div class="flex items-center gap-2">
                                     <span class="font-medium">{{ $party->displayName() }}</span>
                                     <flux:badge size="sm">{{ $party->role->label() }}</flux:badge>
                                 </div>
                                 @if($party->addressLine())
-                                <div class="text-zinc-500 text-xs mt-0.5">{{ $party->addressLine() }}</div>
+                                    <div class="text-zinc-500 text-xs mt-0.5">{{ $party->addressLine() }}</div>
                                 @endif
                             </div>
-                            @endforeach
-                        </div>
-                        @endif
-                    </x-ui.card>
+                        @endforeach
+                    </div>
+                @endif
+            </x-ui.card>
 
-                    {{-- Recent Filings --}}
-                    <x-ui.card>
-                        <x-slot:header>Recent Filings</x-slot:header>
+            {{-- Recent Filings --}}
+            <x-ui.card>
+                <x-slot:header>Recent Filings</x-slot:header>
 
-                        @if($filings->isEmpty())
-                        <p class="text-sm text-zinc-500">No filings yet.</p>
-                        @else
-                        <div class="space-y-3">
-                            @foreach($filings as $filing)
+                @if($filings->isEmpty())
+                    <p class="text-sm text-zinc-500">No filings yet.</p>
+                @else
+                    <div class="space-y-3">
+                        @foreach($filings as $filing)
                             <a href="{{ route('lien.filings.show', $filing) }}"
                                 class="block p-2 -mx-2 rounded hover:bg-zinc-50 dark:hover:bg-zinc-800">
                                 <div class="flex items-center justify-between">
@@ -405,10 +376,10 @@
                                     {{ $filing->created_at->format('M j, Y') }}
                                 </div>
                             </a>
-                            @endforeach
-                        </div>
-                        @endif
-                    </x-ui.card>
-                </div>
-            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </x-ui.card>
+        </div>
+    </div>
 </div>

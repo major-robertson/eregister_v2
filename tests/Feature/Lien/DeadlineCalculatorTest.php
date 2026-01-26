@@ -36,7 +36,7 @@ it('calculates deadlines for a project with dates', function () {
 
     expect($prelimDeadline)->not->toBeNull();
     expect($prelimDeadline->due_date)->not->toBeNull();
-    expect($prelimDeadline->status)->toBe(DeadlineStatus::Pending);
+    expect($prelimDeadline->status)->toBe(DeadlineStatus::NotStarted);
 });
 
 it('marks deadline as not_applicable when anchor date is missing', function () {
@@ -50,7 +50,7 @@ it('marks deadline as not_applicable when anchor date is missing', function () {
 
     $deadline = $project->deadlines()->first();
 
-    expect($deadline->status)->toBe(DeadlineStatus::NotApplicable);
+    expect($deadline->status)->toBe(DeadlineStatus::DeadlineUnknown);
     expect($deadline->missing_fields_json)->not->toBeNull();
 });
 
@@ -151,7 +151,7 @@ it('calculates TX commercial deadline as 15th of 4th month', function () {
     $project = LienProject::factory()->forBusiness($this->business)->create([
         'jobsite_state' => 'TX',
         'last_furnish_date' => $lastFurnishDate,
-        'project_type' => 'commercial',
+        'property_class' => 'commercial',
     ]);
 
     $this->calculator->calculateForProject($project);
@@ -212,7 +212,7 @@ it('calculates NY commercial deadline as 8 months', function () {
     $project = LienProject::factory()->forBusiness($this->business)->create([
         'jobsite_state' => 'NY',
         'last_furnish_date' => $lastFurnishDate,
-        'project_type' => 'commercial',
+        'property_class' => 'commercial',
     ]);
 
     $this->calculator->calculateForProject($project);

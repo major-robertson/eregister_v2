@@ -32,6 +32,10 @@ class LienProjectDeadline extends Model
         'status_reason',
         'status_meta',
         'completed_filing_id',
+        // External completion fields
+        'completed_externally_at',
+        'external_filed_at',
+        'external_completion_note',
     ];
 
     protected function casts(): array
@@ -42,6 +46,8 @@ class LienProjectDeadline extends Model
             'missing_fields_json' => 'array',
             'status' => DeadlineStatus::class,
             'status_meta' => 'array',
+            'completed_externally_at' => 'datetime',
+            'external_filed_at' => 'date',
         ];
     }
 
@@ -105,7 +111,12 @@ class LienProjectDeadline extends Model
      */
     public function isOverdue(): bool
     {
-        if (! $this->due_date || $this->status !== DeadlineStatus::Pending) {
+        if (! $this->due_date) {
+            return false;
+        }
+
+        // Only consider overdue if not already completed
+        if ($this->status === DeadlineStatus::Completed) {
             return false;
         }
 
@@ -117,7 +128,12 @@ class LienProjectDeadline extends Model
      */
     public function isDueSoon(): bool
     {
-        if (! $this->due_date || $this->status !== DeadlineStatus::Pending) {
+        if (! $this->due_date) {
+            return false;
+        }
+
+        // Only consider due soon if not already completed
+        if ($this->status === DeadlineStatus::Completed) {
             return false;
         }
 
@@ -143,17 +159,31 @@ class LienProjectDeadline extends Model
     }
 
     /**
+     * Check if this deadline was completed externally (user filed themselves).
+     */
+    public function wasCompletedExternally(): bool
+    {
+        return $this->completed_externally_at !== null;
+    }
+
+    /**
+     * Check if this deadline is completed (either through filing or externally).
+     */
+    public function isCompleted(): bool
+    {
+        return $this->status === DeadlineStatus::Completed
+            || $this->completed_filing_id !== null
+            || $this->completed_externally_at !== null;
+    }
+
+    /**
      * Check if filing can be started for this deadline.
+     * Most deadlines can be started - user may have done prior steps themselves.
      */
     public function canFile(): bool
     {
         // Already completed - cannot file again
         if ($this->status === DeadlineStatus::Completed) {
-            return false;
-        }
-
-        // Blocked deadlines cannot be filed (rights eliminated, tenant not allowed, etc.)
-        if ($this->status === DeadlineStatus::Blocked) {
             return false;
         }
 
@@ -170,20 +200,13 @@ class LienProjectDeadline extends Model
             return true;
         }
 
-        // For other document types, check additional requirements
-
-        // Missing required fields blocks filing for non-prelim documents
-        if ($this->hasMissingFields()) {
-            return false;
-        }
-
         // Lien release: requires mechanics lien to be filed first
         if ($slug === 'lien_release') {
             return $this->hasPriorFilingCompleted();
         }
 
-        // NOI and mechanics lien: no special restrictions beyond status checks
-        // Warning status does NOT block filing - just shows warnings
+        // NOI and mechanics lien: can start even with missing info
+        // The wizard will collect missing info
         return true;
     }
 
@@ -197,29 +220,17 @@ class LienProjectDeadline extends Model
             return 'Already Filed';
         }
 
-        // Blocked - rights eliminated
-        if ($this->status === DeadlineStatus::Blocked) {
-            return 'Blocked';
-        }
-
         // Not applicable
         if ($this->status === DeadlineStatus::NotApplicable) {
             return 'Not Applicable';
         }
 
+        // Locked by purchase conflict
+        if ($this->status === DeadlineStatus::Locked) {
+            return 'Locked';
+        }
+
         $slug = $this->documentType?->slug;
-
-        // Preliminary notice: always available unless already filed
-        if ($slug === 'prelim_notice') {
-            return null;
-        }
-
-        // For other document types, check additional requirements
-
-        // Missing required fields blocks filing for non-prelim documents
-        if ($this->hasMissingFields()) {
-            return 'Needs Info';
-        }
 
         // Lien release: check if mechanics lien is filed
         if ($slug === 'lien_release' && ! $this->hasPriorFilingCompleted()) {
@@ -249,99 +260,40 @@ class LienProjectDeadline extends Model
         }
 
         // Lien release requires mechanics lien to be RECORDED (not just submitted)
-        return $this->project->filings()
+        // OR completed externally
+        $hasRecordedFiling = $this->project->filings()
             ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
             ->whereNotNull('recorded_at')
             ->exists();
-    }
 
-    /**
-     * Get the filing status label for display.
-     */
-    public function getFilingStatusLabel(): string
-    {
-        if ($this->status === DeadlineStatus::Completed) {
-            return 'Filed';
+        if ($hasRecordedFiling) {
+            return true;
         }
 
-        $blocker = $this->getFilingBlockerReason();
-        if ($blocker) {
-            return $blocker;
-        }
+        // Check if lien was completed externally
+        $lienDeadline = $this->project->deadlines()
+            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
+            ->first();
 
-        return 'Ready';
-    }
-
-    /**
-     * Get the appropriate color for the filing status badge.
-     */
-    public function getFilingStatusColor(): string
-    {
-        if ($this->status === DeadlineStatus::Completed) {
-            return 'green';
-        }
-
-        $blocker = $this->getFilingBlockerReason();
-        if ($blocker) {
-            // "Needs Info" and "Lien Required" get amber, "Not Applicable" gets zinc
-            if ($blocker === 'Not Applicable') {
-                return 'zinc';
-            }
-
-            return 'amber';
-        }
-
-        return 'blue';
+        return $lienDeadline?->wasCompletedExternally() ?? false;
     }
 
     /**
      * Get the status label for display.
-     * Returns: Filed, Blocked, Warning, Not Applicable, Needs Info, or Ready.
+     * Delegates to the enum's label() method.
      */
     public function getStatusLabel(): string
     {
-        if ($this->status === DeadlineStatus::Completed) {
-            return 'Filed';
-        }
-        if ($this->status === DeadlineStatus::Blocked) {
-            return 'Blocked';
-        }
-        if ($this->status === DeadlineStatus::Warning) {
-            return 'Warning';
-        }
-        if ($this->status === DeadlineStatus::NotApplicable) {
-            return 'Not Applicable';
-        }
-        if ($this->hasMissingFields()) {
-            return 'Needs Info';
-        }
-
-        return 'Ready';
+        return $this->status->label();
     }
 
     /**
-     * Get the status color based on status/condition (not label text).
-     * This avoids brittle code where label changes break colors.
+     * Get the status color based on status.
+     * Delegates to the enum's color() method.
      */
     public function getStatusColor(): string
     {
-        if ($this->status === DeadlineStatus::Completed) {
-            return 'green';
-        }
-        if ($this->status === DeadlineStatus::Blocked) {
-            return 'red';
-        }
-        if ($this->status === DeadlineStatus::Warning) {
-            return 'amber';
-        }
-        if ($this->status === DeadlineStatus::NotApplicable) {
-            return 'zinc';
-        }
-        if ($this->hasMissingFields()) {
-            return 'amber';
-        }
-
-        return 'blue';
+        return $this->status->color();
     }
 
     /**
@@ -364,6 +316,9 @@ class LienProjectDeadline extends Model
         if ($this->completedFiling) {
             return 'View Filing';
         }
+        if ($this->wasCompletedExternally()) {
+            return 'View Details';
+        }
         if ($this->draftFiling()->exists()) {
             return 'Continue';
         }
@@ -376,14 +331,14 @@ class LienProjectDeadline extends Model
 
     /**
      * Check if filing can be started for this deadline.
-     * "Needs Info" does NOT block starting - the wizard collects missing info.
-     * Completed, NotApplicable, and Blocked block starting.
+     * Most deadlines can be started - the wizard collects missing info.
      */
     public function canStart(): bool
     {
-        return $this->status !== DeadlineStatus::Completed
-            && $this->status !== DeadlineStatus::NotApplicable
-            && $this->status !== DeadlineStatus::Blocked;
+        return ! in_array($this->status, [
+            DeadlineStatus::Completed,
+            DeadlineStatus::NotApplicable,
+        ], true);
     }
 
     /**
@@ -400,5 +355,18 @@ class LienProjectDeadline extends Model
     public function isOptional(): bool
     {
         return ! $this->isRequired();
+    }
+
+    /**
+     * Mark this deadline as completed externally (user filed themselves).
+     */
+    public function markCompletedExternally(string $filedAt, ?string $note = null): void
+    {
+        $this->update([
+            'status' => DeadlineStatus::Completed,
+            'completed_externally_at' => now(),
+            'external_filed_at' => $filedAt,
+            'external_completion_note' => $note,
+        ]);
     }
 }

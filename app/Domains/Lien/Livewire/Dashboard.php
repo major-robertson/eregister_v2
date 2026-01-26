@@ -34,7 +34,7 @@ class Dashboard extends Component
         $overdueCount = LienProjectDeadline::query()
             ->whereHas('project', fn ($q) => $q->where('business_id', $businessId))
             ->where('due_date', '<', today())
-            ->whereIn('status', [DeadlineStatus::Pending, DeadlineStatus::Missed])
+            ->whereIn('status', [DeadlineStatus::NotStarted, DeadlineStatus::Missed, DeadlineStatus::DueSoon])
             ->count();
 
         $overdueDeadlines = LienProjectDeadline::query()
@@ -42,7 +42,7 @@ class Dashboard extends Component
             ->with(['project:id,name,public_id', 'documentType:id,name'])
             ->whereHas('project', fn ($q) => $q->where('business_id', $businessId))
             ->where('due_date', '<', today())
-            ->whereIn('status', [DeadlineStatus::Pending, DeadlineStatus::Missed])
+            ->whereIn('status', [DeadlineStatus::NotStarted, DeadlineStatus::Missed, DeadlineStatus::DueSoon])
             ->orderBy('due_date')
             ->limit(5)
             ->get();
@@ -50,7 +50,7 @@ class Dashboard extends Component
         // Upcoming deadlines (7 days) - count + peek
         $upcomingCount = LienProjectDeadline::query()
             ->whereHas('project', fn ($q) => $q->where('business_id', $businessId))
-            ->where('status', DeadlineStatus::Pending)
+            ->whereIn('status', [DeadlineStatus::NotStarted, DeadlineStatus::DueSoon])
             ->whereBetween('due_date', [today(), today()->addDays(7)])
             ->count();
 
@@ -58,7 +58,7 @@ class Dashboard extends Component
             ->select(['id', 'project_id', 'document_type_id', 'due_date', 'status'])
             ->with(['project:id,name,public_id', 'documentType:id,name'])
             ->whereHas('project', fn ($q) => $q->where('business_id', $businessId))
-            ->where('status', DeadlineStatus::Pending)
+            ->whereIn('status', [DeadlineStatus::NotStarted, DeadlineStatus::DueSoon])
             ->whereBetween('due_date', [today(), today()->addDays(7)])
             ->orderBy('due_date')
             ->limit(5)

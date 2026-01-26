@@ -24,42 +24,6 @@
         <section class="mb-12">
             <h2 class="mb-6 text-lg font-semibold text-text-primary">Quick Actions</h2>
             <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {{-- Sales Tax Permit Card --}}
-                <div class="group rounded-xl border border-border bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-                    <div class="flex items-start gap-4">
-                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                            <flux:icon name="clipboard-document" class="size-6" />
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-base font-semibold text-text-primary">Sales Tax Permit</h3>
-                            <p class="mt-1 text-sm text-text-secondary">Apply for multiple states at once</p>
-                        </div>
-                    </div>
-                    <div class="mt-5 pt-5 border-t border-border">
-                        <flux:button href="{{ route('forms.start', ['formType' => 'sales_tax_permit']) }}" variant="primary" class="w-full justify-center">
-                            Get Started
-                        </flux:button>
-                    </div>
-                </div>
-
-                {{-- LLC Formation Card --}}
-                <div class="group rounded-xl border border-border bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-                    <div class="flex items-start gap-4">
-                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-accent">
-                            <flux:icon name="building-office" class="size-6" />
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-base font-semibold text-text-primary">LLC Formation</h3>
-                            <p class="mt-1 text-sm text-text-secondary">Form an LLC in any state</p>
-                        </div>
-                    </div>
-                    <div class="mt-5 pt-5 border-t border-border">
-                        <flux:button href="{{ route('forms.start', ['formType' => 'llc']) }}" variant="primary" class="w-full justify-center">
-                            Get Started
-                        </flux:button>
-                    </div>
-                </div>
-
                 {{-- Lien Projects Card --}}
                 <div class="group rounded-xl border border-border bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md">
                     <div class="flex items-start gap-4">

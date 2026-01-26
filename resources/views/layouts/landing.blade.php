@@ -25,15 +25,9 @@
                         class="text-sm font-medium text-zinc-600 transition hover:text-zinc-900 {{ request()->routeIs('liens') ? 'text-zinc-900' : '' }}">
                         Liens
                     </a>
-                    <a href="{{ route('home') }}"
-                        class="text-sm font-medium text-zinc-600 transition hover:text-zinc-900 {{ request()->routeIs('home') ? 'text-zinc-900' : '' }}">
-                        Sales Tax
-                    </a>
-                    <a href="#" class="text-sm font-medium text-zinc-600 transition hover:text-zinc-900">
-                        Resale Certificates
-                    </a>
-                    <a href="#" class="text-sm font-medium text-zinc-600 transition hover:text-zinc-900">
-                        LLC
+                    <a href="{{ route('contact') }}"
+                        class="text-sm font-medium text-zinc-600 transition hover:text-zinc-900 {{ request()->routeIs('contact') ? 'text-zinc-900' : '' }}">
+                        Contact
                     </a>
                 </nav>
 
@@ -98,17 +92,9 @@
                         class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 {{ request()->routeIs('liens') ? 'bg-zinc-100 text-zinc-900' : '' }}">
                         Liens
                     </a>
-                    <a href="{{ route('home') }}"
-                        class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 {{ request()->routeIs('home') ? 'bg-zinc-100 text-zinc-900' : '' }}">
-                        Sales Tax
-                    </a>
-                    <a href="#"
-                        class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">
-                        Resale Certificates
-                    </a>
-                    <a href="#"
-                        class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">
-                        LLC
+                    <a href="{{ route('contact') }}"
+                        class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 {{ request()->routeIs('contact') ? 'bg-zinc-100 text-zinc-900' : '' }}">
+                        Contact
                     </a>
                     <div class="mt-3 flex flex-col gap-2 border-t border-zinc-200 pt-3">
                         @auth
@@ -169,14 +155,8 @@
                 <div>
                     <h4 class="font-semibold text-white">Services</h4>
                     <ul class="mt-4 space-y-3">
-                        <li><a href="{{ route('register') }}"
-                                class="text-sm text-zinc-400 transition hover:text-white">Sales Tax Permits</a></li>
-                        <li><a href="{{ route('register') }}"
-                                class="text-sm text-zinc-400 transition hover:text-white">LLC Formation</a></li>
-                        <li><a href="{{ route('register') }}"
-                                class="text-sm text-zinc-400 transition hover:text-white">Use Tax Registration</a></li>
-                        <li><a href="{{ route('register') }}"
-                                class="text-sm text-zinc-400 transition hover:text-white">Annual Reports</a></li>
+                        <li><a href="{{ route('liens') }}"
+                                class="text-sm text-zinc-400 transition hover:text-white">Liens</a></li>
                     </ul>
                 </div>
 
@@ -184,11 +164,9 @@
                 <div>
                     <h4 class="font-semibold text-white">Company</h4>
                     <ul class="mt-4 space-y-3">
-                        <li><a href="#" class="text-sm text-zinc-400 transition hover:text-white">About Us</a></li>
                         <li><a href="#faq" class="text-sm text-zinc-400 transition hover:text-white">FAQ</a></li>
                         <li><a href="{{ route('contact') }}"
                                 class="text-sm text-zinc-400 transition hover:text-white">Contact</a></li>
-                        <li><a href="#" class="text-sm text-zinc-400 transition hover:text-white">Blog</a></li>
                     </ul>
                 </div>
 

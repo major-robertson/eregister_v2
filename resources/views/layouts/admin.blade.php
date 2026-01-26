@@ -17,14 +17,6 @@
                     <flux:sidebar.item icon="document-text" :href="route('admin.liens.board')" :current="request()->routeIs('admin.liens.*')" wire:navigate>
                         {{ __('Liens') }}
                     </flux:sidebar.item>
-                    <flux:sidebar.item icon="building-office" disabled class="opacity-50 cursor-not-allowed">
-                        {{ __('LLC Registrations') }}
-                        <flux:badge size="sm" color="zinc" class="ml-auto">Soon</flux:badge>
-                    </flux:sidebar.item>
-                    <flux:sidebar.item icon="calculator" disabled class="opacity-50 cursor-not-allowed">
-                        {{ __('Sales/Use Tax') }}
-                        <flux:badge size="sm" color="zinc" class="ml-auto">Soon</flux:badge>
-                    </flux:sidebar.item>
                 </flux:sidebar.group>
 
                 @role('admin')

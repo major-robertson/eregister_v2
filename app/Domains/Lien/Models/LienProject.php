@@ -55,6 +55,9 @@ class LienProject extends Model
         'completion_date',
         'noc_status',
         'noc_recorded_at',
+        'noc_filed_date',
+        'prelim_notice_sent_at',
+        'property_context',
         'wizard_completed_at',
     ];
 
@@ -74,6 +77,8 @@ class LienProject extends Model
             'completion_date' => 'date',
             'noc_status' => NocStatus::class,
             'noc_recorded_at' => 'date',
+            'noc_filed_date' => 'datetime',
+            'prelim_notice_sent_at' => 'datetime',
             'wizard_completed_at' => 'datetime',
         ];
     }

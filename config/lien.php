@@ -105,4 +105,23 @@ return [
     'notifications' => [
         'reminder_intervals' => [14, 7, 3, 1, 0], // Days before due date (0 = overdue)
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Status Reason Messages
+    |--------------------------------------------------------------------------
+    |
+    | Maps machine-readable status_reason codes to user-friendly messages.
+    | These are used by LienProjectDeadline::getFriendlyStatusReason().
+    |
+    */
+    'status_reasons' => [
+        'no_lien_rights_for_claimant' => 'Your claimant type does not have lien rights in this state.',
+        'missing_anchor_date' => 'Missing required date information.',
+        'noc_requires_prior_prelim' => 'NOC was filed without a prior preliminary notice.',
+        'tenant_project_not_allowed' => 'Tenant improvements are not lienable in this state.',
+        'tenant_project_restrictions' => 'Tenant lien restrictions apply.',
+        'owner_occupied_restrictions' => 'Owner-occupied property restrictions apply.',
+        'unknown_property_type' => 'Confirm property type - restrictions may apply.',
+    ],
 ];

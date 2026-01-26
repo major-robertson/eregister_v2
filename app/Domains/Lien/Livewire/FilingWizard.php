@@ -10,6 +10,7 @@ use App\Domains\Lien\Models\LienFilingRecipient;
 use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienProjectDeadline;
+use App\Domains\Lien\Models\LienStateRule;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -285,6 +286,63 @@ class FilingWizard extends Component
             if (! $owner) {
                 $this->warnings[] = 'Adding the property owner is recommended but not required.';
             }
+        }
+
+        // Check jurisdiction-specific warnings for lien-related filings
+        if (in_array($docType, ['mechanics_lien', 'lien_enforcement'])) {
+            $this->validateJurisdictionRights();
+        }
+    }
+
+    /**
+     * Validate claimant has lien rights and check property restrictions.
+     */
+    private function validateJurisdictionRights(): void
+    {
+        $stateRule = LienStateRule::where('state', $this->project->jobsite_state)->first();
+
+        if (! $stateRule) {
+            return;
+        }
+
+        // 1. Claimant rights check
+        $claimantType = $this->project->claimant_type?->value;
+        $hasRights = match ($claimantType) {
+            'gc' => $stateRule->gc_has_lien_rights,
+            'subcontractor' => $stateRule->sub_has_lien_rights,
+            'sub_sub_contractor' => $stateRule->subsub_has_lien_rights,
+            'supplier_to_owner' => $stateRule->supplier_owner_has_lien_rights,
+            'supplier_to_contractor' => $stateRule->supplier_gc_has_lien_rights,
+            'supplier_to_subcontractor' => $stateRule->supplier_sub_has_lien_rights,
+            default => true,
+        };
+
+        if (! $hasRights) {
+            $this->warnings[] = "Your claimant type may not have lien rights in {$stateRule->state}.";
+        }
+
+        // 2. Property restriction checks
+        $propertyContext = $this->project->property_context ?? 'unknown';
+
+        if ($propertyContext === 'tenant_improvement' && ! $stateRule->tenant_project_lien_allowed) {
+            $this->warnings[] = "Tenant improvements may not be lienable in {$stateRule->state}.";
+        }
+
+        if ($propertyContext === 'tenant_improvement' && $stateRule->tenant_project_restrictions !== 'none') {
+            $this->warnings[] = "Tenant lien restrictions apply: {$stateRule->tenant_project_restrictions}";
+        }
+
+        if ($propertyContext === 'owner_occupied' && $stateRule->owner_occupied_restriction_type !== 'none') {
+            $this->warnings[] = "Owner-occupied restrictions: {$stateRule->owner_occupied_restriction_type}";
+        }
+
+        // 3. Filing requirement warnings
+        if ($stateRule->notarization_required) {
+            $this->warnings[] = 'Notarization is required for this filing.';
+        }
+
+        if ($stateRule->verification_type === 'sworn') {
+            $this->warnings[] = 'This document must be sworn under oath.';
         }
     }
 

@@ -8,6 +8,8 @@ enum DeadlineStatus: string
     case Completed = 'completed';
     case Missed = 'missed';
     case NotApplicable = 'not_applicable';
+    case Blocked = 'blocked';
+    case Warning = 'warning';
 
     public function label(): string
     {
@@ -16,6 +18,8 @@ enum DeadlineStatus: string
             self::Completed => 'Completed',
             self::Missed => 'Missed',
             self::NotApplicable => 'Not Applicable',
+            self::Blocked => 'Blocked',
+            self::Warning => 'Warning',
         };
     }
 
@@ -26,6 +30,8 @@ enum DeadlineStatus: string
             self::Completed => 'green',
             self::Missed => 'red',
             self::NotApplicable => 'zinc',
+            self::Blocked => 'red',
+            self::Warning => 'amber',
         };
     }
 }

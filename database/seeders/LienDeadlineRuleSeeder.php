@@ -10,14 +10,15 @@ class LienDeadlineRuleSeeder extends Seeder
 {
     /**
      * Claimant types to process from the CSV.
+     * Maps CSV column prefix to database/enum value.
      */
     private const CLAIMANT_TYPES = [
-        'gc',
-        'sub',
-        'subsub',
-        'supplier_owner',
-        'supplier_gc',
-        'supplier_sub',
+        'gc' => 'gc',
+        'sub' => 'subcontractor',
+        'subsub' => 'sub_sub_contractor',
+        'supplier_owner' => 'supplier_to_owner',
+        'supplier_gc' => 'supplier_to_contractor',
+        'supplier_sub' => 'supplier_to_subcontractor',
     ];
 
     /**
@@ -97,10 +98,10 @@ class LienDeadlineRuleSeeder extends Seeder
     {
         $count = 0;
 
-        foreach (self::CLAIMANT_TYPES as $type) {
-            $requiredField = "prelim_{$type}_required";
-            $daysField = "prelim_{$type}_deadline_days";
-            $triggerField = "prelim_{$type}_trigger";
+        foreach (self::CLAIMANT_TYPES as $csvPrefix => $dbValue) {
+            $requiredField = "prelim_{$csvPrefix}_required";
+            $daysField = "prelim_{$csvPrefix}_deadline_days";
+            $triggerField = "prelim_{$csvPrefix}_trigger";
 
             if (strtolower(trim($data[$requiredField] ?? '')) !== 'yes') {
                 continue;
@@ -112,7 +113,7 @@ class LienDeadlineRuleSeeder extends Seeder
             DB::table('lien_deadline_rules')->insert([
                 'state' => $state,
                 'document_type_id' => $docTypeId,
-                'claimant_type' => $type,
+                'claimant_type' => $dbValue,
                 'trigger_event' => $trigger,
                 'calc_method' => 'days_after_date',
                 'offset_days' => $offsetDays,
@@ -141,9 +142,9 @@ class LienDeadlineRuleSeeder extends Seeder
     {
         $count = 0;
 
-        foreach (self::CLAIMANT_TYPES as $type) {
-            $requiredField = "noi_{$type}_required";
-            $daysField = "noi_{$type}_lead_time_days";
+        foreach (self::CLAIMANT_TYPES as $csvPrefix => $dbValue) {
+            $requiredField = "noi_{$csvPrefix}_required";
+            $daysField = "noi_{$csvPrefix}_lead_time_days";
 
             if (strtolower(trim($data[$requiredField] ?? '')) !== 'yes') {
                 continue;
@@ -156,7 +157,7 @@ class LienDeadlineRuleSeeder extends Seeder
             DB::table('lien_deadline_rules')->insert([
                 'state' => $state,
                 'document_type_id' => $docTypeId,
-                'claimant_type' => $type,
+                'claimant_type' => $dbValue,
                 'trigger_event' => 'lien_filing_date', // NOI is relative to lien filing
                 'calc_method' => 'days_before_date',
                 'offset_days' => $leadTimeDays,
@@ -187,13 +188,13 @@ class LienDeadlineRuleSeeder extends Seeder
         $count = 0;
         $scopes = ['res' => 'residential', 'com' => 'commercial'];
 
-        foreach (self::CLAIMANT_TYPES as $type) {
+        foreach (self::CLAIMANT_TYPES as $csvPrefix => $dbValue) {
             foreach ($scopes as $scopeKey => $scopeValue) {
-                $triggerField = "lien_{$type}_{$scopeKey}_trigger";
-                $calcMethodField = "lien_{$type}_{$scopeKey}_calc_method";
-                $offsetDaysField = "lien_{$type}_{$scopeKey}_offset_days";
-                $offsetMonthsField = "lien_{$type}_{$scopeKey}_offset_months";
-                $dayOfMonthField = "lien_{$type}_{$scopeKey}_day_of_month";
+                $triggerField = "lien_{$csvPrefix}_{$scopeKey}_trigger";
+                $calcMethodField = "lien_{$csvPrefix}_{$scopeKey}_calc_method";
+                $offsetDaysField = "lien_{$csvPrefix}_{$scopeKey}_offset_days";
+                $offsetMonthsField = "lien_{$csvPrefix}_{$scopeKey}_offset_months";
+                $dayOfMonthField = "lien_{$csvPrefix}_{$scopeKey}_day_of_month";
 
                 $trigger = $this->emptyToNull($data[$triggerField] ?? '');
                 $calcMethod = $this->emptyToDefault($data[$calcMethodField] ?? '', 'days_after_date');
@@ -219,7 +220,7 @@ class LienDeadlineRuleSeeder extends Seeder
                 DB::table('lien_deadline_rules')->insert([
                     'state' => $state,
                     'document_type_id' => $docTypeId,
-                    'claimant_type' => $type,
+                    'claimant_type' => $dbValue,
                     'trigger_event' => $trigger,
                     'calc_method' => $calcMethod,
                     'offset_days' => $offsetDays,

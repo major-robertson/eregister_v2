@@ -7,6 +7,7 @@ use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienProjectDeadline;
+use App\Domains\Lien\Models\LienStateRule;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -90,6 +91,9 @@ class ProjectShow extends Component
             },
         ]);
 
+        // Load state rule ONCE for entire project
+        $stateRule = LienStateRule::where('state', $this->project->jobsite_state)->first();
+
         // Find the next pending REQUIRED deadline that can be filed for the top banner
         $nextDeadline = $this->project->deadlines
             ->where('status.value', 'pending')
@@ -102,6 +106,7 @@ class ProjectShow extends Component
             'parties' => $this->project->parties,
             'deadlines' => $this->project->deadlines,
             'filings' => $this->project->filings,
+            'stateRule' => $stateRule,
             'nextDeadline' => $nextDeadline,
         ])->layout('layouts.lien', ['title' => $this->project->name]);
     }

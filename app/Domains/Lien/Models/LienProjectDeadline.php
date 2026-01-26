@@ -29,6 +29,8 @@ class LienProjectDeadline extends Model
         'computed_from_date',
         'missing_fields_json',
         'status',
+        'status_reason',
+        'status_meta',
         'completed_filing_id',
     ];
 
@@ -39,6 +41,7 @@ class LienProjectDeadline extends Model
             'computed_from_date' => 'date',
             'missing_fields_json' => 'array',
             'status' => DeadlineStatus::class,
+            'status_meta' => 'array',
         ];
     }
 
@@ -149,6 +152,16 @@ class LienProjectDeadline extends Model
             return false;
         }
 
+        // Blocked deadlines cannot be filed (rights eliminated, tenant not allowed, etc.)
+        if ($this->status === DeadlineStatus::Blocked) {
+            return false;
+        }
+
+        // Not applicable deadlines cannot be filed
+        if ($this->status === DeadlineStatus::NotApplicable) {
+            return false;
+        }
+
         $slug = $this->documentType?->slug;
 
         // Preliminary notice: always available unless already filed
@@ -164,17 +177,13 @@ class LienProjectDeadline extends Model
             return false;
         }
 
-        // Not applicable deadlines cannot be filed
-        if ($this->status === DeadlineStatus::NotApplicable) {
-            return false;
-        }
-
         // Lien release: requires mechanics lien to be filed first
         if ($slug === 'lien_release') {
             return $this->hasPriorFilingCompleted();
         }
 
         // NOI and mechanics lien: no special restrictions beyond status checks
+        // Warning status does NOT block filing - just shows warnings
         return true;
     }
 
@@ -186,6 +195,16 @@ class LienProjectDeadline extends Model
         // Already completed
         if ($this->status === DeadlineStatus::Completed) {
             return 'Already Filed';
+        }
+
+        // Blocked - rights eliminated
+        if ($this->status === DeadlineStatus::Blocked) {
+            return 'Blocked';
+        }
+
+        // Not applicable
+        if ($this->status === DeadlineStatus::NotApplicable) {
+            return 'Not Applicable';
         }
 
         $slug = $this->documentType?->slug;
@@ -200,11 +219,6 @@ class LienProjectDeadline extends Model
         // Missing required fields blocks filing for non-prelim documents
         if ($this->hasMissingFields()) {
             return 'Needs Info';
-        }
-
-        // Not applicable
-        if ($this->status === DeadlineStatus::NotApplicable) {
-            return 'Not Applicable';
         }
 
         // Lien release: check if mechanics lien is filed
@@ -282,12 +296,18 @@ class LienProjectDeadline extends Model
 
     /**
      * Get the status label for display.
-     * Returns: Filed, Not Applicable, Needs Info, or Ready.
+     * Returns: Filed, Blocked, Warning, Not Applicable, Needs Info, or Ready.
      */
     public function getStatusLabel(): string
     {
         if ($this->status === DeadlineStatus::Completed) {
             return 'Filed';
+        }
+        if ($this->status === DeadlineStatus::Blocked) {
+            return 'Blocked';
+        }
+        if ($this->status === DeadlineStatus::Warning) {
+            return 'Warning';
         }
         if ($this->status === DeadlineStatus::NotApplicable) {
             return 'Not Applicable';
@@ -308,6 +328,12 @@ class LienProjectDeadline extends Model
         if ($this->status === DeadlineStatus::Completed) {
             return 'green';
         }
+        if ($this->status === DeadlineStatus::Blocked) {
+            return 'red';
+        }
+        if ($this->status === DeadlineStatus::Warning) {
+            return 'amber';
+        }
         if ($this->status === DeadlineStatus::NotApplicable) {
             return 'zinc';
         }
@@ -316,6 +342,18 @@ class LienProjectDeadline extends Model
         }
 
         return 'blue';
+    }
+
+    /**
+     * Get the friendly message for the status_reason code.
+     */
+    public function getFriendlyStatusReason(): ?string
+    {
+        if (! $this->status_reason) {
+            return null;
+        }
+
+        return config("lien.status_reasons.{$this->status_reason}", $this->status_reason);
     }
 
     /**
@@ -339,12 +377,13 @@ class LienProjectDeadline extends Model
     /**
      * Check if filing can be started for this deadline.
      * "Needs Info" does NOT block starting - the wizard collects missing info.
-     * Only Completed and NotApplicable block starting.
+     * Completed, NotApplicable, and Blocked block starting.
      */
     public function canStart(): bool
     {
         return $this->status !== DeadlineStatus::Completed
-            && $this->status !== DeadlineStatus::NotApplicable;
+            && $this->status !== DeadlineStatus::NotApplicable
+            && $this->status !== DeadlineStatus::Blocked;
     }
 
     /**

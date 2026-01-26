@@ -31,6 +31,8 @@ class ProjectForm extends Component
 
     public string $claimant_type = 'subcontractor';
 
+    public string $property_context = 'unknown';
+
     // Step 2: Jobsite Address
     public ?string $jobsite_address1 = null;
 
@@ -83,6 +85,7 @@ class ProjectForm extends Component
         $this->name = $this->project->name;
         $this->job_number = $this->project->job_number;
         $this->claimant_type = $this->project->claimant_type?->value ?? 'subcontractor';
+        $this->property_context = $this->project->property_context ?? 'unknown';
 
         // Step 2
         $this->jobsite_address1 = $this->project->jobsite_address1;
@@ -299,6 +302,7 @@ class ProjectForm extends Component
             'name' => $this->name,
             'job_number' => $this->job_number,
             'claimant_type' => $this->claimant_type,
+            'property_context' => $this->property_context,
             'jobsite_address1' => $this->jobsite_address1,
             'jobsite_address2' => $this->jobsite_address2,
             'jobsite_city' => $this->jobsite_city,

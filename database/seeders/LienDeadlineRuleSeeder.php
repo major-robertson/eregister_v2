@@ -26,7 +26,7 @@ class LienDeadlineRuleSeeder extends Seeder
      */
     public function run(): void
     {
-        $csvPath = storage_path('lien_rules_by_state_v3_checked_csv.csv');
+        $csvPath = database_path('seeders/data/lien_rules_by_state_v3_checked_csv.csv');
 
         if (! file_exists($csvPath)) {
             $this->command->error("CSV file not found: {$csvPath}");

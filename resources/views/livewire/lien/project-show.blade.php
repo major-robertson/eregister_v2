@@ -62,8 +62,7 @@
                         @endif
                     </div>
                     <flux:button wire:click="startFiling({{ $nextDeadline->id }})"
-                        :variant="$canStartNext ? 'danger' : 'ghost'"
-                        :disabled="!$canStartNext" size="sm">
+                        :variant="$canStartNext ? 'danger' : 'ghost'" :disabled="!$canStartNext" size="sm">
                         {{ $nextDeadline->getButtonText() }}
                     </flux:button>
                 </div>
@@ -110,8 +109,10 @@
                     {{-- Payment Protection Steps Timeline --}}
                     <x-ui.card>
                         <div class="mb-6">
-                            <h2 class="text-lg font-semibold text-zinc-900 dark:text-white">Payment Protection Steps</h2>
-                            <p class="text-sm text-zinc-500 dark:text-zinc-400">{{ $project->jobsite_state ?? 'Unknown' }} lien path</p>
+                            <h2 class="text-lg font-semibold text-zinc-900 dark:text-white">Payment Protection Steps
+                            </h2>
+                            <p class="text-sm text-zinc-500 dark:text-zinc-400">{{ $project->jobsite_state ?? 'Unknown'
+                                }} lien path</p>
                             <p class="text-sm text-zinc-400 dark:text-zinc-500">Order and timing vary by state.</p>
                         </div>
 
@@ -126,34 +127,37 @@
                         @endif
                         @else
                         @php
-                            // Find the first pending REQUIRED deadline that can be filed (next step)
-                            $nextRequiredStepId = $deadlines->first(fn($d) => $d->status->value === 'pending' && $d->canFile() && $d->isRequired())?->id;
+                        // Find the first pending REQUIRED deadline that can be filed (next step)
+                        $nextRequiredStepId = $deadlines->first(fn($d) => $d->status->value === 'pending' &&
+                        $d->canFile() && $d->isRequired())?->id;
 
-                            // Step descriptions
-                            $stepDescriptions = [
-                                'prelim_notice' => 'Preserves your rights early.',
-                                'noi' => "If you're still unpaid, send an NOI.",
-                                'mechanics_lien' => 'If still unpaid after NOI, file the lien.',
-                                'lien_release' => 'If you get paid, release the lien.',
-                            ];
+                        // Step descriptions
+                        $stepDescriptions = [
+                        'prelim_notice' => 'Preserves your rights early.',
+                        'noi' => "If you're still unpaid, send an NOI.",
+                        'mechanics_lien' => 'If still unpaid after NOI, file the lien.',
+                        'lien_release' => 'If you get paid, release the lien.',
+                        ];
                         @endphp
 
                         <div class="relative">
                             @foreach($deadlines as $index => $deadline)
                             @php
-                                $slug = $deadline->documentType->slug;
-                                $description = $stepDescriptions[$slug] ?? '';
-                                $isCompleted = $deadline->status->value === 'completed';
-                                $isPending = $deadline->status->value === 'pending';
-                                $isNextRequiredStep = $deadline->id === $nextRequiredStepId;
+                            $slug = $deadline->documentType->slug;
+                            $description = $stepDescriptions[$slug] ?? '';
+                            $isCompleted = $deadline->status->value === 'completed';
+                            $isPending = $deadline->status->value === 'pending';
+                            $isNextRequiredStep = $deadline->id === $nextRequiredStepId;
 
-                                // Check if all PRIOR required steps (before this one) are completed
-                                $priorDeadlines = $deadlines->take($loop->index);
-                                $hasPendingPriorRequired = $priorDeadlines->contains(fn($d) => $d->isRequired() && $d->status->value !== 'completed');
+                            // Check if all PRIOR required steps (before this one) are completed
+                            $priorDeadlines = $deadlines->take($loop->index);
+                            $hasPendingPriorRequired = $priorDeadlines->contains(fn($d) => $d->isRequired() &&
+                            $d->status->value !== 'completed');
 
-                                // Optional step is only "available" (blue button) if all prior required steps are done
-                                $isOptionalAvailable = $isPending && $deadline->canFile() && $deadline->isOptional() && !$hasPendingPriorRequired;
-                                $stepNumber = $loop->iteration;
+                            // Optional step is only "available" (blue button) if all prior required steps are done
+                            $isOptionalAvailable = $isPending && $deadline->canFile() && $deadline->isOptional() &&
+                            !$hasPendingPriorRequired;
+                            $stepNumber = $loop->iteration;
                             @endphp
 
                             <div class="relative flex gap-4 {{ !$loop->last ? 'pb-6' : '' }}">
@@ -170,9 +174,9 @@
                                         @endif
                                     ">
                                         @if($isCompleted)
-                                            <flux:icon name="check" class="size-4" />
+                                        <flux:icon name="check" class="size-4" />
                                         @else
-                                            {{ $stepNumber }}
+                                        {{ $stepNumber }}
                                         @endif
                                     </div>
 
@@ -201,24 +205,28 @@
                                     ">
                                         <div class="flex-1 min-w-0">
                                             <div class="flex items-center gap-2 flex-wrap">
-                                                <span class="font-semibold text-zinc-900 dark:text-white">{{ $deadline->documentType->name }}</span>
+                                                <span class="font-semibold text-zinc-900 dark:text-white">{{
+                                                    $deadline->documentType->name }}</span>
                                                 @if($isCompleted)
-                                                    <flux:badge size="sm" color="green">Submitted</flux:badge>
+                                                <flux:badge size="sm" color="green">Submitted</flux:badge>
                                                 @elseif($deadline->isOptional())
-                                                    <flux:badge size="sm" color="zinc">Optional</flux:badge>
+                                                <flux:badge size="sm" color="zinc">Optional</flux:badge>
                                                 @endif
                                             </div>
-                                            <p class="text-sm text-zinc-500 dark:text-zinc-400 mt-1">{{ $description }}</p>
+                                            <p class="text-sm text-zinc-500 dark:text-zinc-400 mt-1">{{ $description }}
+                                            </p>
                                             @if($deadline->hasMissingFields())
                                             <p class="text-sm text-amber-600 dark:text-amber-400 mt-1">
-                                                Needs: {{ implode(', ', array_map(fn($f) => str_replace('_', ' ', $f), $deadline->missing_fields_json)) }}
+                                                Needs: {{ implode(', ', array_map(fn($f) => str_replace('_', ' ', $f),
+                                                $deadline->missing_fields_json)) }}
                                             </p>
                                             @endif
                                             @if($deadline->due_date)
                                             <p class="text-sm text-zinc-400 dark:text-zinc-500 mt-1">
                                                 Due {{ $deadline->due_date->format('M j, Y') }}
                                                 @if($deadline->daysRemaining() !== null)
-                                                    <span class="text-zinc-500 dark:text-zinc-400">({{ $deadline->daysRemaining() }} days)</span>
+                                                <span class="text-zinc-500 dark:text-zinc-400">({{
+                                                    $deadline->daysRemaining() }} days)</span>
                                                 @endif
                                             </p>
                                             @endif
@@ -236,15 +244,19 @@
 
                                             {{-- Action Button --}}
                                             @if($deadline->completedFiling)
-                                            <flux:button href="{{ route('lien.filings.show', $deadline->completedFiling) }}" size="sm" variant="outline">
+                                            <flux:button
+                                                href="{{ route('lien.filings.show', $deadline->completedFiling) }}"
+                                                size="sm" variant="outline">
                                                 View
                                             </flux:button>
                                             @elseif($isNextRequiredStep || $isOptionalAvailable)
-                                            <flux:button wire:click="startFiling({{ $deadline->id }})" size="sm" variant="primary">
+                                            <flux:button wire:click="startFiling({{ $deadline->id }})" size="sm"
+                                                variant="primary">
                                                 {{ $deadline->draftFiling ? 'Continue' : 'Start' }}
                                             </flux:button>
                                             @elseif($deadline->canStart())
-                                            <flux:button wire:click="startFiling({{ $deadline->id }})" size="sm" variant="outline">
+                                            <flux:button wire:click="startFiling({{ $deadline->id }})" size="sm"
+                                                variant="outline">
                                                 {{ $deadline->draftFiling ? 'Continue' : 'Start' }}
                                             </flux:button>
                                             @endif

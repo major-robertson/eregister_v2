@@ -2,166 +2,120 @@
 
 namespace Database\Seeders;
 
-use App\Domains\Lien\Models\LienDeadlineRule;
 use App\Domains\Lien\Models\LienDocumentType;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class LienDeadlineRuleSeeder extends Seeder
 {
     /**
-     * Preliminary Notice rules by state (from CSV).
-     * States not listed here do not require pre-notice.
+     * Claimant types to process from the CSV.
      */
-    private const PRELIM_NOTICE_RULES = [
-        'AZ' => ['days' => 20, 'required_for' => 'subs, suppliers'],
-        'AR' => ['days' => 10, 'required_for' => 'subs (residential)'],
-        'CA' => ['days' => 20, 'required_for' => 'subs, suppliers'],
-        'FL' => ['days' => 45, 'required_for' => 'subs, suppliers'],
-        'GA' => ['days' => 30, 'required_for' => 'subs, suppliers'],
-        'ID' => ['days' => 30, 'required_for' => 'subs (residential)'],
-        'IN' => ['days' => 30, 'required_for' => 'subs (1-2 family)'],
-        'IA' => ['days' => 30, 'required_for' => 'everyone'],
-        'KY' => ['days' => 75, 'required_for' => 'subs'],
-        'LA' => ['days' => 10, 'required_for' => 'subs, suppliers'],
-        'MI' => ['days' => 20, 'required_for' => 'subs, suppliers'],
-        'MN' => ['days' => 45, 'required_for' => 'everyone'],
-        'NV' => ['days' => 31, 'required_for' => 'subs, suppliers'],
-        'NM' => ['days' => 60, 'required_for' => 'subs, suppliers'],
-        'NC' => ['days' => 15, 'required_for' => 'subs, suppliers'],
-        'OH' => ['days' => 21, 'required_for' => 'subs, suppliers'],
-        'OK' => ['days' => 75, 'required_for' => 'subs, suppliers'],
-        'OR' => ['days' => 8, 'required_for' => 'everyone'],
-        'RI' => ['days' => 10, 'required_for' => 'prime'],
-        'TN' => ['days' => 90, 'required_for' => 'subs'],
-        'TX' => ['days' => 15, 'required_for' => 'subs, suppliers'],
-        'UT' => ['days' => 20, 'required_for' => 'everyone'],
-        'WA' => ['days' => 60, 'required_for' => 'subs, suppliers'],
-        'WY' => ['days' => 30, 'required_for' => 'everyone'],
+    private const CLAIMANT_TYPES = [
+        'gc',
+        'sub',
+        'subsub',
+        'supplier_owner',
+        'supplier_gc',
+        'supplier_sub',
     ];
 
     /**
-     * Mechanics Lien rules by state (from CSV).
-     * All states have lien rules. Special calc_methods for TX, NY, VA.
+     * Seed the lien_deadline_rules table from CSV.
      */
-    private const MECHANICS_LIEN_RULES = [
-        'AL' => ['days' => 180, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'AK' => ['days' => 120, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'AZ' => ['days' => 120, 'trigger' => 'completion_date', 'calc_method' => 'days_after_date'],
-        'AR' => ['days' => 120, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'CA' => ['days' => 90, 'trigger' => 'completion_date', 'calc_method' => 'days_after_date'],
-        'CO' => ['days' => 120, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'CT' => ['days' => 90, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'DE' => ['days' => 90, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'FL' => ['days' => 90, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'GA' => ['days' => 90, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'HI' => ['days' => 45, 'trigger' => 'completion_date', 'calc_method' => 'days_after_date'],
-        'ID' => ['days' => 90, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'IL' => ['days' => 120, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'IN' => ['days' => 90, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'IA' => ['days' => 90, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'KS' => ['days' => 90, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'KY' => ['days' => 180, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'LA' => ['days' => 60, 'trigger' => 'completion_date', 'calc_method' => 'days_after_date'],
-        'ME' => ['days' => 90, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'MD' => ['days' => 180, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'MA' => ['days' => 90, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'MI' => ['days' => 90, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'MN' => ['days' => 120, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'MS' => ['days' => 90, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'MO' => ['days' => 120, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'MT' => ['days' => 90, 'trigger' => 'completion_date', 'calc_method' => 'days_after_date'],
-        'NE' => ['days' => 120, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'NV' => ['days' => 90, 'trigger' => 'completion_date', 'calc_method' => 'days_after_date'],
-        'NH' => ['days' => 120, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'NJ' => ['days' => 90, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'NM' => ['days' => 90, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        // NY uses months_after_date - handled separately
-        'NC' => ['days' => 120, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'ND' => ['days' => 90, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'OH' => ['days' => 75, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'OK' => ['days' => 90, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'OR' => ['days' => 75, 'trigger' => 'completion_date', 'calc_method' => 'days_after_date'],
-        'PA' => ['days' => 180, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'RI' => ['days' => 200, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'SC' => ['days' => 90, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'SD' => ['days' => 120, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'TN' => ['days' => 90, 'trigger' => 'completion_date', 'calc_method' => 'days_after_date'],
-        // TX uses month_day_after_month_of_date - handled separately
-        'UT' => ['days' => 180, 'trigger' => 'completion_date', 'calc_method' => 'days_after_date'],
-        'VT' => ['days' => 180, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        // VA uses days_after_end_of_month_of_date - handled separately
-        'WA' => ['days' => 90, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'WV' => ['days' => 100, 'trigger' => 'completion_date', 'calc_method' => 'days_after_date'],
-        'WI' => ['days' => 180, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-        'WY' => ['days' => 120, 'trigger' => 'last_furnish_date', 'calc_method' => 'days_after_date'],
-    ];
-
     public function run(): void
     {
-        $prelimNotice = LienDocumentType::where('slug', 'prelim_notice')->first();
-        $mechanicsLien = LienDocumentType::where('slug', 'mechanics_lien')->first();
-        $lienRelease = LienDocumentType::where('slug', 'lien_release')->first();
+        $csvPath = storage_path('lien_rules_by_state_v3_checked_csv.csv');
 
-        if (! $prelimNotice || ! $mechanicsLien || ! $lienRelease) {
-            $this->command->error('Document types not found. Run LienDocumentTypeSeeder first.');
+        if (! file_exists($csvPath)) {
+            $this->command->error("CSV file not found: {$csvPath}");
 
             return;
         }
 
-        // Clear existing rules (disable FK checks for truncate)
-        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        LienDeadlineRule::truncate();
-        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        // Get document type IDs
+        $prelimNotice = LienDocumentType::where('slug', 'prelim_notice')->first();
+        $noi = LienDocumentType::where('slug', 'noi')->first();
+        $mechanicsLien = LienDocumentType::where('slug', 'mechanics_lien')->first();
+        $lienRelease = LienDocumentType::where('slug', 'lien_release')->first();
 
-        // Seed Preliminary Notice rules
-        $this->seedPreliminaryNoticeRules($prelimNotice);
+        if (! $prelimNotice || ! $mechanicsLien) {
+            $this->command->error('Required document types not found. Run LienDocumentTypeSeeder first.');
 
-        // Seed Mechanics Lien rules (standard states)
-        $this->seedMechanicsLienRules($mechanicsLien);
-
-        // Seed special state rules (TX, NY, VA)
-        $this->seedTexasRules($mechanicsLien);
-        $this->seedNewYorkRules($mechanicsLien);
-        $this->seedVirginiaRules($mechanicsLien);
-
-        // Seed Lien Release rules (optional, no deadline)
-        $this->seedLienReleaseRules($lienRelease);
-
-        $this->command->info('Seeded deadline rules for all 50 states.');
-    }
-
-    private function seedPreliminaryNoticeRules(LienDocumentType $docType): void
-    {
-        foreach (self::PRELIM_NOTICE_RULES as $state => $data) {
-            LienDeadlineRule::create([
-                'state' => $state,
-                'document_type_id' => $docType->id,
-                'claimant_type' => 'any',
-                'trigger_event' => 'first_furnish_date',
-                'calc_method' => 'days_after_date',
-                'offset_days' => $data['days'],
-                'offset_months' => null,
-                'day_of_month' => null,
-                'is_required' => true,
-                'effective_scope' => 'both',
-                'is_placeholder' => false,
-                'conditions_json' => null,
-                'notes' => "Required for: {$data['required_for']}",
-                'data_source' => 'csv_v1',
-            ]);
+            return;
         }
+
+        // Truncate table
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('lien_deadline_rules')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+        // Read CSV content and convert from Windows-1252 to UTF-8
+        $csvContent = file_get_contents($csvPath);
+        $csvContent = mb_convert_encoding($csvContent, 'UTF-8', 'Windows-1252');
+
+        // Parse the UTF-8 content
+        $lines = explode("\n", $csvContent);
+        $headers = str_getcsv(array_shift($lines));
+
+        $prelimCount = 0;
+        $noiCount = 0;
+        $lienCount = 0;
+
+        foreach ($lines as $line) {
+            if (trim($line) === '') {
+                continue;
+            }
+            $row = str_getcsv($line);
+            if (count($row) !== count($headers)) {
+                continue;
+            }
+            $data = array_combine($headers, $row);
+            $state = $data['state_code'];
+
+            // Seed Preliminary Notice rules
+            $prelimCount += $this->seedPreliminaryNoticeRules($data, $state, $prelimNotice->id);
+
+            // Seed NOI rules (if noi document type exists)
+            if ($noi) {
+                $noiCount += $this->seedNoiRules($data, $state, $noi->id);
+            }
+
+            // Seed Mechanics Lien rules (residential + commercial for each claimant type)
+            $lienCount += $this->seedMechanicsLienRules($data, $state, $mechanicsLien->id);
+        }
+
+        $this->command->info("Seeded {$prelimCount} preliminary notice rules.");
+        $this->command->info("Seeded {$noiCount} NOI rules.");
+        $this->command->info("Seeded {$lienCount} mechanics lien rules.");
     }
 
-    private function seedMechanicsLienRules(LienDocumentType $docType): void
+    /**
+     * Seed Preliminary Notice rules from CSV row.
+     */
+    private function seedPreliminaryNoticeRules(array $data, string $state, int $docTypeId): int
     {
-        foreach (self::MECHANICS_LIEN_RULES as $state => $data) {
-            LienDeadlineRule::create([
+        $count = 0;
+
+        foreach (self::CLAIMANT_TYPES as $type) {
+            $requiredField = "prelim_{$type}_required";
+            $daysField = "prelim_{$type}_deadline_days";
+            $triggerField = "prelim_{$type}_trigger";
+
+            if (strtolower(trim($data[$requiredField] ?? '')) !== 'yes') {
+                continue;
+            }
+
+            $offsetDays = $this->toNullableInt($data[$daysField] ?? '');
+            $trigger = $this->emptyToDefault($data[$triggerField] ?? '', 'first_furnish_date');
+
+            DB::table('lien_deadline_rules')->insert([
                 'state' => $state,
-                'document_type_id' => $docType->id,
-                'claimant_type' => 'any',
-                'trigger_event' => $data['trigger'],
-                'calc_method' => $data['calc_method'],
-                'offset_days' => $data['days'],
+                'document_type_id' => $docTypeId,
+                'claimant_type' => $type,
+                'trigger_event' => $trigger,
+                'calc_method' => 'days_after_date',
+                'offset_days' => $offsetDays,
                 'offset_months' => null,
                 'day_of_month' => null,
                 'is_required' => true,
@@ -169,183 +123,143 @@ class LienDeadlineRuleSeeder extends Seeder
                 'is_placeholder' => false,
                 'conditions_json' => null,
                 'notes' => null,
-                'data_source' => 'csv_v1',
+                'data_source' => 'csv_v3',
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
+
+            $count++;
         }
+
+        return $count;
     }
 
     /**
-     * Texas uses "15th of the Nth month" calculation.
-     * Residential: 3rd month, Commercial: 4th month.
-     * Sub/Supplier uses later_of anchor for special fab delivery.
+     * Seed NOI (Notice of Intent) rules from CSV row.
      */
-    private function seedTexasRules(LienDocumentType $docType): void
+    private function seedNoiRules(array $data, string $state, int $docTypeId): int
     {
-        // TX Sub/Supplier - Residential (15th of 3rd month)
-        LienDeadlineRule::create([
-            'state' => 'TX',
-            'document_type_id' => $docType->id,
-            'claimant_type' => 'any',
-            'trigger_event' => 'last_furnish_date',
-            'calc_method' => 'month_day_after_month_of_date',
-            'offset_days' => null,
-            'offset_months' => 3,
-            'day_of_month' => 15,
-            'is_required' => true,
-            'effective_scope' => 'residential',
-            'is_placeholder' => false,
-            'conditions_json' => ['anchor' => 'later_of', 'dates' => ['last_furnish_date', 'special_fab_delivery_date']],
-            'notes' => 'Lien affidavit must be filed by the 15th of the 3rd month after indebtedness accrues.',
-            'data_source' => 'csv_v1',
-        ]);
+        $count = 0;
 
-        // TX Sub/Supplier - Commercial (15th of 4th month)
-        LienDeadlineRule::create([
-            'state' => 'TX',
-            'document_type_id' => $docType->id,
-            'claimant_type' => 'any',
-            'trigger_event' => 'last_furnish_date',
-            'calc_method' => 'month_day_after_month_of_date',
-            'offset_days' => null,
-            'offset_months' => 4,
-            'day_of_month' => 15,
-            'is_required' => true,
-            'effective_scope' => 'commercial',
-            'is_placeholder' => false,
-            'conditions_json' => ['anchor' => 'later_of', 'dates' => ['last_furnish_date', 'special_fab_delivery_date']],
-            'notes' => 'Lien affidavit must be filed by the 15th of the 4th month after indebtedness accrues.',
-            'data_source' => 'csv_v1',
-        ]);
+        foreach (self::CLAIMANT_TYPES as $type) {
+            $requiredField = "noi_{$type}_required";
+            $daysField = "noi_{$type}_lead_time_days";
 
-        // TX Original Contractor - Residential (15th of 3rd month from completion)
-        LienDeadlineRule::create([
-            'state' => 'TX',
-            'document_type_id' => $docType->id,
-            'claimant_type' => 'gc',
-            'trigger_event' => 'completion_date',
-            'calc_method' => 'month_day_after_month_of_date',
-            'offset_days' => null,
-            'offset_months' => 3,
-            'day_of_month' => 15,
-            'is_required' => true,
-            'effective_scope' => 'residential',
-            'is_placeholder' => false,
-            'conditions_json' => null,
-            'notes' => 'Original contractor: 15th of 3rd month after completion/termination.',
-            'data_source' => 'csv_v1',
-        ]);
+            if (strtolower(trim($data[$requiredField] ?? '')) !== 'yes') {
+                continue;
+            }
 
-        // TX Original Contractor - Commercial (15th of 4th month from completion)
-        LienDeadlineRule::create([
-            'state' => 'TX',
-            'document_type_id' => $docType->id,
-            'claimant_type' => 'gc',
-            'trigger_event' => 'completion_date',
-            'calc_method' => 'month_day_after_month_of_date',
-            'offset_days' => null,
-            'offset_months' => 4,
-            'day_of_month' => 15,
-            'is_required' => true,
-            'effective_scope' => 'commercial',
-            'is_placeholder' => false,
-            'conditions_json' => null,
-            'notes' => 'Original contractor: 15th of 4th month after completion/termination.',
-            'data_source' => 'csv_v1',
-        ]);
-    }
+            $leadTimeDays = $this->toNullableInt($data[$daysField] ?? '');
 
-    /**
-     * New York uses months_after_date calculation.
-     * Residential (single-family): 4 months, Commercial: 8 months.
-     */
-    private function seedNewYorkRules(LienDocumentType $docType): void
-    {
-        // NY Residential (single-family dwelling) - 4 months
-        LienDeadlineRule::create([
-            'state' => 'NY',
-            'document_type_id' => $docType->id,
-            'claimant_type' => 'any',
-            'trigger_event' => 'last_furnish_date',
-            'calc_method' => 'months_after_date',
-            'offset_days' => null,
-            'offset_months' => 4,
-            'day_of_month' => null,
-            'is_required' => true,
-            'effective_scope' => 'residential',
-            'is_placeholder' => false,
-            'conditions_json' => null,
-            'notes' => 'Lien must be filed within 4 months for single-family dwelling.',
-            'data_source' => 'csv_v1',
-        ]);
-
-        // NY Commercial - 8 months
-        LienDeadlineRule::create([
-            'state' => 'NY',
-            'document_type_id' => $docType->id,
-            'claimant_type' => 'any',
-            'trigger_event' => 'last_furnish_date',
-            'calc_method' => 'months_after_date',
-            'offset_days' => null,
-            'offset_months' => 8,
-            'day_of_month' => null,
-            'is_required' => true,
-            'effective_scope' => 'commercial',
-            'is_placeholder' => false,
-            'conditions_json' => null,
-            'notes' => 'Lien must be filed within 8 months of completion.',
-            'data_source' => 'csv_v1',
-        ]);
-    }
-
-    /**
-     * Virginia uses "90 days from end of month of last work".
-     */
-    private function seedVirginiaRules(LienDocumentType $docType): void
-    {
-        LienDeadlineRule::create([
-            'state' => 'VA',
-            'document_type_id' => $docType->id,
-            'claimant_type' => 'any',
-            'trigger_event' => 'last_furnish_date',
-            'calc_method' => 'days_after_end_of_month_of_date',
-            'offset_days' => 90,
-            'offset_months' => null,
-            'day_of_month' => null,
-            'is_required' => true,
-            'effective_scope' => 'both',
-            'is_placeholder' => false,
-            'conditions_json' => null,
-            'notes' => 'Lien must be filed within 90 days of the last day of the month in which work was performed.',
-            'data_source' => 'csv_v1',
-        ]);
-    }
-
-    /**
-     * Lien Release rules - optional, file when paid.
-     */
-    private function seedLienReleaseRules(LienDocumentType $docType): void
-    {
-        $states = array_keys(self::MECHANICS_LIEN_RULES);
-        $states = array_merge($states, ['NY', 'TX', 'VA']); // Add special states
-        $states = array_unique($states);
-
-        foreach ($states as $state) {
-            LienDeadlineRule::create([
+            // NOI is typically X days BEFORE filing lien, so we use a different approach
+            // We'll store the lead time as offset_days (positive = days before lien deadline)
+            DB::table('lien_deadline_rules')->insert([
                 'state' => $state,
-                'document_type_id' => $docType->id,
-                'claimant_type' => 'any',
-                'trigger_event' => 'last_furnish_date',
-                'calc_method' => 'days_after_date',
-                'offset_days' => 365,
+                'document_type_id' => $docTypeId,
+                'claimant_type' => $type,
+                'trigger_event' => 'lien_filing_date', // NOI is relative to lien filing
+                'calc_method' => 'days_before_date',
+                'offset_days' => $leadTimeDays,
                 'offset_months' => null,
                 'day_of_month' => null,
-                'is_required' => false,
+                'is_required' => true,
                 'effective_scope' => 'both',
-                'is_placeholder' => true,
+                'is_placeholder' => false,
                 'conditions_json' => null,
-                'notes' => 'File after payment received. No specific deadline.',
-                'data_source' => 'csv_v1',
+                'notes' => "NOI must be sent {$leadTimeDays} days before filing lien",
+                'data_source' => 'csv_v3',
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
+
+            $count++;
         }
+
+        return $count;
+    }
+
+    /**
+     * Seed Mechanics Lien rules from CSV row.
+     * Creates separate rules for residential and commercial scopes.
+     */
+    private function seedMechanicsLienRules(array $data, string $state, int $docTypeId): int
+    {
+        $count = 0;
+        $scopes = ['res' => 'residential', 'com' => 'commercial'];
+
+        foreach (self::CLAIMANT_TYPES as $type) {
+            foreach ($scopes as $scopeKey => $scopeValue) {
+                $triggerField = "lien_{$type}_{$scopeKey}_trigger";
+                $calcMethodField = "lien_{$type}_{$scopeKey}_calc_method";
+                $offsetDaysField = "lien_{$type}_{$scopeKey}_offset_days";
+                $offsetMonthsField = "lien_{$type}_{$scopeKey}_offset_months";
+                $dayOfMonthField = "lien_{$type}_{$scopeKey}_day_of_month";
+
+                $trigger = $this->emptyToNull($data[$triggerField] ?? '');
+                $calcMethod = $this->emptyToDefault($data[$calcMethodField] ?? '', 'days_after_date');
+
+                // Skip if no trigger defined (means this claimant/scope combo doesn't have a rule)
+                if ($trigger === null) {
+                    continue;
+                }
+
+                $offsetDays = $this->toNullableInt($data[$offsetDaysField] ?? '');
+                $offsetMonths = $this->toNullableInt($data[$offsetMonthsField] ?? '');
+                $dayOfMonth = $this->toNullableInt($data[$dayOfMonthField] ?? '');
+
+                // Build conditions_json for special anchor logic
+                $conditions = null;
+                if ($data['lien_anchor_logic'] === 'later_of' && ! empty($data['lien_anchor_alt_field'])) {
+                    $conditions = json_encode([
+                        'anchor' => 'later_of',
+                        'dates' => [$trigger, $data['lien_anchor_alt_field']],
+                    ]);
+                }
+
+                DB::table('lien_deadline_rules')->insert([
+                    'state' => $state,
+                    'document_type_id' => $docTypeId,
+                    'claimant_type' => $type,
+                    'trigger_event' => $trigger,
+                    'calc_method' => $calcMethod,
+                    'offset_days' => $offsetDays,
+                    'offset_months' => $offsetMonths,
+                    'day_of_month' => $dayOfMonth,
+                    'is_required' => true,
+                    'effective_scope' => $scopeValue,
+                    'is_placeholder' => false,
+                    'conditions_json' => $conditions,
+                    'notes' => null,
+                    'data_source' => 'csv_v3',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
+    private function toNullableInt(string $value): ?int
+    {
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : (int) $trimmed;
+    }
+
+    private function emptyToNull(string $value): ?string
+    {
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
+    }
+
+    private function emptyToDefault(string $value, string $default): string
+    {
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? $default : $trimmed;
     }
 }

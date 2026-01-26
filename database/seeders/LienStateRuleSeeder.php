@@ -2,91 +2,258 @@
 
 namespace Database\Seeders;
 
-use App\Domains\Lien\Models\LienStateRule;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class LienStateRuleSeeder extends Seeder
 {
     /**
-     * All 50 US states with their lien rules from authoritative CSV data.
+     * Seed the lien_state_rules table from CSV.
      */
-    private const STATE_DATA = [
-        'AL' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 6, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'Code of Alabama, Title 35, Chapter 11, §§35-11-210 to 35-11-234'],
-        'AK' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 6, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'Alaska Statutes, Title 34, Chapter 35, §§34.35.050 to 34.35.125'],
-        'AZ' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'subs, suppliers', 'noi_lead_time_days' => null, 'post_lien_notice_required' => true, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 6, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'damages', 'statute_reference' => 'Arizona Rev. Stat., Title 33, Chapter 7, §§33-981 to 33-1008'],
-        'AR' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'subs (residential)', 'noi_lead_time_days' => 10, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 15, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'criminal', 'statute_reference' => 'Arkansas Code Ann., Title 18, Chapter 44, §§18-44-101 to 18-44-206'],
-        'CA' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'subs, suppliers', 'noi_lead_time_days' => null, 'post_lien_notice_required' => true, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 3, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => false, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'California Civil Code, §§8400–8460'],
-        'CO' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => 10, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 6, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'criminal', 'statute_reference' => 'Colorado Rev. Stat., Title 38, Article 22, §§38-22-101 to 38-22-133'],
-        'CT' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => true, 'post_lien_notice_days' => 30, 'enforcement_deadline_months' => 12, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'fees', 'statute_reference' => 'Connecticut Gen. Stat., Title 49, Chapter 847, §§49-33 to 49-40a'],
-        'DE' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => 10, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 12, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'Delaware Code Ann., Title 25, Chapter 27, §§2701 to 2737'],
-        'FL' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'subs, suppliers', 'noi_lead_time_days' => null, 'post_lien_notice_required' => true, 'post_lien_notice_days' => 15, 'enforcement_deadline_months' => 12, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'damages', 'statute_reference' => 'Florida Statutes, Chapter 713, §§713.001 to 713.37'],
-        'GA' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'subs, suppliers', 'noi_lead_time_days' => 10, 'post_lien_notice_required' => true, 'post_lien_notice_days' => 2, 'enforcement_deadline_months' => 12, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => false, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'Official Code of Georgia, Title 44, Chapter 14, Article 8, §§44-14-360 to 44-14-369'],
-        'HI' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 3, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'fees', 'statute_reference' => 'Hawaii Rev. Stat., Chapter 507, §§507-41 to 507-49'],
-        'ID' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'subs (residential)', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 6, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'damages', 'statute_reference' => 'Idaho Code, Title 45, §§45-501 to 45-525'],
-        'IL' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => true, 'post_lien_notice_days' => 10, 'enforcement_deadline_months' => 24, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => '770 Ill. Comp. Stat. 60/0.01–60/39'],
-        'IN' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'subs (1-2 family)', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 12, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'fees', 'statute_reference' => 'Indiana Code, Title 32, Article 28, §§32-28-3-1 to 32-28-3-18'],
-        'IA' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'everyone', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 24, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => false, 'wrongful_lien_penalty' => 'fees', 'statute_reference' => 'Iowa Code, Chapter 572'],
-        'KS' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 12, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'Kan. Stat. Ann. §§60-1101 to 60-1109'],
-        'KY' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'subs', 'noi_lead_time_days' => null, 'post_lien_notice_required' => true, 'post_lien_notice_days' => 7, 'enforcement_deadline_months' => 6, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'Ky. Rev. Stat. Ann. §§376.010 to 376.260'],
-        'LA' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'subs, suppliers', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 13, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'La. Rev. Stat. §§9:4801 to 9:4861'],
-        'ME' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 8, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'fees', 'statute_reference' => 'Me. Rev. Stat. tit. 10, §§3251 to 3269'],
-        'MD' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 12, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'fees', 'statute_reference' => 'Md. Code Ann., Real Prop. §§9-101 to 9-204'],
-        'MA' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 12, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'Mass. Gen. Laws, ch. 254, §§1 to 33'],
-        'MI' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'subs, suppliers', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 12, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'Mich. Comp. Laws §§570.1101 to 570.1305'],
-        'MN' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'everyone', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 12, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'fees', 'statute_reference' => 'Minn. Stat. §§514.01 to 514.18'],
-        'MS' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 12, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'Miss. Code Ann., Title 85, Chapter 7, §§85-7-401 et seq.'],
-        'MO' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => 10, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 6, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'Mo. Rev. Stat. §§429.005 to 429.360'],
-        'MT' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 24, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'damages', 'statute_reference' => 'Mont. Code Ann., Title 71, Chapter 3, Part 5, §§71-3-521 to 71-3-564'],
-        'NE' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 24, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'fees', 'statute_reference' => 'Neb. Rev. Stat. §§52-125 to 52-159'],
-        'NV' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'subs, suppliers', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 6, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'criminal', 'statute_reference' => 'Nevada Rev. Stat. §§108.221 to 108.246'],
-        'NH' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 0.5, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'N.H. Rev. Stat. Ann. §447:1 to 447:14'],
-        'NJ' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => true, 'post_lien_notice_days' => 10, 'enforcement_deadline_months' => 12, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'N.J. Stat. Ann. §§2A:44A-1 to 2A:44A-38'],
-        'NM' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'subs, suppliers', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 12, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'damages', 'statute_reference' => 'N.M. Stat. Ann. §§48-2-1 to 48-2-17; §§48-2A-1 to 48-2A-12'],
-        'NY' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => true, 'post_lien_notice_days' => 30, 'enforcement_deadline_months' => 12, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'fees', 'statute_reference' => 'N.Y. Lien Law §§3 to 39-c'],
-        'NC' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'subs, suppliers', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 6, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'fees', 'statute_reference' => 'N.C. Gen. Stat. §§44A-7 to 44A-23'],
-        'ND' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => 10, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 36, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'N.D. Cent. Code §§35-27-01 to 35-27-25'],
-        'OH' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'subs, suppliers', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 6, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'Ohio Rev. Code Ann. §§1311.01 to 1311.38'],
-        'OK' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'subs, suppliers', 'noi_lead_time_days' => null, 'post_lien_notice_required' => true, 'post_lien_notice_days' => 1, 'enforcement_deadline_months' => 12, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'Okla. Stat. tit. 42, §§141 to 180'],
-        'OR' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'everyone', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 18, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'fees', 'statute_reference' => 'Or. Rev. Stat. §§87.001 to 87.093'],
-        'PA' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => 30, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 6, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'fees', 'statute_reference' => 'Pa. Cons. Stat. tit. 49, §§1101 to 1902'],
-        'RI' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'prime', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 0.133, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'R.I. Gen. Laws §§34-28-1 to 34-28-37'],
-        'SC' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 6, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'S.C. Code Ann. §§29-5-10 to 29-5-430'],
-        'SD' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 72, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'S.D. Codified Laws §§44-9-1 to 44-9-53'],
-        'TN' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'subs', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 12, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'Tenn. Code Ann. §§66-11-101 to 66-11-150'],
-        'TX' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'subs, suppliers', 'noi_lead_time_days' => null, 'post_lien_notice_required' => true, 'post_lien_notice_days' => 5, 'enforcement_deadline_months' => 12, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'damages', 'statute_reference' => 'Tex. Prop. Code §§53.001 to 53.284; Tex. Civ. Prac. & Rem. Code §12.002'],
-        'UT' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'everyone', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 12, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'damages', 'statute_reference' => 'Utah Code Ann. §38-1a-101 to 38-1a-804'],
-        'VT' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 6, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'Vt. Stat. Ann. tit. 9, §§1921 to 1928'],
-        'VA' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => true, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 6, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'Va. Code Ann. §§43-1 to 43-23'],
-        'WA' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'subs, suppliers', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 8, 'owner_occupied_special_rules' => true, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'damages', 'statute_reference' => 'Rev. Code Wash. (RCW) §§60.04.011 to 60.04.904'],
-        'WV' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => null, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 6, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'W. Va. Code §§38-2-1 to 38-2-39'],
-        'WI' => ['pre_notice_required' => false, 'pre_notice_required_for' => 'none', 'noi_lead_time_days' => 30, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 24, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'Wis. Stat. §§779.01 to 779.17'],
-        'WY' => ['pre_notice_required' => true, 'pre_notice_required_for' => 'everyone', 'noi_lead_time_days' => 20, 'post_lien_notice_required' => false, 'post_lien_notice_days' => null, 'enforcement_deadline_months' => 6, 'owner_occupied_special_rules' => false, 'efile_allowed' => true, 'notarization_required' => true, 'wrongful_lien_penalty' => 'none', 'statute_reference' => 'Wyo. Stat. §§29-1-201 to 29-1-407; §§29-2-101 to 29-2-113'],
-    ];
-
     public function run(): void
     {
-        foreach (self::STATE_DATA as $state => $data) {
-            LienStateRule::updateOrCreate(
-                ['state' => $state],
-                [
-                    'pre_notice_required' => $data['pre_notice_required'],
-                    'pre_notice_required_for' => $data['pre_notice_required_for'],
-                    'noi_lead_time_days' => $data['noi_lead_time_days'],
-                    'post_lien_notice_required' => $data['post_lien_notice_required'],
-                    'post_lien_notice_days' => $data['post_lien_notice_days'],
-                    'efile_allowed' => $data['efile_allowed'],
-                    'notarization_required' => $data['notarization_required'],
-                    'wrongful_lien_penalty' => $data['wrongful_lien_penalty'],
-                    'owner_occupied_special_rules' => $data['owner_occupied_special_rules'],
-                    'enforcement_deadline_months' => $data['enforcement_deadline_months'],
-                    'enforcement_deadline_days' => (int) round($data['enforcement_deadline_months'] * 30),
-                    'enforcement_deadline_trigger' => 'lien_recorded_date',
-                    'statute_references' => [$data['statute_reference']],
-                    'data_source' => 'csv_v1',
-                ]
-            );
+        $csvPath = storage_path('lien_rules_by_state_v3_checked_csv.csv');
+
+        if (! file_exists($csvPath)) {
+            $this->command->error("CSV file not found: {$csvPath}");
+
+            return;
         }
 
-        $this->command->info('Seeded lien state rules for '.count(self::STATE_DATA).' states.');
+        // Truncate table (FK checks disabled by LienDeadlineRuleSeeder if run together)
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('lien_state_rules')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+        // Read CSV content and convert from Windows-1252 to UTF-8
+        $csvContent = file_get_contents($csvPath);
+        $csvContent = mb_convert_encoding($csvContent, 'UTF-8', 'Windows-1252');
+
+        // Parse the UTF-8 content
+        $lines = explode("\n", $csvContent);
+        $headers = str_getcsv(array_shift($lines));
+
+        $count = 0;
+        foreach ($lines as $line) {
+            if (trim($line) === '') {
+                continue;
+            }
+            $row = str_getcsv($line);
+            if (count($row) !== count($headers)) {
+                continue;
+            }
+            $data = array_combine($headers, $row);
+
+            DB::table('lien_state_rules')->insert([
+                'state' => $data['state_code'],
+
+                // Pre-notice flags (derived from any prelim_*_required = yes)
+                'pre_notice_required' => $this->anyPrelimRequired($data),
+                'pre_notice_required_for' => $this->getPrelimRequiredFor($data),
+                'noi_lead_time_days' => $this->getMaxNoiLeadTime($data),
+
+                // Preliminary Notice Metadata
+                'prelim_delivery_method' => $this->emptyToDefault($data['prelim_delivery_method'], 'any'),
+                'prelim_recipients' => $this->emptyToDefault($data['prelim_recipients'], 'owner'),
+
+                // Notice of Completion Effects
+                'noc_shortens_deadline' => $this->toBool($data['noc_shortens_deadline']),
+                'lien_after_noc_days' => $this->toNullableInt($data['lien_after_noc_days']),
+                'noc_requires_prior_prelim' => $this->toBool($data['noc_requires_prior_prelim']),
+                'noc_eliminates_rights_if_no_prelim' => $this->toBool($data['noc_eliminates_rights_if_no_prelim']),
+
+                // Post-Lien Notice
+                'post_lien_notice_required' => $this->toBool($data['post_lien_notice_required']),
+                'post_lien_notice_days' => $this->toNullableInt($data['post_lien_notice_days']),
+                'post_lien_notice_recipients' => $this->emptyToNull($data['post_lien_notice_recipients']),
+
+                // Enforcement
+                'enforcement_calc_method' => $this->emptyToDefault($data['enforcement_calc_method'], 'months_after_date'),
+                'enforcement_deadline_days' => $this->toIntOrZero($data['enforcement_days']),
+                'enforcement_deadline_months' => $this->toNullableDecimal($data['enforcement_months']),
+                'enforcement_deadline_trigger' => $this->emptyToDefault($data['enforcement_trigger'], 'lien_recorded_date'),
+
+                // Owner-Occupied/Tenant
+                'owner_occupied_special_rules' => $this->toBool($data['owner_occupied_special']),
+                'owner_occupied_restriction_type' => $this->emptyToDefault($data['owner_occupied_restriction_type'], 'none'),
+                'tenant_project_lien_allowed' => $this->toBool($data['tenant_project_lien_allowed']),
+                'tenant_project_restrictions' => $this->emptyToDefault($data['tenant_project_restrictions'], 'none'),
+
+                // Filing Requirements
+                'notarization_required' => $this->toBool($data['notarization_required']),
+                'verification_type' => $this->emptyToDefault($data['verification_type'], 'sworn'),
+                'efile_allowed' => $this->toBool($data['efile_allowed']),
+                'filing_location' => $this->emptyToDefault($data['filing_location'], 'county_recorder'),
+                'wrongful_lien_penalty' => $this->emptyToDefault($data['wrongful_lien_penalty'], 'none'),
+                'penalty_details' => $this->cleanUtf8($this->emptyToNull($data['penalty_details'])),
+
+                // Lien Anchor Logic
+                'lien_anchor_logic' => $this->emptyToDefault($data['lien_anchor_logic'], 'single'),
+                'lien_anchor_alt_field' => $this->emptyToNull($data['lien_anchor_alt_field']),
+
+                // Lien Rights by Claimant Type
+                'gc_has_lien_rights' => $this->toBool($data['gc_has_lien_rights']),
+                'sub_has_lien_rights' => $this->toBool($data['sub_has_lien_rights']),
+                'subsub_has_lien_rights' => $this->toBool($data['subsub_has_lien_rights']),
+                'supplier_owner_has_lien_rights' => $this->toBool($data['supplier_owner_has_lien_rights']),
+                'supplier_gc_has_lien_rights' => $this->toBool($data['supplier_gc_has_lien_rights']),
+                'supplier_sub_has_lien_rights' => $this->toBool($data['supplier_sub_has_lien_rights']),
+
+                // References
+                'statute_references' => $this->toJsonArray($data['statute_reference']),
+                'statute_url' => $this->emptyToNull($data['statute_url']),
+                'notes' => $this->cleanUtf8($this->emptyToNull($data['notes'])),
+
+                'data_source' => 'csv_v3',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $count++;
+        }
+
+        $this->command->info("Seeded lien state rules for {$count} states from CSV.");
+    }
+
+    /**
+     * Check if any prelim_*_required field is "yes".
+     */
+    private function anyPrelimRequired(array $data): bool
+    {
+        $fields = [
+            'prelim_gc_required',
+            'prelim_sub_required',
+            'prelim_subsub_required',
+            'prelim_supplier_owner_required',
+            'prelim_supplier_gc_required',
+            'prelim_supplier_sub_required',
+        ];
+
+        foreach ($fields as $field) {
+            if (strtolower(trim($data[$field] ?? '')) === 'yes') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Derive a human-readable "required for" string from prelim fields.
+     */
+    private function getPrelimRequiredFor(array $data): string
+    {
+        $required = [];
+
+        if ($this->toBool($data['prelim_gc_required'] ?? 'no')) {
+            $required[] = 'gc';
+        }
+        if ($this->toBool($data['prelim_sub_required'] ?? 'no')) {
+            $required[] = 'subs';
+        }
+        if ($this->toBool($data['prelim_subsub_required'] ?? 'no')) {
+            $required[] = 'subsubs';
+        }
+        if ($this->toBool($data['prelim_supplier_owner_required'] ?? 'no') ||
+            $this->toBool($data['prelim_supplier_gc_required'] ?? 'no') ||
+            $this->toBool($data['prelim_supplier_sub_required'] ?? 'no')) {
+            $required[] = 'suppliers';
+        }
+
+        if (empty($required)) {
+            return 'none';
+        }
+
+        if (count($required) >= 4 || in_array('gc', $required)) {
+            return 'everyone';
+        }
+
+        return implode(', ', $required);
+    }
+
+    /**
+     * Get the maximum NOI lead time from all claimant types.
+     */
+    private function getMaxNoiLeadTime(array $data): ?int
+    {
+        $fields = [
+            'noi_gc_lead_time_days',
+            'noi_sub_lead_time_days',
+            'noi_subsub_lead_time_days',
+            'noi_supplier_owner_lead_time_days',
+            'noi_supplier_gc_lead_time_days',
+            'noi_supplier_sub_lead_time_days',
+        ];
+
+        $max = null;
+        foreach ($fields as $field) {
+            $val = $this->toNullableInt($data[$field] ?? '');
+            if ($val !== null && ($max === null || $val > $max)) {
+                $max = $val;
+            }
+        }
+
+        return $max;
+    }
+
+    private function toBool(string $value): bool
+    {
+        return strtolower(trim($value)) === 'yes';
+    }
+
+    private function toNullableInt(string $value): ?int
+    {
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : (int) $trimmed;
+    }
+
+    private function toIntOrZero(string $value): int
+    {
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? 0 : (int) $trimmed;
+    }
+
+    private function toNullableDecimal(string $value): ?float
+    {
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : (float) $trimmed;
+    }
+
+    private function emptyToNull(string $value): ?string
+    {
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? null : $trimmed;
+    }
+
+    private function emptyToDefault(string $value, string $default): string
+    {
+        $trimmed = trim($value);
+
+        return $trimmed === '' ? $default : $trimmed;
+    }
+
+    private function toJsonArray(string $value): string
+    {
+        $cleaned = $this->cleanUtf8(trim($value));
+
+        if ($cleaned === '' || $cleaned === null) {
+            return '[]';
+        }
+
+        return json_encode([$cleaned], JSON_UNESCAPED_UNICODE) ?: '[]';
+    }
+
+    private function cleanUtf8(?string $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        // Already converted to UTF-8 at source, just trim
+        return trim($value);
     }
 }

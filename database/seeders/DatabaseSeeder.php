@@ -37,6 +37,7 @@ class DatabaseSeeder extends Seeder
         // Admin permissions and roles
         $this->call([
             PermissionsSeeder::class,
+            AssignUserRolesSeeder::class,
         ]);
     }
 }

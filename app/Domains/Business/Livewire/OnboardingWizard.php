@@ -124,14 +124,20 @@ class OnboardingWizard extends Component
 
         $this->business->completeOnboarding();
 
-        // Only redirect to lien onboarding if from liens AND this is their first business
+        // Redirect based on signup landing path for first business
         $user = Auth::user();
-        $isFromLiens = $user->signup_landing_path === '/liens';
         $isFirstBusiness = $user->businesses()->count() === 1;
+        $landingPath = $user->signup_landing_path;
 
-        $redirectRoute = ($isFromLiens && $isFirstBusiness)
-            ? route('lien.onboarding')
-            : route('dashboard');
+        if ($isFirstBusiness && $landingPath === '/liens') {
+            $redirectRoute = route('lien.onboarding');
+        } elseif ($isFirstBusiness && $landingPath === '/llc') {
+            // TODO: Add LLC onboarding route when available
+            // For now, redirect to dashboard where they can start LLC application
+            $redirectRoute = route('dashboard');
+        } else {
+            $redirectRoute = route('dashboard');
+        }
 
         return $this->redirect($redirectRoute, navigate: true);
     }

@@ -21,6 +21,10 @@
 
                 <!-- Main Navigation -->
                 <nav class="hidden items-center gap-8 md:flex">
+                    <a href="{{ route('llc') }}"
+                        class="text-sm font-medium text-zinc-600 transition hover:text-zinc-900 {{ request()->routeIs('llc') ? 'text-zinc-900' : '' }}">
+                        LLC Formation
+                    </a>
                     <a href="{{ route('liens') }}"
                         class="text-sm font-medium text-zinc-600 transition hover:text-zinc-900 {{ request()->routeIs('liens') ? 'text-zinc-900' : '' }}">
                         Liens
@@ -88,6 +92,10 @@
             x-transition:leave-end="opacity-0 scale-95" class="md:hidden" style="display: none;">
             <div class="border-t border-zinc-200 bg-white px-4 pb-4 pt-2">
                 <nav class="flex flex-col gap-3">
+                    <a href="{{ route('llc') }}"
+                        class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 {{ request()->routeIs('llc') ? 'bg-zinc-100 text-zinc-900' : '' }}">
+                        LLC Formation
+                    </a>
                     <a href="{{ route('liens') }}"
                         class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 {{ request()->routeIs('liens') ? 'bg-zinc-100 text-zinc-900' : '' }}">
                         Liens
@@ -155,6 +163,8 @@
                 <div>
                     <h4 class="font-semibold text-white">Services</h4>
                     <ul class="mt-4 space-y-3">
+                        <li><a href="{{ route('llc') }}"
+                                class="text-sm text-zinc-400 transition hover:text-white">LLC Formation</a></li>
                         <li><a href="{{ route('liens') }}"
                                 class="text-sm text-zinc-400 transition hover:text-white">Liens</a></li>
                     </ul>

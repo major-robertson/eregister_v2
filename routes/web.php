@@ -28,4 +28,8 @@ Route::view('terms-of-service', 'pages.terms-of-service')->name('terms-of-servic
 Route::view('refund-policy', 'pages.refund-policy')->name('refund-policy');
 Route::view('contact', 'pages.contact')->name('contact');
 
+Route::get('/llc', function () {
+    return view('llc');
+})->name('llc');
+
 require __DIR__.'/settings.php';

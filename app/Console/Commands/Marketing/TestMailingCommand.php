@@ -70,7 +70,11 @@ class TestMailingCommand extends Command
         $step = MarketingCampaignStep::first();
         if ($step) {
             $templateRef = $step->provider_template_ref;
+            $mailpieceOptions = $step->mailpiece_options ?? [];
             $this->line('Campaign Step: '.($templateRef['templateId'] ?? 'No template ID'));
+            $this->line('  Type: '.$step->type->value);
+            $this->line('  Mailing Class: '.($mailpieceOptions['mailingClass'] ?? 'standard_class (default)'));
+            $this->line('  Color: '.($mailpieceOptions['color'] ?? false ? 'Yes' : 'No (black & white, default)'));
         }
 
         $this->newLine();

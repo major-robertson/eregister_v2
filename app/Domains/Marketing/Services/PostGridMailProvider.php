@@ -49,6 +49,8 @@ class PostGridMailProvider implements MailProviderInterface
             'from' => $this->formatAddress($this->fromAddress),
             'template' => $templateId,
             'mergeVariables' => $mergeVariables,
+            'mailingClass' => $options['mailingClass'] ?? 'standard_class',
+            'color' => $options['color'] ?? false, // Black and white by default
         ];
 
         if (! empty($metadata)) {
@@ -82,6 +84,7 @@ class PostGridMailProvider implements MailProviderInterface
             'frontTemplate' => $frontTemplateId,
             'backTemplate' => $backTemplateId,
             'mergeVariables' => $mergeVariables,
+            'mailingClass' => $options['mailingClass'] ?? 'standard_class',
         ];
 
         // Add size if specified

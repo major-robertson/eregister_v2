@@ -8,6 +8,7 @@ enum LeadCampaignStatus: string
     case InProgress = 'in_progress';
     case Completed = 'completed';
     case Failed = 'failed';
+    case Skipped = 'skipped';
 
     public function label(): string
     {
@@ -16,6 +17,7 @@ enum LeadCampaignStatus: string
             self::InProgress => 'In Progress',
             self::Completed => 'Completed',
             self::Failed => 'Failed',
+            self::Skipped => 'Skipped',
         };
     }
 
@@ -26,6 +28,7 @@ enum LeadCampaignStatus: string
             self::InProgress => 'blue',
             self::Completed => 'green',
             self::Failed => 'red',
+            self::Skipped => 'amber',
         };
     }
 }

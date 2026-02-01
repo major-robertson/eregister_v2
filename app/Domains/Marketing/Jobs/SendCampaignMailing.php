@@ -7,6 +7,7 @@ use App\Domains\Marketing\Enums\CampaignStepType;
 use App\Domains\Marketing\Enums\DestinationType;
 use App\Domains\Marketing\Enums\MailProvider;
 use App\Domains\Marketing\Models\MarketingCampaignStep;
+use App\Domains\Marketing\Models\MarketingLead;
 use App\Domains\Marketing\Models\MarketingLeadCampaign;
 use App\Domains\Marketing\Models\MarketingMailing;
 use App\Domains\Marketing\Models\MarketingTrackingLink;
@@ -60,6 +61,19 @@ class SendCampaignMailing implements ShouldQueue
                 'enrollment_id' => $enrollment->id,
             ]);
             $enrollment->markFailed('Lead not found');
+
+            return;
+        }
+
+        // Check if another lead with the same mailing address has already been mailed
+        if ($this->hasAddressBeenMailed($lead)) {
+            Log::info('SendCampaignMailing: Skipping - duplicate address already mailed', [
+                'enrollment_id' => $enrollment->id,
+                'lead_id' => $lead->id,
+                'address' => $lead->mailing_address,
+                'zip' => $lead->mailing_zip,
+            ]);
+            $enrollment->markSkipped('Duplicate address already mailed');
 
             return;
         }
@@ -280,5 +294,28 @@ class SendCampaignMailing implements ShouldQueue
         $parts = explode(' ', trim($fullName), 2);
 
         return $parts[1] ?? '';
+    }
+
+    /**
+     * Check if the mailing address has already been mailed to.
+     *
+     * Looks for any OTHER lead with the same normalized mailing address + zip
+     * that has a MarketingMailing with executed_at set.
+     */
+    protected function hasAddressBeenMailed(MarketingLead $lead): bool
+    {
+        if (empty($lead->mailing_address) || empty($lead->mailing_zip)) {
+            return false;
+        }
+
+        $normalizedAddress = strtolower(trim($lead->mailing_address));
+        $normalizedZip = substr(trim($lead->mailing_zip), 0, 5);
+
+        return MarketingLead::query()
+            ->where('id', '!=', $lead->id) // Exclude this lead
+            ->whereRaw('LOWER(TRIM(mailing_address)) = ?', [$normalizedAddress])
+            ->where('mailing_zip', 'LIKE', $normalizedZip.'%')
+            ->whereHas('campaigns.mailings', fn ($q) => $q->whereNotNull('executed_at'))
+            ->exists();
     }
 }

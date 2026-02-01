@@ -132,6 +132,16 @@ class MarketingLeadCampaign extends Model
     }
 
     /**
+     * Mark the enrollment as skipped (e.g., duplicate address already mailed).
+     */
+    public function markSkipped(?string $reason = null): void
+    {
+        $this->status = LeadCampaignStatus::Skipped;
+        $this->next_action_at = null;
+        $this->save();
+    }
+
+    /**
      * Initialize the enrollment for the first step.
      */
     public function initializeForFirstStep(): void

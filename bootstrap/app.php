@@ -15,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('web')->group(base_path('routes/forms.php'));
             Route::middleware('web')->group(base_path('routes/lien.php'));
             Route::middleware('web')->group(base_path('routes/admin.php'));
+
+            // API routes (no session, no CSRF)
+            Route::prefix('api')->group(base_path('routes/api.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -34,6 +37,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'business.complete' => \App\Domains\Portal\Http\Middleware\EnsureBusinessProfileComplete::class,
             'application.access' => \App\Domains\Portal\Http\Middleware\EnsureHasAccess::class,
             'lien.onboarding' => \App\Domains\Lien\Http\Middleware\EnsureLienOnboardingComplete::class,
+            // API middleware
+            'api.key' => \App\Http\Middleware\ValidateApiKey::class,
             // Spatie Permission middleware
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,

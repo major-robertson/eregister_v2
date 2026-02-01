@@ -54,4 +54,8 @@ return [
         ],
     ],
 
+    'nosynelly' => [
+        'api_key' => env('NOSYNELLY_API_KEY'),
+    ],
+
 ];

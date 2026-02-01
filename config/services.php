@@ -47,6 +47,7 @@ return [
         'from' => [
             'company_name' => env('POSTGRID_FROM_COMPANY', 'eRegister'),
             'address_line_1' => env('POSTGRID_FROM_ADDRESS', '123 Main St'),
+            'address_line_2' => env('POSTGRID_FROM_ADDRESS_2', ''),
             'city' => env('POSTGRID_FROM_CITY', 'Louisville'),
             'state' => env('POSTGRID_FROM_STATE', 'KY'),
             'zip' => env('POSTGRID_FROM_ZIP', '40202'),

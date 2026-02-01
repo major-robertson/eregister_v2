@@ -86,6 +86,9 @@ class AppServiceProvider extends ServiceProvider
         // Lien admin components
         Livewire::component('lien.admin.board', \App\Domains\Lien\Admin\Livewire\LienBoard::class);
         Livewire::component('lien.admin.filing-detail', \App\Domains\Lien\Admin\Livewire\LienFilingDetail::class);
+
+        // Marketing domain components
+        Livewire::component('marketing.contractor-landing', \App\Domains\Marketing\Livewire\ContractorLanding::class);
     }
 
     protected function configurePolicies(): void

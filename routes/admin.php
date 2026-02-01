@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Admin\Livewire\MarketingStats;
 use App\Domains\Admin\Livewire\RolesBoard;
 use App\Domains\Admin\Livewire\StatsBoard;
 use App\Domains\Lien\Admin\Livewire\LienBoard;
@@ -37,5 +38,10 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     // Stats dashboard - admin role only
     Route::get('/stats', StatsBoard::class)
         ->name('admin.stats')
+        ->middleware('role:admin');
+
+    // Marketing stats - admin role only
+    Route::get('/marketing', MarketingStats::class)
+        ->name('admin.marketing')
         ->middleware('role:admin');
 });

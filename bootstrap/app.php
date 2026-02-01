@@ -22,9 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\TrackSignupAttribution::class,
         ]);
 
-        // Exclude Stripe webhook from CSRF verification
+        // Exclude webhooks from CSRF verification
         $middleware->validateCsrfTokens(except: [
             'webhooks/stripe',
+            'webhooks/postgrid',
         ]);
 
         $middleware->alias([

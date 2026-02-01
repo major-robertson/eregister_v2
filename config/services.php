@@ -39,4 +39,19 @@ return [
         'maps_api_key' => env('GOOGLE_API_KEY'),
     ],
 
+    'postgrid' => [
+        'api_key' => env('POSTGRID_API_KEY'), // Active key (test or live based on environment)
+        'base_url' => env('POSTGRID_BASE_URL', 'https://api.postgrid.com/print-mail/v1'),
+        'webhook_secret' => env('POSTGRID_WEBHOOK_SECRET'),
+        'webhook_tolerance_seconds' => env('POSTGRID_WEBHOOK_TOLERANCE', 300), // 5 minutes
+        'from' => [
+            'company_name' => env('POSTGRID_FROM_COMPANY', 'eRegister'),
+            'address_line_1' => env('POSTGRID_FROM_ADDRESS', '123 Main St'),
+            'city' => env('POSTGRID_FROM_CITY', 'Louisville'),
+            'state' => env('POSTGRID_FROM_STATE', 'KY'),
+            'zip' => env('POSTGRID_FROM_ZIP', '40202'),
+            'country' => env('POSTGRID_FROM_COUNTRY', 'US'),
+        ],
+    ],
+
 ];

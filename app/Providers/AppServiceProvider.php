@@ -29,6 +29,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Register domain console commands
+        $this->commands([
+            \App\Domains\Lien\Console\SendDeadlineReminders::class,
+        ]);
+
         // Bind ConditionEvaluator as transient (non-singleton) to prevent state leaking
         $this->app->bind(ConditionEvaluator::class);
 

@@ -113,8 +113,11 @@ class PostGridWebhookController extends Controller
         }
 
         // Check timestamp tolerance (reject if older than 5 minutes)
+        // PostGrid sends timestamp in milliseconds - convert to seconds if needed
+        $rawTimestamp = (int) $timestamp;
+        $timestampSeconds = $rawTimestamp > 9999999999 ? (int) ($rawTimestamp / 1000) : $rawTimestamp;
         $tolerance = config('services.postgrid.webhook_tolerance_seconds', 300);
-        $timestampAge = time() - (int) $timestamp;
+        $timestampAge = time() - $timestampSeconds;
 
         if ($timestampAge > $tolerance || $timestampAge < -60) {
             Log::warning('PostGrid webhook timestamp out of tolerance', [

@@ -182,3 +182,24 @@ it('ignores webhooks for unknown provider_id', function () {
     $this->mailing->refresh();
     expect($this->mailing->provider_status)->toBe(MailingStatus::Ready);
 });
+
+it('accepts webhooks with millisecond timestamps', function () {
+    // PostGrid sends timestamps in milliseconds
+    $timestampMs = (int) (microtime(true) * 1000);
+    $body = json_encode([
+        'type' => 'letter.updated',
+        'data' => ['id' => 'letter_test123', 'status' => 'printing'],
+    ]);
+    // Signature is computed using the raw millisecond timestamp
+    $signature = hash_hmac('sha256', $timestampMs.'.'.$body, 'test_secret');
+
+    $response = $this->call('POST', '/webhooks/postgrid', [], [], [], [
+        'HTTP_PostGrid-Signature' => "t={$timestampMs},v1={$signature}",
+        'CONTENT_TYPE' => 'application/json',
+    ], $body);
+
+    $response->assertStatus(200);
+
+    $this->mailing->refresh();
+    expect($this->mailing->provider_status)->toBe(MailingStatus::Printing);
+});

@@ -28,9 +28,21 @@
                     :current="request()->routeIs('admin.stats')" wire:navigate>
                     {{ __('Stats') }}
                 </flux:sidebar.item>
+                <flux:sidebar.item icon="clipboard-document-list" :href="route('admin.lien-stats')"
+                    :current="request()->routeIs('admin.lien-stats')" wire:navigate>
+                    {{ __('Lien Stats') }}
+                </flux:sidebar.item>
                 <flux:sidebar.item icon="megaphone" :href="route('admin.marketing')"
                     :current="request()->routeIs('admin.marketing')" wire:navigate>
                     {{ __('Marketing') }}
+                </flux:sidebar.item>
+                <flux:sidebar.item icon="user-group" :href="route('admin.users.index')"
+                    :current="request()->routeIs('admin.users.*')" wire:navigate>
+                    {{ __('Users') }}
+                </flux:sidebar.item>
+                <flux:sidebar.item icon="building-office" :href="route('admin.businesses.index')"
+                    :current="request()->routeIs('admin.businesses.*')" wire:navigate>
+                    {{ __('Businesses') }}
                 </flux:sidebar.item>
                 <flux:sidebar.item icon="users" :href="route('admin.roles')"
                     :current="request()->routeIs('admin.roles')" wire:navigate>

@@ -121,3 +121,62 @@ test('signup clears attribution session data after registration', function () {
     expect(session('signup_landing_url'))->toBeNull();
     expect(session('signup_utm_source'))->toBeNull();
 });
+
+test('registration rejects invalid first names', function (string $invalidName) {
+    $response = $this->post(route('register.store'), [
+        'first_name' => $invalidName,
+        'last_name' => 'Doe',
+        'email' => 'test@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ]);
+
+    $response->assertSessionHasErrors('first_name');
+})->with([
+    'contains URL' => 'Check http://spam.com now',
+    'contains asterisks' => '*** Special offer ***',
+    'contains at symbol' => 'user@domain',
+    'contains numbers' => 'John123',
+    'contains tilde' => 'Name~test',
+    'contains equals' => 'Name=Value',
+    'too long' => str_repeat('A', 51),
+]);
+
+test('registration rejects invalid last names', function (string $invalidName) {
+    $response = $this->post(route('register.store'), [
+        'first_name' => 'John',
+        'last_name' => $invalidName,
+        'email' => 'test@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ]);
+
+    $response->assertSessionHasErrors('last_name');
+})->with([
+    'contains URL' => 'Check http://spam.com now',
+    'contains asterisks' => '*** Special offer ***',
+    'contains at symbol' => 'user@domain',
+    'contains numbers' => 'Doe456',
+    'contains tilde' => 'Name~test',
+    'contains equals' => 'Name=Value',
+    'too long' => str_repeat('B', 51),
+]);
+
+test('registration accepts valid names with special characters', function (string $firstName, string $lastName) {
+    $response = $this->post(route('register.store'), [
+        'first_name' => $firstName,
+        'last_name' => $lastName,
+        'email' => 'valid@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ]);
+
+    $response->assertSessionHasNoErrors();
+    $this->assertAuthenticated();
+})->with([
+    'hyphenated names' => ['Mary-Jane', 'Smith-Jones'],
+    'apostrophe names' => ['Patrick', "O'Brien"],
+    'international characters' => ['José', 'García'],
+    'accented names' => ['François', 'Müller'],
+    'names with periods' => ['J.', 'Smith Jr.'],
+]);

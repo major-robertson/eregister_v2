@@ -28,7 +28,12 @@ trait ProfileValidationRules
      */
     protected function firstNameRules(): array
     {
-        return ['required', 'string', 'max:255'];
+        return [
+            'required',
+            'string',
+            'max:50',
+            'regex:/^[\pL\s\'\-\.]+$/u',
+        ];
     }
 
     /**
@@ -38,7 +43,12 @@ trait ProfileValidationRules
      */
     protected function lastNameRules(): array
     {
-        return ['required', 'string', 'max:255'];
+        return [
+            'required',
+            'string',
+            'max:50',
+            'regex:/^[\pL\s\'\-\.]+$/u',
+        ];
     }
 
     /**

@@ -63,6 +63,7 @@
         <flux:field>
             <flux:label>Your Role on This Project *</flux:label>
             <flux:select wire:model="claimant_type">
+                <option value="">Select your role...</option>
                 @foreach($claimantTypes as $type)
                 <option value="{{ $type->value }}">{{ $type->label() }}</option>
                 @endforeach

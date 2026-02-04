@@ -29,7 +29,7 @@ class ProjectForm extends Component
 
     public ?string $job_number = null;
 
-    public string $claimant_type = 'subcontractor';
+    public string $claimant_type = '';
 
     public string $property_context = 'unknown';
 
@@ -86,7 +86,7 @@ class ProjectForm extends Component
         // Step 1
         $this->name = $this->project->name;
         $this->job_number = $this->project->job_number;
-        $this->claimant_type = $this->project->claimant_type?->value ?? 'subcontractor';
+        $this->claimant_type = $this->project->claimant_type?->value ?? '';
         $this->property_context = $this->project->property_context ?? 'unknown';
 
         // Step 2

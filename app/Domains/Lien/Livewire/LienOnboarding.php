@@ -140,6 +140,11 @@ class LienOnboarding extends Component
 
         $this->business->completeLienOnboarding();
 
+        // If user has no projects, show profile complete page to guide them to create one
+        if ($this->business->lienProjects()->count() === 0) {
+            return $this->redirect(route('lien.profile-complete'), navigate: true);
+        }
+
         return $this->redirect(route('lien.projects.index'), navigate: true);
     }
 

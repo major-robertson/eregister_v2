@@ -9,6 +9,7 @@ use App\Domains\Lien\Livewire\FilingList;
 use App\Domains\Lien\Livewire\FilingShow;
 use App\Domains\Lien\Livewire\FilingWizard;
 use App\Domains\Lien\Livewire\LienOnboarding;
+use App\Domains\Lien\Livewire\LienProfileComplete;
 use App\Domains\Lien\Livewire\ProjectForm;
 use App\Domains\Lien\Livewire\ProjectList;
 use App\Domains\Lien\Livewire\ProjectShow;
@@ -24,6 +25,11 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', 'business.current', 'business.complete'])
     ->get('/portal/liens/onboarding', LienOnboarding::class)
     ->name('lien.onboarding');
+
+// Profile complete page (shown after onboarding when user has 0 projects)
+Route::middleware(['auth', 'business.current', 'business.complete'])
+    ->get('/portal/liens/profile-complete', LienProfileComplete::class)
+    ->name('lien.profile-complete');
 
 // Authenticated lien routes (with lien onboarding check)
 Route::middleware(['auth', 'business.current', 'business.complete', 'lien.onboarding'])

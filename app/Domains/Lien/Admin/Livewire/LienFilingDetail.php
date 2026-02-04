@@ -26,6 +26,7 @@ class LienFilingDetail extends Component
     {
         $this->lienFiling = $lienFiling->load([
             'project.business',
+            'project.parties',
             'documentType',
             'events' => fn ($q) => $q->where('event_type', 'status_changed')->latest()->limit(20),
             'events.creator',

@@ -197,6 +197,90 @@ describe('filing detail sections', function () {
     });
 });
 
+describe('business and filer information', function () {
+    it('displays the business information section', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $business = Business::factory()->create([
+            'legal_name' => 'Smith Construction LLC',
+            'dba_name' => 'Smith Builders',
+            'entity_type' => 'LLC',
+            'phone' => '555-123-4567',
+            'business_address' => [
+                'line1' => '100 Commerce Blvd',
+                'line2' => 'Suite 200',
+                'city' => 'Los Angeles',
+                'state' => 'CA',
+                'zip' => '90001',
+            ],
+            'state_of_incorporation' => 'CA',
+            'contractor_license_number' => 'CSLB-123456',
+        ]);
+        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        $filing = LienFiling::factory()->forProject($project)->create();
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->assertSee('Business & Filer Info', escape: false)
+            ->assertSee('Smith Construction LLC')
+            ->assertSee('Smith Builders')
+            ->assertSee('555-123-4567')
+            ->assertSee('100 Commerce Blvd')
+            ->assertSee('Suite 200')
+            ->assertSee('CSLB-123456');
+    });
+
+    it('displays the filed by user information', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $filer = User::factory()->create([
+            'first_name' => 'Jane',
+            'last_name' => 'Doe',
+            'email' => 'jane.doe@example.com',
+        ]);
+
+        $business = Business::factory()->create();
+        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        $filing = LienFiling::factory()->forProject($project)->create([
+            'created_by_user_id' => $filer->id,
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->assertSee('Filed By')
+            ->assertSee('Jane Doe')
+            ->assertSee('jane.doe@example.com');
+    });
+
+    it('displays the responsible people section', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $business = Business::factory()->create([
+            'responsible_people' => [
+                ['name' => 'Bob Manager', 'title' => 'Project Manager', 'can_sign_liens' => true],
+                ['name' => 'Alice Worker', 'title' => 'Foreman', 'can_sign_liens' => false],
+            ],
+        ]);
+        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        $filing = LienFiling::factory()->forProject($project)->create();
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->assertSee('Responsible People')
+            ->assertSee('Bob Manager')
+            ->assertSee('Project Manager')
+            ->assertSee('Can Sign Liens')
+            ->assertSee('Alice Worker')
+            ->assertSee('Foreman');
+    });
+});
+
 describe('status history', function () {
     it('displays status history section', function () {
         $admin = User::factory()->create();

@@ -25,6 +25,7 @@ class LienFilingDetail extends Component
     public function mount(LienFiling $lienFiling): void
     {
         $this->lienFiling = $lienFiling->load([
+            'createdBy',
             'project.business',
             'project.parties',
             'documentType',

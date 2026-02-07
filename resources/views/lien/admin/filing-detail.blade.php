@@ -432,6 +432,145 @@
                     @endif
                 </div>
             </div>
+
+            <!-- Business & Filer Information Card -->
+            @php
+            $business = $filing->project?->business;
+            @endphp
+            @if ($business)
+            <div class="rounded-lg border border-border bg-white p-6">
+                <flux:heading size="lg" class="mb-4">Business & Filer Info</flux:heading>
+
+                <div class="space-y-3">
+                    @if ($business->legal_name)
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Legal Name</flux:text>
+                        <flux:text class="font-medium">{{ $business->legal_name }}</flux:text>
+                    </div>
+                    @endif
+
+                    @if ($business->dba_name)
+                    <div>
+                        <flux:text class="text-sm text-gray-500">DBA Name</flux:text>
+                        <flux:text class="font-medium">{{ $business->dba_name }}</flux:text>
+                    </div>
+                    @endif
+
+                    @if ($business->entity_type)
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Entity Type</flux:text>
+                        <flux:text class="font-medium">{{ $business->entity_type }}</flux:text>
+                    </div>
+                    @endif
+
+                    @if ($business->phone)
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Phone</flux:text>
+                        <flux:text class="font-medium">{{ $business->phone }}</flux:text>
+                    </div>
+                    @endif
+
+                    @if ($business->business_address)
+                    @php
+                    $addr = $business->business_address;
+                    $addressParts = array_filter([
+                    $addr['line1'] ?? null,
+                    $addr['line2'] ?? null,
+                    ]);
+                    $cityStateZip = array_filter([
+                    $addr['city'] ?? null,
+                    $addr['state'] ?? null,
+                    ]);
+                    @endphp
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Business Address</flux:text>
+                        @foreach ($addressParts as $line)
+                        <flux:text class="font-medium">{{ $line }}</flux:text>
+                        @endforeach
+                        @if (!empty($cityStateZip))
+                        <flux:text class="font-medium">{{ implode(', ', $cityStateZip) }} {{ $addr['zip'] ?? '' }}
+                        </flux:text>
+                        @endif
+                    </div>
+                    @endif
+
+                    @if ($business->mailing_address)
+                    @php
+                    $mail = $business->mailing_address;
+                    $mailParts = array_filter([
+                    $mail['line1'] ?? null,
+                    $mail['line2'] ?? null,
+                    ]);
+                    $mailCityStateZip = array_filter([
+                    $mail['city'] ?? null,
+                    $mail['state'] ?? null,
+                    ]);
+                    @endphp
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Mailing Address</flux:text>
+                        @foreach ($mailParts as $line)
+                        <flux:text class="font-medium">{{ $line }}</flux:text>
+                        @endforeach
+                        @if (!empty($mailCityStateZip))
+                        <flux:text class="font-medium">{{ implode(', ', $mailCityStateZip) }} {{ $mail['zip'] ?? '' }}
+                        </flux:text>
+                        @endif
+                    </div>
+                    @endif
+
+                    @if ($business->state_of_incorporation)
+                    <div>
+                        <flux:text class="text-sm text-gray-500">State of Incorporation</flux:text>
+                        <flux:text class="font-medium">{{ $business->state_of_incorporation }}</flux:text>
+                    </div>
+                    @endif
+
+                    @if ($business->contractor_license_number)
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Contractor License #</flux:text>
+                        <flux:text class="font-mono text-sm">{{ $business->contractor_license_number }}</flux:text>
+                    </div>
+                    @endif
+                </div>
+
+                {{-- Filed By --}}
+                @if ($filing->createdBy)
+                <div class="mt-4 border-t border-gray-100 pt-4">
+                    <flux:text class="mb-2 text-sm font-medium text-gray-700">Filed By</flux:text>
+                    <div class="space-y-2">
+                        <div>
+                            <flux:text class="text-sm text-gray-500">Name</flux:text>
+                            <flux:text class="font-medium">{{ $filing->createdBy->name }}</flux:text>
+                        </div>
+                        <div>
+                            <flux:text class="text-sm text-gray-500">Email</flux:text>
+                            <flux:text class="font-medium">{{ $filing->createdBy->email }}</flux:text>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                {{-- Responsible People --}}
+                @if (!empty($business->responsible_people))
+                <div class="mt-4 border-t border-gray-100 pt-4">
+                    <flux:text class="mb-2 text-sm font-medium text-gray-700">Responsible People</flux:text>
+                    <div class="space-y-2">
+                        @foreach ($business->responsible_people as $person)
+                        <div class="rounded-lg border border-gray-200 p-2">
+                            <flux:text class="font-medium">{{ $person['name'] ?? 'Unknown' }}</flux:text>
+                            @if (!empty($person['title']))
+                            <flux:text class="text-sm text-gray-500">{{ $person['title'] }}</flux:text>
+                            @endif
+                            @if (!empty($person['can_sign_liens']))
+                            <flux:badge size="sm" color="green" class="mt-1">Can Sign Liens</flux:badge>
+                            @endif
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+            </div>
+            @endif
         </div>
     </div>
 

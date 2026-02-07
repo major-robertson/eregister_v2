@@ -112,6 +112,35 @@ class MarketingLead extends Model
     }
 
     /**
+     * Get the business name with common suffixes stripped.
+     *
+     * Removes entities like ", LLC", ", Inc.", ", L.L.C.", ", Ltd.", ", Co.", etc.
+     */
+    public function getCleanedBusinessNameAttribute(): ?string
+    {
+        if (! $this->business_name) {
+            return null;
+        }
+
+        $suffixes = [
+            ',?\s*L\.?L\.?C\.?',
+            ',?\s*Inc\.?',
+            ',?\s*Ltd\.?',
+            ',?\s*Co\.?',
+            ',?\s*L\.L\.C\.?',
+            ',?\s*Corp\.?',
+            ',?\s*Corporation',
+            ',?\s*Incorporated',
+            ',?\s*Limited',
+            ',?\s*Company',
+        ];
+
+        $pattern = '/\s*('.implode('|', $suffixes).')\s*$/i';
+
+        return trim(preg_replace($pattern, '', $this->business_name));
+    }
+
+    /**
      * Get the full mailing address.
      */
     public function getFullMailingAddressAttribute(): string

@@ -6,14 +6,14 @@ use App\Domains\Marketing\Enums\VisitSource;
 use App\Domains\Marketing\Models\MarketingTrackingLink;
 use App\Domains\Marketing\Models\MarketingVisit;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
+use Illuminate\Http\Response;
 
 class MarketingLandingController extends Controller
 {
     /**
      * Handle QR scan landing (source = qr_scan).
      */
-    public function tokenLanding(Request $request, string $token): View
+    public function tokenLanding(Request $request, string $token): Response
     {
         $trackingLink = MarketingTrackingLink::where('token', $token)->firstOrFail();
 
@@ -31,7 +31,7 @@ class MarketingLandingController extends Controller
     /**
      * Handle typed slug landing (source = direct).
      */
-    public function slugLanding(Request $request, string $slug): View
+    public function slugLanding(Request $request, string $slug): Response
     {
         // Slug IS the token for vanity links
         $trackingLink = MarketingTrackingLink::where('token', $slug)->firstOrFail();
@@ -64,7 +64,7 @@ class MarketingLandingController extends Controller
     /**
      * Render the appropriate landing page based on campaign landing key.
      */
-    protected function renderLanding(string $landingKey, MarketingTrackingLink $trackingLink): View
+    protected function renderLanding(string $landingKey, MarketingTrackingLink $trackingLink): Response
     {
         return match ($landingKey) {
             default => $this->renderLiensLanding($trackingLink),
@@ -73,16 +73,17 @@ class MarketingLandingController extends Controller
 
     /**
      * Render the full liens marketing page with personalized hero CTA.
+     * Sets a lead_ref cookie (30 days) for pre-signup continuity.
      */
-    protected function renderLiensLanding(MarketingTrackingLink $trackingLink): View
+    protected function renderLiensLanding(MarketingTrackingLink $trackingLink): Response
     {
         $lead = $trackingLink->lead;
 
-        return view('liens', [
+        return response(view('liens', [
             'lead' => $lead,
             'canonicalUrl' => route('marketing.landing.slug', ['slug' => $lead->slug]),
             'noIndex' => true,
             'pageTitle' => ($lead->business_name ?? 'Contractor').' - Lien Services',
-        ]);
+        ]))->cookie('lead_ref', $lead->public_id, 43200, '/', null, null, true, false, 'Lax');
     }
 }

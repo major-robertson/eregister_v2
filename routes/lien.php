@@ -22,12 +22,12 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Lien onboarding (must be before the lien.onboarding middleware group)
-Route::middleware(['auth', 'business.current', 'business.complete'])
+Route::middleware(['auth', 'business.current', 'business.complete', 'marketing.lead'])
     ->get('/portal/liens/onboarding', LienOnboarding::class)
     ->name('lien.onboarding');
 
 // Profile complete page (shown after onboarding when user has 0 projects)
-Route::middleware(['auth', 'business.current', 'business.complete'])
+Route::middleware(['auth', 'business.current', 'business.complete', 'marketing.lead'])
     ->get('/portal/liens/profile-complete', LienProfileComplete::class)
     ->name('lien.profile-complete');
 
@@ -40,7 +40,7 @@ Route::middleware(['auth', 'business.current', 'business.complete', 'lien.onboar
 
         // Project routes
         Route::get('/projects', ProjectList::class)->name('lien.projects.index');
-        Route::get('/projects/create', ProjectForm::class)->name('lien.projects.create');
+        Route::get('/projects/create', ProjectForm::class)->middleware('marketing.lead')->name('lien.projects.create');
         Route::get('/projects/{project}', ProjectShow::class)->name('lien.projects.show');
         Route::get('/projects/{project}/edit', ProjectForm::class)->name('lien.projects.edit');
 

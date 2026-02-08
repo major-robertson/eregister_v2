@@ -13,14 +13,18 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function (): void {
     // Business Selection (only shown when user needs to pick or create a business)
-    Route::get('/portal/select-business', BusinessSwitcher::class)->name('portal.select-business');
+    Route::get('/portal/select-business', BusinessSwitcher::class)
+        ->middleware('marketing.lead')
+        ->name('portal.select-business');
 
     // Session-based portal routes (business resolved via middleware)
     Route::prefix('/portal')
         ->middleware('business.current')
         ->group(function (): void {
             // Onboarding (before profile complete check)
-            Route::get('/onboarding', OnboardingWizard::class)->name('portal.onboarding');
+            Route::get('/onboarding', OnboardingWizard::class)
+                ->middleware('marketing.lead')
+                ->name('portal.onboarding');
 
             // Dashboard and other routes (requires complete profile)
             Route::middleware('business.complete')->group(function (): void {

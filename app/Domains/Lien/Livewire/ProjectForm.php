@@ -2,6 +2,7 @@
 
 namespace App\Domains\Lien\Livewire;
 
+use App\Concerns\ResolvesMarketingLead;
 use App\Domains\Lien\Engine\DeadlineCalculator;
 use App\Domains\Lien\Enums\ClaimantType;
 use App\Domains\Lien\Enums\NocStatus;
@@ -15,6 +16,8 @@ use Livewire\Component;
 
 class ProjectForm extends Component
 {
+    use ResolvesMarketingLead;
+
     public ?LienProject $project = null;
 
     public bool $isEditing = false;
@@ -78,6 +81,28 @@ class ProjectForm extends Component
             $this->project = $project;
             $this->isEditing = true;
             $this->fillFromProject();
+        }
+
+        // Pre-fill from marketing lead only for the very first project (onboarding).
+        // Once the business has any projects, pre-fill is permanently disabled to
+        // prevent "ghost prefill" from stale lead data on subsequent projects.
+        if (! $this->isEditing) {
+            $business = Auth::user()->currentBusiness();
+            $hasProjects = $business?->lienProjects()->exists() ?? false;
+
+            if (! $hasProjects) {
+                $lead = $this->resolveLeadForPrefill();
+                if ($lead) {
+                    $this->jobsite_address1 = $this->jobsite_address1 ?: $lead->property_address;
+                    $this->jobsite_city = $this->jobsite_city ?: $lead->property_city;
+                    $this->jobsite_state = $this->jobsite_state ?: ($lead->property_state ?? '');
+                    $this->jobsite_zip = $this->jobsite_zip ?: $lead->property_zip;
+                    $this->job_number = $this->job_number ?: $lead->permit_or_external_id;
+                    if (! $this->name && $lead->property_address) {
+                        $this->name = trim($lead->property_address.', '.$lead->property_city);
+                    }
+                }
+            }
         }
     }
 
@@ -334,6 +359,18 @@ class ProjectForm extends Component
             $data['created_by_user_id'] = Auth::id();
             $this->project = LienProject::create($data);
             $this->isEditing = true;
+
+            // Clear active marketing lead context -- onboarding is done.
+            // Three layers of defense against ghost pre-fill:
+            // 1) Session flag prevents re-activation within this session
+            // 2) Cookie deletion prevents re-activation in future sessions
+            // 3) exists() guard in mount() is the ultimate safety net
+            session()->forget(['active_marketing_lead_id', 'active_marketing_lead_set_at']);
+            session(['marketing_lead_prefill_completed' => true]);
+
+            // Kill the cookie -- attribution is already persisted on
+            // users.attributed_marketing_lead_id, so it's no longer needed.
+            cookie()->queue(cookie()->forget('lead_ref'));
         }
 
         // Recalculate deadlines

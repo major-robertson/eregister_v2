@@ -2,6 +2,7 @@
 
 namespace App\Domains\Business\Livewire;
 
+use App\Concerns\ResolvesMarketingLead;
 use App\Domains\Business\Models\Business;
 use App\Services\GooglePlacesService;
 use Illuminate\Contracts\View\View;
@@ -11,6 +12,8 @@ use Livewire\Component;
 
 class OnboardingWizard extends Component
 {
+    use ResolvesMarketingLead;
+
     public Business $business;
 
     // Address (JSON structure for Google Maps compatibility)
@@ -64,6 +67,16 @@ class OnboardingWizard extends Component
             'county' => $existingAddress['county'] ?? null,
             'country' => $existingAddress['country'] ?? null,
         ];
+
+        // Pre-fill from marketing lead if address is empty
+        $lead = $this->resolveLeadForPrefill();
+        if ($lead && empty($this->businessAddress['line1'])) {
+            $this->businessAddress['line1'] = $lead->mailing_address ?? '';
+            $this->businessAddress['line2'] = $lead->mailing_address_2 ?? '';
+            $this->businessAddress['city'] = $lead->mailing_city ?? '';
+            $this->businessAddress['state'] = $lead->mailing_state ?? '';
+            $this->businessAddress['zip'] = $lead->mailing_zip ?? '';
+        }
     }
 
     public function updateAddressFromAutocomplete(array $addressComponents): void

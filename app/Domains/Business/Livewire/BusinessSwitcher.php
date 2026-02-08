@@ -2,6 +2,7 @@
 
 namespace App\Domains\Business\Livewire;
 
+use App\Concerns\ResolvesMarketingLead;
 use App\Domains\Business\Models\Business;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -9,6 +10,8 @@ use Livewire\Component;
 
 class BusinessSwitcher extends Component
 {
+    use ResolvesMarketingLead;
+
     public ?int $selectedBusinessId = null;
 
     /** @var \Illuminate\Database\Eloquent\Collection<int, Business> */
@@ -20,6 +23,14 @@ class BusinessSwitcher extends Component
     {
         $this->loadBusinesses();
         $this->selectedBusinessId = session('current_business_id');
+
+        // Pre-fill business name from marketing lead for new signups
+        if ($this->businesses->isEmpty()) {
+            $lead = $this->resolveLeadForPrefill();
+            if ($lead) {
+                $this->newBusinessName = $lead->business_name ?? '';
+            }
+        }
     }
 
     public function loadBusinesses(): void

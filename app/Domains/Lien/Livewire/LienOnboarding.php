@@ -2,6 +2,7 @@
 
 namespace App\Domains\Lien\Livewire;
 
+use App\Concerns\ResolvesMarketingLead;
 use App\Domains\Business\Models\Business;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -10,6 +11,8 @@ use Livewire\Component;
 
 class LienOnboarding extends Component
 {
+    use ResolvesMarketingLead;
+
     public Business $business;
 
     public int $step = 1;
@@ -77,6 +80,12 @@ class LienOnboarding extends Component
             $this->signerFirstName = $user->first_name ?? '';
             $this->signerLastName = $user->last_name ?? '';
             $this->signerTitle = '';
+        }
+
+        // Pre-fill phone from marketing lead if still empty
+        $lead = $this->resolveLeadForPrefill();
+        if ($lead && empty($this->phone)) {
+            $this->phone = $lead->phone ?? '';
         }
     }
 

@@ -4,8 +4,10 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Domains\Business\Models\Business;
+use App\Domains\Marketing\Models\MarketingLead;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -38,6 +40,8 @@ class User extends Authenticatable
         'signup_utm_content',
         'signup_ip',
         'signup_user_agent',
+        'attributed_marketing_lead_id',
+        'attributed_at',
     ];
 
     /**
@@ -62,6 +66,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'attributed_at' => 'datetime',
         ];
     }
 
@@ -83,6 +88,14 @@ class User extends Authenticatable
         return Str::upper(
             Str::substr($this->first_name, 0, 1).Str::substr($this->last_name, 0, 1)
         );
+    }
+
+    /**
+     * The marketing lead attributed to this user's signup (first-touch, permanent).
+     */
+    public function attributedMarketingLead(): BelongsTo
+    {
+        return $this->belongsTo(MarketingLead::class, 'attributed_marketing_lead_id');
     }
 
     public function businesses(): BelongsToMany

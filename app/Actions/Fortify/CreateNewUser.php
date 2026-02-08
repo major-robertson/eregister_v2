@@ -55,6 +55,9 @@ class CreateNewUser implements CreatesNewUsers
             'signup_utm_content' => session('signup_utm_content'),
             'signup_ip' => request()->ip(),
             'signup_user_agent' => request()->userAgent(),
+            // First-touch attribution: set once, never overwritten
+            'attributed_marketing_lead_id' => session('active_marketing_lead_id'),
+            'attributed_at' => session('active_marketing_lead_id') ? now() : null,
         ];
     }
 

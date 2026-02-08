@@ -52,7 +52,7 @@
 
         {{-- Hero CTA --}}
         <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <a href="{{ route('register') }}"
+            <a href="{{ !empty($lead) ? route('register', ['lead' => $lead->public_id]) : route('register') }}"
                 class="group inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#B91C1C] hover:shadow-xl">
                 Start free lien tracking
                 <svg class="h-4 w-4 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24"
@@ -89,7 +89,7 @@
                 </div>
             </div>
             <div class="flex flex-col gap-2 border-t border-zinc-700 px-6 py-4 sm:flex-row">
-                <a href="{{ route('register') }}"
+                <a href="{{ !empty($lead) ? route('register', ['lead' => $lead->public_id]) : route('register') }}"
                     class="group inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-zinc-900 transition hover:bg-amber-400">
                     Track this job free
                     <svg class="h-4 w-4 transition group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24"
@@ -98,7 +98,7 @@
                             d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
                 </a>
-                <a href="{{ route('register') }}"
+                <a href="{{ !empty($lead) ? route('register', ['lead' => $lead->public_id]) : route('register') }}"
                     class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-zinc-600 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-white">
                     File a lien / send notice
                 </a>
@@ -399,7 +399,7 @@
         </div>
 
         <div class="mt-12 text-center">
-            <a href="{{ route('register') }}"
+            <a href="{{ !empty($lead) ? route('register', ['lead' => $lead->public_id]) : route('register') }}"
                 class="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-8 py-4 font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-zinc-800 hover:shadow-xl">
                 File a Mechanics Lien Now
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -689,7 +689,7 @@
                 property in under 5 minutes.
             </p>
             <div class="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                <a href="{{ route('register') }}"
+                <a href="{{ !empty($lead) ? route('register', ['lead' => $lead->public_id]) : route('register') }}"
                     class="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 font-semibold text-zinc-900 shadow-lg transition hover:scale-105 hover:bg-zinc-50 hover:shadow-xl">
                     File a Construction Lien Now
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -768,7 +768,7 @@
                     lien today</span> and secure the payment you've earned. Our platform helps you file a contractor
                 lien on property quickly and correctly.
             </p>
-            <a href="{{ route('register') }}"
+            <a href="{{ !empty($lead) ? route('register', ['lead' => $lead->public_id]) : route('register') }}"
                 class="mt-6 inline-flex items-center gap-2 rounded-full bg-amber-500 px-8 py-4 font-semibold text-zinc-900 shadow-lg transition hover:scale-105 hover:bg-amber-400 hover:shadow-xl">
                 Start Your Mechanics Lien Filing
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

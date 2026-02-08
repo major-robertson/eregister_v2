@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Http\Middleware\ActivateMarketingLeadContext;
 use App\Http\Responses\LoginResponse;
 use App\Http\Responses\RegisterResponse;
 use App\Http\Responses\TwoFactorLoginResponse;
@@ -59,6 +60,12 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::confirmPasswordView(fn () => view('pages::auth.confirm-password'));
         Fortify::registerView(function () {
             $this->captureLandingPath();
+
+            // Activate marketing lead context from ?lead= or cookie
+            app(ActivateMarketingLeadContext::class)->handle(
+                request(),
+                fn () => response('')
+            );
 
             return view('pages::auth.register');
         });

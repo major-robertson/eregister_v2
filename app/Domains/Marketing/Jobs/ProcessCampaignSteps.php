@@ -18,8 +18,6 @@ class ProcessCampaignSteps implements ShouldQueue
      */
     public function handle(): void
     {
-        Log::info('ProcessCampaignSteps: Starting to process due enrollments');
-
         $processed = 0;
 
         // Process due enrollments in batches using row locking to prevent race conditions
@@ -45,8 +43,11 @@ class ProcessCampaignSteps implements ShouldQueue
             }
         });
 
-        Log::info('ProcessCampaignSteps: Finished processing', [
-            'processed' => $processed,
-        ]);
+        // Only log when enrollments were actually processed
+        if ($processed > 0) {
+            Log::info('ProcessCampaignSteps: Processed campaign enrollments', [
+                'processed' => $processed,
+            ]);
+        }
     }
 }

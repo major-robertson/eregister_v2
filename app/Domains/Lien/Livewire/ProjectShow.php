@@ -97,6 +97,7 @@ class ProjectShow extends Component
         $steps = $stepCalculator->forProject($this->project);
 
         // Find the next actionable deadline for the top banner
+        // Only show steps with known deadlines — "deadline unknown" is shown in the steps list instead
         $nextDeadline = collect($steps)
             ->filter(fn ($step) => in_array($step->status, [
                 DeadlineStatus::NotStarted,
@@ -105,8 +106,8 @@ class ProjectShow extends Component
                 DeadlineStatus::InDraft,
                 DeadlineStatus::AwaitingPayment,
             ], true))
-            ->filter(fn ($step) => $step->isRequired() && $step->canStart)
-            ->sortBy(fn ($step) => $step->deadlineDate ?? now()->addYears(10))
+            ->filter(fn ($step) => $step->isRequired() && $step->canStart && $step->deadlineDate !== null)
+            ->sortBy(fn ($step) => $step->deadlineDate)
             ->first();
 
         return view('livewire.lien.project-show', [

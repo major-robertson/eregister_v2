@@ -190,6 +190,7 @@ class DeadlineCalculator
                 // Create optional placeholder deadline (no rule exists for this doc type)
                 LienProjectDeadline::create([
                     'project_id' => $project->id,
+                    'business_id' => $project->business_id,
                     'document_type_id' => $docType->id,
                     'deadline_rule_id' => null,
                     'status' => DeadlineStatus::NotStarted,

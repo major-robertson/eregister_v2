@@ -8,7 +8,7 @@
             <div class="relative hidden h-full flex-col bg-zinc-900 p-10 text-white lg:flex">
                 <div class="absolute inset-0 bg-zinc-900"></div>
                 <a href="{{ route('home') }}" class="relative z-20 flex items-center" wire:navigate>
-                    <span class="text-xl font-semibold text-white" style="font-family: 'Inter', sans-serif;">eRegister</span>
+                    <img src="/img/logo/eregister-logo-light-svg.svg" alt="eRegister" class="h-9 brightness-0 invert" />
                 </a>
 
                 @php

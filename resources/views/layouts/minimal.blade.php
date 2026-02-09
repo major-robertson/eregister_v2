@@ -8,7 +8,7 @@
             {{-- Simple header with logo --}}
             <header class="border-b border-border px-6 py-4">
                 <a href="{{ route('home') }}" class="flex items-center" wire:navigate>
-                    <span class="text-lg font-semibold text-zinc-900" style="font-family: 'Inter', sans-serif;">eRegister</span>
+                    <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" class="h-8 brightness-0" />
                 </a>
             </header>
 

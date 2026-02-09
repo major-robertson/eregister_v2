@@ -15,8 +15,7 @@
             <div class="flex h-16 items-center justify-between">
                 <!-- Logo -->
                 <a href="{{ route('home') }}" class="flex items-center" wire:navigate>
-                    <span class="text-xl font-semibold text-zinc-900"
-                        style="font-family: 'Inter', sans-serif;">eRegister</span>
+                    <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" class="h-9 brightness-0" />
                 </a>
 
                 <!-- Main Navigation -->
@@ -150,8 +149,7 @@
                 {{-- Company Info --}}
                 <div class="col-span-2 md:col-span-1">
                     <a href="{{ route('home') }}" class="flex items-center" wire:navigate>
-                        <span class="text-xl font-semibold text-white"
-                            style="font-family: 'Inter', sans-serif;">eRegister</span>
+                        <img src="/img/logo/eregister-logo-light-svg.svg" alt="eRegister" class="h-10 brightness-0 invert" />
                     </a>
                     <p class="mt-4 text-sm text-zinc-400">
                         Simplifying business registrations across all 50 states. Sales tax, LLC formation, and

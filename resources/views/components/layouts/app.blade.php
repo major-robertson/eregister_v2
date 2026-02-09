@@ -8,9 +8,11 @@
     <body class="min-h-screen bg-bg-light">
         <flux:sidebar sticky collapsible class="border-e border-border bg-zinc-50">
             <flux:sidebar.header>
-                <livewire:business.business-dropdown />
+                <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
+
+            <livewire:business.business-dropdown />
 
             <flux:sidebar.nav>
                 <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>

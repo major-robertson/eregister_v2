@@ -48,8 +48,8 @@ enum FilingStatus: string
             self::AwaitingPayment => 'credit-card',
             self::Paid => 'check',
             self::InFulfillment => 'clock',
-            self::Mailed => 'mail',
-            self::Recorded => 'file-check',
+            self::Mailed => 'envelope',
+            self::Recorded => 'document-check',
             self::Complete => 'check-circle',
             self::Canceled => 'x-circle',
         };

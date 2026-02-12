@@ -281,8 +281,8 @@ describe('business and filer information', function () {
     });
 });
 
-describe('status history', function () {
-    it('displays status history section', function () {
+describe('activity log', function () {
+    it('displays activity log section', function () {
         $admin = User::factory()->create();
         $admin->givePermissionTo('lien.view');
 
@@ -293,6 +293,146 @@ describe('status history', function () {
         $this->actingAs($admin);
 
         Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
-            ->assertSee('Status History');
+            ->assertSee('Activity Log');
+    });
+
+    it('displays comments in the activity log', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view', 'lien.update');
+
+        $business = Business::factory()->create();
+        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        $filing = LienFiling::factory()->forProject($project)->create();
+
+        $filing->events()->create([
+            'business_id' => $filing->business_id,
+            'event_type' => 'note_added',
+            'payload_json' => ['comment' => 'This filing needs additional documentation.'],
+            'created_by' => $admin->id,
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->assertSee('Activity Log')
+            ->assertSee('This filing needs additional documentation.');
+    });
+});
+
+describe('add comment', function () {
+    it('allows admin with lien.update permission to add a comment', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view', 'lien.update');
+
+        $business = Business::factory()->create();
+        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        $filing = LienFiling::factory()->forProject($project)->create();
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->set('comment', 'This is a test comment.')
+            ->call('addComment')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('lien_filing_events', [
+            'filing_id' => $filing->id,
+            'event_type' => 'note_added',
+            'created_by' => $admin->id,
+        ]);
+
+        $event = $filing->events()->where('event_type', 'note_added')->first();
+        expect($event->payload_json['comment'])->toBe('This is a test comment.');
+    });
+
+    it('stores the comment as a LienFilingEvent with note_added event type', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view', 'lien.update');
+
+        $business = Business::factory()->create();
+        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        $filing = LienFiling::factory()->forProject($project)->create();
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->set('comment', 'Verified documents received.')
+            ->call('addComment')
+            ->assertHasNoErrors();
+
+        $events = $filing->events()->where('event_type', 'note_added')->get();
+        expect($events)->toHaveCount(1);
+        expect($events->first()->payload_json['comment'])->toBe('Verified documents received.');
+        expect($events->first()->created_by)->toBe($admin->id);
+        expect($events->first()->business_id)->toBe($filing->business_id);
+    });
+
+    it('rejects empty comments', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view', 'lien.update');
+
+        $business = Business::factory()->create();
+        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        $filing = LienFiling::factory()->forProject($project)->create();
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->set('comment', '')
+            ->call('addComment')
+            ->assertHasErrors(['comment' => 'required']);
+    });
+
+    it('rejects comments exceeding 1000 characters', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view', 'lien.update');
+
+        $business = Business::factory()->create();
+        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        $filing = LienFiling::factory()->forProject($project)->create();
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->set('comment', str_repeat('a', 1001))
+            ->call('addComment')
+            ->assertHasErrors(['comment' => 'max']);
+    });
+
+    it('denies users without lien.update permission from adding comments', function () {
+        $viewer = User::factory()->create();
+        $viewer->givePermissionTo('lien.view');
+
+        $business = Business::factory()->create();
+        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        $filing = LienFiling::factory()->forProject($project)->create();
+
+        $this->actingAs($viewer);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->set('comment', 'Should not be allowed.')
+            ->call('addComment')
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('lien_filing_events', [
+            'filing_id' => $filing->id,
+            'event_type' => 'note_added',
+        ]);
+    });
+
+    it('resets the comment field after successful submission', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view', 'lien.update');
+
+        $business = Business::factory()->create();
+        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        $filing = LienFiling::factory()->forProject($project)->create();
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->set('comment', 'A comment to add.')
+            ->call('addComment')
+            ->assertSet('comment', '');
     });
 });

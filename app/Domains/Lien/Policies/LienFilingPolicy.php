@@ -91,6 +91,14 @@ class LienFilingPolicy
     }
 
     /**
+     * Determine if the user can add a comment to a filing (admin only).
+     */
+    public function addComment(User $user, LienFiling $filing): bool
+    {
+        return $this->hasAdminPermission($user, 'lien.update');
+    }
+
+    /**
      * Check if the filing belongs to the user's current business.
      */
     private function belongsToBusiness(User $user, LienFiling $filing): bool

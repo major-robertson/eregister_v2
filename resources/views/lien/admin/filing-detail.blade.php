@@ -90,53 +90,144 @@
                 </div>
             </div>
 
-            <!-- Status History -->
+            <!-- Business & Filer Information Card -->
+            @php
+            $business = $filing->project?->business;
+            @endphp
+            @if ($business)
             <div class="rounded-lg border border-border bg-white p-6">
-                <flux:heading size="lg" class="mb-4">Status History</flux:heading>
+                <flux:heading size="lg" class="mb-4">Business & Filer Info</flux:heading>
 
-                @if ($statusHistory->isNotEmpty())
-                <div class="space-y-4">
-                    @foreach ($statusHistory as $event)
+                <div class="grid gap-4 sm:grid-cols-2">
+                    @if ($business->legal_name)
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Legal Name</flux:text>
+                        <flux:text class="font-medium">{{ $business->legal_name }}</flux:text>
+                    </div>
+                    @endif
+
+                    @if ($business->dba_name)
+                    <div>
+                        <flux:text class="text-sm text-gray-500">DBA Name</flux:text>
+                        <flux:text class="font-medium">{{ $business->dba_name }}</flux:text>
+                    </div>
+                    @endif
+
+                    @if ($business->entity_type)
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Entity Type</flux:text>
+                        <flux:text class="font-medium">{{ $business->entity_type }}</flux:text>
+                    </div>
+                    @endif
+
+                    @if ($business->phone)
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Phone</flux:text>
+                        <flux:text class="font-medium">{{ $business->phone }}</flux:text>
+                    </div>
+                    @endif
+
+                    @if ($business->business_address)
                     @php
-                    $fromStatus = \App\Domains\Lien\Enums\FilingStatus::tryFrom($event->payload_json['from'] ?? '');
-                    $toStatus = \App\Domains\Lien\Enums\FilingStatus::tryFrom($event->payload_json['to'] ?? '');
-                    $note = $event->payload_json['meta']['note'] ?? null;
+                    $addr = $business->business_address;
+                    $addrParts = array_filter([
+                    $addr['line1'] ?? null,
+                    $addr['line2'] ?? null,
+                    ]);
+                    $cityStateZip = array_filter([
+                    $addr['city'] ?? null,
+                    $addr['state'] ?? null,
+                    ]);
                     @endphp
-                    <div class="flex gap-3 border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                        <div class="mt-0.5">
-                            <flux:icon name="{{ $toStatus?->icon() ?? 'arrow-right' }}" class="size-5 text-gray-400" />
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Business Address</flux:text>
+                        @foreach ($addrParts as $line)
+                        <flux:text class="font-medium">{{ $line }}</flux:text>
+                        @endforeach
+                        @if (!empty($cityStateZip))
+                        <flux:text class="font-medium">{{ implode(', ', $cityStateZip) }} {{ $addr['zip'] ?? '' }}
+                        </flux:text>
+                        @endif
+                    </div>
+                    @endif
+
+                    @if ($business->mailing_address)
+                    @php
+                    $mail = $business->mailing_address;
+                    $mailParts = array_filter([
+                    $mail['line1'] ?? null,
+                    $mail['line2'] ?? null,
+                    ]);
+                    $mailCityStateZip = array_filter([
+                    $mail['city'] ?? null,
+                    $mail['state'] ?? null,
+                    ]);
+                    @endphp
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Mailing Address</flux:text>
+                        @foreach ($mailParts as $line)
+                        <flux:text class="font-medium">{{ $line }}</flux:text>
+                        @endforeach
+                        @if (!empty($mailCityStateZip))
+                        <flux:text class="font-medium">{{ implode(', ', $mailCityStateZip) }} {{ $mail['zip'] ?? '' }}
+                        </flux:text>
+                        @endif
+                    </div>
+                    @endif
+
+                    @if ($business->state_of_incorporation)
+                    <div>
+                        <flux:text class="text-sm text-gray-500">State of Incorporation</flux:text>
+                        <flux:text class="font-medium">{{ $business->state_of_incorporation }}</flux:text>
+                    </div>
+                    @endif
+
+                    @if ($business->contractor_license_number)
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Contractor License #</flux:text>
+                        <flux:text class="font-mono text-sm">{{ $business->contractor_license_number }}</flux:text>
+                    </div>
+                    @endif
+                </div>
+
+                {{-- Filed By --}}
+                @if ($filing->createdBy)
+                <div class="mt-4 border-t border-gray-100 pt-4">
+                    <flux:text class="mb-2 text-sm font-medium text-gray-700">Filed By</flux:text>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <flux:text class="text-sm text-gray-500">Name</flux:text>
+                            <flux:text class="font-medium">{{ $filing->createdBy->name }}</flux:text>
                         </div>
-                        <div class="flex-1">
-                            <div class="flex items-center gap-2">
-                                @if ($fromStatus)
-                                <flux:badge size="sm" color="{{ $fromStatus->color() }}">
-                                    {{ $fromStatus->label() }}
-                                </flux:badge>
-                                @endif
-                                <flux:icon name="arrow-right" class="size-4 text-gray-400" />
-                                @if ($toStatus)
-                                <flux:badge size="sm" color="{{ $toStatus->color() }}">
-                                    {{ $toStatus->label() }}
-                                </flux:badge>
-                                @endif
-                            </div>
-                            @if ($note)
-                            <flux:text class="mt-1 text-sm text-gray-600">{{ $note }}</flux:text>
-                            @endif
-                            <flux:text class="mt-1 text-xs text-gray-500">
-                                {{ $event->created_at->format('M j, Y g:i A') }}
-                                @if ($event->creator)
-                                by {{ $event->creator->name }}
-                                @endif
-                            </flux:text>
+                        <div>
+                            <flux:text class="text-sm text-gray-500">Email</flux:text>
+                            <flux:text class="font-medium">{{ $filing->createdBy->email }}</flux:text>
                         </div>
                     </div>
-                    @endforeach
                 </div>
-                @else
-                <flux:text class="text-gray-500">No status changes recorded.</flux:text>
+                @endif
+
+                {{-- Responsible People --}}
+                @if (!empty($business->responsible_people))
+                <div class="mt-4 border-t border-gray-100 pt-4">
+                    <flux:text class="mb-2 text-sm font-medium text-gray-700">Responsible People</flux:text>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        @foreach ($business->responsible_people as $person)
+                        <div class="rounded-lg border border-gray-200 p-2">
+                            <flux:text class="font-medium">{{ $person['name'] ?? 'Unknown' }}</flux:text>
+                            @if (!empty($person['title']))
+                            <flux:text class="text-sm text-gray-500">{{ $person['title'] }}</flux:text>
+                            @endif
+                            @if (!empty($person['can_sign_liens']))
+                            <flux:badge size="sm" color="green" class="mt-1">Can Sign Liens</flux:badge>
+                            @endif
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
                 @endif
             </div>
+            @endif
 
             <!-- Project Information Card -->
             @if ($filing->project)
@@ -383,194 +474,75 @@
                 @endif
             </div>
 
-            <!-- Quick Info Card -->
+            <!-- Add Comment Card -->
+            @if ($canAddComment)
             <div class="rounded-lg border border-border bg-white p-6">
-                <flux:heading size="lg" class="mb-4">Quick Info</flux:heading>
+                <flux:heading size="lg" class="mb-4">Add Comment</flux:heading>
 
-                <div class="space-y-3">
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Filing ID</flux:text>
-                        <flux:text class="font-mono text-sm">{{ $filing->public_id }}</flux:text>
-                    </div>
+                <form wire:submit="addComment" class="space-y-4">
+                    <flux:field>
+                        <flux:textarea wire:model="comment" rows="3"
+                            placeholder="Write a comment..." />
+                        <flux:error name="comment" />
+                    </flux:field>
 
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Business</flux:text>
-                        <flux:text class="font-medium">{{ $filing->project?->business?->name ?? 'Unknown' }}</flux:text>
-                    </div>
-
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Project</flux:text>
-                        <flux:text class="font-medium">{{ $filing->project?->name ?? 'Unknown' }}</flux:text>
-                    </div>
-
-                    @if ($filing->mailed_at)
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Mailed</flux:text>
-                        <flux:text class="font-medium">{{ $filing->mailed_at->format('M j, Y') }}</flux:text>
-                    </div>
-                    @endif
-
-                    @if ($filing->mailing_tracking_number)
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Tracking #</flux:text>
-                        <flux:text class="font-mono text-sm">{{ $filing->mailing_tracking_number }}</flux:text>
-                    </div>
-                    @endif
-
-                    @if ($filing->recorded_at)
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Recorded</flux:text>
-                        <flux:text class="font-medium">{{ $filing->recorded_at->format('M j, Y') }}</flux:text>
-                    </div>
-                    @endif
-
-                    @if ($filing->completed_at)
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Completed</flux:text>
-                        <flux:text class="font-medium">{{ $filing->completed_at->format('M j, Y') }}</flux:text>
-                    </div>
-                    @endif
-                </div>
-            </div>
-
-            <!-- Business & Filer Information Card -->
-            @php
-            $business = $filing->project?->business;
-            @endphp
-            @if ($business)
-            <div class="rounded-lg border border-border bg-white p-6">
-                <flux:heading size="lg" class="mb-4">Business & Filer Info</flux:heading>
-
-                <div class="space-y-3">
-                    @if ($business->legal_name)
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Legal Name</flux:text>
-                        <flux:text class="font-medium">{{ $business->legal_name }}</flux:text>
-                    </div>
-                    @endif
-
-                    @if ($business->dba_name)
-                    <div>
-                        <flux:text class="text-sm text-gray-500">DBA Name</flux:text>
-                        <flux:text class="font-medium">{{ $business->dba_name }}</flux:text>
-                    </div>
-                    @endif
-
-                    @if ($business->entity_type)
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Entity Type</flux:text>
-                        <flux:text class="font-medium">{{ $business->entity_type }}</flux:text>
-                    </div>
-                    @endif
-
-                    @if ($business->phone)
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Phone</flux:text>
-                        <flux:text class="font-medium">{{ $business->phone }}</flux:text>
-                    </div>
-                    @endif
-
-                    @if ($business->business_address)
-                    @php
-                    $addr = $business->business_address;
-                    $addressParts = array_filter([
-                    $addr['line1'] ?? null,
-                    $addr['line2'] ?? null,
-                    ]);
-                    $cityStateZip = array_filter([
-                    $addr['city'] ?? null,
-                    $addr['state'] ?? null,
-                    ]);
-                    @endphp
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Business Address</flux:text>
-                        @foreach ($addressParts as $line)
-                        <flux:text class="font-medium">{{ $line }}</flux:text>
-                        @endforeach
-                        @if (!empty($cityStateZip))
-                        <flux:text class="font-medium">{{ implode(', ', $cityStateZip) }} {{ $addr['zip'] ?? '' }}
-                        </flux:text>
-                        @endif
-                    </div>
-                    @endif
-
-                    @if ($business->mailing_address)
-                    @php
-                    $mail = $business->mailing_address;
-                    $mailParts = array_filter([
-                    $mail['line1'] ?? null,
-                    $mail['line2'] ?? null,
-                    ]);
-                    $mailCityStateZip = array_filter([
-                    $mail['city'] ?? null,
-                    $mail['state'] ?? null,
-                    ]);
-                    @endphp
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Mailing Address</flux:text>
-                        @foreach ($mailParts as $line)
-                        <flux:text class="font-medium">{{ $line }}</flux:text>
-                        @endforeach
-                        @if (!empty($mailCityStateZip))
-                        <flux:text class="font-medium">{{ implode(', ', $mailCityStateZip) }} {{ $mail['zip'] ?? '' }}
-                        </flux:text>
-                        @endif
-                    </div>
-                    @endif
-
-                    @if ($business->state_of_incorporation)
-                    <div>
-                        <flux:text class="text-sm text-gray-500">State of Incorporation</flux:text>
-                        <flux:text class="font-medium">{{ $business->state_of_incorporation }}</flux:text>
-                    </div>
-                    @endif
-
-                    @if ($business->contractor_license_number)
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Contractor License #</flux:text>
-                        <flux:text class="font-mono text-sm">{{ $business->contractor_license_number }}</flux:text>
-                    </div>
-                    @endif
-                </div>
-
-                {{-- Filed By --}}
-                @if ($filing->createdBy)
-                <div class="mt-4 border-t border-gray-100 pt-4">
-                    <flux:text class="mb-2 text-sm font-medium text-gray-700">Filed By</flux:text>
-                    <div class="space-y-2">
-                        <div>
-                            <flux:text class="text-sm text-gray-500">Name</flux:text>
-                            <flux:text class="font-medium">{{ $filing->createdBy->name }}</flux:text>
-                        </div>
-                        <div>
-                            <flux:text class="text-sm text-gray-500">Email</flux:text>
-                            <flux:text class="font-medium">{{ $filing->createdBy->email }}</flux:text>
-                        </div>
-                    </div>
-                </div>
-                @endif
-
-                {{-- Responsible People --}}
-                @if (!empty($business->responsible_people))
-                <div class="mt-4 border-t border-gray-100 pt-4">
-                    <flux:text class="mb-2 text-sm font-medium text-gray-700">Responsible People</flux:text>
-                    <div class="space-y-2">
-                        @foreach ($business->responsible_people as $person)
-                        <div class="rounded-lg border border-gray-200 p-2">
-                            <flux:text class="font-medium">{{ $person['name'] ?? 'Unknown' }}</flux:text>
-                            @if (!empty($person['title']))
-                            <flux:text class="text-sm text-gray-500">{{ $person['title'] }}</flux:text>
-                            @endif
-                            @if (!empty($person['can_sign_liens']))
-                            <flux:badge size="sm" color="green" class="mt-1">Can Sign Liens</flux:badge>
-                            @endif
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
+                    <flux:button type="submit" variant="primary" class="w-full">
+                        Add Comment
+                    </flux:button>
+                </form>
             </div>
             @endif
+
+            <!-- Activity Log -->
+            <div class="rounded-lg border border-border bg-white p-6">
+                <flux:heading size="lg" class="mb-4">Activity Log</flux:heading>
+
+                @if ($activityLog->isNotEmpty())
+                <div class="space-y-2">
+                    @foreach ($activityLog as $event)
+                    <div wire:key="event-{{ $event->id }}" class="border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                        @if ($event->event_type === 'status_changed')
+                        @php
+                        $toStatus = \App\Domains\Lien\Enums\FilingStatus::tryFrom($event->payload_json['to'] ?? '');
+                        $note = $event->payload_json['meta']['note'] ?? null;
+                        @endphp
+                        <div class="flex items-center gap-2 flex-wrap">
+                            @if ($toStatus)
+                            <flux:badge size="sm" color="{{ $toStatus->color() }}">
+                                {{ $toStatus->label() }}
+                            </flux:badge>
+                            @endif
+                            <flux:text class="text-xs text-gray-400">
+                                {{ $event->created_at->format('M j, g:i A') }}
+                                @if ($event->creator)
+                                &middot; {{ $event->creator->name }}
+                                @endif
+                            </flux:text>
+                        </div>
+                        @if ($note)
+                        <flux:text class="mt-1 text-sm text-gray-600">{{ $note }}</flux:text>
+                        @endif
+                        @elseif ($event->event_type === 'note_added')
+                        <div class="flex items-start gap-2">
+                            <flux:icon name="chat-bubble-left" class="mt-0.5 size-4 shrink-0 text-blue-400" />
+                            <div class="min-w-0">
+                                <flux:text class="text-sm text-gray-600">{{ $event->payload_json['comment'] ?? '' }}</flux:text>
+                                <flux:text class="text-xs text-gray-400">
+                                    {{ $event->created_at->format('M j, g:i A') }}
+                                    @if ($event->creator)
+                                    &middot; {{ $event->creator->name }}
+                                    @endif
+                                </flux:text>
+                            </div>
+                        </div>
+                        @endif
+                    </div>
+                    @endforeach
+                </div>
+                @else
+                <flux:text class="text-gray-500">No activity recorded.</flux:text>
+                @endif
+            </div>
         </div>
     </div>
 

@@ -2,6 +2,7 @@
 
 namespace App\Domains\Lien\Admin\Livewire;
 
+use App\Domains\Lien\Admin\Actions\AddFilingComment;
 use App\Domains\Lien\Admin\Actions\ChangeFilingStatus;
 use App\Domains\Lien\Admin\Enums\KanbanColumn;
 use App\Domains\Lien\Enums\FilingStatus;
@@ -22,6 +23,8 @@ class LienFilingDetail extends Component
 
     public string $note = '';
 
+    public string $comment = '';
+
     public function mount(LienFiling $lienFiling): void
     {
         $this->lienFiling = $lienFiling->load([
@@ -29,7 +32,7 @@ class LienFilingDetail extends Component
             'project.business',
             'project.parties',
             'documentType',
-            'events' => fn ($q) => $q->where('event_type', 'status_changed')->latest()->limit(20),
+            'events' => fn ($q) => $q->whereIn('event_type', ['status_changed', 'note_added'])->latest()->limit(50),
             'events.creator',
         ]);
     }
@@ -40,22 +43,23 @@ class LienFilingDetail extends Component
             'filing' => $this->lienFiling,
             'kanbanColumn' => KanbanColumn::forFiling($this->lienFiling),
             'allowedTransitions' => $this->lienFiling->allowedTransitions(),
-            'statusHistory' => $this->getStatusHistory(),
+            'activityLog' => $this->getActivityLog(),
             'canChangeStatus' => auth()->user()->can('changeStatus', $this->lienFiling),
             'canUpdate' => auth()->user()->can('update', $this->lienFiling),
+            'canAddComment' => auth()->user()->can('addComment', $this->lienFiling),
         ])->layout('layouts.admin', ['title' => 'Filing Detail']);
     }
 
     /**
-     * Get status change history.
+     * Get activity log including status changes and comments.
      */
-    public function getStatusHistory(): Collection
+    public function getActivityLog(): Collection
     {
         return $this->lienFiling->events()
-            ->where('event_type', 'status_changed')
+            ->whereIn('event_type', ['status_changed', 'note_added'])
             ->with('creator')
             ->latest()
-            ->limit(20)
+            ->limit(50)
             ->get();
     }
 
@@ -82,6 +86,28 @@ class LienFilingDetail extends Component
         $this->reset(['newStatus', 'note']);
 
         session()->flash('success', 'Status updated successfully.');
+    }
+
+    /**
+     * Add a comment to the filing without changing status.
+     */
+    public function addComment(): void
+    {
+        $this->authorize('addComment', $this->lienFiling);
+
+        $this->validate([
+            'comment' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $action = app(AddFilingComment::class);
+        $action->execute(
+            filing: $this->lienFiling,
+            comment: $this->comment,
+        );
+
+        $this->reset('comment');
+
+        session()->flash('success', 'Comment added successfully.');
     }
 
     /**

@@ -16,6 +16,8 @@ use Livewire\Component;
 
 class StatsBoard extends Component
 {
+    private const STATS_TIMEZONE = 'America/New_York';
+
     public function render(): View
     {
         return view('admin.stats-board', [
@@ -30,22 +32,51 @@ class StatsBoard extends Component
     }
 
     /**
-     * Get signup counts for different time periods.
+     * Get UTC date range for a given EST period.
+     *
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    protected function getEstDateRange(string $period): array
+    {
+        $now = now(self::STATS_TIMEZONE);
+
+        return match ($period) {
+            'today' => [
+                $now->copy()->startOfDay()->utc(),
+                $now->copy()->endOfDay()->utc(),
+            ],
+            'yesterday' => [
+                $now->copy()->subDay()->startOfDay()->utc(),
+                $now->copy()->subDay()->endOfDay()->utc(),
+            ],
+            'this_week' => [
+                $now->copy()->startOfWeek()->utc(),
+                $now->copy()->endOfWeek()->utc(),
+            ],
+            'this_month' => [
+                $now->copy()->startOfMonth()->utc(),
+                $now->copy()->endOfMonth()->endOfDay()->utc(),
+            ],
+        };
+    }
+
+    /**
+     * Get signup counts for different time periods (EST).
      *
      * @return array{today: int, yesterday: int, this_week: int, this_month: int}
      */
     protected function getSignupStats(): array
     {
         return [
-            'today' => User::whereDate('created_at', today())->count(),
-            'yesterday' => User::whereDate('created_at', today()->subDay())->count(),
-            'this_week' => User::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
-            'this_month' => User::whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->count(),
+            'today' => User::whereBetween('created_at', $this->getEstDateRange('today'))->count(),
+            'yesterday' => User::whereBetween('created_at', $this->getEstDateRange('yesterday'))->count(),
+            'this_week' => User::whereBetween('created_at', $this->getEstDateRange('this_week'))->count(),
+            'this_month' => User::whereBetween('created_at', $this->getEstDateRange('this_month'))->count(),
         ];
     }
 
     /**
-     * Get payment counts for different time periods.
+     * Get payment counts for different time periods (EST).
      *
      * @return array{today: int, yesterday: int, this_week: int, this_month: int}
      */
@@ -53,35 +84,37 @@ class StatsBoard extends Component
     {
         return [
             'today' => Payment::where('status', PaymentStatus::Succeeded)
-                ->whereDate('paid_at', today())->count(),
+                ->whereBetween('paid_at', $this->getEstDateRange('today'))->count(),
             'yesterday' => Payment::where('status', PaymentStatus::Succeeded)
-                ->whereDate('paid_at', today()->subDay())->count(),
+                ->whereBetween('paid_at', $this->getEstDateRange('yesterday'))->count(),
             'this_week' => Payment::where('status', PaymentStatus::Succeeded)
-                ->whereBetween('paid_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+                ->whereBetween('paid_at', $this->getEstDateRange('this_week'))->count(),
             'this_month' => Payment::where('status', PaymentStatus::Succeeded)
-                ->whereBetween('paid_at', [now()->startOfMonth(), now()->endOfMonth()])->count(),
+                ->whereBetween('paid_at', $this->getEstDateRange('this_month'))->count(),
         ];
     }
 
     /**
-     * Get subscription counts for different time periods.
+     * Get subscription counts for different time periods (EST).
      *
      * @return array{today: int, yesterday: int, this_week: int, this_month: int}
      */
     protected function getSubscriptionStats(): array
     {
         return [
-            'today' => DB::table('subscriptions')->whereDate('created_at', today())->count(),
-            'yesterday' => DB::table('subscriptions')->whereDate('created_at', today()->subDay())->count(),
+            'today' => DB::table('subscriptions')
+                ->whereBetween('created_at', $this->getEstDateRange('today'))->count(),
+            'yesterday' => DB::table('subscriptions')
+                ->whereBetween('created_at', $this->getEstDateRange('yesterday'))->count(),
             'this_week' => DB::table('subscriptions')
-                ->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+                ->whereBetween('created_at', $this->getEstDateRange('this_week'))->count(),
             'this_month' => DB::table('subscriptions')
-                ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->count(),
+                ->whereBetween('created_at', $this->getEstDateRange('this_month'))->count(),
         ];
     }
 
     /**
-     * Get lien filing paid counts for different time periods.
+     * Get lien filing paid counts for different time periods (EST).
      *
      * @return array{today: int, yesterday: int, this_week: int, this_month: int}
      */
@@ -97,13 +130,13 @@ class StatsBoard extends Component
 
         return [
             'today' => LienFiling::whereIn('status', $paidStatuses)
-                ->whereDate('paid_at', today())->count(),
+                ->whereBetween('paid_at', $this->getEstDateRange('today'))->count(),
             'yesterday' => LienFiling::whereIn('status', $paidStatuses)
-                ->whereDate('paid_at', today()->subDay())->count(),
+                ->whereBetween('paid_at', $this->getEstDateRange('yesterday'))->count(),
             'this_week' => LienFiling::whereIn('status', $paidStatuses)
-                ->whereBetween('paid_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+                ->whereBetween('paid_at', $this->getEstDateRange('this_week'))->count(),
             'this_month' => LienFiling::whereIn('status', $paidStatuses)
-                ->whereBetween('paid_at', [now()->startOfMonth(), now()->endOfMonth()])->count(),
+                ->whereBetween('paid_at', $this->getEstDateRange('this_month'))->count(),
         ];
     }
 

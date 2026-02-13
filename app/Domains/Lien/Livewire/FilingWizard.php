@@ -145,6 +145,9 @@ class FilingWizard extends Component
         $this->legal_description = $this->project->legal_description;
         $this->apn = $this->project->apn;
         $this->owner_is_tenant = (bool) $this->project->owner_is_tenant;
+        $this->has_written_contract = $this->project->has_written_contract !== null
+            ? ($this->project->has_written_contract ? '1' : '0')
+            : null;
 
         // Set yes/no toggles based on whether values exist
         if ($this->legal_description) {
@@ -354,6 +357,7 @@ class FilingWizard extends Component
             'apn' => $this->has_apn === 'yes' ? $this->apn : null,
             'owner_is_tenant' => $this->owner_is_tenant,
             'property_class' => $this->project_type_category,
+            'has_written_contract' => $this->has_written_contract === '1',
         ]);
 
         // Update filing

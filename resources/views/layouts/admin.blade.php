@@ -8,7 +8,7 @@
 </head>
 
 <body class="min-h-screen bg-bg-light">
-    <flux:sidebar sticky collapsible class="border-e border-border bg-slate-50">
+    <flux:sidebar sticky collapsible class="border-e border-border bg-slate-50/50 max-lg:bg-zinc-50">
         <flux:sidebar.header>
             <x-app-logo :sidebar="true" href="{{ route('admin.home') }}" badge="Admin" wire:navigate />
             <flux:sidebar.collapse class="lg:hidden" />
@@ -64,7 +64,7 @@
     </flux:sidebar>
 
     <!-- Mobile Header -->
-    <flux:header class="lg:hidden border-b border-border bg-slate-50">
+    <flux:header class="lg:hidden border-b border-border bg-slate-50/50">
         <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
         <x-app-logo href="{{ route('admin.home') }}" badge="Admin" wire:navigate />

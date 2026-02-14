@@ -69,6 +69,20 @@ class PriceSeeder extends Seeder
                 'stripe_price_id_test' => 'price_1StA5nCWSBPRiUNw34sAWKlm',
                 'stripe_price_id_live' => 'price_1StA5sCWSBPRiUNwSmr6LOTO',
             ],
+            [
+                'product_key' => 'demand_letter',
+                'variant_key' => 'self_serve',
+                'amount_cents' => 2900,
+                'stripe_price_id_test' => null, // TODO: Create Stripe product and add price ID
+                'stripe_price_id_live' => null,
+            ],
+            [
+                'product_key' => 'demand_letter',
+                'variant_key' => 'full_service',
+                'amount_cents' => 4900,
+                'stripe_price_id_test' => null, // TODO: Create Stripe product and add price ID
+                'stripe_price_id_live' => null,
+            ],
         ];
 
         foreach ($prices as $price) {

@@ -31,6 +31,11 @@ return [
             'slug' => 'lien_release',
             'description' => 'Document releasing a previously filed lien after payment is received.',
         ],
+        'demand_letter' => [
+            'name' => 'Payment Demand Letter',
+            'slug' => 'demand_letter',
+            'description' => 'Formal demand for payment sent to the debtor. Can be sent at any time.',
+        ],
     ],
 
     /*
@@ -58,6 +63,10 @@ return [
             'self_serve' => 2900,
             'full_service' => 4900,
         ],
+        'demand_letter' => [
+            'self_serve' => 2900,
+            'full_service' => 4900,
+        ],
     ],
 
     /*
@@ -78,6 +87,8 @@ return [
         'mechanics_lien_full' => env('STRIPE_PRICE_LIEN_FULL'),
         'lien_release_self' => env('STRIPE_PRICE_RELEASE_SELF'),
         'lien_release_full' => env('STRIPE_PRICE_RELEASE_FULL'),
+        'demand_letter_self' => env('STRIPE_PRICE_DEMAND_LETTER_SELF'),
+        'demand_letter_full' => env('STRIPE_PRICE_DEMAND_LETTER_FULL'),
     ],
 
     /*

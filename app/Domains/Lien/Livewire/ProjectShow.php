@@ -96,25 +96,39 @@ class ProjectShow extends Component
         $stepCalculator = app(StepStatusCalculator::class);
         $steps = $stepCalculator->forProject($this->project);
 
+        // Detect if ANY required step has been missed — missing one compromises the lien chain.
+        // Excludes steps already Completed or NotApplicable.
+        $requiredSteps = collect($steps)->filter(fn ($step) => $step->isRequired());
+        $actionableRequired = $requiredSteps->filter(
+            fn ($step) => ! in_array($step->status, [DeadlineStatus::Completed, DeadlineStatus::NotApplicable], true)
+        );
+        $hasAnyMissedDeadline = $actionableRequired->contains(
+            fn ($step) => $step->status === DeadlineStatus::Missed
+        );
+
         // Find the next actionable deadline for the top banner
         // Only show steps with known deadlines — "deadline unknown" is shown in the steps list instead
-        $nextDeadline = collect($steps)
-            ->filter(fn ($step) => in_array($step->status, [
-                DeadlineStatus::NotStarted,
-                DeadlineStatus::DueSoon,
-                DeadlineStatus::Missed,
-                DeadlineStatus::InDraft,
-                DeadlineStatus::AwaitingPayment,
-            ], true))
-            ->filter(fn ($step) => $step->isRequired() && $step->canStart && $step->deadlineDate !== null)
-            ->sortBy(fn ($step) => $step->deadlineDate)
-            ->first();
+        // Suppress when a required deadline has been missed (the card shows its own banner)
+        $nextDeadline = null;
+        if (! $hasAnyMissedDeadline) {
+            $nextDeadline = collect($steps)
+                ->filter(fn ($step) => in_array($step->status, [
+                    DeadlineStatus::NotStarted,
+                    DeadlineStatus::DueSoon,
+                    DeadlineStatus::InDraft,
+                    DeadlineStatus::AwaitingPayment,
+                ], true))
+                ->filter(fn ($step) => $step->isRequired() && $step->canStart && $step->deadlineDate !== null)
+                ->sortBy(fn ($step) => $step->deadlineDate)
+                ->first();
+        }
 
         return view('livewire.lien.project-show', [
             'parties' => $this->project->parties,
             'steps' => $steps,
             'filings' => $this->project->filings,
             'nextDeadline' => $nextDeadline,
+            'hasAnyMissedDeadline' => $hasAnyMissedDeadline,
         ])->layout('layouts.lien', ['title' => $this->project->name]);
     }
 }

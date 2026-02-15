@@ -463,7 +463,7 @@
                                             </li>
                                             <li class="flex items-center gap-2">
                                                 <flux:icon name="check" class="w-4 h-4 text-green-500" />
-                                                Recording with county
+                                                Recording with county (if required)
                                             </li>
                                             <li class="flex items-center gap-2">
                                                 <flux:icon name="check" class="w-4 h-4 text-green-500" />

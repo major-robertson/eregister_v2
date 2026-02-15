@@ -543,6 +543,146 @@
                 <flux:text class="text-gray-500">No activity recorded.</flux:text>
                 @endif
             </div>
+
+            <!-- Lien Rights Summary Card -->
+            @if ($filing->project)
+            <div class="rounded-lg border border-border bg-white p-6">
+                <flux:heading size="lg" class="mb-4">Lien Rights Summary</flux:heading>
+
+                {{-- Filing Document Type Status Banner --}}
+                @php
+                $docBg = match($filingDocStatus['color']) {
+                    'green' => 'bg-green-50 border border-green-200',
+                    'red' => 'bg-red-50 border border-red-200',
+                    'yellow' => 'bg-amber-50 border border-amber-200',
+                    default => 'bg-gray-50 border border-gray-200',
+                };
+                $docDot = match($filingDocStatus['color']) {
+                    'green' => 'bg-green-500',
+                    'red' => 'bg-red-500',
+                    'yellow' => 'bg-amber-500',
+                    default => 'bg-gray-400',
+                };
+                $docTextColor = match($filingDocStatus['color']) {
+                    'green' => 'text-green-800',
+                    'red' => 'text-red-800',
+                    'yellow' => 'text-amber-800',
+                    default => 'text-gray-700',
+                };
+                $docSubColor = match($filingDocStatus['color']) {
+                    'green' => 'text-green-600',
+                    'red' => 'text-red-600',
+                    'yellow' => 'text-amber-600',
+                    default => 'text-gray-500',
+                };
+                @endphp
+                <div class="mb-4 rounded-lg p-3 {{ $docBg }}">
+                    <div class="flex items-center gap-3">
+                        <span class="inline-block size-3 shrink-0 rounded-full {{ $docDot }}"></span>
+                        <div>
+                            <flux:text class="font-semibold {{ $docTextColor }}">
+                                {{ $filingDocStatus['docName'] }}: {{ $filingDocStatus['label'] }}
+                            </flux:text>
+                            @if ($filingDocStatus['dueDate'])
+                            <flux:text class="text-xs {{ $docSubColor }}">
+                                Due: {{ $filingDocStatus['dueDate'] }}
+                            </flux:text>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Key Project Factors --}}
+                <div class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                    <div>
+                        <flux:text class="text-xs text-gray-500">Project State</flux:text>
+                        <flux:text class="font-medium">{{ $filing->project->jobsite_state ?? 'Unknown' }}</flux:text>
+                    </div>
+                    <div>
+                        <flux:text class="text-xs text-gray-500">Claimant Type</flux:text>
+                        <flux:text class="font-medium">{{ $filing->project->claimant_type?->label() ?? 'Unknown' }}</flux:text>
+                    </div>
+                    <div>
+                        <flux:text class="text-xs text-gray-500">Property Class</flux:text>
+                        <flux:text class="font-medium">{{ $filing->project->property_class ? ucfirst($filing->project->property_class) : 'Not set' }}</flux:text>
+                    </div>
+                    <div>
+                        <flux:text class="text-xs text-gray-500">NOC Status</flux:text>
+                        <flux:text class="font-medium">
+                            {{ $filing->project->noc_status?->label() ?? 'Unknown' }}
+                            @if ($filing->project->noc_recorded_at)
+                            — {{ $filing->project->noc_recorded_at->format('M j, Y') }}
+                            @endif
+                        </flux:text>
+                    </div>
+                    <div>
+                        <flux:text class="text-xs text-gray-500">First Furnish</flux:text>
+                        <flux:text class="font-medium">{{ $filing->project->first_furnish_date?->format('M j, Y') ?? 'Not set' }}</flux:text>
+                    </div>
+                    <div>
+                        <flux:text class="text-xs text-gray-500">Last Furnish</flux:text>
+                        <flux:text class="font-medium">{{ $filing->project->last_furnish_date?->format('M j, Y') ?? 'Not set' }}</flux:text>
+                    </div>
+                    <div>
+                        <flux:text class="text-xs text-gray-500">Completion</flux:text>
+                        <flux:text class="font-medium">{{ $filing->project->completion_date?->format('M j, Y') ?? 'Not set' }}</flux:text>
+                    </div>
+                    <div>
+                        <flux:text class="text-xs text-gray-500">Owner is Tenant</flux:text>
+                        <flux:text class="font-medium">{{ $filing->project->owner_is_tenant ? 'Yes' : 'No' }}</flux:text>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- Required Deadlines Card -->
+            @if ($requiredDeadlines->isNotEmpty())
+            <div class="rounded-lg border border-border bg-white p-6">
+                <flux:heading size="lg" class="mb-4">Required Deadlines</flux:heading>
+                <div class="space-y-2">
+                    @foreach ($requiredDeadlines as $deadline)
+                    <div wire:key="req-deadline-{{ $deadline->id }}" class="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2">
+                        <div class="min-w-0 flex-1">
+                            <flux:text class="text-sm font-medium">{{ $deadline->documentType?->name ?? 'Unknown' }}</flux:text>
+                            <flux:badge size="sm" color="{{ $deadline->getStatusColor() }}" class="mt-0.5">
+                                {{ $deadline->getStatusLabel() }}
+                            </flux:badge>
+                        </div>
+                        <div class="text-right shrink-0 ml-3">
+                            @php
+                            $daysLeft = $deadline->daysRemaining();
+                            $showDaysLeft = $daysLeft !== null
+                                && $deadline->status !== \App\Domains\Lien\Enums\DeadlineStatus::Completed
+                                && $deadline->status !== \App\Domains\Lien\Enums\DeadlineStatus::NotApplicable;
+                            $daysLeftClass = match(true) {
+                                $daysLeft === null => 'text-gray-500',
+                                $daysLeft < 0 => 'text-red-600 font-semibold',
+                                $daysLeft <= 7 => 'text-amber-600 font-medium',
+                                $daysLeft <= 30 => 'text-amber-500',
+                                default => 'text-green-600',
+                            };
+                            $daysLeftLabel = match(true) {
+                                $daysLeft === null => '',
+                                $daysLeft < 0 => abs($daysLeft) . ' days overdue',
+                                $daysLeft === 0 => 'Due today',
+                                default => $daysLeft . ' days left',
+                            };
+                            @endphp
+                            @if ($deadline->due_date)
+                            <flux:text class="text-sm font-medium">{{ $deadline->due_date->format('M j, Y') }}</flux:text>
+                            @if ($showDaysLeft)
+                            <flux:text class="text-xs {{ $daysLeftClass }}">{{ $daysLeftLabel }}</flux:text>
+                            @endif
+                            @else
+                            <flux:text class="text-xs text-gray-400">Unknown</flux:text>
+                            @endif
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
         </div>
     </div>
 

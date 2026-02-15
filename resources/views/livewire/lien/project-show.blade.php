@@ -155,15 +155,13 @@
                     @endphp
 
                     @if($hasAnyMissedDeadline)
-                        {{-- All Deadlines Passed Banner --}}
-                        <div class="flex items-center gap-3 p-4 mb-6 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
-                            <div class="flex items-center justify-center size-10 rounded-lg bg-red-100 dark:bg-red-900/30 shrink-0">
-                                <flux:icon name="x-circle" class="size-5 text-red-600 dark:text-red-400" />
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="font-semibold text-red-900 dark:text-red-200">A required filing deadline has passed</p>
-                                <p class="text-sm text-red-700/70 dark:text-red-300/70">Your lien rights may be compromised. A demand letter is your best remaining option to recover payment.</p>
-                            </div>
+                        {{-- Missed Deadline Notice --}}
+                        <div class="flex items-center gap-2.5 px-3 py-2.5 mb-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50/80 dark:bg-red-900/10">
+                            <flux:icon name="shield-exclamation" class="size-4 text-red-400 dark:text-red-500 shrink-0" />
+                            <p class="text-sm text-red-700/80 dark:text-red-300/70">
+                                <span class="font-medium">A required filing deadline has passed.</span>
+                                A demand letter is your best remaining option to recover payment.
+                            </p>
                         </div>
 
                         {{-- Promoted Demand Letter --}}

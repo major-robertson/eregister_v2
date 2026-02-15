@@ -162,6 +162,22 @@ class Business extends Model implements HasMedia
     }
 
     /**
+     * Get the name that should be synced to Stripe.
+     */
+    public function stripeName(): ?string
+    {
+        return $this->name ?? $this->legal_name;
+    }
+
+    /**
+     * Get the email address that should be synced to Stripe.
+     */
+    public function stripeEmail(): ?string
+    {
+        return $this->users()->first()?->email;
+    }
+
+    /**
      * Get the full business address as a single line.
      */
     public function businessAddressLine(): string

@@ -73,15 +73,15 @@ class PriceSeeder extends Seeder
                 'product_key' => 'demand_letter',
                 'variant_key' => 'self_serve',
                 'amount_cents' => 2900,
-                'stripe_price_id_test' => null, // TODO: Create Stripe product and add price ID
-                'stripe_price_id_live' => null,
+                'stripe_price_id_test' => 'price_1T169eCWSBPRiUNwdSt5UK9D',
+                'stripe_price_id_live' => 'price_1T163iCWSBPRiUNwdrSzclOo',
             ],
             [
                 'product_key' => 'demand_letter',
                 'variant_key' => 'full_service',
                 'amount_cents' => 4900,
-                'stripe_price_id_test' => null, // TODO: Create Stripe product and add price ID
-                'stripe_price_id_live' => null,
+                'stripe_price_id_test' => 'price_1T16BLCWSBPRiUNwksRQa3N5',
+                'stripe_price_id_live' => 'price_1T166iCWSBPRiUNwmxA7iZ6W',
             ],
         ];
 

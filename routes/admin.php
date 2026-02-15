@@ -10,6 +10,7 @@ use App\Domains\Admin\Livewire\UserOverview;
 use App\Domains\Admin\Livewire\UsersList;
 use App\Domains\Lien\Admin\Livewire\LienBoard;
 use App\Domains\Lien\Admin\Livewire\LienFilingDetail;
+use App\Domains\Lien\Admin\Livewire\LienRulesOverview;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -32,6 +33,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
         ->middleware(['permission:lien.view'])
         ->group(function () {
             Route::get('/board', LienBoard::class)->name('board');
+            Route::get('/lien-rules-overview', LienRulesOverview::class)->name('lien-rules-overview');
             Route::get('/{lienFiling:public_id}', LienFilingDetail::class)->name('show');
         });
 

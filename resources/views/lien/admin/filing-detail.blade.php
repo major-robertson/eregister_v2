@@ -547,7 +547,13 @@
             <!-- Lien Rights Summary Card -->
             @if ($filing->project)
             <div class="rounded-lg border border-border bg-white p-6">
-                <flux:heading size="lg" class="mb-4">Lien Rights Summary</flux:heading>
+                <div class="mb-4 flex items-center justify-between">
+                    <flux:heading size="lg">Lien Rights Summary</flux:heading>
+                    <a href="{{ route('admin.liens.lien-rules-overview', ['state' => $filing->project->jobsite_state]) }}"
+                       class="text-sm text-blue-600 hover:underline" wire:navigate>
+                        View Rules Overview
+                    </a>
+                </div>
 
                 {{-- Filing Document Type Status Banner --}}
                 @php

@@ -103,6 +103,25 @@ class LienFilingDetail extends Component
             ];
         }
 
+        // Warn if filing an NOI or prelim when lien rights have already expired
+        $slug = $docType->slug;
+        if (in_array($slug, ['noi', 'prelim_notice'], true)) {
+            $lienDeadline = $deadlines->first(
+                fn ($d) => $d->documentType?->slug === 'mechanics_lien'
+            );
+
+            if ($lienDeadline && ($lienDeadline->status === DeadlineStatus::Missed || $lienDeadline->isOverdue())) {
+                return [
+                    'color' => 'yellow',
+                    'label' => 'Lien rights expired — consider a demand letter instead',
+                    'docName' => $docName,
+                    'dueDate' => $deadline->due_date?->format('M j, Y'),
+                    'daysRemaining' => $deadline->daysRemaining(),
+                    'isRequired' => $isRequired,
+                ];
+            }
+        }
+
         // Optional document — always green, no urgency
         if (! $isRequired) {
             return [

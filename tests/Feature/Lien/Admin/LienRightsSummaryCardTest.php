@@ -172,4 +172,56 @@ describe('lien rights summary card', function () {
         Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
             ->assertSee('Feb 10, 2026');
     });
+
+    it('warns when NOI is filed but lien rights have expired', function () {
+        $noiDocType = LienDocumentType::where('slug', 'noi')->first();
+
+        $project = LienProject::factory()->create([
+            'business_id' => $this->business->id,
+            'jobsite_state' => 'FL',
+            'claimant_type' => ClaimantType::Subcontractor,
+            'property_class' => 'residential',
+            'first_furnish_date' => now()->subDays(200),
+            'last_furnish_date' => now()->subDays(200),
+            'noc_status' => NocStatus::No,
+        ]);
+
+        $this->calculator->calculateForProject($project);
+
+        $filing = LienFiling::factory()->forProject($project)->create([
+            'document_type_id' => $noiDocType->id,
+        ]);
+
+        $this->actingAs($this->admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->assertSee('Lien rights expired')
+            ->assertSee('demand letter');
+    });
+
+    it('warns when prelim notice is filed but lien rights have expired', function () {
+        $prelimDocType = LienDocumentType::where('slug', 'prelim_notice')->first();
+
+        $project = LienProject::factory()->create([
+            'business_id' => $this->business->id,
+            'jobsite_state' => 'FL',
+            'claimant_type' => ClaimantType::Subcontractor,
+            'property_class' => 'residential',
+            'first_furnish_date' => now()->subDays(200),
+            'last_furnish_date' => now()->subDays(200),
+            'noc_status' => NocStatus::No,
+        ]);
+
+        $this->calculator->calculateForProject($project);
+
+        $filing = LienFiling::factory()->forProject($project)->create([
+            'document_type_id' => $prelimDocType->id,
+        ]);
+
+        $this->actingAs($this->admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->assertSee('Lien rights expired')
+            ->assertSee('demand letter');
+    });
 });

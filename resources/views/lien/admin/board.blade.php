@@ -9,6 +9,9 @@
         </flux:button>
     </div>
 
+    <flux:input type="search" placeholder="Search by name, email, address, business..."
+        wire:model.live.debounce.300ms="search" icon="magnifying-glass" />
+
     <!-- Kanban Board -->
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         @foreach ($columns as $column)

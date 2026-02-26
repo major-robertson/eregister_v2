@@ -89,6 +89,84 @@ describe('all statuses board', function () {
             ->assertSee('Canceled Works Inc');
     });
 
+    it('filters by business name when searching', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $matchBusiness = Business::factory()->create(['name' => 'Pinnacle Roofing']);
+        $matchProject = LienProject::factory()->create(['business_id' => $matchBusiness->id]);
+        LienFiling::factory()->forProject($matchProject)->create([
+            'status' => FilingStatus::Draft,
+        ]);
+
+        $otherBusiness = Business::factory()->create(['name' => 'Valley Electric']);
+        $otherProject = LienProject::factory()->create(['business_id' => $otherBusiness->id]);
+        LienFiling::factory()->forProject($otherProject)->create([
+            'status' => FilingStatus::Draft,
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienBoardAll::class)
+            ->set('search', 'Pinnacle')
+            ->assertSee('Pinnacle Roofing')
+            ->assertDontSee('Valley Electric');
+    });
+
+    it('filters by filer email when searching', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $filer = User::factory()->create(['email' => 'searchme@test.com']);
+
+        $business = Business::factory()->create(['name' => 'Found By Email Co']);
+        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        LienFiling::factory()->forProject($project)->create([
+            'status' => FilingStatus::Draft,
+            'created_by_user_id' => $filer->id,
+        ]);
+
+        $otherBusiness = Business::factory()->create(['name' => 'Not Found Co']);
+        $otherProject = LienProject::factory()->create(['business_id' => $otherBusiness->id]);
+        LienFiling::factory()->forProject($otherProject)->create([
+            'status' => FilingStatus::Draft,
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienBoardAll::class)
+            ->set('search', 'searchme')
+            ->assertSee('Found By Email Co')
+            ->assertDontSee('Not Found Co');
+    });
+
+    it('filters by property address when searching', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $business = Business::factory()->create(['name' => 'Maple St Co']);
+        $project = LienProject::factory()->create([
+            'business_id' => $business->id,
+            'jobsite_address1' => '55 Maple Street',
+        ]);
+        LienFiling::factory()->forProject($project)->create([
+            'status' => FilingStatus::Draft,
+        ]);
+
+        $otherBusiness = Business::factory()->create(['name' => 'Elm St Co']);
+        $otherProject = LienProject::factory()->create(['business_id' => $otherBusiness->id]);
+        LienFiling::factory()->forProject($otherProject)->create([
+            'status' => FilingStatus::Draft,
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienBoardAll::class)
+            ->set('search', 'Maple')
+            ->assertSee('Maple St Co')
+            ->assertDontSee('Elm St Co');
+    });
+
     it('shows filings across multiple statuses', function () {
         $admin = User::factory()->create();
         $admin->givePermissionTo('lien.view');

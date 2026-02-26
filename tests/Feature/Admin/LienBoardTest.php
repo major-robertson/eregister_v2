@@ -220,6 +220,116 @@ describe('board cards display', function () {
             ->assertSee('Signing Co');
     });
 
+    it('filters by business name when searching', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $matchBusiness = Business::factory()->create(['name' => 'Skyline Builders']);
+        $matchProject = LienProject::factory()->create(['business_id' => $matchBusiness->id]);
+        LienFiling::factory()->forProject($matchProject)->create([
+            'status' => FilingStatus::Paid,
+            'paid_at' => now(),
+        ]);
+
+        $otherBusiness = Business::factory()->create(['name' => 'Ocean Plumbing']);
+        $otherProject = LienProject::factory()->create(['business_id' => $otherBusiness->id]);
+        LienFiling::factory()->forProject($otherProject)->create([
+            'status' => FilingStatus::Paid,
+            'paid_at' => now(),
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienBoard::class)
+            ->set('search', 'Skyline')
+            ->assertSee('Skyline Builders')
+            ->assertDontSee('Ocean Plumbing');
+    });
+
+    it('filters by filer email when searching', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $filer = User::factory()->create(['email' => 'uniquefiler@test.com']);
+
+        $business = Business::factory()->create(['name' => 'Email Match Co']);
+        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        LienFiling::factory()->forProject($project)->create([
+            'status' => FilingStatus::Paid,
+            'paid_at' => now(),
+            'created_by_user_id' => $filer->id,
+        ]);
+
+        $otherBusiness = Business::factory()->create(['name' => 'No Match Co']);
+        $otherProject = LienProject::factory()->create(['business_id' => $otherBusiness->id]);
+        LienFiling::factory()->forProject($otherProject)->create([
+            'status' => FilingStatus::Paid,
+            'paid_at' => now(),
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienBoard::class)
+            ->set('search', 'uniquefiler')
+            ->assertSee('Email Match Co')
+            ->assertDontSee('No Match Co');
+    });
+
+    it('filters by property address when searching', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $business = Business::factory()->create(['name' => 'Address Match Co']);
+        $project = LienProject::factory()->create([
+            'business_id' => $business->id,
+            'jobsite_address1' => '742 Evergreen Terrace',
+        ]);
+        LienFiling::factory()->forProject($project)->create([
+            'status' => FilingStatus::Paid,
+            'paid_at' => now(),
+        ]);
+
+        $otherBusiness = Business::factory()->create(['name' => 'Other Address Co']);
+        $otherProject = LienProject::factory()->create(['business_id' => $otherBusiness->id]);
+        LienFiling::factory()->forProject($otherProject)->create([
+            'status' => FilingStatus::Paid,
+            'paid_at' => now(),
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienBoard::class)
+            ->set('search', 'Evergreen')
+            ->assertSee('Address Match Co')
+            ->assertDontSee('Other Address Co');
+    });
+
+    it('shows all filings when search is empty', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $business1 = Business::factory()->create(['name' => 'Alpha Corp']);
+        $project1 = LienProject::factory()->create(['business_id' => $business1->id]);
+        LienFiling::factory()->forProject($project1)->create([
+            'status' => FilingStatus::Paid,
+            'paid_at' => now(),
+        ]);
+
+        $business2 = Business::factory()->create(['name' => 'Beta LLC']);
+        $project2 = LienProject::factory()->create(['business_id' => $business2->id]);
+        LienFiling::factory()->forProject($project2)->create([
+            'status' => FilingStatus::Paid,
+            'paid_at' => now(),
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienBoard::class)
+            ->set('search', '')
+            ->assertSee('Alpha Corp')
+            ->assertSee('Beta LLC');
+    });
+
     it('does not show draft or canceled filings', function () {
         $admin = User::factory()->create();
         $admin->givePermissionTo('lien.view');

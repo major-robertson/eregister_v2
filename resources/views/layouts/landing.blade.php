@@ -18,25 +18,139 @@
                     <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" class="h-9 brightness-0" />
                 </a>
 
-                <!-- Main Navigation -->
-                <nav class="hidden items-center gap-8 md:flex">
-                    <a href="{{ route('llc') }}"
-                        class="text-sm font-medium text-zinc-600 transition hover:text-zinc-900 {{ request()->routeIs('llc') ? 'text-zinc-900' : '' }}">
-                        LLC Formation
-                    </a>
-                    <a href="{{ route('liens') }}"
-                        class="text-sm font-medium text-zinc-600 transition hover:text-zinc-900 {{ request()->routeIs('liens') ? 'text-zinc-900' : '' }}">
-                        Liens
-                    </a>
+                <!-- Main Navigation (Desktop) -->
+                <nav class="hidden items-center gap-1 lg:flex">
+                    {{-- Form a Business Dropdown --}}
+                    <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
+                        <button @click="open = !open" type="button"
+                            class="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 {{ request()->routeIs('llc', 'corporation', 'dba', 'nonprofit', 'sole-proprietorship', 'registered-agent', 'annual-reports', 'ein-tax-id', 'operating-agreement') ? 'text-zinc-900' : '' }}">
+                            Form a Business
+                            <svg class="h-4 w-4 transition" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div x-show="open" x-transition:enter="transition ease-out duration-150"
+                            x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
+                            x-transition:leave="transition ease-in duration-100"
+                            x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-1"
+                            class="absolute left-1/2 top-full z-50 mt-1 w-[32rem] -translate-x-1/2 rounded-xl border border-zinc-200 bg-white p-5 shadow-xl" style="display: none;">
+                            <div class="grid grid-cols-2 gap-6">
+                                {{-- Column 1: Register Your Business --}}
+                                <div>
+                                    <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Register Your Business</p>
+                                    <div class="space-y-1">
+                                        <a href="{{ route('llc') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
+                                            Limited Liability Company (LLC)
+                                        </a>
+                                        <a href="{{ route('corporation') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
+                                            Corporation (C Corp, S Corp)
+                                        </a>
+                                        <a href="{{ route('dba') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
+                                            Doing Business As (DBA)
+                                        </a>
+                                        <a href="{{ route('nonprofit') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
+                                            Nonprofit
+                                        </a>
+                                        <a href="{{ route('sole-proprietorship') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
+                                            Sole Proprietorship
+                                        </a>
+                                    </div>
+                                </div>
+                                {{-- Column 2: Run Your Business --}}
+                                <div>
+                                    <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Run Your Business</p>
+                                    <div class="space-y-1">
+                                        <a href="{{ route('registered-agent') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
+                                            Registered Agent
+                                        </a>
+                                        <a href="{{ route('annual-reports') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
+                                            Annual Reports
+                                        </a>
+                                        <a href="{{ route('ein-tax-id') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
+                                            EIN / Tax ID
+                                        </a>
+                                        <a href="{{ route('operating-agreement') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
+                                            Operating Agreement
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Compliance & Tax Dropdown --}}
+                    <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
+                        <button @click="open = !open" type="button"
+                            class="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 {{ request()->routeIs('sales-tax-registration', 'resale-certificates') ? 'text-zinc-900' : '' }}">
+                            Compliance & Tax
+                            <svg class="h-4 w-4 transition" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div x-show="open" x-transition:enter="transition ease-out duration-150"
+                            x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
+                            x-transition:leave="transition ease-in duration-100"
+                            x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-1"
+                            class="absolute left-1/2 top-full z-50 mt-1 w-64 -translate-x-1/2 rounded-xl border border-zinc-200 bg-white p-3 shadow-xl" style="display: none;">
+                            <div class="space-y-1">
+                                <a href="{{ route('sales-tax-registration') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
+                                    Sales & Use Tax Registration
+                                </a>
+                                <a href="{{ route('resale-certificates') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
+                                    Resale Certificates
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Payment Protection Dropdown --}}
+                    <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
+                        <button @click="open = !open" type="button"
+                            class="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 {{ request()->routeIs('liens', 'liens.*') ? 'text-zinc-900' : '' }}">
+                            Payment Protection
+                            <svg class="h-4 w-4 transition" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div x-show="open" x-transition:enter="transition ease-out duration-150"
+                            x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
+                            x-transition:leave="transition ease-in duration-100"
+                            x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-1"
+                            class="absolute left-1/2 top-full z-50 mt-1 w-72 -translate-x-1/2 rounded-xl border border-zinc-200 bg-white p-3 shadow-xl" style="display: none;">
+                            <div class="space-y-1">
+                                <a href="{{ route('liens') }}#tracking" class="flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
+                                    Lien Tracking Portal
+                                    <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">Free</span>
+                                </a>
+                                <a href="{{ route('liens') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
+                                    Mechanics / Construction Lien
+                                </a>
+                                <a href="{{ route('liens.preliminary-notice') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
+                                    Preliminary Notice
+                                </a>
+                                <a href="{{ route('liens.notice-of-intent-to-lien') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
+                                    Notice of Intent to Lien
+                                </a>
+                                <a href="{{ route('liens.lien-release') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
+                                    Lien Release
+                                </a>
+                                <a href="{{ route('liens.payment-demand-letter') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
+                                    Payment Demand Letter
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Contact (flat link) --}}
                     <a href="{{ route('contact') }}"
-                        class="text-sm font-medium text-zinc-600 transition hover:text-zinc-900 {{ request()->routeIs('contact') ? 'text-zinc-900' : '' }}">
+                        class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 {{ request()->routeIs('contact') ? 'text-zinc-900' : '' }}">
                         Contact
                     </a>
                 </nav>
 
                 <!-- Auth Navigation -->
                 <div class="flex items-center gap-4">
-                    <nav class="hidden items-center gap-4 md:flex">
+                    <nav class="hidden items-center gap-4 lg:flex">
                         @auth
                         <a href="{{ auth()->user()->roles->isNotEmpty() ? route('admin.home') : url('/portal') }}"
                             class="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800"
@@ -67,7 +181,7 @@
 
                     <!-- Mobile menu button -->
                     <button @click="mobileMenuOpen = !mobileMenuOpen" type="button"
-                        class="inline-flex items-center justify-center rounded-md p-2 text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 md:hidden">
+                        class="inline-flex items-center justify-center rounded-md p-2 text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 lg:hidden">
                         <span class="sr-only">Open menu</span>
                         <svg x-show="!mobileMenuOpen" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
@@ -88,21 +202,74 @@
         <div x-show="mobileMenuOpen" x-transition:enter="transition ease-out duration-200"
             x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
             x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100"
-            x-transition:leave-end="opacity-0 scale-95" class="md:hidden" style="display: none;">
-            <div class="border-t border-zinc-200 bg-white px-4 pb-4 pt-2">
-                <nav class="flex flex-col gap-3">
-                    <a href="{{ route('llc') }}"
-                        class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 {{ request()->routeIs('llc') ? 'bg-zinc-100 text-zinc-900' : '' }}">
-                        LLC Formation
-                    </a>
-                    <a href="{{ route('liens') }}"
-                        class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 {{ request()->routeIs('liens') ? 'bg-zinc-100 text-zinc-900' : '' }}">
-                        Liens
-                    </a>
+            x-transition:leave-end="opacity-0 scale-95" class="lg:hidden" style="display: none;">
+            <div class="max-h-[80vh] overflow-y-auto border-t border-zinc-200 bg-white px-4 pb-4 pt-2">
+                <nav class="flex flex-col gap-1">
+                    {{-- Form a Business --}}
+                    <details class="group">
+                        <summary class="flex cursor-pointer list-none items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 [&::-webkit-details-marker]:hidden">
+                            Form a Business
+                            <svg class="h-4 w-4 shrink-0 text-zinc-400 transition group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </summary>
+                        <div class="ml-3 mt-1 space-y-1 border-l-2 border-zinc-100 pl-3">
+                            <p class="px-3 pt-2 text-xs font-semibold uppercase tracking-wider text-zinc-400">Register</p>
+                            <a href="{{ route('llc') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">LLC</a>
+                            <a href="{{ route('corporation') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Corporation (C Corp, S Corp)</a>
+                            <a href="{{ route('dba') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">DBA</a>
+                            <a href="{{ route('nonprofit') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Nonprofit</a>
+                            <a href="{{ route('sole-proprietorship') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Sole Proprietorship</a>
+                            <p class="px-3 pt-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Run Your Business</p>
+                            <a href="{{ route('registered-agent') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Registered Agent</a>
+                            <a href="{{ route('annual-reports') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Annual Reports</a>
+                            <a href="{{ route('ein-tax-id') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">EIN / Tax ID</a>
+                            <a href="{{ route('operating-agreement') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Operating Agreement</a>
+                        </div>
+                    </details>
+
+                    {{-- Compliance & Tax --}}
+                    <details class="group">
+                        <summary class="flex cursor-pointer list-none items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 [&::-webkit-details-marker]:hidden">
+                            Compliance & Tax
+                            <svg class="h-4 w-4 shrink-0 text-zinc-400 transition group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </summary>
+                        <div class="ml-3 mt-1 space-y-1 border-l-2 border-zinc-100 pl-3">
+                            <a href="{{ route('sales-tax-registration') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Sales & Use Tax Registration</a>
+                            <a href="{{ route('resale-certificates') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Resale Certificates</a>
+                        </div>
+                    </details>
+
+                    {{-- Payment Protection --}}
+                    <details class="group">
+                        <summary class="flex cursor-pointer list-none items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 [&::-webkit-details-marker]:hidden">
+                            Payment Protection
+                            <svg class="h-4 w-4 shrink-0 text-zinc-400 transition group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </summary>
+                        <div class="ml-3 mt-1 space-y-1 border-l-2 border-zinc-100 pl-3">
+                            <a href="{{ route('liens') }}#tracking" class="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">
+                                Lien Tracking Portal
+                                <span class="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">Free</span>
+                            </a>
+                            <a href="{{ route('liens') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Mechanics / Construction Lien</a>
+                            <a href="{{ route('liens.preliminary-notice') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Preliminary Notice</a>
+                            <a href="{{ route('liens.notice-of-intent-to-lien') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Notice of Intent to Lien</a>
+                            <a href="{{ route('liens.lien-release') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Lien Release</a>
+                            <a href="{{ route('liens.payment-demand-letter') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Payment Demand Letter</a>
+                        </div>
+                    </details>
+
+                    {{-- Contact --}}
                     <a href="{{ route('contact') }}"
                         class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 {{ request()->routeIs('contact') ? 'bg-zinc-100 text-zinc-900' : '' }}">
                         Contact
                     </a>
+
+                    {{-- Auth --}}
                     <div class="mt-3 flex flex-col gap-2 border-t border-zinc-200 pt-3">
                         @auth
                         <a href="{{ auth()->user()->roles->isNotEmpty() ? route('admin.home') : url('/portal') }}"
@@ -145,26 +312,39 @@
     <!-- Footer -->
     <footer class="border-t border-zinc-200 bg-zinc-900">
         <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-2 gap-8 md:grid-cols-4">
+            <div class="grid grid-cols-2 gap-8 md:grid-cols-5">
                 {{-- Company Info --}}
                 <div class="col-span-2 md:col-span-1">
                     <a href="{{ route('home') }}" class="flex items-center" wire:navigate>
                         <img src="/img/logo/eregister-logo-light-svg.svg" alt="eRegister" class="h-10 brightness-0 invert" />
                     </a>
                     <p class="mt-4 text-sm text-zinc-400">
-                        Simplifying business registrations across all 50 states. Sales tax, LLC formation, and
-                        compliance made easy.
+                        Business formation, compliance, and payment protection across all 50 states.
                     </p>
                 </div>
 
-                {{-- Services --}}
+                {{-- Form a Business --}}
                 <div>
-                    <h4 class="font-semibold text-white">Services</h4>
+                    <h4 class="font-semibold text-white">Form a Business</h4>
                     <ul class="mt-4 space-y-3">
-                        <li><a href="{{ route('llc') }}"
-                                class="text-sm text-zinc-400 transition hover:text-white">LLC Formation</a></li>
-                        <li><a href="{{ route('liens') }}"
-                                class="text-sm text-zinc-400 transition hover:text-white">Liens</a></li>
+                        <li><a href="{{ route('llc') }}" class="text-sm text-zinc-400 transition hover:text-white">LLC</a></li>
+                        <li><a href="{{ route('corporation') }}" class="text-sm text-zinc-400 transition hover:text-white">Corporation</a></li>
+                        <li><a href="{{ route('dba') }}" class="text-sm text-zinc-400 transition hover:text-white">DBA</a></li>
+                        <li><a href="{{ route('nonprofit') }}" class="text-sm text-zinc-400 transition hover:text-white">Nonprofit</a></li>
+                        <li><a href="{{ route('registered-agent') }}" class="text-sm text-zinc-400 transition hover:text-white">Registered Agent</a></li>
+                        <li><a href="{{ route('ein-tax-id') }}" class="text-sm text-zinc-400 transition hover:text-white">EIN / Tax ID</a></li>
+                    </ul>
+                </div>
+
+                {{-- Payment Protection --}}
+                <div>
+                    <h4 class="font-semibold text-white">Payment Protection</h4>
+                    <ul class="mt-4 space-y-3">
+                        <li><a href="{{ route('liens') }}" class="text-sm text-zinc-400 transition hover:text-white">Mechanics Lien</a></li>
+                        <li><a href="{{ route('liens.preliminary-notice') }}" class="text-sm text-zinc-400 transition hover:text-white">Preliminary Notice</a></li>
+                        <li><a href="{{ route('liens.notice-of-intent-to-lien') }}" class="text-sm text-zinc-400 transition hover:text-white">Notice of Intent</a></li>
+                        <li><a href="{{ route('liens.lien-release') }}" class="text-sm text-zinc-400 transition hover:text-white">Lien Release</a></li>
+                        <li><a href="{{ route('liens.payment-demand-letter') }}" class="text-sm text-zinc-400 transition hover:text-white">Demand Letter</a></li>
                     </ul>
                 </div>
 
@@ -172,9 +352,9 @@
                 <div>
                     <h4 class="font-semibold text-white">Company</h4>
                     <ul class="mt-4 space-y-3">
-                        <li><a href="#faq" class="text-sm text-zinc-400 transition hover:text-white">FAQ</a></li>
-                        <li><a href="{{ route('contact') }}"
-                                class="text-sm text-zinc-400 transition hover:text-white">Contact</a></li>
+                        <li><a href="{{ route('contact') }}" class="text-sm text-zinc-400 transition hover:text-white">Contact</a></li>
+                        <li><a href="{{ route('sales-tax-registration') }}" class="text-sm text-zinc-400 transition hover:text-white">Sales Tax</a></li>
+                        <li><a href="{{ route('resale-certificates') }}" class="text-sm text-zinc-400 transition hover:text-white">Resale Certificates</a></li>
                     </ul>
                 </div>
 

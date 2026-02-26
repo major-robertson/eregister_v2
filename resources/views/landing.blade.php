@@ -4,7 +4,7 @@
 
 @section('meta')
 <meta name="description"
-    content="eRegister simplifies business registrations. Apply for sales tax permits, form LLCs, and handle compliance across multiple states from one platform.">
+    content="eRegister simplifies business formation, compliance, and payment protection. Form LLCs, register for sales tax, file mechanics liens, and manage compliance across all 50 states.">
 @endsection
 
 @section('content')
@@ -20,8 +20,7 @@
                 </h1>
 
                 <p class="mt-6 text-xl leading-relaxed text-zinc-600">
-                    Sales tax permits, LLC formation, use tax registration, and more. One application, multiple states,
-                    zero hassle.
+                    LLC formation, sales tax permits, mechanics liens, and compliance management. One platform, all 50 states, zero hassle.
                 </p>
 
                 <div class="mt-8">
@@ -104,6 +103,22 @@
                             <h3 class="font-bold text-zinc-900">Foreign Qualification</h3>
                             <p class="text-sm text-zinc-500">Expand to new states easily</p>
                         </div>
+                    </div>
+
+                    {{-- Card 5 --}}
+                    <div class="flex items-center gap-4 rounded-2xl border border-amber-200 bg-amber-50/50 p-5 shadow-lg">
+                        <div
+                            class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+                            <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-zinc-900">Payment Protection</h3>
+                            <p class="text-sm text-zinc-500">Liens, notices & demand letters</p>
+                        </div>
+                        <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">Free tracking</span>
                     </div>
                 </div>
             </div>
@@ -395,47 +410,49 @@
                 </a>
             </div>
 
-            {{-- Business Licenses --}}
+            {{-- Payment Protection --}}
             <div
-                class="group rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                class="group rounded-2xl border border-amber-200 bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                 <div
-                    class="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
+                    class="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
                     <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
                 </div>
-                <h3 class="text-xl font-bold text-zinc-900">Business Licenses</h3>
+                <div class="flex items-center gap-2">
+                    <h3 class="text-xl font-bold text-zinc-900">Payment Protection</h3>
+                    <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">Free tracking</span>
+                </div>
                 <p class="mt-3 text-zinc-600">
-                    Get the licenses you need to operate legally. We research and apply for required business licenses
-                    in your jurisdiction.
+                    File mechanics liens, send preliminary notices, and protect your construction payment rights. Free project tracking included.
                 </p>
                 <ul class="mt-6 space-y-3">
                     <li class="flex items-center gap-3 text-sm text-zinc-600">
-                        <svg class="h-5 w-5 shrink-0 text-rose-600" fill="none" viewBox="0 0 24 24"
+                        <svg class="h-5 w-5 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        License research
+                        Mechanics lien filing
                     </li>
                     <li class="flex items-center gap-3 text-sm text-zinc-600">
-                        <svg class="h-5 w-5 shrink-0 text-rose-600" fill="none" viewBox="0 0 24 24"
+                        <svg class="h-5 w-5 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        Application preparation
+                        Preliminary notices & intent to lien
                     </li>
                     <li class="flex items-center gap-3 text-sm text-zinc-600">
-                        <svg class="h-5 w-5 shrink-0 text-rose-600" fill="none" viewBox="0 0 24 24"
+                        <svg class="h-5 w-5 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        Renewal tracking
+                        Deadline tracking & alerts
                     </li>
                 </ul>
-                <a href="{{ route('register') }}"
-                    class="mt-8 inline-flex items-center gap-1 text-sm font-semibold text-rose-600 transition-colors hover:text-rose-700">
-                    Get licensed
+                <a href="{{ route('liens') }}"
+                    class="mt-8 inline-flex items-center gap-1 text-sm font-semibold text-amber-600 transition-colors hover:text-amber-700">
+                    Protect your payments
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M17 8l4 4m0 0l-4 4m4-4H3" />

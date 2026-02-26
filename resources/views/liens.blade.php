@@ -215,6 +215,97 @@
     </div>
 </section>
 
+{{-- Free Lien Tracking --}}
+<section id="tracking" class="border-b border-zinc-200 bg-white py-24">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        <div class="text-center">
+            <div class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-sm font-semibold text-emerald-700">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                100% Free &mdash; No Credit Card Required
+            </div>
+            <h2 class="mt-6 text-3xl font-bold text-zinc-900 sm:text-4xl">Free Lien Tracking Portal</h2>
+            <p class="mx-auto mt-4 max-w-2xl text-lg text-zinc-600">
+                Track every project, monitor deadlines, and protect your payment rights &mdash; all from one dashboard. Our free lien tracking portal gives contractors, subcontractors, and suppliers the tools to stay ahead.
+            </p>
+        </div>
+
+        <div class="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
+                <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-zinc-900">Project Dashboard</h3>
+                <p class="mt-2 text-zinc-600">See all your active projects, lien statuses, and amounts protected in a single view.</p>
+            </div>
+
+            <div class="rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
+                <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-zinc-900">Deadline Alerts</h3>
+                <p class="mt-2 text-zinc-600">Automatic reminders for preliminary notice deadlines, lien filing windows, and enforcement dates.</p>
+            </div>
+
+            <div class="rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
+                <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-zinc-900">Rights Protection</h3>
+                <p class="mt-2 text-zinc-600">Know exactly when to send notices and file liens so you never lose your right to payment.</p>
+            </div>
+
+            <div class="rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
+                <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-zinc-900">Multi-Project Support</h3>
+                <p class="mt-2 text-zinc-600">Manage unlimited projects across multiple states from one account.</p>
+            </div>
+
+            <div class="rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
+                <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-zinc-900">Email Notifications</h3>
+                <p class="mt-2 text-zinc-600">Get notified when deadlines approach, documents are ready, or action is needed on a project.</p>
+            </div>
+
+            <div class="rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
+                <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-zinc-900">No Hidden Costs</h3>
+                <p class="mt-2 text-zinc-600">Tracking is free forever. Only pay when you're ready to file a lien or send a notice.</p>
+            </div>
+        </div>
+
+        <div class="mt-12 text-center">
+            <a href="{{ route('register') }}"
+                class="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-8 py-4 font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-zinc-800 hover:shadow-xl">
+                Start Free Tracking
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+            </a>
+            <p class="mt-3 text-sm text-zinc-500">Free forever. No credit card required.</p>
+        </div>
+    </div>
+</section>
+
 {{-- Features --}}
 <section class="py-24">
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">

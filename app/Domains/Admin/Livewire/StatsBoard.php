@@ -122,6 +122,8 @@ class StatsBoard extends Component
     {
         $paidStatuses = [
             FilingStatus::Paid,
+            FilingStatus::AwaitingClient,
+            FilingStatus::AwaitingEsign,
             FilingStatus::InFulfillment,
             FilingStatus::Mailed,
             FilingStatus::Recorded,

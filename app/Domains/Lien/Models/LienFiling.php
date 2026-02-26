@@ -174,8 +174,10 @@ class LienFiling extends Model implements HasMedia
         return match ($this->status) {
             FilingStatus::Draft => [FilingStatus::AwaitingPayment, FilingStatus::Canceled],
             FilingStatus::AwaitingPayment => [FilingStatus::Paid, FilingStatus::Draft, FilingStatus::Canceled],
-            FilingStatus::Paid => [FilingStatus::InFulfillment, FilingStatus::Complete],
-            FilingStatus::InFulfillment => [FilingStatus::Mailed, FilingStatus::Canceled],
+            FilingStatus::Paid => [FilingStatus::InFulfillment, FilingStatus::AwaitingClient, FilingStatus::AwaitingEsign, FilingStatus::Complete],
+            FilingStatus::AwaitingClient => [FilingStatus::InFulfillment, FilingStatus::Canceled],
+            FilingStatus::AwaitingEsign => [FilingStatus::InFulfillment, FilingStatus::Canceled],
+            FilingStatus::InFulfillment => [FilingStatus::Mailed, FilingStatus::AwaitingClient, FilingStatus::AwaitingEsign, FilingStatus::Canceled],
             FilingStatus::Mailed => [FilingStatus::Recorded, FilingStatus::Complete],
             FilingStatus::Recorded => [FilingStatus::Complete],
             FilingStatus::Complete => [],

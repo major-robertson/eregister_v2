@@ -28,39 +28,63 @@
                 <!-- Column Content -->
                 <div class="flex-1 space-y-3 overflow-y-auto p-3" style="max-height: 70vh;">
                     @forelse ($columnFilings as $filing)
+                        @php
+                            $latestComment = $filing->events->first();
+                        @endphp
                         <a
                             href="{{ route('admin.liens.show', $filing->public_id) }}"
                             class="block rounded-lg border border-border bg-white p-3 shadow-sm transition hover:border-blue-300 hover:shadow-md"
                             wire:navigate
                         >
-                            <!-- Business Name -->
                             <div class="flex items-start justify-between gap-2">
                                 <flux:text class="font-medium text-gray-900 truncate">
                                     {{ $filing->project?->business?->name ?? 'Unknown Business' }}
                                 </flux:text>
-                                @if ($filing->needs_review)
-                                    <flux:badge color="amber" size="sm">Review</flux:badge>
-                                @endif
+                                <div class="flex shrink-0 items-center gap-1">
+                                    @if ($filing->project?->jobsite_state)
+                                        <flux:badge size="sm" color="zinc">{{ $filing->project->jobsite_state }}</flux:badge>
+                                    @endif
+                                    @if ($filing->needs_review)
+                                        <flux:badge color="amber" size="sm">Review</flux:badge>
+                                    @endif
+                                </div>
                             </div>
 
-                            <!-- Project Name -->
-                            <flux:text class="mt-1 text-sm text-gray-600 truncate">
-                                {{ $filing->project?->name ?? 'Unknown Project' }}
-                            </flux:text>
+                            @if ($filing->createdBy)
+                                <flux:text class="mt-1 text-xs text-gray-500 truncate">
+                                    {{ $filing->createdBy->name }} &middot; {{ $filing->createdBy->email }}
+                                </flux:text>
+                            @endif
 
-                            <!-- Document Type -->
-                            <div class="mt-2 flex items-center gap-2">
+                            @if ($filing->project?->jobsite_address1)
+                                <flux:text class="mt-1 text-xs text-gray-500 truncate">
+                                    {{ $filing->project->jobsiteAddressLine() }}
+                                </flux:text>
+                            @endif
+
+                            <div class="mt-2 flex flex-wrap items-center gap-1">
                                 <flux:badge size="sm" color="zinc">
                                     {{ $filing->documentType?->name ?? 'Unknown' }}
+                                </flux:badge>
+                                <flux:badge size="sm" color="{{ $filing->service_level === \App\Domains\Lien\Enums\ServiceLevel::FullService ? 'indigo' : 'zinc' }}">
+                                    {{ $filing->service_level->label() }}
                                 </flux:badge>
                                 <flux:badge size="sm" color="{{ $filing->status->color() }}">
                                     {{ $filing->status->label() }}
                                 </flux:badge>
                             </div>
 
-                            <!-- Date -->
-                            <flux:text class="mt-2 text-xs text-gray-500">
-                                Created {{ $filing->created_at->diffForHumans() }}
+                            @if ($latestComment)
+                                <div class="mt-2 flex items-start gap-1.5">
+                                    <flux:icon name="chat-bubble-left" class="mt-0.5 size-3 shrink-0 text-gray-400" />
+                                    <flux:text class="text-xs text-gray-500 line-clamp-2">
+                                        {{ Str::limit($latestComment->payload_json['comment'] ?? '', 200) }}
+                                    </flux:text>
+                                </div>
+                            @endif
+
+                            <flux:text class="mt-2 text-xs text-gray-400">
+                                {{ $filing->created_at->diffForHumans() }}
                             </flux:text>
                         </a>
                     @empty

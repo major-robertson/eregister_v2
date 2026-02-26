@@ -27,6 +27,8 @@ class StepStatusCalculator
      */
     protected const PAID_STATUSES = [
         FilingStatus::Paid,
+        FilingStatus::AwaitingClient,
+        FilingStatus::AwaitingEsign,
         FilingStatus::InFulfillment,
         FilingStatus::Mailed,
         FilingStatus::Recorded,
@@ -83,6 +85,8 @@ class StepStatusCalculator
         // Filing statuses that count as "paid/in-progress"
         $paidFilingStatuses = [
             FilingStatus::Paid,
+            FilingStatus::AwaitingClient,
+            FilingStatus::AwaitingEsign,
             FilingStatus::InFulfillment,
             FilingStatus::Mailed,
             FilingStatus::Recorded,
@@ -245,8 +249,12 @@ class StepStatusCalculator
             return [DeadlineStatus::Completed, $statusReason, $statusMeta];
         }
 
-        // 5. Filing is InFulfillment → InFulfillment
-        if ($filingStatus === FilingStatus::InFulfillment) {
+        // 5. Filing is InFulfillment / AwaitingClient / AwaitingEsign → InFulfillment
+        if (in_array($filingStatus, [
+            FilingStatus::InFulfillment,
+            FilingStatus::AwaitingClient,
+            FilingStatus::AwaitingEsign,
+        ], true)) {
             return [DeadlineStatus::InFulfillment, $statusReason, $statusMeta];
         }
 
@@ -371,6 +379,8 @@ class StepStatusCalculator
             FilingStatus::Recorded => 90,
             FilingStatus::Mailed => 80,
             FilingStatus::InFulfillment => 70,
+            FilingStatus::AwaitingClient => 65,
+            FilingStatus::AwaitingEsign => 65,
             FilingStatus::Paid => 60,
             FilingStatus::AwaitingPayment => 50,
             FilingStatus::Draft => 40,

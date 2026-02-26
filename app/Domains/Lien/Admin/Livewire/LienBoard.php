@@ -39,8 +39,14 @@ class LienBoard extends Component
                 FilingStatus::AwaitingPayment,
                 FilingStatus::Canceled,
             ])
-            ->with(['project', 'project.business', 'documentType'])
-            ->orderBy('created_at', 'asc') // Oldest first in queue
+            ->with([
+                'project',
+                'project.business',
+                'documentType',
+                'createdBy',
+                'events' => fn ($q) => $q->where('event_type', 'note_added')->latest()->limit(1),
+            ])
+            ->orderBy('created_at', 'asc')
             ->get()
             ->groupBy(fn (LienFiling $filing) => KanbanColumn::forFiling($filing)->value);
     }

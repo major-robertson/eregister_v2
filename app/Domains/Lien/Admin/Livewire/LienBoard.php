@@ -37,6 +37,7 @@ class LienBoard extends Component
             ->whereNotIn('status', [
                 FilingStatus::Draft,
                 FilingStatus::AwaitingPayment,
+                FilingStatus::Complete,
                 FilingStatus::Canceled,
             ])
             ->with([

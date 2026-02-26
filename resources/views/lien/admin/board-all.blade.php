@@ -1,23 +1,23 @@
 <div class="space-y-6">
     <div class="flex items-center justify-between">
         <div>
-            <flux:heading size="xl">Lien Filings Board</flux:heading>
-            <flux:text class="mt-1">Manage and process lien filings across all businesses.</flux:text>
+            <flux:heading size="xl">All Filings Board</flux:heading>
+            <flux:text class="mt-1">Every filing across all statuses.</flux:text>
         </div>
-        <flux:button href="{{ route('admin.liens.board-all') }}" variant="subtle" icon="view-columns" wire:navigate>
-            View All Statuses
+        <flux:button href="{{ route('admin.liens.board') }}" variant="primary" icon="arrow-left" wire:navigate>
+            Back to Board
         </flux:button>
     </div>
 
-    <!-- Kanban Board -->
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <!-- Kanban Board — horizontal scroll for 10 columns -->
+    <div class="flex gap-4 overflow-x-auto pb-4">
         @foreach ($columns as $column)
             @php
                 $columnFilings = $filings->get($column->value) ?? collect();
                 $count = $columnFilings->count();
             @endphp
 
-            <div class="flex flex-col rounded-lg border border-border bg-white">
+            <div class="flex w-72 shrink-0 flex-col rounded-lg border border-border bg-white">
                 <!-- Column Header -->
                 <div class="flex items-center justify-between border-b border-border px-4 py-3">
                     <div class="flex items-center gap-2">
@@ -71,9 +71,6 @@
                                 </flux:badge>
                                 <flux:badge size="sm" color="{{ $filing->service_level === \App\Domains\Lien\Enums\ServiceLevel::FullService ? 'indigo' : 'zinc' }}">
                                     {{ $filing->service_level->label() }}
-                                </flux:badge>
-                                <flux:badge size="sm" color="{{ $filing->status->color() }}">
-                                    {{ $filing->status->label() }}
                                 </flux:badge>
                             </div>
 

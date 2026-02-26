@@ -84,7 +84,6 @@
                     <flux:button
                         href="{{ route('lien.filings.checkout', $filing) }}"
                         variant="primary"
-                        size="lg"
                     >
                         Complete Payment
                     </flux:button>

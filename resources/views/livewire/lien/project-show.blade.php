@@ -250,6 +250,8 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                         $isAwaitingPayment = $step->status === DeadlineStatus::AwaitingPayment;
                         $isPurchased = $step->status === DeadlineStatus::Purchased;
                         $isInFulfillment = $step->status === DeadlineStatus::InFulfillment;
+                        $isAwaitingClient = $step->status === DeadlineStatus::AwaitingClient;
+                        $isAwaitingEsign = $step->status === DeadlineStatus::AwaitingEsign;
                         $isNotStarted = $step->status === DeadlineStatus::NotStarted;
                         $stepNumber = $index + 1;
                         $isFirst = $index === 0;
@@ -277,6 +279,8 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                                     'bg-amber-500 text-white' => $isDueSoon || $isAwaitingPayment ||
                                     $isNextStepHighlighted,
                                     'bg-zinc-400 text-white' => $isNotApplicable || $isLocked,
+                                    'bg-orange-500 text-white' => $isAwaitingClient,
+                                    'bg-purple-500 text-white' => $isAwaitingEsign,
                                     'bg-sky-500 text-white' => $isPurchased || $isInFulfillment,
                                     'bg-white dark:bg-zinc-800 border-2 border-zinc-300 dark:border-zinc-600
                                     text-zinc-500 dark:text-zinc-400' => $isInDraft || ($isNotStarted &&
@@ -316,11 +320,16 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                                     !$isNextStepHighlighted,
                                     'border bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700
                                     opacity-60' => $isNotApplicable,
+                                    'border bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800' =>
+                                    $isAwaitingClient,
+                                    'border bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800' =>
+                                    $isAwaitingEsign,
                                     'border bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800' =>
                                     $isPurchased || $isInFulfillment,
                                     'border border-zinc-200 dark:border-zinc-700' => !$isCompleted && !$isMissed &&
                                     !$isNextStepHighlighted && !($isDueSoon || $isAwaitingPayment ||
-                                    $hasPropertyWarning) && !$isNotApplicable && !($isPurchased || $isInFulfillment),
+                                    $hasPropertyWarning) && !$isNotApplicable && !($isPurchased || $isInFulfillment) &&
+                                    !$isAwaitingClient && !$isAwaitingEsign,
                                     ])>
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center gap-2 flex-wrap">
@@ -412,6 +421,10 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                                         <flux:badge color="zinc" size="sm">Deadline Unknown</flux:badge>
                                         @elseif($isAwaitingPayment)
                                         <flux:badge color="amber" size="sm">Awaiting Payment</flux:badge>
+                                        @elseif($isAwaitingClient)
+                                        <flux:badge color="orange" size="sm">Awaiting Client</flux:badge>
+                                        @elseif($isAwaitingEsign)
+                                        <flux:badge color="purple" size="sm">Awaiting E-Signature</flux:badge>
                                         @elseif($isPurchased || $isInFulfillment)
                                         <flux:badge color="sky" size="sm">In Progress</flux:badge>
                                         @elseif($isInDraft)
@@ -426,7 +439,7 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                                                 size="sm" variant="outline">
                                                 View
                                             </flux:button>
-                                            @elseif($isPurchased || $isInFulfillment)
+                                            @elseif($isPurchased || $isInFulfillment || $isAwaitingClient || $isAwaitingEsign)
                                             @if($step->activeFiling)
                                             <flux:button href="{{ route('lien.filings.show', $step->activeFiling) }}"
                                                 size="sm" variant="outline">

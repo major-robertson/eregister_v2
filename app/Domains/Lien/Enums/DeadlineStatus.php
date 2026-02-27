@@ -17,6 +17,8 @@ enum DeadlineStatus: string
     case AwaitingPayment = 'awaiting_payment'; // filing awaiting payment
     case Purchased = 'purchased';              // paid, not yet in fulfillment
     case InFulfillment = 'in_fulfillment';     // in fulfillment process
+    case AwaitingClient = 'awaiting_client';   // waiting on client info
+    case AwaitingEsign = 'awaiting_esign';     // waiting on e-signature
     case Completed = 'completed';              // done (paid or external)
     case DueSoon = 'due_soon';                 // amber - within threshold
     case Missed = 'missed';                    // red - deadline passed
@@ -32,6 +34,8 @@ enum DeadlineStatus: string
             self::AwaitingPayment => 'Awaiting Payment',
             self::Purchased => 'Purchased',
             self::InFulfillment => 'In Progress',
+            self::AwaitingClient => 'Awaiting Client',
+            self::AwaitingEsign => 'Awaiting E-Signature',
             self::Completed => 'Completed',
             self::DueSoon => 'Due Soon',
             self::Missed => 'Overdue',
@@ -49,6 +53,8 @@ enum DeadlineStatus: string
             self::AwaitingPayment => 'amber',
             self::Purchased => 'sky',
             self::InFulfillment => 'blue',
+            self::AwaitingClient => 'orange',
+            self::AwaitingEsign => 'purple',
             self::Completed => 'green',
             self::DueSoon => 'amber',
             self::Missed => 'red',
@@ -78,6 +84,8 @@ enum DeadlineStatus: string
             self::NotApplicable,
             self::Purchased,
             self::InFulfillment,
+            self::AwaitingClient,
+            self::AwaitingEsign,
             self::AwaitingPayment,
         ], true);
     }
@@ -92,6 +100,8 @@ enum DeadlineStatus: string
             self::AwaitingPayment,
             self::Purchased,
             self::InFulfillment,
+            self::AwaitingClient,
+            self::AwaitingEsign,
         ], true);
     }
 }

@@ -80,6 +80,8 @@ class StepStatusCalculator
             DeadlineStatus::Completed,
             DeadlineStatus::Purchased,
             DeadlineStatus::InFulfillment,
+            DeadlineStatus::AwaitingClient,
+            DeadlineStatus::AwaitingEsign,
         ];
 
         // Filing statuses that count as "paid/in-progress"
@@ -249,13 +251,19 @@ class StepStatusCalculator
             return [DeadlineStatus::Completed, $statusReason, $statusMeta];
         }
 
-        // 5. Filing is InFulfillment / AwaitingClient / AwaitingEsign → InFulfillment
-        if (in_array($filingStatus, [
-            FilingStatus::InFulfillment,
-            FilingStatus::AwaitingClient,
-            FilingStatus::AwaitingEsign,
-        ], true)) {
+        // 5. Filing is InFulfillment → InFulfillment
+        if ($filingStatus === FilingStatus::InFulfillment) {
             return [DeadlineStatus::InFulfillment, $statusReason, $statusMeta];
+        }
+
+        // 5a. Filing is AwaitingClient → AwaitingClient
+        if ($filingStatus === FilingStatus::AwaitingClient) {
+            return [DeadlineStatus::AwaitingClient, $statusReason, $statusMeta];
+        }
+
+        // 5b. Filing is AwaitingEsign → AwaitingEsign
+        if ($filingStatus === FilingStatus::AwaitingEsign) {
+            return [DeadlineStatus::AwaitingEsign, $statusReason, $statusMeta];
         }
 
         // 6. Filing is Paid → Purchased

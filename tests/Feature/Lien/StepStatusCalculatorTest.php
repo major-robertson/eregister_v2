@@ -115,6 +115,56 @@ describe('status precedence', function () {
         expect($step->status)->toBe(DeadlineStatus::InFulfillment);
     });
 
+    it('returns AwaitingClient status when filing is AwaitingClient', function () {
+        $project = LienProject::factory()->forBusiness($this->business)->create([
+            'jobsite_state' => 'CA',
+            'first_furnish_date' => now()->subDays(10),
+        ]);
+
+        $this->deadlineCalculator->calculateForProject($project);
+
+        $deadline = $project->deadlines()
+            ->whereHas('documentType', fn ($q) => $q->where('slug', 'prelim_notice'))
+            ->first();
+
+        LienFiling::factory()->forProject($project)->create([
+            'document_type_id' => $deadline->document_type_id,
+            'project_deadline_id' => $deadline->id,
+            'status' => FilingStatus::AwaitingClient,
+        ]);
+
+        $steps = $this->calculator->forProject($project->fresh());
+        $step = $steps['prelim_notice'] ?? null;
+
+        expect($step)->not->toBeNull();
+        expect($step->status)->toBe(DeadlineStatus::AwaitingClient);
+    });
+
+    it('returns AwaitingEsign status when filing is AwaitingEsign', function () {
+        $project = LienProject::factory()->forBusiness($this->business)->create([
+            'jobsite_state' => 'CA',
+            'first_furnish_date' => now()->subDays(10),
+        ]);
+
+        $this->deadlineCalculator->calculateForProject($project);
+
+        $deadline = $project->deadlines()
+            ->whereHas('documentType', fn ($q) => $q->where('slug', 'prelim_notice'))
+            ->first();
+
+        LienFiling::factory()->forProject($project)->create([
+            'document_type_id' => $deadline->document_type_id,
+            'project_deadline_id' => $deadline->id,
+            'status' => FilingStatus::AwaitingEsign,
+        ]);
+
+        $steps = $this->calculator->forProject($project->fresh());
+        $step = $steps['prelim_notice'] ?? null;
+
+        expect($step)->not->toBeNull();
+        expect($step->status)->toBe(DeadlineStatus::AwaitingEsign);
+    });
+
     it('returns AwaitingPayment status when filing is AwaitingPayment', function () {
         $project = LienProject::factory()->forBusiness($this->business)->create([
             'jobsite_state' => 'CA',

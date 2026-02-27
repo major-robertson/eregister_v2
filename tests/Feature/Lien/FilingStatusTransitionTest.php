@@ -130,17 +130,23 @@ it('can transition from awaiting_esign back to in_fulfillment', function () {
     expect($this->filing->fresh()->status)->toBe(FilingStatus::InFulfillment);
 });
 
-it('cannot transition from awaiting_client to mailed', function () {
+it('can transition from awaiting_client to any status except itself', function () {
     $this->filing->update(['status' => FilingStatus::AwaitingClient]);
 
-    $this->filing->transitionTo(FilingStatus::Mailed);
-})->throws(InvalidStatusTransitionException::class);
+    $allowed = $this->filing->allowedTransitions();
 
-it('cannot transition from awaiting_esign to mailed', function () {
+    expect($allowed)->not->toContain(FilingStatus::AwaitingClient);
+    expect(count($allowed))->toBe(count(FilingStatus::cases()) - 1);
+});
+
+it('can transition from awaiting_esign to any status except itself', function () {
     $this->filing->update(['status' => FilingStatus::AwaitingEsign]);
 
-    $this->filing->transitionTo(FilingStatus::Mailed);
-})->throws(InvalidStatusTransitionException::class);
+    $allowed = $this->filing->allowedTransitions();
+
+    expect($allowed)->not->toContain(FilingStatus::AwaitingEsign);
+    expect(count($allowed))->toBe(count(FilingStatus::cases()) - 1);
+});
 
 it('does not allow transition from complete', function () {
     $this->filing->update(['status' => FilingStatus::Complete]);

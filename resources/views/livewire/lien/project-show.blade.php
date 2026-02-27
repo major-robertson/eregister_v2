@@ -252,6 +252,8 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                         $isInFulfillment = $step->status === DeadlineStatus::InFulfillment;
                         $isAwaitingClient = $step->status === DeadlineStatus::AwaitingClient;
                         $isAwaitingEsign = $step->status === DeadlineStatus::AwaitingEsign;
+                        $isMailed = $step->status === DeadlineStatus::Mailed;
+                        $isRecorded = $step->status === DeadlineStatus::Recorded;
                         $isNotStarted = $step->status === DeadlineStatus::NotStarted;
                         $stepNumber = $index + 1;
                         $isFirst = $index === 0;
@@ -281,12 +283,14 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                                     'bg-zinc-400 text-white' => $isNotApplicable || $isLocked,
                                     'bg-orange-500 text-white' => $isAwaitingClient,
                                     'bg-purple-500 text-white' => $isAwaitingEsign,
+                                    'bg-teal-500 text-white' => $isMailed,
+                                    'bg-cyan-500 text-white' => $isRecorded,
                                     'bg-sky-500 text-white' => $isPurchased || $isInFulfillment,
                                     'bg-white dark:bg-zinc-800 border-2 border-zinc-300 dark:border-zinc-600
                                     text-zinc-500 dark:text-zinc-400' => $isInDraft || ($isNotStarted &&
                                     !$step->isNextStep) || ($isDeadlineUnknown && !$step->isNextStep),
                                     ])>
-                                    @if($isCompleted)
+                                    @if($isCompleted || $isMailed || $isRecorded)
                                     <flux:icon name="check" class="size-4" />
                                     @elseif($isLocked)
                                     <flux:icon name="lock-closed" class="size-4" />
@@ -300,8 +304,8 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                                 {{-- Connecting line --}}
                                 @if(!$isLast)
                                 <div @class([ 'w-0.5 flex-1 mt-2 border-l-2 border-dashed'
-                                    , 'border-green-300 dark:border-green-700'=> $isCompleted,
-                                    'border-zinc-300 dark:border-zinc-600' => !$isCompleted,
+                                    , 'border-green-300 dark:border-green-700'=> $isCompleted || $isMailed || $isRecorded,
+                                    'border-zinc-300 dark:border-zinc-600' => !$isCompleted && !$isMailed && !$isRecorded,
                                     ])></div>
                                 @endif
                             </div>
@@ -324,12 +328,16 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                                     $isAwaitingClient,
                                     'border bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800' =>
                                     $isAwaitingEsign,
+                                    'border bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800' =>
+                                    $isMailed,
+                                    'border bg-cyan-50 dark:bg-cyan-900/20 border-cyan-200 dark:border-cyan-800' =>
+                                    $isRecorded,
                                     'border bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800' =>
                                     $isPurchased || $isInFulfillment,
                                     'border border-zinc-200 dark:border-zinc-700' => !$isCompleted && !$isMissed &&
                                     !$isNextStepHighlighted && !($isDueSoon || $isAwaitingPayment ||
                                     $hasPropertyWarning) && !$isNotApplicable && !($isPurchased || $isInFulfillment) &&
-                                    !$isAwaitingClient && !$isAwaitingEsign,
+                                    !$isAwaitingClient && !$isAwaitingEsign && !$isMailed && !$isRecorded,
                                     ])>
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center gap-2 flex-wrap">
@@ -339,7 +347,7 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                                                 }}</span>
                                             @if($isCompleted)
                                             <flux:badge size="sm" color="green">
-                                                {{ $deadline->wasCompletedExternally() ? 'Filed Myself' : 'Submitted' }}
+                                                {{ $deadline->wasCompletedExternally() ? 'Filed Myself' : 'Complete' }}
                                             </flux:badge>
                                             @elseif($isNextStepHighlighted)
                                             <flux:badge size="sm" color="amber">Next step</flux:badge>
@@ -425,6 +433,10 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                                         <flux:badge color="orange" size="sm">Awaiting Client</flux:badge>
                                         @elseif($isAwaitingEsign)
                                         <flux:badge color="purple" size="sm">Awaiting E-Signature</flux:badge>
+                                        @elseif($isMailed)
+                                        <flux:badge color="teal" size="sm">Mailed</flux:badge>
+                                        @elseif($isRecorded)
+                                        <flux:badge color="cyan" size="sm">Recorded</flux:badge>
                                         @elseif($isPurchased || $isInFulfillment)
                                         <flux:badge color="sky" size="sm">In Progress</flux:badge>
                                         @elseif($isInDraft)
@@ -433,13 +445,13 @@ use App\Domains\Lien\Enums\DeadlineStatus;
 
                                         {{-- Action Buttons --}}
                                         <div class="flex items-center gap-2">
-                                            @if($isCompleted && $deadline->completedFiling)
+                                            @if($isCompleted && ($deadline->completedFiling || $step->activeFiling))
                                             <flux:button
-                                                href="{{ route('lien.filings.show', $deadline->completedFiling) }}"
+                                                href="{{ route('lien.filings.show', $deadline->completedFiling ?? $step->activeFiling) }}"
                                                 size="sm" variant="outline">
                                                 View
                                             </flux:button>
-                                            @elseif($isPurchased || $isInFulfillment || $isAwaitingClient || $isAwaitingEsign)
+                                            @elseif($isPurchased || $isInFulfillment || $isAwaitingClient || $isAwaitingEsign || $isMailed || $isRecorded)
                                             @if($step->activeFiling)
                                             <flux:button href="{{ route('lien.filings.show', $step->activeFiling) }}"
                                                 size="sm" variant="outline">
@@ -516,7 +528,7 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                                         <flux:badge size="sm" color="zinc">Optional</flux:badge>
                                         @if($isCompleted)
                                         <flux:badge size="sm" color="green">
-                                            {{ $deadline->wasCompletedExternally() ? 'Filed Myself' : 'Submitted' }}
+                                            {{ $deadline->wasCompletedExternally() ? 'Filed Myself' : 'Complete' }}
                                         </flux:badge>
                                         @elseif($isInDraft)
                                         <flux:badge size="sm" color="zinc">Draft</flux:badge>

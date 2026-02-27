@@ -78,6 +78,8 @@ class StepStatusCalculator
         // Statuses that count as "in progress" or "completed"
         $inProgressOrComplete = [
             DeadlineStatus::Completed,
+            DeadlineStatus::Recorded,
+            DeadlineStatus::Mailed,
             DeadlineStatus::Purchased,
             DeadlineStatus::InFulfillment,
             DeadlineStatus::AwaitingClient,
@@ -242,13 +244,19 @@ class StepStatusCalculator
             return [DeadlineStatus::Completed, $statusReason, $statusMeta];
         }
 
-        // 2-4. Filing is Complete/Recorded/Mailed → Completed
-        if ($filingStatus !== null && in_array($filingStatus, [
-            FilingStatus::Complete,
-            FilingStatus::Recorded,
-            FilingStatus::Mailed,
-        ], true)) {
+        // 2. Filing is Complete → Completed
+        if ($filingStatus === FilingStatus::Complete) {
             return [DeadlineStatus::Completed, $statusReason, $statusMeta];
+        }
+
+        // 3. Filing is Recorded → Recorded
+        if ($filingStatus === FilingStatus::Recorded) {
+            return [DeadlineStatus::Recorded, $statusReason, $statusMeta];
+        }
+
+        // 4. Filing is Mailed → Mailed
+        if ($filingStatus === FilingStatus::Mailed) {
+            return [DeadlineStatus::Mailed, $statusReason, $statusMeta];
         }
 
         // 5. Filing is InFulfillment → InFulfillment

@@ -73,7 +73,7 @@
                                     {{ $filing->documentType?->name ?? 'Unknown' }}
                                 </flux:badge>
                                 <flux:badge size="sm" color="{{ $filing->service_level === \App\Domains\Lien\Enums\ServiceLevel::FullService ? 'indigo' : 'zinc' }}">
-                                    {{ $filing->service_level->label() }}
+                                    {{ $filing->service_level?->label() ?? 'Unknown' }}
                                 </flux:badge>
                             </div>
 

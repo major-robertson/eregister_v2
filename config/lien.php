@@ -48,8 +48,8 @@ return [
     */
     'pricing' => [
         'prelim_notice' => [
-            'self_serve' => 4900,
-            'full_service' => 9900,
+            'self_serve' => 2900,
+            'full_service' => 4900,
         ],
         'noi' => [
             'self_serve' => 4900,
@@ -57,11 +57,11 @@ return [
         ],
         'mechanics_lien' => [
             'self_serve' => 9900,
-            'full_service' => 19900,
+            'full_service' => 29900,
         ],
         'lien_release' => [
-            'self_serve' => 2900,
-            'full_service' => 4900,
+            'self_serve' => 4900,
+            'full_service' => 9900,
         ],
         'demand_letter' => [
             'self_serve' => 2900,

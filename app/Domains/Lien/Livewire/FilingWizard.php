@@ -339,14 +339,8 @@ class FilingWizard extends Component
             $this->warnings[] = "Owner-occupied restrictions: {$stateRule->owner_occupied_restriction_type}";
         }
 
-        // 3. Filing requirement warnings
-        if ($stateRule->notarization_required) {
-            $this->warnings[] = 'Notarization is required for this filing.';
-        }
-
-        if ($stateRule->verification_type === 'sworn') {
-            $this->warnings[] = 'This document must be sworn under oath.';
-        }
+        // Notarization and oath requirements are handled by the service team
+        // for Full Service filings, so we don't surface them as warnings.
     }
 
     private function updateFiling(): void

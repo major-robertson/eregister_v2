@@ -398,11 +398,14 @@
                 <div class="lg:w-3/5 space-y-6">
                     <flux:heading size="lg">Choose Your Service Level</flux:heading>
 
-                    {{-- Validation Errors --}}
-                    @if($errors->any())
+                    {{-- Validation Errors (exclude disclaimerAccepted — shown inline under checkbox) --}}
+                    @if($errors->has('property_identification') || $errors->has('owner_party'))
                         <flux:callout color="red" icon="exclamation-circle">
                             <div class="space-y-1">
-                                @foreach($errors->all() as $error)
+                                @foreach($errors->get('property_identification') as $error)
+                                    <div>{{ $error }}</div>
+                                @endforeach
+                                @foreach($errors->get('owner_party') as $error)
                                     <div>{{ $error }}</div>
                                 @endforeach
                             </div>
@@ -509,7 +512,6 @@
                             wire:model="disclaimerAccepted"
                             label="I confirm this information is accurate and I'm authorized to file this document."
                         />
-                        <flux:error name="disclaimerAccepted" />
                     </div>
                 </div>
 

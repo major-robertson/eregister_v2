@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\MarketingLandingController;
 use App\Http\Controllers\PostGridWebhookController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,6 +20,8 @@ Route::get('/go/t/{token}', [MarketingLandingController::class, 'tokenLanding'])
 
 Route::get('/go/{slug}', [MarketingLandingController::class, 'slugLanding'])
     ->name('marketing.landing.slug');
+
+Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 
 Route::get('/', function () {
     return view('landing');

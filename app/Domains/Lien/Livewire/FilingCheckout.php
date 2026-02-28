@@ -6,6 +6,7 @@ use App\Domains\Business\Models\Business;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Services\LienPaymentService;
 use App\Enums\PaymentStatus;
+use App\Models\EmailSequence;
 use App\Models\Payment;
 use App\Models\Price;
 use Illuminate\Contracts\View\View;
@@ -135,6 +136,14 @@ class FilingCheckout extends Component
 
         // 6. Persist PaymentIntent ID
         $payment->update(['stripe_payment_intent_id' => $pi->id]);
+
+        EmailSequence::startFor(
+            'abandon_checkout',
+            $this->filing,
+            Auth::user(),
+            $this->business,
+            route('lien.filings.checkout', $this->filing)
+        );
 
         $this->paymentIntentId = $pi->id;
         $this->clientSecret = $pi->client_secret;

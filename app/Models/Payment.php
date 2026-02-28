@@ -129,4 +129,12 @@ class Payment extends Model
     {
         return $this->status?->isTerminal() ?? false;
     }
+
+    /**
+     * Whether this payment is for a registration order (not SaaS).
+     */
+    public function isRegistrationOrder(): bool
+    {
+        return $this->price && in_array($this->price->product_family, ['lien', 'llc', 'tax']);
+    }
 }

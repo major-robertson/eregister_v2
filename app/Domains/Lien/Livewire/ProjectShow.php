@@ -9,6 +9,7 @@ use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienProjectDeadline;
+use App\Models\EmailSequence;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -60,6 +61,14 @@ class ProjectShow extends Component
             'status' => FilingStatus::Draft,
             'created_by_user_id' => auth()->id(),
         ]);
+
+        EmailSequence::startFor(
+            'abandon_checkout',
+            $filing,
+            auth()->user(),
+            $this->project->business,
+            route('lien.filings.start', ['project' => $this->project, 'deadline' => $deadline])
+        );
 
         $this->redirect(route('lien.filings.start', [
             'project' => $this->project,

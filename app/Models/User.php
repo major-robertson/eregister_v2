@@ -42,6 +42,7 @@ class User extends Authenticatable
         'signup_user_agent',
         'attributed_marketing_lead_id',
         'attributed_at',
+        'unsubscribed_from_all_emails_at',
     ];
 
     /**
@@ -65,6 +66,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'unsubscribed_from_all_emails_at' => 'datetime',
             'password' => 'hashed',
             'attributed_at' => 'datetime',
         ];

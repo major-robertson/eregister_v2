@@ -63,9 +63,10 @@ class AppServiceProvider extends ServiceProvider
             'user' => \App\Models\User::class,
             'business' => \App\Domains\Business\Models\Business::class,
             'lien_filing' => \App\Domains\Lien\Models\LienFiling::class,
-            // Future:
-            // 'llc_filing' => \App\Domains\Llc\Models\LlcFiling::class,
-            // 'subscription' => \App\Models\Subscription::class,
+            'lien_project' => \App\Domains\Lien\Models\LienProject::class,
+            'form_application' => \App\Domains\Forms\Models\FormApplication::class,
+            'email_sequence' => \App\Models\EmailSequence::class,
+            'payment' => \App\Models\Payment::class,
         ]);
     }
 

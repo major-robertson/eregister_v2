@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\EmailUnsubscribeController;
 use App\Http\Controllers\MarketingLandingController;
 use App\Http\Controllers\PostGridWebhookController;
 use App\Http\Controllers\SitemapController;
@@ -69,5 +70,10 @@ Route::view('liens/preliminary-notice', 'pages.liens.preliminary-notice')->name(
 Route::view('liens/notice-of-intent-to-lien', 'pages.liens.notice-of-intent-to-lien')->name('liens.notice-of-intent-to-lien');
 Route::view('liens/lien-release', 'pages.liens.lien-release')->name('liens.lien-release');
 Route::view('liens/payment-demand-letter', 'pages.liens.payment-demand-letter')->name('liens.payment-demand-letter');
+
+// Email preferences (signed URL, no auth required)
+Route::get('/email/preferences/{user}', [EmailUnsubscribeController::class, 'preferences'])
+    ->middleware('throttle:30,1')
+    ->name('email.preferences');
 
 require __DIR__.'/settings.php';

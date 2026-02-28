@@ -4,7 +4,9 @@ namespace App\Actions\Fortify;
 
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
+use App\Mail\WelcomeEmail;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
@@ -33,6 +35,10 @@ class CreateNewUser implements CreatesNewUsers
         ]);
 
         $this->clearSignupAttributionSession();
+
+        Mail::to($user)->queue(
+            (new WelcomeEmail($user))->delay(now()->addMinutes(7))
+        );
 
         return $user;
     }

@@ -6,6 +6,7 @@ use App\Domains\Business\Models\Business;
 use App\Domains\Forms\Engine\FormRegistry;
 use App\Domains\Forms\FormTypeConfig;
 use App\Domains\Forms\Models\FormApplication;
+use App\Models\EmailSequence;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -79,6 +80,14 @@ class Checkout extends Component
             'stripe_checkout_session_id' => $session->id,
         ]);
 
+        EmailSequence::startFor(
+            'abandon_checkout',
+            $this->application,
+            Auth::user(),
+            $this->business,
+            route('portal.checkout', $this->application)
+        );
+
         $this->redirect($session->url);
     }
 
@@ -100,6 +109,14 @@ class Checkout extends Component
         $this->application->update([
             'stripe_checkout_session_id' => $session->id,
         ]);
+
+        EmailSequence::startFor(
+            'abandon_checkout',
+            $this->application,
+            Auth::user(),
+            $this->business,
+            route('portal.checkout', $this->application)
+        );
 
         $this->redirect($session->url);
     }

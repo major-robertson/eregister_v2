@@ -14,3 +14,6 @@ Schedule::command('lien:send-deadline-reminders')->hourly();
 
 // Marketing campaign step processing - run hourly
 Schedule::job(new ProcessCampaignSteps)->hourly();
+
+// Email sequences (abandon checkout, nurture, etc.) - run every 15 minutes
+Schedule::command('email:process-sequences')->everyFifteenMinutes()->withoutOverlapping();

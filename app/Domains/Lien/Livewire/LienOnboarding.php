@@ -4,6 +4,7 @@ namespace App\Domains\Lien\Livewire;
 
 use App\Concerns\ResolvesMarketingLead;
 use App\Domains\Business\Models\Business;
+use App\Models\EmailSequence;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -149,8 +150,19 @@ class LienOnboarding extends Component
 
         $this->business->completeLienOnboarding();
 
+        $firstProject = $this->business->lienProjects()->first();
+        if ($firstProject) {
+            EmailSequence::startFor(
+                'abandon_checkout',
+                $firstProject,
+                Auth::user(),
+                $this->business,
+                route('lien.projects.show', $firstProject)
+            );
+        }
+
         // If user has no projects, show profile complete page to guide them to create one
-        if ($this->business->lienProjects()->count() === 0) {
+        if (! $firstProject) {
             return $this->redirect(route('lien.profile-complete'), navigate: true);
         }
 

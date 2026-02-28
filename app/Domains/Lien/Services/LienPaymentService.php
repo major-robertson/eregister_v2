@@ -5,8 +5,12 @@ namespace App\Domains\Lien\Services;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Models\LienFulfillmentTask;
 use App\Enums\PaymentStatus;
+use App\Jobs\SendWorkingOnOrderEmail;
+use App\Mail\PaymentReceipt;
 use App\Models\Payment;
+use App\Models\SentEmail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Stripe\PaymentIntent;
 
 class LienPaymentService
@@ -50,6 +54,26 @@ class LienPaymentService
                     'status' => 'completed',
                     'completed_filing_id' => $filing->id,
                 ]);
+            }
+        });
+
+        DB::afterCommit(function () use ($payment) {
+            $payment = $payment->fresh();
+            $user = $payment->business->users()->first();
+
+            if (! $user) {
+                return;
+            }
+
+            SentEmail::recordOrSkip('payment_receipt', $payment, $user, function () use ($payment, $user) {
+                Mail::to($user)->queue(new PaymentReceipt($payment));
+            });
+
+            if ($payment->isRegistrationOrder()) {
+                $scheduledAt = SendWorkingOnOrderEmail::nextAllowedSendTime();
+                SentEmail::recordOrSkip('working_on_order', $payment, $user, function () use ($payment) {
+                    SendWorkingOnOrderEmail::dispatch($payment);
+                }, $scheduledAt);
             }
         });
     }

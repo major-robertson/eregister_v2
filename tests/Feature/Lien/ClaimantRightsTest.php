@@ -9,10 +9,6 @@ use App\Domains\Lien\Models\LienStateRule;
 use App\Models\User;
 
 beforeEach(function () {
-    $this->artisan('db:seed', ['--class' => 'LienDocumentTypeSeeder']);
-    $this->artisan('db:seed', ['--class' => 'LienStateRuleSeeder']);
-    $this->artisan('db:seed', ['--class' => 'LienDeadlineRuleSeeder']);
-
     $this->user = User::factory()->create();
     $this->business = Business::factory()->create(['timezone' => 'America/Los_Angeles']);
     $this->business->users()->attach($this->user, ['role' => 'owner']);

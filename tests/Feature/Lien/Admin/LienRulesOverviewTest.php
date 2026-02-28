@@ -5,11 +5,6 @@ use App\Models\User;
 use Livewire\Livewire;
 
 beforeEach(function () {
-    $this->artisan('db:seed', ['--class' => 'PermissionsSeeder']);
-    $this->artisan('db:seed', ['--class' => 'LienDocumentTypeSeeder']);
-    $this->artisan('db:seed', ['--class' => 'LienStateRuleSeeder']);
-    $this->artisan('db:seed', ['--class' => 'LienDeadlineRuleSeeder']);
-
     $this->admin = User::factory()->create();
     $this->admin->givePermissionTo('lien.view');
 });
@@ -32,31 +27,13 @@ describe('lien rules overview page', function () {
             ->assertSee('TX');
     });
 
-    it('shows claimant rights section', function () {
+    it('shows all required sections', function () {
         $this->actingAs($this->admin);
 
         Livewire::test(LienRulesOverview::class)
-            ->assertSee('Claimant Rights');
-    });
-
-    it('shows preliminary notice section', function () {
-        $this->actingAs($this->admin);
-
-        Livewire::test(LienRulesOverview::class)
-            ->assertSee('Preliminary Notice');
-    });
-
-    it('shows mechanics lien deadlines section', function () {
-        $this->actingAs($this->admin);
-
-        Livewire::test(LienRulesOverview::class)
-            ->assertSee('Mechanics Lien Deadlines');
-    });
-
-    it('shows filing requirements section', function () {
-        $this->actingAs($this->admin);
-
-        Livewire::test(LienRulesOverview::class)
+            ->assertSee('Claimant Rights')
+            ->assertSee('Preliminary Notice')
+            ->assertSee('Mechanics Lien Deadlines')
             ->assertSee('Filing Requirements');
     });
 

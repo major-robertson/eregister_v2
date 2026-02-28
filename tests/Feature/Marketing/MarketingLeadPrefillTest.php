@@ -418,9 +418,6 @@ it('does not pre-fill ProjectForm for returning user with attributed_marketing_l
 // ─── Context Cleared After First Project ──────────────────────────────────
 
 it('clears active lead session keys and sets completion flag after first project is created', function () {
-    $this->artisan('db:seed', ['--class' => 'LienDocumentTypeSeeder']);
-    $this->artisan('db:seed', ['--class' => 'LienDeadlineRuleSeeder']);
-
     $user = User::factory()->create();
     $business = Business::factory()->create([
         'lien_onboarding_completed_at' => now(),
@@ -448,9 +445,6 @@ it('clears active lead session keys and sets completion flag after first project
 });
 
 it('does not pre-fill second project after context is cleared', function () {
-    $this->artisan('db:seed', ['--class' => 'LienDocumentTypeSeeder']);
-    $this->artisan('db:seed', ['--class' => 'LienDeadlineRuleSeeder']);
-
     $user = User::factory()->create();
     $business = Business::factory()->create([
         'lien_onboarding_completed_at' => now(),
@@ -479,9 +473,6 @@ it('does not pre-fill second project after context is cleared', function () {
 });
 
 it('does not pre-fill second project even when lead_ref cookie is still present', function () {
-    $this->artisan('db:seed', ['--class' => 'LienDocumentTypeSeeder']);
-    $this->artisan('db:seed', ['--class' => 'LienDeadlineRuleSeeder']);
-
     $user = User::factory()->create();
     $business = Business::factory()->create([
         'lien_onboarding_completed_at' => now(),

@@ -5,11 +5,6 @@ use App\Models\User;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 
-beforeEach(function () {
-    // Seed permissions and roles
-    $this->artisan('db:seed', ['--class' => 'PermissionsSeeder']);
-});
-
 describe('access control', function () {
     it('allows admin to access the roles page', function () {
         $admin = User::factory()->create();

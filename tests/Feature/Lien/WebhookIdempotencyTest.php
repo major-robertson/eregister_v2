@@ -11,7 +11,7 @@ use App\Models\StripeWebhookEvent;
 use App\Models\User;
 
 beforeEach(function () {
-    $this->artisan('db:seed', ['--class' => 'LienDocumentTypeSeeder']);
+    config(['cashier.webhook.secret' => 'whsec_test_secret']);
 
     $this->user = User::factory()->create();
     $this->business = Business::factory()->create();
@@ -25,7 +25,6 @@ beforeEach(function () {
         'status' => FilingStatus::AwaitingPayment,
     ]);
 
-    // Create a payment for this filing (using polymorphic Payment model)
     $this->payment = Payment::create([
         'purchasable_type' => $this->filing->getMorphClass(),
         'purchasable_id' => $this->filing->id,
@@ -39,9 +38,6 @@ beforeEach(function () {
     ]);
 });
 
-/**
- * Helper to create a valid Stripe webhook signature.
- */
 function createStripeSignature(string $payload, ?string $secret = null): string
 {
     $secret = $secret ?? config('cashier.webhook.secret', 'whsec_test_secret');
@@ -52,9 +48,6 @@ function createStripeSignature(string $payload, ?string $secret = null): string
     return "t={$timestamp},v1={$signature}";
 }
 
-/**
- * Helper to send a webhook with proper signature.
- */
 function postWebhook($test, array $payload): \Illuminate\Testing\TestResponse
 {
     $jsonPayload = json_encode($payload);
@@ -71,9 +64,6 @@ function postWebhook($test, array $payload): \Illuminate\Testing\TestResponse
 }
 
 it('processes payment_intent.succeeded webhook', function () {
-    // Set a test webhook secret
-    config(['cashier.webhook.secret' => 'whsec_test_secret']);
-
     $payload = [
         'id' => 'evt_test_pi_succeeded',
         'type' => 'payment_intent.succeeded',
@@ -96,25 +86,21 @@ it('processes payment_intent.succeeded webhook', function () {
 
     $response->assertOk();
 
-    // Check event was recorded and marked processed
     $this->assertDatabaseHas('stripe_webhook_events', [
         'stripe_event_id' => 'evt_test_pi_succeeded',
         'type' => 'payment_intent.succeeded',
     ]);
     expect(StripeWebhookEvent::where('stripe_event_id', 'evt_test_pi_succeeded')->first()->processed_at)->not->toBeNull();
 
-    // Check payment status updated
-    expect($this->payment->fresh()->status)->toBe(PaymentStatus::Succeeded);
-    expect($this->payment->fresh()->stripe_charge_id)->toBe('ch_test_123');
+    $this->payment->refresh();
+    expect($this->payment->status)->toBe(PaymentStatus::Succeeded);
+    expect($this->payment->stripe_charge_id)->toBe('ch_test_123');
 
-    // Check filing status updated (InFulfillment for full-service, Paid for self-serve)
-    $status = $this->filing->fresh()->status;
-    expect($status)->toBeIn([FilingStatus::Paid, FilingStatus::InFulfillment]);
+    $this->filing->refresh();
+    expect($this->filing->status)->toBeIn([FilingStatus::Paid, FilingStatus::InFulfillment]);
 });
 
 it('is idempotent - duplicate events are ignored after processing', function () {
-    config(['cashier.webhook.secret' => 'whsec_test_secret']);
-
     $eventId = 'evt_test_idempotent';
 
     $payload = [
@@ -135,23 +121,18 @@ it('is idempotent - duplicate events are ignored after processing', function () 
         ],
     ];
 
-    // First request
     postWebhook($this, $payload)->assertOk();
 
     $eventCount = StripeWebhookEvent::count();
 
-    // Second request with same event ID
     postWebhook($this, $payload)
         ->assertOk()
         ->assertSee('Already processed');
 
-    // Should not create duplicate event records
     expect(StripeWebhookEvent::count())->toBe($eventCount);
 });
 
 it('handles payment_intent.payment_failed as retryable', function () {
-    config(['cashier.webhook.secret' => 'whsec_test_secret']);
-
     $payload = [
         'id' => 'evt_test_pi_failed',
         'type' => 'payment_intent.payment_failed',
@@ -173,15 +154,12 @@ it('handles payment_intent.payment_failed as retryable', function () {
 
     $response->assertOk();
 
-    // Payment should be marked as retryable, not terminal failed
-    $payment = $this->payment->fresh();
-    expect($payment->status)->toBe(PaymentStatus::RequiresPaymentMethod);
-    expect($payment->error_message)->toBe('Your card was declined.');
+    $this->payment->refresh();
+    expect($this->payment->status)->toBe(PaymentStatus::RequiresPaymentMethod);
+    expect($this->payment->error_message)->toBe('Your card was declined.');
 });
 
 it('handles payment_intent.canceled', function () {
-    config(['cashier.webhook.secret' => 'whsec_test_secret']);
-
     $payload = [
         'id' => 'evt_test_pi_canceled',
         'type' => 'payment_intent.canceled',
@@ -200,19 +178,18 @@ it('handles payment_intent.canceled', function () {
 
     $response->assertOk();
 
-    expect($this->payment->fresh()->status)->toBe(PaymentStatus::Canceled);
+    $this->payment->refresh();
+    expect($this->payment->status)->toBe(PaymentStatus::Canceled);
 });
 
 it('flags payment for manual review on amount mismatch', function () {
-    config(['cashier.webhook.secret' => 'whsec_test_secret']);
-
     $payload = [
         'id' => 'evt_test_amount_mismatch',
         'type' => 'payment_intent.succeeded',
         'data' => [
             'object' => [
                 'id' => 'pi_test_123',
-                'amount_received' => 9900, // Different from expected 4900
+                'amount_received' => 9900,
                 'currency' => 'usd',
                 'latest_charge' => 'ch_test_789',
                 'metadata' => [
@@ -228,25 +205,22 @@ it('flags payment for manual review on amount mismatch', function () {
 
     $response->assertOk();
 
-    $payment = $this->payment->fresh();
-    expect($payment->status)->toBe(PaymentStatus::Succeeded);
-    expect($payment->requires_manual_review)->toBeTrue();
-    expect($payment->error_message)->toContain('Amount mismatch');
+    $this->payment->refresh();
+    expect($this->payment->status)->toBe(PaymentStatus::Succeeded);
+    expect($this->payment->requires_manual_review)->toBeTrue();
+    expect($this->payment->error_message)->toContain('Amount mismatch');
 
-    // Filing should NOT be transitioned when flagged for review
-    expect($this->filing->fresh()->status)->toBe(FilingStatus::AwaitingPayment);
+    $this->filing->refresh();
+    expect($this->filing->status)->toBe(FilingStatus::AwaitingPayment);
 });
 
 it('returns 400 for invalid signature', function () {
-    config(['cashier.webhook.secret' => 'whsec_test_secret']);
-
     $payload = [
         'id' => 'evt_test_bad_sig',
         'type' => 'payment_intent.succeeded',
         'data' => ['object' => []],
     ];
 
-    // Send with wrong signature
     $response = $this->postJson(
         route('webhooks.stripe'),
         $payload,
@@ -260,8 +234,6 @@ it('returns 400 for invalid signature', function () {
 });
 
 it('handles missing app_payment_id gracefully', function () {
-    config(['cashier.webhook.secret' => 'whsec_test_secret']);
-
     $payload = [
         'id' => 'evt_test_no_payment_id',
         'type' => 'payment_intent.succeeded',
@@ -272,7 +244,6 @@ it('handles missing app_payment_id gracefully', function () {
                 'currency' => 'usd',
                 'metadata' => [
                     'app_domain' => 'lien',
-                    // No app_payment_id
                 ],
             ],
         ],
@@ -285,9 +256,6 @@ it('handles missing app_payment_id gracefully', function () {
 });
 
 it('does not re-process already succeeded payments', function () {
-    config(['cashier.webhook.secret' => 'whsec_test_secret']);
-
-    // Mark payment as already succeeded
     $this->payment->update([
         'status' => PaymentStatus::Succeeded,
         'paid_at' => now(),
@@ -314,6 +282,6 @@ it('does not re-process already succeeded payments', function () {
 
     $response->assertOk();
 
-    // Charge ID should NOT be updated (idempotent)
-    expect($this->payment->fresh()->stripe_charge_id)->toBeNull();
+    $this->payment->refresh();
+    expect($this->payment->stripe_charge_id)->toBeNull();
 });

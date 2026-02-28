@@ -13,6 +13,7 @@ beforeEach(function () {
     $this->user = User::factory()->create();
     $this->business = Business::factory()->create([
         'timezone' => 'America/Los_Angeles',
+        'onboarding_completed_at' => now(),
         'lien_onboarding_completed_at' => now(),
     ]);
     $this->business->users()->attach($this->user, ['role' => 'owner']);
@@ -20,10 +21,6 @@ beforeEach(function () {
     // Set current business in session
     $this->actingAs($this->user);
     session(['current_business_id' => $this->business->id]);
-
-    // Seed required data
-    $this->artisan('db:seed', ['--class' => 'LienDocumentTypeSeeder']);
-    $this->artisan('db:seed', ['--class' => 'LienDeadlineRuleSeeder']);
 });
 
 it('can render the deadlines list component', function () {
@@ -50,7 +47,7 @@ it('displays deadlines in the table', function () {
         'project_id' => $project->id,
         'document_type_id' => $documentType->id,
         'due_date' => today()->addDays(10),
-        'status' => DeadlineStatus::Pending,
+        'status' => DeadlineStatus::NotStarted,
     ]);
 
     Livewire::test(DeadlineList::class)
@@ -74,7 +71,7 @@ it('can filter deadlines by status', function () {
         'project_id' => $pendingProject->id,
         'document_type_id' => $documentType->id,
         'due_date' => today()->addDays(10),
-        'status' => DeadlineStatus::Pending,
+        'status' => DeadlineStatus::NotStarted,
     ]);
 
     LienProjectDeadline::factory()->create([
@@ -86,7 +83,7 @@ it('can filter deadlines by status', function () {
     ]);
 
     Livewire::test(DeadlineList::class)
-        ->set('statusFilter', DeadlineStatus::Pending->value)
+        ->set('statusFilter', DeadlineStatus::NotStarted->value)
         ->assertSee('Pending Project')
         ->assertDontSee('Completed Project');
 });
@@ -107,7 +104,7 @@ it('can search deadlines by project name', function () {
         'project_id' => $project1->id,
         'document_type_id' => $documentType->id,
         'due_date' => today()->addDays(10),
-        'status' => DeadlineStatus::Pending,
+        'status' => DeadlineStatus::NotStarted,
     ]);
 
     LienProjectDeadline::factory()->create([
@@ -115,7 +112,7 @@ it('can search deadlines by project name', function () {
         'project_id' => $project2->id,
         'document_type_id' => $documentType->id,
         'due_date' => today()->addDays(15),
-        'status' => DeadlineStatus::Pending,
+        'status' => DeadlineStatus::NotStarted,
     ]);
 
     Livewire::test(DeadlineList::class)
@@ -136,7 +133,7 @@ it('shows overdue styling for past due deadlines', function () {
         'project_id' => $project->id,
         'document_type_id' => $documentType->id,
         'due_date' => today()->subDays(3),
-        'status' => DeadlineStatus::Pending,
+        'status' => DeadlineStatus::NotStarted,
     ]);
 
     Livewire::test(DeadlineList::class)
@@ -156,7 +153,7 @@ it('does not show deadlines from other businesses', function () {
         'project_id' => $otherProject->id,
         'document_type_id' => $documentType->id,
         'due_date' => today()->addDays(10),
-        'status' => DeadlineStatus::Pending,
+        'status' => DeadlineStatus::NotStarted,
     ]);
 
     Livewire::test(DeadlineList::class)

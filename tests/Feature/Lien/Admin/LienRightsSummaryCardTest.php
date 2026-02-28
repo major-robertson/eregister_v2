@@ -12,11 +12,6 @@ use App\Models\User;
 use Livewire\Livewire;
 
 beforeEach(function () {
-    $this->artisan('db:seed', ['--class' => 'PermissionsSeeder']);
-    $this->artisan('db:seed', ['--class' => 'LienDocumentTypeSeeder']);
-    $this->artisan('db:seed', ['--class' => 'LienStateRuleSeeder']);
-    $this->artisan('db:seed', ['--class' => 'LienDeadlineRuleSeeder']);
-
     $this->admin = User::factory()->create();
     $this->admin->givePermissionTo('lien.view');
 
@@ -173,8 +168,8 @@ describe('lien rights summary card', function () {
             ->assertSee('Feb 10, 2026');
     });
 
-    it('warns when NOI is filed but lien rights have expired', function () {
-        $noiDocType = LienDocumentType::where('slug', 'noi')->first();
+    it('warns when filing type has expired lien rights', function (string $slug) {
+        $docType = LienDocumentType::where('slug', $slug)->first();
 
         $project = LienProject::factory()->create([
             'business_id' => $this->business->id,
@@ -189,7 +184,7 @@ describe('lien rights summary card', function () {
         $this->calculator->calculateForProject($project);
 
         $filing = LienFiling::factory()->forProject($project)->create([
-            'document_type_id' => $noiDocType->id,
+            'document_type_id' => $docType->id,
         ]);
 
         $this->actingAs($this->admin);
@@ -197,31 +192,5 @@ describe('lien rights summary card', function () {
         Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
             ->assertSee('Lien rights expired')
             ->assertSee('demand letter');
-    });
-
-    it('warns when prelim notice is filed but lien rights have expired', function () {
-        $prelimDocType = LienDocumentType::where('slug', 'prelim_notice')->first();
-
-        $project = LienProject::factory()->create([
-            'business_id' => $this->business->id,
-            'jobsite_state' => 'FL',
-            'claimant_type' => ClaimantType::Subcontractor,
-            'property_class' => 'residential',
-            'first_furnish_date' => now()->subDays(200),
-            'last_furnish_date' => now()->subDays(200),
-            'noc_status' => NocStatus::No,
-        ]);
-
-        $this->calculator->calculateForProject($project);
-
-        $filing = LienFiling::factory()->forProject($project)->create([
-            'document_type_id' => $prelimDocType->id,
-        ]);
-
-        $this->actingAs($this->admin);
-
-        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
-            ->assertSee('Lien rights expired')
-            ->assertSee('demand letter');
-    });
+    })->with(['noi', 'prelim_notice']);
 });

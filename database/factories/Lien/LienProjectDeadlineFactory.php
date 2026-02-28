@@ -25,7 +25,7 @@ class LienProjectDeadlineFactory extends Factory
             'deadline_rule_id' => fn () => LienDeadlineRule::first()?->id ?? 1,
             'document_type_id' => fn () => LienDocumentType::first()?->id ?? 1,
             'due_date' => fake()->dateTimeBetween('now', '+30 days'),
-            'status' => DeadlineStatus::Pending,
+            'status' => DeadlineStatus::NotStarted,
         ];
     }
 
@@ -41,7 +41,7 @@ class LienProjectDeadlineFactory extends Factory
     {
         return $this->state(fn () => [
             'due_date' => fake()->dateTimeBetween('-30 days', '-1 day'),
-            'status' => DeadlineStatus::Pending,
+            'status' => DeadlineStatus::NotStarted,
         ]);
     }
 
@@ -49,7 +49,7 @@ class LienProjectDeadlineFactory extends Factory
     {
         return $this->state(fn () => [
             'due_date' => fake()->dateTimeBetween('now', '+7 days'),
-            'status' => DeadlineStatus::Pending,
+            'status' => DeadlineStatus::NotStarted,
         ]);
     }
 

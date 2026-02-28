@@ -14,6 +14,7 @@ beforeEach(function () {
     $this->user = User::factory()->create();
     $this->business = Business::factory()->create([
         'timezone' => 'America/Los_Angeles',
+        'onboarding_completed_at' => now(),
         'lien_onboarding_completed_at' => now(),
     ]);
     $this->business->users()->attach($this->user, ['role' => 'owner']);
@@ -21,10 +22,6 @@ beforeEach(function () {
     // Set current business in session
     $this->actingAs($this->user);
     session(['current_business_id' => $this->business->id]);
-
-    // Seed required data
-    $this->artisan('db:seed', ['--class' => 'LienDocumentTypeSeeder']);
-    $this->artisan('db:seed', ['--class' => 'LienDeadlineRuleSeeder']);
 });
 
 it('can view the dashboard', function () {
@@ -60,7 +57,7 @@ it('shows overdue deadlines count', function () {
         'business_id' => $this->business->id,
         'project_id' => $project->id,
         'due_date' => today()->subDays(5),
-        'status' => DeadlineStatus::Pending,
+        'status' => DeadlineStatus::NotStarted,
     ]);
 
     Livewire::test(Dashboard::class)
@@ -77,7 +74,7 @@ it('shows upcoming deadlines within 7 days', function () {
         'business_id' => $this->business->id,
         'project_id' => $project->id,
         'due_date' => today()->addDays(3),
-        'status' => DeadlineStatus::Pending,
+        'status' => DeadlineStatus::NotStarted,
     ]);
 
     Livewire::test(Dashboard::class)

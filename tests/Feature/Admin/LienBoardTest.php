@@ -9,11 +9,6 @@ use App\Domains\Lien\Models\LienProject;
 use App\Models\User;
 use Livewire\Livewire;
 
-beforeEach(function () {
-    $this->artisan('db:seed', ['--class' => 'PermissionsSeeder']);
-    $this->artisan('db:seed', ['--class' => 'LienDocumentTypeSeeder']);
-});
-
 describe('access control', function () {
     it('allows users with lien.view permission to access the board', function () {
         $admin = User::factory()->create();

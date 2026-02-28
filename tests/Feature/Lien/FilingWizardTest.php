@@ -20,10 +20,6 @@ beforeEach(function () {
     $this->actingAs($this->user);
     session(['current_business_id' => $this->business->id]);
 
-    // Seed document types and deadline rules
-    $this->artisan('db:seed', ['--class' => 'LienDocumentTypeSeeder']);
-    $this->artisan('db:seed', ['--class' => 'LienDeadlineRuleSeeder']);
-
     $this->project = LienProject::factory()->forBusiness($this->business)->create([
         'jobsite_state' => 'AZ',
         'first_furnish_date' => now()->subDays(30),
@@ -49,6 +45,13 @@ beforeEach(function () {
     $this->deadline = $this->project->deadlines()
         ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
         ->first();
+
+    $this->filing = LienFiling::factory()->forProject($this->project)->create([
+        'document_type_id' => $this->deadline->document_type_id,
+        'project_deadline_id' => $this->deadline->id,
+        'status' => \App\Domains\Lien\Enums\FilingStatus::Draft,
+        'created_by_user_id' => $this->user->id,
+    ]);
 });
 
 describe('Filing Wizard has_written_contract', function () {

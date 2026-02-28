@@ -2,12 +2,6 @@
 
 use App\Models\User;
 use Database\Seeders\AssignUserRolesSeeder;
-use Database\Seeders\PermissionsSeeder;
-
-beforeEach(function () {
-    // Run PermissionsSeeder to ensure roles exist
-    $this->seed(PermissionsSeeder::class);
-});
 
 it('assigns admin role to major@major.holdings when user exists', function () {
     $user = User::factory()->create(['email' => 'major@major.holdings']);

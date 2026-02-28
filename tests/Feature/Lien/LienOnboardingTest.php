@@ -21,17 +21,11 @@ beforeEach(function () {
 });
 
 it('redirects to lien onboarding when not completed', function () {
-    $this->artisan('db:seed', ['--class' => 'LienDocumentTypeSeeder']);
-    $this->artisan('db:seed', ['--class' => 'LienDeadlineRuleSeeder']);
-
     $this->get(route('lien.projects.index'))
         ->assertRedirect(route('lien.onboarding'));
 });
 
 it('allows access to lien routes when onboarding is complete', function () {
-    $this->artisan('db:seed', ['--class' => 'LienDocumentTypeSeeder']);
-    $this->artisan('db:seed', ['--class' => 'LienDeadlineRuleSeeder']);
-
     $this->business->update(['lien_onboarding_completed_at' => now()]);
 
     $this->get(route('lien.projects.index'))

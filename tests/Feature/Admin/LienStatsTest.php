@@ -6,10 +6,6 @@ use App\Domains\Lien\Models\LienProject;
 use App\Models\User;
 use Livewire\Livewire;
 
-beforeEach(function () {
-    $this->artisan('db:seed', ['--class' => 'PermissionsSeeder']);
-});
-
 describe('access control', function () {
     it('allows admin to access the lien stats page', function () {
         $admin = User::factory()->create();

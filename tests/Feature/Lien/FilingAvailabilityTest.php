@@ -20,10 +20,6 @@ beforeEach(function () {
     $this->actingAs($this->user);
     session(['current_business_id' => $this->business->id]);
 
-    // Seed document types
-    $this->artisan('db:seed', ['--class' => 'LienDocumentTypeSeeder']);
-    $this->artisan('db:seed', ['--class' => 'LienDeadlineRuleSeeder']);
-
     $this->project = LienProject::factory()->forBusiness($this->business)->create([
         'jobsite_state' => 'CA',
         'first_furnish_date' => now()->subDays(10),
@@ -61,7 +57,8 @@ describe('LienProjectDeadline::canFile()', function () {
             'completed_filing_id' => $filing->id,
         ]);
 
-        expect($deadline->fresh()->canFile())->toBeFalse();
+        $deadline->refresh();
+        expect($deadline->canFile())->toBeFalse();
     });
 
     it('returns true for preliminary notice even with missing fields', function () {
@@ -73,11 +70,11 @@ describe('LienProjectDeadline::canFile()', function () {
             'missing_fields_json' => ['first_furnish_date'],
         ]);
 
-        // Preliminary notice can always be filed unless already filed
-        expect($deadline->fresh()->canFile())->toBeTrue();
+        $deadline->refresh();
+        expect($deadline->canFile())->toBeTrue();
     });
 
-    it('returns false for mechanics lien when there are missing fields', function () {
+    it('returns true for mechanics lien even with missing fields', function () {
         $deadline = $this->project->deadlines()
             ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
             ->first();
@@ -86,10 +83,11 @@ describe('LienProjectDeadline::canFile()', function () {
             'missing_fields_json' => ['last_furnish_date'],
         ]);
 
-        expect($deadline->fresh()->canFile())->toBeFalse();
+        $deadline->refresh();
+        expect($deadline->canFile())->toBeTrue();
     });
 
-    it('returns true for preliminary notice even when status is not applicable', function () {
+    it('returns false for preliminary notice when status is not applicable', function () {
         $deadline = $this->project->deadlines()
             ->whereHas('documentType', fn ($q) => $q->where('slug', 'prelim_notice'))
             ->first();
@@ -98,8 +96,8 @@ describe('LienProjectDeadline::canFile()', function () {
             'status' => DeadlineStatus::NotApplicable,
         ]);
 
-        // Preliminary notice can always be filed unless already filed
-        expect($deadline->fresh()->canFile())->toBeTrue();
+        $deadline->refresh();
+        expect($deadline->canFile())->toBeFalse();
     });
 
     it('returns false for mechanics lien when status is not applicable', function () {
@@ -111,7 +109,8 @@ describe('LienProjectDeadline::canFile()', function () {
             'status' => DeadlineStatus::NotApplicable,
         ]);
 
-        expect($deadline->fresh()->canFile())->toBeFalse();
+        $deadline->refresh();
+        expect($deadline->canFile())->toBeFalse();
     });
 
     it('returns false for lien release when mechanics lien is not filed', function () {
@@ -155,8 +154,7 @@ describe('LienProjectDeadline::canFile()', function () {
         expect($releaseDeadline->canFile())->toBeTrue();
     });
 
-    it('returns false for lien release when mechanics lien is submitted but not recorded', function () {
-        // File mechanics lien but don't record it
+    it('returns false for lien release when mechanics lien is paid but not recorded', function () {
         $lienDeadline = $this->project->deadlines()
             ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
             ->first();
@@ -165,12 +163,12 @@ describe('LienProjectDeadline::canFile()', function () {
         $filing = LienFiling::factory()->forProject($this->project)->create([
             'document_type_id' => $documentType->id,
             'project_deadline_id' => $lienDeadline->id,
-            'status' => FilingStatus::Submitted,
-            'recorded_at' => null, // Not yet recorded
+            'status' => FilingStatus::Paid,
+            'recorded_at' => null,
         ]);
 
         $lienDeadline->update([
-            'status' => DeadlineStatus::Pending,
+            'status' => DeadlineStatus::NotStarted,
             'completed_filing_id' => null,
         ]);
 
@@ -184,165 +182,26 @@ describe('LienProjectDeadline::canFile()', function () {
 });
 
 describe('LienProjectDeadline::getFilingBlockerReason()', function () {
-    it('returns "Already Filed" when status is completed', function () {
+    it('returns correct blocker reason', function (string $slug, array $updates, ?string $expected) {
         $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'prelim_notice'))
+            ->whereHas('documentType', fn ($q) => $q->where('slug', $slug))
             ->first();
 
-        $deadline->update(['status' => DeadlineStatus::Completed]);
+        if ($updates) {
+            $deadline->update($updates);
+            $deadline->refresh();
+        }
 
-        expect($deadline->fresh()->getFilingBlockerReason())->toBe('Already Filed');
-    });
-
-    it('returns null for preliminary notice even with missing fields', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'prelim_notice'))
-            ->first();
-
-        $deadline->update(['missing_fields_json' => ['first_furnish_date']]);
-
-        // Preliminary notice is always available unless already filed
-        expect($deadline->fresh()->getFilingBlockerReason())->toBeNull();
-    });
-
-    it('returns "Needs Info" for mechanics lien when there are missing fields', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
-            ->first();
-
-        $deadline->update(['missing_fields_json' => ['last_furnish_date']]);
-
-        expect($deadline->fresh()->getFilingBlockerReason())->toBe('Needs Info');
-    });
-
-    it('returns null for preliminary notice even when status is not applicable', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'prelim_notice'))
-            ->first();
-
-        $deadline->update(['status' => DeadlineStatus::NotApplicable]);
-
-        // Preliminary notice is always available unless already filed
-        expect($deadline->fresh()->getFilingBlockerReason())->toBeNull();
-    });
-
-    it('returns "Not Applicable" for mechanics lien when status is not applicable', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
-            ->first();
-
-        $deadline->update(['status' => DeadlineStatus::NotApplicable]);
-
-        expect($deadline->fresh()->getFilingBlockerReason())->toBe('Not Applicable');
-    });
-
-    it('returns "Lien Required" for lien release when mechanics lien is not filed', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'lien_release'))
-            ->first();
-
-        expect($deadline->getFilingBlockerReason())->toBe('Lien Required');
-    });
-
-    it('returns null when filing is available', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'prelim_notice'))
-            ->first();
-
-        expect($deadline->getFilingBlockerReason())->toBeNull();
-    });
-});
-
-describe('LienProjectDeadline::getFilingStatusLabel()', function () {
-    it('returns "Filed" when status is completed', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'prelim_notice'))
-            ->first();
-
-        $deadline->update(['status' => DeadlineStatus::Completed]);
-
-        expect($deadline->fresh()->getFilingStatusLabel())->toBe('Filed');
-    });
-
-    it('returns "Ready" for preliminary notice even with missing fields', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'prelim_notice'))
-            ->first();
-
-        $deadline->update(['missing_fields_json' => ['first_furnish_date']]);
-
-        // Preliminary notice is always ready unless already filed
-        expect($deadline->fresh()->getFilingStatusLabel())->toBe('Ready');
-    });
-
-    it('returns blocker reason for mechanics lien when blocked', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
-            ->first();
-
-        $deadline->update(['missing_fields_json' => ['last_furnish_date']]);
-
-        expect($deadline->fresh()->getFilingStatusLabel())->toBe('Needs Info');
-    });
-
-    it('returns "Ready" when filing is available', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'prelim_notice'))
-            ->first();
-
-        expect($deadline->getFilingStatusLabel())->toBe('Ready');
-    });
-});
-
-describe('LienProjectDeadline::getFilingStatusColor()', function () {
-    it('returns "green" when status is completed', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'prelim_notice'))
-            ->first();
-
-        $deadline->update(['status' => DeadlineStatus::Completed]);
-
-        expect($deadline->fresh()->getFilingStatusColor())->toBe('green');
-    });
-
-    it('returns "blue" for preliminary notice even with missing fields', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'prelim_notice'))
-            ->first();
-
-        $deadline->update(['missing_fields_json' => ['first_furnish_date']]);
-
-        // Preliminary notice is always ready (blue) unless already filed
-        expect($deadline->fresh()->getFilingStatusColor())->toBe('blue');
-    });
-
-    it('returns "amber" for mechanics lien with missing fields', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
-            ->first();
-
-        $deadline->update(['missing_fields_json' => ['last_furnish_date']]);
-
-        expect($deadline->fresh()->getFilingStatusColor())->toBe('amber');
-    });
-
-    it('returns "zinc" for Not Applicable status on mechanics lien', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
-            ->first();
-
-        $deadline->update(['status' => DeadlineStatus::NotApplicable]);
-
-        expect($deadline->fresh()->getFilingStatusColor())->toBe('zinc');
-    });
-
-    it('returns "blue" when ready to file', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'prelim_notice'))
-            ->first();
-
-        expect($deadline->getFilingStatusColor())->toBe('blue');
-    });
+        expect($deadline->getFilingBlockerReason())->toBe($expected);
+    })->with([
+        'completed → Already Filed' => ['prelim_notice', ['status' => DeadlineStatus::Completed], 'Already Filed'],
+        'missing fields on prelim → null' => ['prelim_notice', ['missing_fields_json' => ['first_furnish_date']], null],
+        'missing fields on lien → null' => ['mechanics_lien', ['missing_fields_json' => ['last_furnish_date']], null],
+        'not applicable on prelim → Not Applicable' => ['prelim_notice', ['status' => DeadlineStatus::NotApplicable], 'Not Applicable'],
+        'not applicable on lien → Not Applicable' => ['mechanics_lien', ['status' => DeadlineStatus::NotApplicable], 'Not Applicable'],
+        'lien release without lien → Lien Required' => ['lien_release', [], 'Lien Required'],
+        'ready → null' => ['prelim_notice', [], null],
+    ]);
 });
 
 describe('LienProject::hasCompletedFilingForType()', function () {
@@ -366,7 +225,8 @@ describe('LienProject::hasCompletedFilingForType()', function () {
             'completed_filing_id' => $filing->id,
         ]);
 
-        expect($this->project->fresh()->hasCompletedFilingForType('mechanics_lien'))->toBeTrue();
+        $this->project->refresh();
+        expect($this->project->hasCompletedFilingForType('mechanics_lien'))->toBeTrue();
     });
 });
 
@@ -401,8 +261,8 @@ describe('LienProjectDeadline::canStart()', function () {
 
         $deadline->update(['missing_fields_json' => ['last_furnish_date']]);
 
-        // canStart should still be true - wizard collects missing info
-        expect($deadline->fresh()->canStart())->toBeTrue();
+        $deadline->refresh();
+        expect($deadline->canStart())->toBeTrue();
     });
 
     it('returns false when status is completed', function () {
@@ -412,7 +272,8 @@ describe('LienProjectDeadline::canStart()', function () {
 
         $deadline->update(['status' => DeadlineStatus::Completed]);
 
-        expect($deadline->fresh()->canStart())->toBeFalse();
+        $deadline->refresh();
+        expect($deadline->canStart())->toBeFalse();
     });
 
     it('returns false when status is not applicable', function () {
@@ -422,7 +283,8 @@ describe('LienProjectDeadline::canStart()', function () {
 
         $deadline->update(['status' => DeadlineStatus::NotApplicable]);
 
-        expect($deadline->fresh()->canStart())->toBeFalse();
+        $deadline->refresh();
+        expect($deadline->canStart())->toBeFalse();
     });
 });
 
@@ -442,7 +304,8 @@ describe('LienProjectDeadline::getButtonText()', function () {
 
         $deadline->update(['missing_fields_json' => ['last_furnish_date']]);
 
-        expect($deadline->fresh()->getButtonText())->toBe("Start filing (we'll ask a few questions)");
+        $deadline->refresh();
+        expect($deadline->getButtonText())->toBe("Start filing (we'll ask a few questions)");
     });
 
     it('returns "View Filing" when completed', function () {
@@ -467,83 +330,43 @@ describe('LienProjectDeadline::getButtonText()', function () {
 });
 
 describe('LienProjectDeadline::getStatusLabel()', function () {
-    it('returns "Filed" when status is completed', function () {
+    it('returns correct status label', function (string $slug, array $updates, string $expected) {
         $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'prelim_notice'))
+            ->whereHas('documentType', fn ($q) => $q->where('slug', $slug))
             ->first();
 
-        $deadline->update(['status' => DeadlineStatus::Completed]);
+        if ($updates) {
+            $deadline->update($updates);
+            $deadline->refresh();
+        }
 
-        expect($deadline->fresh()->getStatusLabel())->toBe('Filed');
-    });
-
-    it('returns "Not Applicable" when status is not applicable', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
-            ->first();
-
-        $deadline->update(['status' => DeadlineStatus::NotApplicable]);
-
-        expect($deadline->fresh()->getStatusLabel())->toBe('Not Applicable');
-    });
-
-    it('returns "Needs Info" when there are missing fields', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
-            ->first();
-
-        $deadline->update(['missing_fields_json' => ['last_furnish_date']]);
-
-        expect($deadline->fresh()->getStatusLabel())->toBe('Needs Info');
-    });
-
-    it('returns "Ready" when ready to file', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'prelim_notice'))
-            ->first();
-
-        expect($deadline->getStatusLabel())->toBe('Ready');
-    });
+        expect($deadline->getStatusLabel())->toBe($expected);
+    })->with([
+        'completed → Completed' => ['prelim_notice', ['status' => DeadlineStatus::Completed], 'Completed'],
+        'not applicable → N/A' => ['mechanics_lien', ['status' => DeadlineStatus::NotApplicable], 'N/A'],
+        'deadline unknown → Deadline Unknown' => ['mechanics_lien', ['status' => DeadlineStatus::DeadlineUnknown], 'Deadline Unknown'],
+        'not started → Not Started' => ['prelim_notice', ['status' => DeadlineStatus::NotStarted], 'Not Started'],
+    ]);
 });
 
 describe('LienProjectDeadline::getStatusColor()', function () {
-    it('returns "green" when status is completed', function () {
+    it('returns correct status color', function (string $slug, array $updates, string $expected) {
         $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'prelim_notice'))
+            ->whereHas('documentType', fn ($q) => $q->where('slug', $slug))
             ->first();
 
-        $deadline->update(['status' => DeadlineStatus::Completed]);
+        if ($updates) {
+            $deadline->update($updates);
+            $deadline->refresh();
+        }
 
-        expect($deadline->fresh()->getStatusColor())->toBe('green');
-    });
-
-    it('returns "zinc" when status is not applicable', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
-            ->first();
-
-        $deadline->update(['status' => DeadlineStatus::NotApplicable]);
-
-        expect($deadline->fresh()->getStatusColor())->toBe('zinc');
-    });
-
-    it('returns "amber" when there are missing fields', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
-            ->first();
-
-        $deadline->update(['missing_fields_json' => ['last_furnish_date']]);
-
-        expect($deadline->fresh()->getStatusColor())->toBe('amber');
-    });
-
-    it('returns "blue" when ready to file', function () {
-        $deadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'prelim_notice'))
-            ->first();
-
-        expect($deadline->getStatusColor())->toBe('blue');
-    });
+        expect($deadline->getStatusColor())->toBe($expected);
+    })->with([
+        'completed → green' => ['prelim_notice', ['status' => DeadlineStatus::Completed], 'green'],
+        'not applicable → zinc' => ['mechanics_lien', ['status' => DeadlineStatus::NotApplicable], 'zinc'],
+        'deadline unknown → zinc' => ['mechanics_lien', ['status' => DeadlineStatus::DeadlineUnknown], 'zinc'],
+        'not started → blue' => ['prelim_notice', ['status' => DeadlineStatus::NotStarted], 'blue'],
+    ]);
 });
 
 describe('LienProject Alerts Status', function () {

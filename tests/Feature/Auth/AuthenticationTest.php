@@ -25,8 +25,6 @@ test('users can authenticate using the login screen', function () {
 });
 
 test('users with admin roles are redirected to admin dashboard after login', function () {
-    $this->artisan('db:seed', ['--class' => 'PermissionsSeeder']);
-
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
@@ -43,8 +41,6 @@ test('users with admin roles are redirected to admin dashboard after login', fun
 });
 
 test('users with any admin level role are redirected to admin dashboard', function () {
-    $this->artisan('db:seed', ['--class' => 'PermissionsSeeder']);
-
     $lienAgent = User::factory()->create();
     $lienAgent->assignRole('lien_agent');
 

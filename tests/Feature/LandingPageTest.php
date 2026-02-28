@@ -19,8 +19,6 @@ test('landing page shows dashboard link to portal for regular users', function (
 });
 
 test('landing page shows dashboard link to admin for users with roles', function () {
-    $this->artisan('db:seed', ['--class' => 'PermissionsSeeder']);
-
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
@@ -32,8 +30,6 @@ test('landing page shows dashboard link to admin for users with roles', function
 });
 
 test('landing page shows dashboard link to admin for lien agent users', function () {
-    $this->artisan('db:seed', ['--class' => 'PermissionsSeeder']);
-
     $agent = User::factory()->create();
     $agent->assignRole('lien_agent');
 

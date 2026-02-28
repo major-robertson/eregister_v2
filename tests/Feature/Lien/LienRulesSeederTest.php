@@ -8,19 +8,6 @@ use App\Domains\Lien\Models\LienStateRule;
 
 uses()->group('slow');
 
-beforeEach(function () {
-    // Seed if tables are empty (RefreshDatabase resets the DB for each test)
-    if (LienDocumentType::count() === 0) {
-        $this->artisan('db:seed', ['--class' => 'LienDocumentTypeSeeder']);
-    }
-    if (LienStateRule::count() === 0) {
-        $this->artisan('db:seed', ['--class' => 'LienStateRuleSeeder']);
-    }
-    if (LienDeadlineRule::count() === 0) {
-        $this->artisan('db:seed', ['--class' => 'LienDeadlineRuleSeeder']);
-    }
-});
-
 describe('LienStateRuleSeeder', function () {
     it('seeds all 50 states with correct data', function () {
         // Verify 50 states seeded
@@ -99,11 +86,11 @@ describe('LienDeadlineRuleSeeder', function () {
             ->toArray();
 
         expect($claimantTypes)->toContain('gc');
-        expect($claimantTypes)->toContain('sub');
-        expect($claimantTypes)->toContain('subsub');
-        expect($claimantTypes)->toContain('supplier_owner');
-        expect($claimantTypes)->toContain('supplier_gc');
-        expect($claimantTypes)->toContain('supplier_sub');
+        expect($claimantTypes)->toContain('subcontractor');
+        expect($claimantTypes)->toContain('sub_sub_contractor');
+        expect($claimantTypes)->toContain('supplier_to_owner');
+        expect($claimantTypes)->toContain('supplier_to_contractor');
+        expect($claimantTypes)->toContain('supplier_to_subcontractor');
 
         // Verify residential and commercial scopes
         $scopes = LienDeadlineRule::where('document_type_id', $mechanicsLien->id)

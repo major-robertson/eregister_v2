@@ -8,11 +8,6 @@ use App\Models\Payment;
 use App\Models\User;
 use Livewire\Livewire;
 
-beforeEach(function () {
-    // Seed permissions and roles
-    $this->artisan('db:seed', ['--class' => 'PermissionsSeeder']);
-});
-
 describe('access control', function () {
     it('allows admin to access the stats page', function () {
         $admin = User::factory()->create();

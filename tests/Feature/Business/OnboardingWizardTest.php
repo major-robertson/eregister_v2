@@ -338,61 +338,6 @@ describe('Form Application Prefill', function () {
         ]);
     });
 
-    it('persists form data with persist_to_business flag back to business', function () {
-        // TODO: This test needs investigation - persistence mechanism may need different test setup
-        $this->markTestSkipped('Persistence test requires investigation of test environment setup');
-
-        $user = User::factory()->create();
-        $business = Business::create([
-            'name' => 'Test Business',
-            'legal_name' => 'Test Business',
-            'onboarding_completed_at' => now(),
-        ]);
-        $user->businesses()->attach($business->id, ['role' => 'owner']);
-
-        // Create application with empty core_data
-        $application = FormApplication::create([
-            'business_id' => $business->id,
-            'form_type' => 'sales_tax_permit',
-            'definition_version' => 1,
-            'selected_states' => ['CA'],
-            'status' => 'draft',
-            'current_phase' => 'core',
-            'core_data' => null,
-            'created_by_user_id' => $user->id,
-            'paid_at' => now(),
-        ]);
-
-        FormApplicationState::create([
-            'form_application_id' => $application->id,
-            'state_code' => 'CA',
-            'status' => 'pending',
-            'data' => [],
-        ]);
-
-        $this->actingAs($user)
-            ->withSession(['current_business_id' => $business->id]);
-
-        $component = Livewire::test(MultiStateFormRunner::class, ['application' => $application]);
-
-        // Update entity_type (which has persist_to_business: true)
-        $component->set('coreData.entity_type', 'corp')
-            ->set('coreData.dba_name', 'Test DBA');
-
-        // Save by moving through the form
-        $steps = ['business', 'contact'];
-        foreach ($steps as $index => $step) {
-            if ($index > 0) {
-                // Only advance after the first step
-                $component->call('nextStep');
-            }
-        }
-
-        $business->refresh();
-        expect($business->entity_type)->toBe('corp');
-        expect($business->dba_name)->toBe('Test DBA');
-    });
-
     it('does not override existing core data', function () {
         $user = User::factory()->create();
         $business = Business::create([

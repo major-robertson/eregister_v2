@@ -55,14 +55,14 @@ describe('ResolveCurrentBusiness Middleware', function () {
             ->assertSee('Session Business');
     });
 
-    it('denies access when session business does not belong to user', function () {
+    it('redirects when session business does not belong to user', function () {
         $user = User::factory()->create();
         $business = Business::create(['name' => 'Other Business']);
 
         $this->actingAs($user)
             ->withSession(['current_business_id' => $business->id])
             ->get('/portal')
-            ->assertForbidden();
+            ->assertRedirect(route('portal.select-business'));
     });
 });
 

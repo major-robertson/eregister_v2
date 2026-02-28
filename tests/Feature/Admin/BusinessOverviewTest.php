@@ -10,10 +10,6 @@ use App\Models\Payment;
 use App\Models\User;
 use Livewire\Livewire;
 
-beforeEach(function () {
-    $this->artisan('db:seed', ['--class' => 'PermissionsSeeder']);
-});
-
 describe('access control', function () {
     it('allows admin to access the business overview page', function () {
         $admin = User::factory()->create();
@@ -116,9 +112,14 @@ describe('displaying business details', function () {
         $user = User::factory()->create();
         $business->users()->attach($user->id, ['role' => 'owner']);
 
-        FormApplication::factory()->create([
+        FormApplication::create([
             'business_id' => $business->id,
             'form_type' => 'llc_formation',
+            'definition_version' => 1,
+            'selected_states' => ['CA'],
+            'status' => 'draft',
+            'current_phase' => 'core',
+            'core_data' => [],
             'created_by_user_id' => $user->id,
         ]);
 
@@ -134,11 +135,12 @@ describe('displaying business details', function () {
 
         $business = Business::factory()->create();
 
-        LienProject::withoutGlobalScopes()->create([
+        LienProject::factory()->create([
             'business_id' => $business->id,
             'name' => 'Test Lien Project',
             'jobsite_city' => 'Los Angeles',
             'jobsite_state' => 'CA',
+            'claimant_type' => 'subcontractor',
         ]);
 
         $this->actingAs($admin);

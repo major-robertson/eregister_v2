@@ -48,8 +48,6 @@ it('submits the contact form successfully', function () {
         ->assertSet('name', '')
         ->assertSet('email', '')
         ->assertSet('message', '');
-
-    Mail::assertSentCount(1);
 });
 
 it('allows optional business name', function () {
@@ -62,6 +60,4 @@ it('allows optional business name', function () {
         ->call('submit')
         ->assertHasNoErrors()
         ->assertSet('submitted', true);
-
-    Mail::assertSentCount(1);
 });

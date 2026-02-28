@@ -171,6 +171,58 @@
         </div>
     </div>
 
+    <!-- Redirect Campaigns Table -->
+    <div class="rounded-lg border border-border bg-white">
+        <div class="border-b border-border px-4 py-3">
+            <flux:heading size="sm">Redirect Campaigns</flux:heading>
+            <flux:text class="mt-1 text-sm text-gray-500">Banner ads and partnership links (/r/slug)</flux:text>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="border-b border-border bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 font-medium text-gray-700">Slug</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">Destination</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">Source</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">Status</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">Total Clicks</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">Today</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">This Week</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">This Month</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">Signups</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border">
+                    @forelse ($redirectStats as $redirect)
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 font-mono text-sm">/r/{{ $redirect['slug'] }}</td>
+                        <td class="px-4 py-3">{{ $redirect['destination_path'] }}</td>
+                        <td class="px-4 py-3">{{ $redirect['utm_source'] }}</td>
+                        <td class="px-4 py-3">
+                            <flux:badge size="sm" color="{{ $redirect['is_active'] ? 'green' : 'zinc' }}">
+                                {{ $redirect['is_active'] ? 'Active' : 'Inactive' }}
+                            </flux:badge>
+                        </td>
+                        <td class="px-4 py-3 font-semibold">{{ number_format($redirect['total_clicks']) }}</td>
+                        <td class="px-4 py-3">{{ $redirect['clicks_today'] }}</td>
+                        <td class="px-4 py-3">{{ $redirect['clicks_this_week'] }}</td>
+                        <td class="px-4 py-3">{{ $redirect['clicks_this_month'] }}</td>
+                        <td class="px-4 py-3">
+                            <flux:badge size="sm" color="blue">{{ $redirect['attributed_signups'] }}</flux:badge>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="9" class="px-4 py-8 text-center text-gray-400">
+                            No redirect campaigns yet.
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <!-- Recent Activity Tables -->
     <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <!-- Recent Visits -->

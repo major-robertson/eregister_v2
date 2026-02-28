@@ -9,7 +9,10 @@ use App\Domains\Marketing\Models\MarketingEvent;
 use App\Domains\Marketing\Models\MarketingLead;
 use App\Domains\Marketing\Models\MarketingLeadCampaign;
 use App\Domains\Marketing\Models\MarketingMailing;
+use App\Domains\Marketing\Models\MarketingRedirect;
+use App\Domains\Marketing\Models\MarketingRedirectVisit;
 use App\Domains\Marketing\Models\MarketingVisit;
+use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Component;
@@ -26,6 +29,7 @@ class MarketingStats extends Component
             'campaigns' => $this->getCampaigns(),
             'recentVisits' => $this->getRecentVisits(),
             'recentEvents' => $this->getRecentEvents(),
+            'redirectStats' => $this->getRedirectStats(),
         ])->layout('layouts.admin', ['title' => 'Marketing Stats']);
     }
 
@@ -134,6 +138,33 @@ class MarketingStats extends Component
                     'source' => $visit->source->label(),
                     'step_name' => $visit->trackingLink?->campaignStep?->name ?? '-',
                     'visited_at' => $visit->visited_at,
+                ];
+            });
+    }
+
+    /**
+     * Get redirect campaign stats with click counts and attributed signups.
+     */
+    protected function getRedirectStats(): Collection
+    {
+        return MarketingRedirect::query()
+            ->withCount('visits')
+            ->latest()
+            ->get()
+            ->map(function (MarketingRedirect $redirect) {
+                $visitsQuery = MarketingRedirectVisit::where('marketing_redirect_id', $redirect->id);
+
+                return [
+                    'id' => $redirect->id,
+                    'slug' => $redirect->slug,
+                    'destination_path' => $redirect->destination_path,
+                    'utm_source' => $redirect->utm_source,
+                    'is_active' => $redirect->is_active,
+                    'total_clicks' => $redirect->visits_count,
+                    'clicks_today' => (clone $visitsQuery)->whereDate('visited_at', today())->count(),
+                    'clicks_this_week' => (clone $visitsQuery)->whereBetween('visited_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+                    'clicks_this_month' => (clone $visitsQuery)->whereBetween('visited_at', [now()->startOfMonth(), now()->endOfMonth()])->count(),
+                    'attributed_signups' => User::where('signup_utm_source', $redirect->utm_source)->count(),
                 ];
             });
     }

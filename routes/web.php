@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\EmailUnsubscribeController;
 use App\Http\Controllers\MarketingLandingController;
+use App\Http\Controllers\MarketingRedirectController;
 use App\Http\Controllers\PostGridWebhookController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StripeWebhookController;
@@ -15,7 +16,11 @@ Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle'])
 Route::post('/webhooks/postgrid', [PostGridWebhookController::class, 'handle'])
     ->name('webhooks.postgrid');
 
-// Marketing landing pages
+// Marketing redirects (banner ads, partnerships)
+Route::get('/r/{slug}', [MarketingRedirectController::class, 'handle'])
+    ->name('marketing.redirect');
+
+// Marketing landing pages (direct mail campaigns)
 Route::get('/go/t/{token}', [MarketingLandingController::class, 'tokenLanding'])
     ->name('marketing.landing.token');
 

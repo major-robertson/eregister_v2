@@ -36,7 +36,7 @@
 
                     <div>
                         <flux:text class="text-sm text-gray-500">Service Level</flux:text>
-                        <flux:text class="font-medium">{{ $filing->service_level->label() }}</flux:text>
+                        <flux:text class="font-medium">{{ $filing->service_level?->label() ?? 'Unknown' }}</flux:text>
                     </div>
 
                     <div>

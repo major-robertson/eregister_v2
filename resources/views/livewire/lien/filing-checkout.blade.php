@@ -7,7 +7,7 @@
         {{-- Compact order summary --}}
         <div class="flex justify-between items-center text-sm text-zinc-600 dark:text-zinc-400 mb-6">
             <span>{{ $filing->documentType->name }}</span>
-            <span>{{ $filing->service_level->label() }}</span>
+            <span>{{ $filing->service_level?->label() ?? 'Unknown' }}</span>
         </div>
 
         <div>

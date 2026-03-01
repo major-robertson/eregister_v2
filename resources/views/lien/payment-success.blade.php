@@ -46,7 +46,7 @@
                         {{ $filing->project->name }}
                     </x-ui.info-list.item>
                     <x-ui.info-list.item label="Service Level">
-                        {{ $filing->service_level->label() }}
+                        {{ $filing->service_level?->label() ?? 'Unknown' }}
                     </x-ui.info-list.item>
                     <x-ui.info-list.item label="Amount Paid">
                         {{ $payment->formattedAmount() }}

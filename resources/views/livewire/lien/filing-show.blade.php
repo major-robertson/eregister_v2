@@ -218,7 +218,7 @@
                 </x-ui.info-list.item>
             @endif
             <x-ui.info-list.item label="Service Level">
-                {{ $filing->service_level->label() }}
+                {{ $filing->service_level?->label() ?? 'Unknown' }}
             </x-ui.info-list.item>
             @if($filing->paid_at)
                 <x-ui.info-list.item label="Paid">

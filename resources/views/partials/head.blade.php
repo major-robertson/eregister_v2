@@ -1,11 +1,11 @@
 @unless(request()->routeIs('admin.*'))
 <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-KNE1XS2NKF"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MSVBK7VE6P"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  gtag('config', 'G-KNE1XS2NKF');
+  gtag('config', 'G-MSVBK7VE6P');
   gtag('config', 'AW-984288380');
 </script>
 @endunless

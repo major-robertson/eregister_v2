@@ -21,6 +21,7 @@
         "sentry/sentry-laravel": "^4.20",
         "spatie/laravel-medialibrary": "^11.17",
         "spatie/laravel-permission": "^6.24",
+        "spatie/laravel-sitemap": "^7.4",
         "symfony/http-client": "^8.0",
         "symfony/postmark-mailer": "^8.0"
     },

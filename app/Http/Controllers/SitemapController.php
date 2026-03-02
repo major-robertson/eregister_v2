@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Response;
+use Spatie\Sitemap\Sitemap;
+use Spatie\Sitemap\Tags\Url;
 
 class SitemapController extends Controller
 {
@@ -47,10 +49,17 @@ class SitemapController extends Controller
 
     public function __invoke(): Response
     {
-        $urls = static::urls();
+        $sitemap = Sitemap::create();
 
-        return response()
-            ->view('sitemap', compact('urls'))
+        foreach (static::urls() as $entry) {
+            $sitemap->add(
+                Url::create($entry['loc'])
+                    ->setChangeFrequency($entry['changefreq'])
+                    ->setPriority((float) $entry['priority'])
+            );
+        }
+
+        return response($sitemap->render())
             ->header('Content-Type', 'application/xml');
     }
 }

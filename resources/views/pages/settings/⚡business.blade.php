@@ -2,9 +2,10 @@
 
 use App\Domains\Business\Models\Business;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new class extends Component {
+new #[Title('Business Settings')] class extends Component {
     public ?Business $business = null;
 
     // Entity fields

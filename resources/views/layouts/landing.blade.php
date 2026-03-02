@@ -2,8 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
-    @include('partials.head')
-    <title>@yield('title', config('app.name', 'eRegister'))</title>
+    @include('partials.head', ['title' => $__env->yieldContent('title', config('app.name', 'eRegister'))])
     @yield('meta')
 </head>
 

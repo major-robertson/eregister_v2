@@ -62,6 +62,35 @@ class LienDeadlineRule extends Model
     }
 
     /**
+     * Get the primary trigger event for a mechanics lien in a given state.
+     * Used to determine which date field (completion_date vs last_furnish_date) is the key date.
+     */
+    public static function primaryTriggerForMechanicsLien(
+        string $state,
+        ?ClaimantType $claimantType = null,
+        ?string $propertyClass = null,
+    ): ?DeadlineTrigger {
+        $query = static::where('state', $state)
+            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'));
+
+        if ($claimantType) {
+            $query->where(function ($q) use ($claimantType) {
+                $q->where('claimant_type', $claimantType->value)
+                    ->orWhere('claimant_type', 'any');
+            });
+        }
+
+        if ($propertyClass && $propertyClass !== 'government') {
+            $query->where(function ($q) use ($propertyClass) {
+                $q->where('effective_scope', $propertyClass)
+                    ->orWhere('effective_scope', 'both');
+            });
+        }
+
+        return $query->value('trigger_event');
+    }
+
+    /**
      * Get all rules applicable to a given state, claimant type, and scope.
      * Selection order: claimant_type exact match first, then 'any'; effective_scope exact match first, then 'both'.
      */

@@ -5,7 +5,9 @@ namespace App\Domains\Lien\Livewire;
 use App\Concerns\ResolvesMarketingLead;
 use App\Domains\Lien\Engine\DeadlineCalculator;
 use App\Domains\Lien\Enums\ClaimantType;
+use App\Domains\Lien\Enums\DeadlineTrigger;
 use App\Domains\Lien\Enums\NocStatus;
+use App\Domains\Lien\Models\LienDeadlineRule;
 use App\Domains\Lien\Models\LienProject;
 use App\Services\GooglePlacesService;
 use Illuminate\Contracts\View\View;
@@ -66,6 +68,8 @@ class ProjectForm extends Component
     public ?string $first_furnish_date = null;
 
     public ?string $last_furnish_date = null;
+
+    public ?string $completion_date = null;
 
     public string $noc_status = 'unknown';
 
@@ -131,6 +135,7 @@ class ProjectForm extends Component
         // Step 3
         $this->first_furnish_date = $this->project->first_furnish_date?->format('Y-m-d');
         $this->last_furnish_date = $this->project->last_furnish_date?->format('Y-m-d');
+        $this->completion_date = $this->project->completion_date?->format('Y-m-d');
         $this->noc_status = $this->project->noc_status?->value ?? 'unknown';
         $this->noc_recorded_at = $this->project->noc_recorded_at?->format('Y-m-d');
     }
@@ -210,7 +215,6 @@ class ProjectForm extends Component
      */
     private function getStep3Rules(): array
     {
-        // Build last_furnish_date rules properly
         $lastFurnishRules = ['nullable', 'date', 'before_or_equal:today'];
         if ($this->first_furnish_date) {
             $lastFurnishRules[] = 'after_or_equal:first_furnish_date';
@@ -219,9 +223,9 @@ class ProjectForm extends Component
         $rules = [
             'first_furnish_date' => ['nullable', 'date', 'before_or_equal:today'],
             'last_furnish_date' => $lastFurnishRules,
+            'completion_date' => ['nullable', 'date', 'before_or_equal:today'],
         ];
 
-        // Only validate NOC fields for states that require it
         if ($this->showNocQuestion()) {
             $rules['noc_status'] = ['required', Rule::enum(NocStatus::class)];
             $rules['noc_recorded_at'] = [
@@ -232,6 +236,24 @@ class ProjectForm extends Component
         }
 
         return $rules;
+    }
+
+    /**
+     * Determine the primary date field for the project's state mechanics lien rule.
+     */
+    public function primaryDateField(): string
+    {
+        if (empty($this->jobsite_state) || empty($this->claimant_type)) {
+            return DeadlineTrigger::LastFurnish->value;
+        }
+
+        $trigger = LienDeadlineRule::primaryTriggerForMechanicsLien(
+            strtoupper($this->jobsite_state),
+            ClaimantType::tryFrom($this->claimant_type),
+            $this->property_class,
+        );
+
+        return $trigger?->value ?? DeadlineTrigger::LastFurnish->value;
     }
 
     /**
@@ -346,6 +368,7 @@ class ProjectForm extends Component
             'jobsite_lng' => $this->jobsite_lng,
             'first_furnish_date' => $this->first_furnish_date ?: null,
             'last_furnish_date' => $this->last_furnish_date ?: null,
+            'completion_date' => $this->completion_date ?: null,
             'noc_status' => $this->noc_status,
             'noc_recorded_at' => $this->noc_recorded_at ?: null,
         ];
@@ -384,6 +407,7 @@ class ProjectForm extends Component
             'states' => $this->getUsStates(),
             'stepTitles' => $this->getStepTitles(),
             'nocStatuses' => NocStatus::cases(),
+            'primaryDateField' => $this->primaryDateField(),
         ])->layout('layouts.lien', [
             'title' => $this->isEditing ? 'Edit Project' : 'Create Project',
         ]);

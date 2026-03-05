@@ -154,26 +154,62 @@
     </x-slot:header>
 
     <div class="space-y-6">
-        {{-- Info Banner --}}
         <flux:callout color="blue" icon="information-circle">
-            These dates are optional, but without them we can't calculate your filing deadlines or send you alerts.
+            Enter your key date below to calculate filing deadlines.
         </flux:callout>
 
+        {{-- Primary date field based on state rules --}}
         <div class="space-y-4">
-            <flux:field>
-                <flux:label>First Furnish Date</flux:label>
-                <flux:input type="date" wire:model="first_furnish_date" />
-                <flux:description>When you first provided labor/materials</flux:description>
-                <flux:error name="first_furnish_date" />
-            </flux:field>
-
-            <flux:field>
-                <flux:label>Last Furnish Date</flux:label>
-                <flux:input type="date" wire:model="last_furnish_date" />
-                <flux:description>When you last provided labor/materials</flux:description>
-                <flux:error name="last_furnish_date" />
-            </flux:field>
+            @if($primaryDateField === 'completion_date')
+                <flux:field>
+                    <flux:label>Completion Date</flux:label>
+                    <flux:input type="date" wire:model="completion_date" />
+                    <flux:description>When the project was substantially complete</flux:description>
+                    <flux:error name="completion_date" />
+                </flux:field>
+            @else
+                <flux:field>
+                    <flux:label>Last Furnish Date</flux:label>
+                    <flux:input type="date" wire:model="last_furnish_date" />
+                    <flux:description>When you last provided labor/materials</flux:description>
+                    <flux:error name="last_furnish_date" />
+                </flux:field>
+            @endif
         </div>
+
+        {{-- Additional optional dates --}}
+        <details class="group">
+            <summary class="flex items-center justify-between cursor-pointer p-4 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
+                <div class="flex items-center gap-2">
+                    <span class="font-medium">Additional Dates (optional)</span>
+                </div>
+                <flux:icon name="chevron-down" class="w-5 h-5 transition-transform group-open:rotate-180" />
+            </summary>
+            <div class="p-4 border border-t-0 border-zinc-200 dark:border-zinc-700 rounded-b-lg space-y-4">
+                <flux:field>
+                    <flux:label>First Furnish Date</flux:label>
+                    <flux:input type="date" wire:model="first_furnish_date" />
+                    <flux:description>When you first provided labor/materials</flux:description>
+                    <flux:error name="first_furnish_date" />
+                </flux:field>
+
+                @if($primaryDateField === 'completion_date')
+                    <flux:field>
+                        <flux:label>Last Furnish Date</flux:label>
+                        <flux:input type="date" wire:model="last_furnish_date" />
+                        <flux:description>When you last provided labor/materials</flux:description>
+                        <flux:error name="last_furnish_date" />
+                    </flux:field>
+                @else
+                    <flux:field>
+                        <flux:label>Completion Date</flux:label>
+                        <flux:input type="date" wire:model="completion_date" />
+                        <flux:description>When the project was substantially complete</flux:description>
+                        <flux:error name="completion_date" />
+                    </flux:field>
+                @endif
+            </div>
+        </details>
 
         {{-- NOC Question - only for CA, NV, AZ, OR --}}
         @if($this->showNocQuestion())

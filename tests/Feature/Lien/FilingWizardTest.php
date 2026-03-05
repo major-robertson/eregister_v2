@@ -24,6 +24,7 @@ beforeEach(function () {
         'jobsite_state' => 'AZ',
         'first_furnish_date' => now()->subDays(30),
         'last_furnish_date' => now()->subDays(5),
+        'completion_date' => now()->subDays(3),
         'property_class' => 'residential',
     ]);
 
@@ -52,6 +53,167 @@ beforeEach(function () {
         'status' => \App\Domains\Lien\Enums\FilingStatus::Draft,
         'created_by_user_id' => $this->user->id,
     ]);
+});
+
+describe('Filing Wizard required dates', function () {
+    it('pre-populates dates from the project', function () {
+        $component = Livewire::test(FilingWizard::class, [
+            'project' => $this->project,
+            'deadline' => $this->deadline,
+        ]);
+
+        $component->assertSet('completion_date', $this->project->completion_date->format('Y-m-d'))
+            ->assertSet('last_furnish_date', $this->project->last_furnish_date->format('Y-m-d'))
+            ->assertSet('first_furnish_date', $this->project->first_furnish_date->format('Y-m-d'));
+    });
+
+    it('fails step 3 validation without required date for a completion_date state', function () {
+        $project = LienProject::factory()->forBusiness($this->business)->create([
+            'jobsite_state' => 'IL',
+            'claimant_type' => 'gc',
+            'first_furnish_date' => now()->subDays(30),
+            'last_furnish_date' => now()->subDays(5),
+            'property_class' => 'residential',
+        ]);
+
+        app(\App\Domains\Lien\Engine\DeadlineCalculator::class)->calculateForProject($project);
+
+        LienParty::create([
+            'business_id' => $this->business->id,
+            'project_id' => $project->id,
+            'role' => 'owner',
+            'name' => 'Test Owner',
+            'address1' => '123 Main St',
+            'city' => 'Chicago',
+            'state' => 'IL',
+            'zip' => '60601',
+        ]);
+
+        $deadline = $project->deadlines()
+            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
+            ->first();
+
+        LienFiling::factory()->forProject($project)->create([
+            'document_type_id' => $deadline->document_type_id,
+            'project_deadline_id' => $deadline->id,
+            'status' => FilingStatus::Draft,
+            'created_by_user_id' => $this->user->id,
+        ]);
+
+        $component = Livewire::test(FilingWizard::class, [
+            'project' => $project,
+            'deadline' => $deadline,
+        ]);
+
+        $component->set('project_type_category', 'residential')
+            ->call('nextStep')
+            ->call('nextStep')
+            ->set('has_written_contract', '0')
+            ->set('amount_claimed', 5000.00)
+            ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->call('nextStep')
+            ->assertHasErrors(['completion_date']);
+    });
+
+    it('passes step 3 validation when required completion_date is provided', function () {
+        $project = LienProject::factory()->forBusiness($this->business)->create([
+            'jobsite_state' => 'IL',
+            'claimant_type' => 'gc',
+            'first_furnish_date' => now()->subDays(30),
+            'last_furnish_date' => now()->subDays(5),
+            'property_class' => 'residential',
+        ]);
+
+        app(\App\Domains\Lien\Engine\DeadlineCalculator::class)->calculateForProject($project);
+
+        LienParty::create([
+            'business_id' => $this->business->id,
+            'project_id' => $project->id,
+            'role' => 'owner',
+            'name' => 'Test Owner',
+            'address1' => '123 Main St',
+            'city' => 'Chicago',
+            'state' => 'IL',
+            'zip' => '60601',
+        ]);
+
+        $deadline = $project->deadlines()
+            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
+            ->first();
+
+        LienFiling::factory()->forProject($project)->create([
+            'document_type_id' => $deadline->document_type_id,
+            'project_deadline_id' => $deadline->id,
+            'status' => FilingStatus::Draft,
+            'created_by_user_id' => $this->user->id,
+        ]);
+
+        $component = Livewire::test(FilingWizard::class, [
+            'project' => $project,
+            'deadline' => $deadline,
+        ]);
+
+        $component->set('project_type_category', 'residential')
+            ->call('nextStep')
+            ->call('nextStep')
+            ->set('completion_date', now()->subDays(3)->format('Y-m-d'))
+            ->set('has_written_contract', '0')
+            ->set('amount_claimed', 5000.00)
+            ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->call('nextStep')
+            ->assertHasNoErrors(['completion_date']);
+    });
+
+    it('saves dates entered in wizard back to the project', function () {
+        $project = LienProject::factory()->forBusiness($this->business)->create([
+            'jobsite_state' => 'IL',
+            'claimant_type' => 'gc',
+            'property_class' => 'residential',
+        ]);
+
+        app(\App\Domains\Lien\Engine\DeadlineCalculator::class)->calculateForProject($project);
+
+        LienParty::create([
+            'business_id' => $this->business->id,
+            'project_id' => $project->id,
+            'role' => 'owner',
+            'name' => 'Test Owner',
+            'address1' => '123 Main St',
+            'city' => 'Chicago',
+            'state' => 'IL',
+            'zip' => '60601',
+        ]);
+
+        $deadline = $project->deadlines()
+            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
+            ->first();
+
+        LienFiling::factory()->forProject($project)->create([
+            'document_type_id' => $deadline->document_type_id,
+            'project_deadline_id' => $deadline->id,
+            'status' => FilingStatus::Draft,
+            'created_by_user_id' => $this->user->id,
+        ]);
+
+        $completionDate = now()->subDays(10)->format('Y-m-d');
+
+        $component = Livewire::test(FilingWizard::class, [
+            'project' => $project,
+            'deadline' => $deadline,
+        ]);
+
+        $component->set('project_type_category', 'residential')
+            ->call('nextStep')
+            ->call('nextStep')
+            ->set('completion_date', $completionDate)
+            ->set('has_written_contract', '0')
+            ->set('amount_claimed', 5000.00)
+            ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->call('nextStep');
+
+        $project->refresh();
+        expect($project->completion_date->format('Y-m-d'))->toBe($completionDate);
+    });
 });
 
 describe('Filing Wizard has_written_contract', function () {

@@ -12,7 +12,7 @@
     {{-- Progress Steps --}}
     <div class="flex items-center justify-between mb-8">
         @php
-            $steps = ['Property', 'Parties', 'Amount', 'Service & Review'];
+            $steps = ['Property', 'Parties', 'Work', 'Service & Review'];
         @endphp
         @foreach($steps as $index => $label)
             @php
@@ -48,6 +48,44 @@
     </div>
 
     {{-- Step Content --}}
+    @if($step === 3)
+        {{-- Step 3 uses two separate cards --}}
+        @if(count($requiredDateFields) > 0)
+        <x-ui.card>
+            <x-slot:header>Important Dates</x-slot:header>
+
+            <div class="space-y-4">
+                @if(array_key_exists('completion_date', $requiredDateFields))
+                    <flux:field>
+                        <flux:label>Completion Date *</flux:label>
+                        <flux:input type="date" wire:model="completion_date" />
+                        <flux:description>When the project was substantially complete</flux:description>
+                        <flux:error name="completion_date" />
+                    </flux:field>
+                @endif
+
+                @if(array_key_exists('last_furnish_date', $requiredDateFields))
+                    <flux:field>
+                        <flux:label>Last Furnish Date *</flux:label>
+                        <flux:input type="date" wire:model="last_furnish_date" />
+                        <flux:description>When you last provided labor/materials</flux:description>
+                        <flux:error name="last_furnish_date" />
+                    </flux:field>
+                @endif
+
+                @if(array_key_exists('first_furnish_date', $requiredDateFields))
+                    <flux:field>
+                        <flux:label>First Furnish Date *</flux:label>
+                        <flux:input type="date" wire:model="first_furnish_date" />
+                        <flux:description>When you first provided labor/materials</flux:description>
+                        <flux:error name="first_furnish_date" />
+                    </flux:field>
+                @endif
+            </div>
+        </x-ui.card>
+        @endif
+    @endif
+
     <x-ui.card>
         @if($step === 1)
             {{-- Step 1: Property Details --}}
@@ -281,7 +319,7 @@
             </div>
 
         @elseif($step === 3)
-            {{-- Step 3: Amount & Contract --}}
+            {{-- Step 3: Work --}}
             <x-slot:header>Amount & Contract</x-slot:header>
 
             <div class="space-y-6">

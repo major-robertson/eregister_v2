@@ -2,9 +2,11 @@
 
 namespace App\Domains\Lien\Livewire;
 
+use App\Domains\Lien\Engine\DeadlineCalculator;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Enums\PartyRole;
 use App\Domains\Lien\Enums\ServiceLevel;
+use App\Domains\Lien\Models\LienDeadlineRule;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienFilingRecipient;
 use App\Domains\Lien\Models\LienParty;
@@ -50,7 +52,14 @@ class FilingWizard extends Component
 
     public bool $owner_is_tenant = false;
 
-    // Step 4: Amount & Contract
+    // Step 3: Important Dates
+    public ?string $first_furnish_date = null;
+
+    public ?string $last_furnish_date = null;
+
+    public ?string $completion_date = null;
+
+    // Step 3: Amount & Contract
     public ?float $amount_claimed = null;
 
     public ?string $description_of_work = null;
@@ -156,6 +165,11 @@ class FilingWizard extends Component
         if ($this->apn) {
             $this->has_apn = 'yes';
         }
+
+        // Dates
+        $this->first_furnish_date = $this->project->first_furnish_date?->format('Y-m-d');
+        $this->last_furnish_date = $this->project->last_furnish_date?->format('Y-m-d');
+        $this->completion_date = $this->project->completion_date?->format('Y-m-d');
     }
 
     private function populateFromFiling(): void
@@ -214,29 +228,80 @@ class FilingWizard extends Component
         }
     }
 
+    /**
+     * Get the required date fields for this filing based on state deadline rules.
+     *
+     * @return array<string, string> Map of field name => human label
+     */
+    public function getRequiredDateFieldsProperty(): array
+    {
+        $docSlug = $this->deadline->documentType->slug;
+
+        $rules = LienDeadlineRule::where('state', $this->project->jobsite_state)
+            ->whereHas('documentType', fn ($q) => $q->where('slug', $docSlug))
+            ->where(function ($q) {
+                $claimant = $this->project->claimant_type;
+                if ($claimant) {
+                    $q->where('claimant_type', $claimant->value)
+                        ->orWhere('claimant_type', 'any');
+                } else {
+                    $q->where('claimant_type', 'any');
+                }
+            })
+            ->where(function ($q) {
+                $scope = $this->project->property_class;
+                if ($scope && $scope !== 'government') {
+                    $q->where('effective_scope', $scope)
+                        ->orWhere('effective_scope', 'both');
+                }
+            })
+            ->get();
+
+        $labels = config('lien.missing_field_labels', []);
+        $fields = [];
+
+        foreach ($rules as $rule) {
+            $fieldName = $rule->trigger_event->value;
+            if (in_array($fieldName, ['completion_date', 'last_furnish_date', 'first_furnish_date'])) {
+                $fields[$fieldName] = $labels[$fieldName] ?? $fieldName;
+            }
+        }
+
+        return $fields;
+    }
+
     private function validateStep(): void
     {
         match ($this->step) {
-            // Step 1: Property - validate property type
             1 => $this->validate([
                 'project_type_category' => ['required', 'in:residential,commercial,government'],
             ], [
                 'project_type_category.required' => 'Please select a property type.',
             ]),
-            // Step 2: Parties - property owner is required
             2 => $this->validateOwnerRequired(),
-            // Step 3: Amount & Contract
-            3 => $this->validate([
-                'has_written_contract' => ['required', 'in:0,1'],
-                'amount_claimed' => ['required', 'numeric', 'min:0.01'],
-                'description_of_work' => ['required', 'string', 'min:10'],
-            ], [
-                'has_written_contract.required' => 'Please indicate whether the work was done pursuant to a written contract.',
-            ]),
-            // Step 4: Checkout (service + review combined) - no nextStep validation needed
-            // Validation happens in proceedToCheckout()
+            3 => $this->validateWorkStep(),
             default => null,
         };
+    }
+
+    private function validateWorkStep(): void
+    {
+        $rules = [
+            'has_written_contract' => ['required', 'in:0,1'],
+            'amount_claimed' => ['required', 'numeric', 'min:0.01'],
+            'description_of_work' => ['required', 'string', 'min:10'],
+        ];
+
+        $messages = [
+            'has_written_contract.required' => 'Please indicate whether the work was done pursuant to a written contract.',
+        ];
+
+        foreach ($this->requiredDateFields as $fieldName => $label) {
+            $rules[$fieldName] = ['required', 'date', 'before_or_equal:today'];
+            $messages["{$fieldName}.required"] = "The {$label} is required to file in this state.";
+        }
+
+        $this->validate($rules, $messages);
     }
 
     /**
@@ -345,16 +410,26 @@ class FilingWizard extends Component
 
     private function updateFiling(): void
     {
-        // Update property details on the project
-        $this->project->update([
+        $projectData = [
             'legal_description' => $this->has_legal_description === 'yes' ? $this->legal_description : null,
             'apn' => $this->has_apn === 'yes' ? $this->apn : null,
             'owner_is_tenant' => $this->owner_is_tenant,
             'property_class' => $this->project_type_category,
             'has_written_contract' => $this->has_written_contract === '1',
-        ]);
+        ];
 
-        // Update filing
+        if ($this->step >= 3) {
+            $projectData['first_furnish_date'] = $this->first_furnish_date ?: null;
+            $projectData['last_furnish_date'] = $this->last_furnish_date ?: null;
+            $projectData['completion_date'] = $this->completion_date ?: null;
+        }
+
+        $this->project->update($projectData);
+
+        if ($this->step >= 3) {
+            app(DeadlineCalculator::class)->calculateForProject($this->project->fresh());
+        }
+
         $this->filing->update([
             'amount_claimed_cents' => $this->amount_claimed ? (int) ($this->amount_claimed * 100) : null,
             'description_of_work' => $this->description_of_work,
@@ -458,6 +533,7 @@ class FilingWizard extends Component
             'dates' => [
                 'first_furnish' => $this->project->first_furnish_date?->toDateString(),
                 'last_furnish' => $this->project->last_furnish_date?->toDateString(),
+                'completion' => $this->project->completion_date?->toDateString(),
             ],
         ];
     }
@@ -658,6 +734,7 @@ class FilingWizard extends Component
             'serviceLevels' => ServiceLevel::cases(),
             'claimantInfo' => $this->claimantInfo,
             'partyRoles' => collect(PartyRole::cases())->filter(fn ($role) => $role !== PartyRole::Claimant)->values(),
+            'requiredDateFields' => $this->requiredDateFields,
         ])->layout('layouts.lien', ['title' => 'Create '.$this->deadline->documentType->name]);
     }
 }

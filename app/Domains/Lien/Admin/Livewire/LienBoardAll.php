@@ -26,6 +26,7 @@ class LienBoardAll extends Component
     public function getFilings(): Collection
     {
         return LienFiling::query()
+            ->withoutGlobalScope('business')
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->whereHas('project', function ($pq) {

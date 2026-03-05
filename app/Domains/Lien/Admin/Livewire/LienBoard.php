@@ -35,6 +35,7 @@ class LienBoard extends Component
     public function getFilings(): Collection
     {
         return LienFiling::query()
+            ->withoutGlobalScope('business')
             ->whereNotNull('paid_at')
             ->whereNotIn('status', [
                 FilingStatus::Draft,

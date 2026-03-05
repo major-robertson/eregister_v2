@@ -27,8 +27,14 @@ class LienFilingDetail extends Component
 
     public string $comment = '';
 
-    public function mount(LienFiling $lienFiling): void
+    public function mount(string|LienFiling $lienFiling): void
     {
+        if (is_string($lienFiling)) {
+            $lienFiling = LienFiling::withoutGlobalScope('business')
+                ->where('public_id', $lienFiling)
+                ->firstOrFail();
+        }
+
         $this->lienFiling = $lienFiling->load([
             'createdBy',
             'project.business',

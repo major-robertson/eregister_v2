@@ -66,6 +66,47 @@ describe('filing detail sections', function () {
             ->assertSee($filing->documentType->name);
     });
 
+    it('displays payments received and credit deductions in filing summary', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $business = Business::factory()->create();
+        $project = LienProject::factory()->create([
+            'business_id' => $business->id,
+            'payments_received_cents' => 150000,
+            'credits_deductions_cents' => 25000,
+        ]);
+        $filing = LienFiling::factory()->forProject($project)->create();
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->assertSee('Payments Received')
+            ->assertSee('$1,500.00')
+            ->assertSee('Credit Deductions')
+            ->assertSee('$250.00');
+    });
+
+    it('displays $0.00 for payments received and credit deductions when null', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $business = Business::factory()->create();
+        $project = LienProject::factory()->create([
+            'business_id' => $business->id,
+            'payments_received_cents' => null,
+            'credits_deductions_cents' => null,
+        ]);
+        $filing = LienFiling::factory()->forProject($project)->create();
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->assertSee('Payments Received')
+            ->assertSee('Credit Deductions')
+            ->assertSee('$0.00');
+    });
+
     it('displays the project information section', function () {
         $admin = User::factory()->create();
         $admin->givePermissionTo('lien.view');
@@ -134,6 +175,24 @@ describe('filing detail sections', function () {
             ->assertSee('Jane Doe')
             ->assertSee('Claimant (You)')
             ->assertSee('Property Owner');
+    });
+
+    it('displays owner is tenant tooltip', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $business = Business::factory()->create();
+        $project = LienProject::factory()->create([
+            'business_id' => $business->id,
+            'owner_is_tenant' => true,
+        ]);
+        $filing = LienFiling::factory()->forProject($project)->create();
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->assertSee('Owner is Tenant')
+            ->assertSee('Was the work performed for someone renting the property rather than the property owner?');
     });
 
     it('displays the all fields collapsible section', function () {

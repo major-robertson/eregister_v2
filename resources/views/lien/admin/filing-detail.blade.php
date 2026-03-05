@@ -51,6 +51,20 @@
                     </div>
 
                     <div>
+                        <flux:text class="text-sm text-gray-500">Payments Received</flux:text>
+                        <flux:text class="font-medium">
+                            ${{ number_format(($filing->project?->payments_received_cents ?? 0) / 100, 2) }}
+                        </flux:text>
+                    </div>
+
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Credit Deductions</flux:text>
+                        <flux:text class="font-medium">
+                            ${{ number_format(($filing->project?->credits_deductions_cents ?? 0) / 100, 2) }}
+                        </flux:text>
+                    </div>
+
+                    <div>
                         <flux:text class="text-sm text-gray-500">Jurisdiction</flux:text>
                         <flux:text class="font-medium">
                             {{ $filing->jurisdiction_county ?? 'Unknown' }}, {{ $filing->jurisdiction_state ?? 'Unknown'
@@ -342,7 +356,12 @@
                     @endif
 
                     <div>
-                        <flux:text class="text-sm text-gray-500">Owner is Tenant</flux:text>
+                        <div class="flex items-center gap-1">
+                            <flux:text class="text-sm text-gray-500">Owner is Tenant</flux:text>
+                            <flux:tooltip content="Was the work performed for someone renting the property rather than the property owner?">
+                                <flux:icon name="question-mark-circle" class="size-4 text-gray-400" />
+                            </flux:tooltip>
+                        </div>
                         <flux:text class="font-medium">{{ $filing->project->owner_is_tenant ? 'Yes' : 'No' }}
                         </flux:text>
                     </div>
@@ -634,7 +653,12 @@
                         <flux:text class="font-medium">{{ $filing->project->completion_date?->format('M j, Y') ?? 'Not set' }}</flux:text>
                     </div>
                     <div>
-                        <flux:text class="text-xs text-gray-500">Owner is Tenant</flux:text>
+                        <div class="flex items-center gap-1">
+                            <flux:text class="text-xs text-gray-500">Owner is Tenant</flux:text>
+                            <flux:tooltip content="Was the work performed for someone renting the property rather than the property owner?">
+                                <flux:icon name="question-mark-circle" class="size-3.5 text-gray-400" />
+                            </flux:tooltip>
+                        </div>
                         <flux:text class="font-medium">{{ $filing->project->owner_is_tenant ? 'Yes' : 'No' }}</flux:text>
                     </div>
                 </div>

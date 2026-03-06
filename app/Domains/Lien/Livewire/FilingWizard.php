@@ -124,12 +124,14 @@ class FilingWizard extends Component
         $this->deadline = $deadline;
 
         // Find or create draft filing
-        $this->filing = $project->filings()
+        $existing = $project->filings()
             ->where('project_deadline_id', $deadline->id)
             ->whereIn('status', [FilingStatus::Draft, FilingStatus::AwaitingPayment])
             ->first();
 
-        if (! $this->filing) {
+        if ($existing) {
+            $this->filing = $existing;
+        } else {
             $this->filing = LienFiling::create([
                 'public_id' => Str::ulid()->toBase32(),
                 'business_id' => $project->business_id,

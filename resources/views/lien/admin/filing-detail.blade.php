@@ -27,6 +27,33 @@
     </flux:callout>
     @endif
 
+    <!-- Quick Summary -->
+    <div class="grid grid-cols-2 gap-x-6 gap-y-2 rounded-lg border border-border bg-white px-5 py-4 text-sm lg:grid-cols-4">
+        <div>
+            <flux:text class="text-xs text-gray-500">Business</flux:text>
+            <flux:text class="font-medium">{{ $filing->project?->business?->name ?? 'Unknown' }}</flux:text>
+        </div>
+        <div>
+            <flux:text class="text-xs text-gray-500">Filed By</flux:text>
+            @if ($filing->createdBy)
+            <flux:text class="font-medium">{{ $filing->createdBy->name }}</flux:text>
+            <flux:text class="text-xs text-gray-400">{{ $filing->createdBy->email }}</flux:text>
+            @else
+            <flux:text class="font-medium text-gray-400">Unknown</flux:text>
+            @endif
+        </div>
+        <div>
+            <flux:text class="text-xs text-gray-500">Document</flux:text>
+            <flux:text class="font-medium">{{ $filing->documentType?->name ?? 'Unknown' }}</flux:text>
+            <flux:text class="text-xs text-gray-400">{{ $filing->service_level?->label() ?? '' }}</flux:text>
+        </div>
+        <div>
+            <flux:text class="text-xs text-gray-500">Project Location</flux:text>
+            <flux:text class="font-medium">{{ $filing->project?->jobsite_state ?? 'Unknown' }}</flux:text>
+            <flux:text class="truncate text-xs text-gray-400">{{ $filing->project?->jobsiteAddressLine() ?: 'No address' }}</flux:text>
+        </div>
+    </div>
+
     <div class="grid gap-6 lg:grid-cols-3">
         <!-- Main Content -->
         <div class="space-y-6 lg:col-span-2">

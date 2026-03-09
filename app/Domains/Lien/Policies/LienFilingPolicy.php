@@ -99,6 +99,14 @@ class LienFilingPolicy
     }
 
     /**
+     * Determine if the user can refund a filing's payment.
+     */
+    public function refund(User $user, LienFiling $filing): bool
+    {
+        return $this->hasAdminPermission($user, 'payment.refund');
+    }
+
+    /**
      * Check if the filing belongs to the user's current business.
      */
     private function belongsToBusiness(User $user, LienFiling $filing): bool

@@ -33,6 +33,9 @@ class PermissionsSeeder extends Seeder
             'tax.view',
             'tax.update',
             'tax.change_status',
+
+            // Payment permissions
+            'payment.refund',
         ];
 
         foreach ($permissions as $permission) {

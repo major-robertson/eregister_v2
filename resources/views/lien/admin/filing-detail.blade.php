@@ -21,6 +21,12 @@
     </flux:callout>
     @endif
 
+    @if (session('error'))
+    <flux:callout variant="danger" icon="x-circle">
+        {{ session('error') }}
+    </flux:callout>
+    @endif
+
     <div class="grid gap-6 lg:grid-cols-3">
         <!-- Main Content -->
         <div class="space-y-6 lg:col-span-2">
@@ -29,16 +35,6 @@
                 <flux:heading size="lg" class="mb-4">Filing Summary</flux:heading>
 
                 <div class="grid gap-4 sm:grid-cols-2">
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Document Type</flux:text>
-                        <flux:text class="font-medium">{{ $filing->documentType?->name ?? 'Unknown' }}</flux:text>
-                    </div>
-
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Service Level</flux:text>
-                        <flux:text class="font-medium">{{ $filing->service_level?->label() ?? 'Unknown' }}</flux:text>
-                    </div>
-
                     <div>
                         <flux:text class="text-sm text-gray-500">Amount Claimed</flux:text>
                         <flux:text class="font-medium">
@@ -69,22 +65,6 @@
                         <flux:text class="font-medium">
                             {{ $filing->jurisdiction_county ?? 'Unknown' }}, {{ $filing->jurisdiction_state ?? 'Unknown'
                             }}
-                        </flux:text>
-                    </div>
-
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Created</flux:text>
-                        <flux:text class="font-medium">{{ $filing->created_at->format('M j, Y g:i A') }}</flux:text>
-                    </div>
-
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Paid</flux:text>
-                        <flux:text class="font-medium">
-                            @if ($filing->paid_at)
-                            {{ $filing->paid_at->format('M j, Y g:i A') }}
-                            @else
-                            Not paid
-                            @endif
                         </flux:text>
                     </div>
 
@@ -491,7 +471,95 @@
                     No status transitions available from current status.
                 </flux:text>
                 @endif
+
             </div>
+
+            <!-- Payment & Filing Info Card -->
+            <div class="rounded-lg border border-border bg-white p-6">
+                <flux:heading size="lg" class="mb-4">Payment & Filing Info</flux:heading>
+
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <flux:text class="text-sm text-gray-500">Document Type</flux:text>
+                        <flux:text class="font-medium">{{ $filing->documentType?->name ?? 'Unknown' }}</flux:text>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <flux:text class="text-sm text-gray-500">Service Level</flux:text>
+                        <flux:text class="font-medium">{{ $filing->service_level?->label() ?? 'Unknown' }}</flux:text>
+                    </div>
+
+                    <flux:separator />
+
+                    <div class="flex items-center justify-between">
+                        <flux:text class="text-sm text-gray-500">Created</flux:text>
+                        <flux:text class="font-medium">{{ $filing->created_at->format('M j, Y g:i A') }}</flux:text>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <flux:text class="text-sm text-gray-500">Paid</flux:text>
+                        <flux:text class="font-medium">
+                            @if ($filing->paid_at)
+                            {{ $filing->paid_at->format('M j, Y g:i A') }}
+                            @else
+                            Not paid
+                            @endif
+                        </flux:text>
+                    </div>
+
+                    @if ($refundablePayment?->isRefunded())
+                    <div class="flex items-center justify-between">
+                        <flux:text class="text-sm text-gray-500">Refunded</flux:text>
+                        <flux:text class="font-medium text-red-600">{{ $refundablePayment->refunded_at->format('M j, Y g:i A') }}</flux:text>
+                    </div>
+                    @endif
+                </div>
+
+                @if ($canRefund)
+                <div class="mt-4 border-t border-gray-200 pt-4">
+                    <flux:button wire:click="confirmRefund" variant="danger" class="w-full" icon="arrow-uturn-left">
+                        Refund {{ $refundablePayment->formattedAmount() }}
+                    </flux:button>
+                </div>
+                @elseif ($refundablePayment?->isRefunded())
+                <div class="mt-4 border-t border-gray-200 pt-4">
+                    <div class="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3">
+                        <flux:icon name="arrow-uturn-left" class="size-5 text-red-500" />
+                        <div>
+                            <flux:text class="font-medium text-red-800">Payment Refunded</flux:text>
+                            <flux:text class="text-sm text-red-600">
+                                {{ $refundablePayment->formattedAmount() }}
+                            </flux:text>
+                        </div>
+                    </div>
+                </div>
+                @endif
+            </div>
+
+            <!-- Refund Confirmation Modal -->
+            @if ($canRefund)
+            <flux:modal wire:model="showRefundModal" class="max-w-md">
+                <div class="space-y-6">
+                    <div>
+                        <flux:heading size="lg">Confirm Refund</flux:heading>
+                        <flux:subheading class="mt-2">
+                            Are you sure you want to refund <strong>{{ $refundablePayment->formattedAmount() }}</strong>?
+                            This action cannot be undone.
+                        </flux:subheading>
+                    </div>
+
+                    <div class="flex justify-end gap-2">
+                        <flux:modal.close>
+                            <flux:button variant="filled">Cancel</flux:button>
+                        </flux:modal.close>
+
+                        <flux:button wire:click="refundPayment" variant="danger">
+                            Refund {{ $refundablePayment->formattedAmount() }}
+                        </flux:button>
+                    </div>
+                </div>
+            </flux:modal>
+            @endif
 
             <!-- Add Comment Card -->
             @if ($canAddComment)
@@ -546,6 +614,19 @@
                             <flux:icon name="chat-bubble-left" class="mt-0.5 size-4 shrink-0 text-blue-400" />
                             <div class="min-w-0">
                                 <flux:text class="text-sm text-gray-600">{{ $event->payload_json['comment'] ?? '' }}</flux:text>
+                                <flux:text class="text-xs text-gray-400">
+                                    {{ $event->created_at->format('M j, g:i A') }}
+                                    @if ($event->creator)
+                                    &middot; {{ $event->creator->name }}
+                                    @endif
+                                </flux:text>
+                            </div>
+                        </div>
+                        @elseif ($event->event_type === 'payment_refunded')
+                        <div class="flex items-start gap-2">
+                            <flux:icon name="arrow-uturn-left" class="mt-0.5 size-4 shrink-0 text-red-400" />
+                            <div class="min-w-0">
+                                <flux:text class="text-sm font-medium text-red-600">Refunded {{ $event->payload_json['amount'] ?? '' }}</flux:text>
                                 <flux:text class="text-xs text-gray-400">
                                     {{ $event->created_at->format('M j, g:i A') }}
                                     @if ($event->creator)

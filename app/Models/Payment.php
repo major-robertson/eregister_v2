@@ -33,6 +33,9 @@ class Payment extends Model
         'requires_manual_review',
         'meta',
         'paid_at',
+        'stripe_refund_id',
+        'refunded_at',
+        'refunded_by',
     ];
 
     protected function casts(): array
@@ -43,6 +46,7 @@ class Payment extends Model
             'requires_manual_review' => 'boolean',
             'meta' => 'array',
             'paid_at' => 'datetime',
+            'refunded_at' => 'datetime',
             'amount_cents' => 'integer',
         ];
     }
@@ -69,6 +73,14 @@ class Payment extends Model
     public function price(): BelongsTo
     {
         return $this->belongsTo(Price::class);
+    }
+
+    /**
+     * The user who issued the refund.
+     */
+    public function refundedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'refunded_by');
     }
 
     /**
@@ -136,5 +148,22 @@ class Payment extends Model
     public function isRegistrationOrder(): bool
     {
         return $this->price && in_array($this->price->product_family, ['lien', 'llc', 'tax']);
+    }
+
+    /**
+     * Whether this payment can be refunded (succeeded with a Stripe payment intent).
+     */
+    public function isRefundable(): bool
+    {
+        return $this->status === PaymentStatus::Succeeded
+            && $this->stripe_payment_intent_id !== null;
+    }
+
+    /**
+     * Whether this payment has been refunded.
+     */
+    public function isRefunded(): bool
+    {
+        return $this->status === PaymentStatus::Refunded;
     }
 }

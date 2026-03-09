@@ -4,6 +4,7 @@ namespace App\Domains\Lien\Admin\Livewire;
 
 use App\Domains\Lien\Admin\Actions\AddFilingComment;
 use App\Domains\Lien\Admin\Actions\ChangeFilingStatus;
+use App\Domains\Lien\Admin\Actions\RefundPayment;
 use App\Domains\Lien\Admin\Enums\KanbanColumn;
 use App\Domains\Lien\Enums\DeadlineStatus;
 use App\Domains\Lien\Enums\FilingStatus;
@@ -27,6 +28,8 @@ class LienFilingDetail extends Component
 
     public string $comment = '';
 
+    public bool $showRefundModal = false;
+
     public function mount(string|LienFiling $lienFiling): void
     {
         if (is_string($lienFiling)) {
@@ -42,7 +45,7 @@ class LienFilingDetail extends Component
             'project.deadlines.rule',
             'project.deadlines.documentType',
             'documentType',
-            'events' => fn ($q) => $q->whereIn('event_type', ['status_changed', 'note_added'])->latest()->limit(50),
+            'events' => fn ($q) => $q->whereIn('event_type', ['status_changed', 'note_added', 'payment_refunded'])->latest()->limit(50),
             'events.creator',
         ]);
     }
@@ -62,6 +65,13 @@ class LienFilingDetail extends Component
 
         $filingDocStatus = $this->computeFilingDocStatus($project, $stateRule, $deadlines);
 
+        $refundablePayment = $this->lienFiling->payments()
+            ->latest('paid_at')
+            ->first();
+
+        $canRefund = auth()->user()->can('refund', $this->lienFiling)
+            && $refundablePayment?->isRefundable();
+
         return view('lien.admin.filing-detail', [
             'filing' => $this->lienFiling,
             'kanbanColumn' => KanbanColumn::forFiling($this->lienFiling),
@@ -70,6 +80,8 @@ class LienFilingDetail extends Component
             'canChangeStatus' => auth()->user()->can('changeStatus', $this->lienFiling),
             'canUpdate' => auth()->user()->can('update', $this->lienFiling),
             'canAddComment' => auth()->user()->can('addComment', $this->lienFiling),
+            'canRefund' => $canRefund,
+            'refundablePayment' => $refundablePayment,
             'requiredDeadlines' => $requiredDeadlines,
             'filingDocStatus' => $filingDocStatus,
         ])->layout('layouts.admin', ['title' => 'Filing Detail']);
@@ -223,7 +235,7 @@ class LienFilingDetail extends Component
     public function getActivityLog(): Collection
     {
         return $this->lienFiling->events()
-            ->whereIn('event_type', ['status_changed', 'note_added'])
+            ->whereIn('event_type', ['status_changed', 'note_added', 'payment_refunded'])
             ->with('creator')
             ->latest()
             ->limit(50)
@@ -275,6 +287,48 @@ class LienFilingDetail extends Component
         $this->reset('comment');
 
         session()->flash('success', 'Comment added successfully.');
+    }
+
+    /**
+     * Show the refund confirmation modal.
+     */
+    public function confirmRefund(): void
+    {
+        $this->authorize('refund', $this->lienFiling);
+
+        $this->showRefundModal = true;
+    }
+
+    /**
+     * Process the refund via Stripe.
+     */
+    public function refundPayment(): void
+    {
+        $this->authorize('refund', $this->lienFiling);
+
+        $payment = $this->lienFiling->payments()
+            ->latest('paid_at')
+            ->first();
+
+        if (! $payment?->isRefundable()) {
+            session()->flash('error', 'This payment cannot be refunded.');
+            $this->showRefundModal = false;
+
+            return;
+        }
+
+        try {
+            app(RefundPayment::class)->execute($payment, auth()->user());
+
+            $this->lienFiling->refresh();
+            $this->showRefundModal = false;
+
+            session()->flash('success', "Payment of {$payment->formattedAmount()} has been refunded.");
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            $this->showRefundModal = false;
+
+            session()->flash('error', 'Stripe error: '.$e->getMessage());
+        }
     }
 
     /**

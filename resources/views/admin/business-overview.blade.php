@@ -328,8 +328,14 @@
                             <flux:text class="font-medium">{{ $payment->formattedAmount() }}</flux:text>
                         </td>
                         <td class="px-4 py-3">
-                            <flux:badge size="sm"
-                                color="{{ $payment->status === \App\Enums\PaymentStatus::Succeeded ? 'green' : 'zinc' }}">
+                            @php
+                            $badgeColor = match($payment->status) {
+                                \App\Enums\PaymentStatus::Succeeded => 'green',
+                                \App\Enums\PaymentStatus::Refunded => 'red',
+                                default => 'zinc',
+                            };
+                            @endphp
+                            <flux:badge size="sm" color="{{ $badgeColor }}">
                                 {{ $payment->status->label() }}
                             </flux:badge>
                         </td>

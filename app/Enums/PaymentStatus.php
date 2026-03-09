@@ -10,6 +10,7 @@ enum PaymentStatus: string
     case Succeeded = 'succeeded';
     case Failed = 'failed';       // Terminal - abandoned or flagged
     case Canceled = 'canceled';   // Terminal - explicitly canceled
+    case Refunded = 'refunded';   // Terminal - fully refunded via Stripe
 
     public function label(): string
     {
@@ -20,12 +21,13 @@ enum PaymentStatus: string
             self::Succeeded => 'Succeeded',
             self::Failed => 'Failed',
             self::Canceled => 'Canceled',
+            self::Refunded => 'Refunded',
         };
     }
 
     public function isTerminal(): bool
     {
-        return in_array($this, [self::Succeeded, self::Failed, self::Canceled], true);
+        return in_array($this, [self::Succeeded, self::Failed, self::Canceled, self::Refunded], true);
     }
 
     public function isRetryable(): bool

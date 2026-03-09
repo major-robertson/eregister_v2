@@ -182,6 +182,7 @@ class LienFiling extends Model implements HasMedia
             FilingStatus::Recorded => [FilingStatus::Complete],
             FilingStatus::Complete => [],
             FilingStatus::Canceled => [],
+            FilingStatus::Refunded => [],
         };
     }
 

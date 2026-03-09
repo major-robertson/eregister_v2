@@ -2,6 +2,8 @@
 
 namespace App\Domains\Lien\Admin\Actions;
 
+use App\Domains\Lien\Enums\FilingStatus;
+use App\Domains\Lien\Models\LienFiling;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Models\User;
@@ -38,7 +40,9 @@ class RefundPayment
 
             $filing = $payment->purchasable;
 
-            if ($filing && method_exists($filing, 'events')) {
+            if ($filing instanceof LienFiling) {
+                $filing->update(['status' => FilingStatus::Refunded]);
+
                 $filing->events()->create([
                     'business_id' => $filing->business_id,
                     'event_type' => 'payment_refunded',

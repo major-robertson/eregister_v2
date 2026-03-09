@@ -14,6 +14,7 @@ enum FilingStatus: string
     case Recorded = 'recorded';
     case Complete = 'complete';
     case Canceled = 'canceled';
+    case Refunded = 'refunded';
 
     public function label(): string
     {
@@ -28,6 +29,7 @@ enum FilingStatus: string
             self::Recorded => 'Recorded',
             self::Complete => 'Complete',
             self::Canceled => 'Canceled',
+            self::Refunded => 'Refunded',
         };
     }
 
@@ -44,6 +46,7 @@ enum FilingStatus: string
             self::Recorded => 'violet',
             self::Complete => 'green',
             self::Canceled => 'red',
+            self::Refunded => 'red',
         };
     }
 
@@ -60,6 +63,7 @@ enum FilingStatus: string
             self::Recorded => 'document-check',
             self::Complete => 'check-circle',
             self::Canceled => 'x-circle',
+            self::Refunded => 'arrow-uturn-left',
         };
     }
 
@@ -79,6 +83,7 @@ enum FilingStatus: string
             self::Recorded => 'Your document has been recorded with the county.',
             self::Complete => 'Your filing is complete. All notices have been delivered.',
             self::Canceled => 'This filing has been canceled.',
+            self::Refunded => 'This filing has been refunded.',
         };
     }
 
@@ -93,7 +98,7 @@ enum FilingStatus: string
             self::AwaitingClient => 'Please respond to our email so we can continue processing your filing.',
             self::AwaitingEsign => 'Please complete the e-signature request sent to your email.',
             self::Paid, self::InFulfillment, self::Mailed, self::Recorded => 'We will email you when there is an update or if we need additional information.',
-            self::Complete, self::Canceled => null,
+            self::Complete, self::Canceled, self::Refunded => null,
         };
     }
 
@@ -103,7 +108,7 @@ enum FilingStatus: string
     public function isUserMilestone(): bool
     {
         return match ($this) {
-            self::Paid, self::AwaitingClient, self::AwaitingEsign, self::InFulfillment, self::Mailed, self::Recorded, self::Complete, self::Canceled => true,
+            self::Paid, self::AwaitingClient, self::AwaitingEsign, self::InFulfillment, self::Mailed, self::Recorded, self::Complete, self::Canceled, self::Refunded => true,
             self::Draft, self::AwaitingPayment => false,
         };
     }

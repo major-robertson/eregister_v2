@@ -4,6 +4,7 @@ namespace App\Domains\Lien\Policies;
 
 use App\Domains\Lien\Models\LienFiling;
 use App\Models\User;
+use Spatie\Permission\Exceptions\PermissionDoesNotExist;
 
 class LienFilingPolicy
 {
@@ -122,6 +123,10 @@ class LienFilingPolicy
      */
     private function hasAdminPermission(User $user, string $permission): bool
     {
-        return $user->hasPermissionTo($permission);
+        try {
+            return $user->hasPermissionTo($permission);
+        } catch (PermissionDoesNotExist) {
+            return false;
+        }
     }
 }

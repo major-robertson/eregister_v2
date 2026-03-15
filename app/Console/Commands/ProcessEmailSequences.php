@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Mail\AbandonedCheckoutReminder;
+use App\Mail\FilingActionReminder;
 use App\Models\EmailSequence;
 use App\Models\SentEmail;
 use Illuminate\Console\Command;
@@ -85,6 +86,7 @@ class ProcessEmailSequences extends Command
 
         match ($sequence->sequence_type) {
             'abandon_checkout' => Mail::to($user)->queue(new AbandonedCheckoutReminder($sequence, $step)),
+            'filing_action_reminder' => Mail::to($user)->queue(new FilingActionReminder($sequence, $step)),
             default => Log::warning('ProcessEmailSequences: No mailable for sequence type', [
                 'sequence_type' => $sequence->sequence_type,
             ]),

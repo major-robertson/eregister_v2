@@ -6,6 +6,7 @@ use App\Domains\Lien\Concerns\BelongsToBusiness;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Enums\ServiceLevel;
 use App\Domains\Lien\Exceptions\InvalidStatusTransitionException;
+use App\Models\EmailSequence;
 use App\Models\User;
 use Database\Factories\Lien\LienFilingFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -236,6 +237,28 @@ class LienFiling extends Model implements HasMedia
             ],
             'created_by' => auth()->id(),
         ]);
+
+        $this->syncActionReminderSequence($oldStatus, $newStatus);
+    }
+
+    /**
+     * Start or suppress the filing action reminder sequence based on status transition.
+     */
+    protected function syncActionReminderSequence(FilingStatus $oldStatus, FilingStatus $newStatus): void
+    {
+        if ($oldStatus === $newStatus) {
+            return;
+        }
+
+        if ($newStatus->isWaitingOnCustomer()) {
+            $user = $this->createdBy ?? User::find($this->created_by_user_id);
+
+            if ($user) {
+                EmailSequence::startReminderFor($this, $newStatus, $user, $this->business);
+            }
+        } elseif ($oldStatus->isWaitingOnCustomer()) {
+            EmailSequence::suppressReminderFor($this);
+        }
     }
 
     /**

@@ -109,6 +109,41 @@ enum FilingStatus: string
     }
 
     /**
+     * Whether the filing is waiting on the customer to take action.
+     */
+    public function isWaitingOnCustomer(): bool
+    {
+        return in_array($this, [self::AwaitingClient, self::AwaitingEsign, self::AwaitingNotary], true);
+    }
+
+    /**
+     * Content context for action-reminder emails.
+     *
+     * @return array{headline: string, body: string, cta_label: string}
+     */
+    public function reminderContext(): array
+    {
+        return match ($this) {
+            self::AwaitingClient => [
+                'headline' => 'We need information from you',
+                'body' => 'Your filing is on hold because we need additional information from you before we can continue processing it. Please review the request and respond at your earliest convenience so we can keep things moving.',
+                'cta_label' => 'Provide Information',
+            ],
+            self::AwaitingEsign => [
+                'headline' => 'Please sign your document',
+                'body' => 'An e-signature request has been sent to you. Please check your email for the signing link and complete it so we can continue processing your filing.',
+                'cta_label' => 'Sign Now',
+            ],
+            self::AwaitingNotary => [
+                'headline' => 'Your document needs notarization',
+                'body' => 'Your filing requires notarization before we can continue processing it. Please have the document notarized and send it back to us so we can move forward.',
+                'cta_label' => 'View Filing Details',
+            ],
+            default => throw new \LogicException("No reminder context for {$this->value}"),
+        };
+    }
+
+    /**
      * Check if this is a user-visible milestone status.
      */
     public function isUserMilestone(): bool

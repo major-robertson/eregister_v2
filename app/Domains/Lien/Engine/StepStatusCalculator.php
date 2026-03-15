@@ -29,6 +29,7 @@ class StepStatusCalculator
         FilingStatus::Paid,
         FilingStatus::AwaitingClient,
         FilingStatus::AwaitingEsign,
+        FilingStatus::AwaitingNotary,
         FilingStatus::InFulfillment,
         FilingStatus::Mailed,
         FilingStatus::Recorded,
@@ -84,6 +85,7 @@ class StepStatusCalculator
             DeadlineStatus::InFulfillment,
             DeadlineStatus::AwaitingClient,
             DeadlineStatus::AwaitingEsign,
+            DeadlineStatus::AwaitingNotary,
         ];
 
         // Filing statuses that count as "paid/in-progress"
@@ -91,6 +93,7 @@ class StepStatusCalculator
             FilingStatus::Paid,
             FilingStatus::AwaitingClient,
             FilingStatus::AwaitingEsign,
+            FilingStatus::AwaitingNotary,
             FilingStatus::InFulfillment,
             FilingStatus::Mailed,
             FilingStatus::Recorded,
@@ -274,6 +277,11 @@ class StepStatusCalculator
             return [DeadlineStatus::AwaitingEsign, $statusReason, $statusMeta];
         }
 
+        // 5c. Filing is AwaitingNotary → AwaitingNotary
+        if ($filingStatus === FilingStatus::AwaitingNotary) {
+            return [DeadlineStatus::AwaitingNotary, $statusReason, $statusMeta];
+        }
+
         // 6. Filing is Paid → Purchased
         if ($filingStatus === FilingStatus::Paid) {
             return [DeadlineStatus::Purchased, $statusReason, $statusMeta];
@@ -397,6 +405,7 @@ class StepStatusCalculator
             FilingStatus::InFulfillment => 70,
             FilingStatus::AwaitingClient => 65,
             FilingStatus::AwaitingEsign => 65,
+            FilingStatus::AwaitingNotary => 65,
             FilingStatus::Paid => 60,
             FilingStatus::AwaitingPayment => 50,
             FilingStatus::Draft => 40,

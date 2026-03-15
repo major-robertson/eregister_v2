@@ -9,6 +9,7 @@ enum FilingStatus: string
     case Paid = 'paid';
     case AwaitingClient = 'awaiting_client';
     case AwaitingEsign = 'awaiting_esign';
+    case AwaitingNotary = 'awaiting_notary';
     case InFulfillment = 'in_fulfillment';
     case Mailed = 'mailed';
     case Recorded = 'recorded';
@@ -24,6 +25,7 @@ enum FilingStatus: string
             self::Paid => 'Submitted',
             self::AwaitingClient => 'Awaiting Client',
             self::AwaitingEsign => 'Awaiting E-Signature',
+            self::AwaitingNotary => 'Awaiting Notary',
             self::InFulfillment => 'In Fulfillment',
             self::Mailed => 'Mailed',
             self::Recorded => 'Recorded',
@@ -41,6 +43,7 @@ enum FilingStatus: string
             self::Paid => 'sky',
             self::AwaitingClient => 'orange',
             self::AwaitingEsign => 'purple',
+            self::AwaitingNotary => 'violet',
             self::InFulfillment => 'blue',
             self::Mailed => 'indigo',
             self::Recorded => 'violet',
@@ -58,6 +61,7 @@ enum FilingStatus: string
             self::Paid => 'check',
             self::AwaitingClient => 'user',
             self::AwaitingEsign => 'pencil-square',
+            self::AwaitingNotary => 'stamp',
             self::InFulfillment => 'clock',
             self::Mailed => 'envelope',
             self::Recorded => 'document-check',
@@ -78,6 +82,7 @@ enum FilingStatus: string
             self::Paid => 'Payment received. Your filing is being prepared.',
             self::AwaitingClient => 'We need additional information from you to continue processing your filing.',
             self::AwaitingEsign => 'An e-signature request has been sent to you. Please check your email.',
+            self::AwaitingNotary => 'Your document is awaiting notarization.',
             self::InFulfillment => 'We are preparing and sending your notice.',
             self::Mailed => 'Your notice has been mailed to all recipients.',
             self::Recorded => 'Your document has been recorded with the county.',
@@ -97,6 +102,7 @@ enum FilingStatus: string
             self::AwaitingPayment => 'Complete payment to begin processing.',
             self::AwaitingClient => 'Please respond to our email so we can continue processing your filing.',
             self::AwaitingEsign => 'Please complete the e-signature request sent to your email.',
+            self::AwaitingNotary => 'Your document will be notarized shortly.',
             self::Paid, self::InFulfillment, self::Mailed, self::Recorded => 'We will email you when there is an update or if we need additional information.',
             self::Complete, self::Canceled, self::Refunded => null,
         };
@@ -108,7 +114,7 @@ enum FilingStatus: string
     public function isUserMilestone(): bool
     {
         return match ($this) {
-            self::Paid, self::AwaitingClient, self::AwaitingEsign, self::InFulfillment, self::Mailed, self::Recorded, self::Complete, self::Canceled, self::Refunded => true,
+            self::Paid, self::AwaitingClient, self::AwaitingEsign, self::AwaitingNotary, self::InFulfillment, self::Mailed, self::Recorded, self::Complete, self::Canceled, self::Refunded => true,
             self::Draft, self::AwaitingPayment => false,
         };
     }

@@ -197,7 +197,7 @@ describe('board cards display', function () {
             ->assertSee('Waiting Co');
     });
 
-    it('places awaiting_esign filings in the Awaiting E-Signature column', function () {
+    it('places awaiting_esign filings in the Awaiting Signatures column', function () {
         $admin = User::factory()->create();
         $admin->givePermissionTo('lien.view');
 
@@ -211,8 +211,26 @@ describe('board cards display', function () {
         $this->actingAs($admin);
 
         Livewire::test(LienBoard::class)
-            ->assertSee('Awaiting E-Signature')
+            ->assertSee('Awaiting Signatures')
             ->assertSee('Signing Co');
+    });
+
+    it('places awaiting_notary filings in the Awaiting Signatures column', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $business = Business::factory()->create(['name' => 'Notary Co']);
+        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        LienFiling::factory()->forProject($project)->create([
+            'status' => FilingStatus::AwaitingNotary,
+            'paid_at' => now(),
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienBoard::class)
+            ->assertSee('Awaiting Signatures')
+            ->assertSee('Notary Co');
     });
 
     it('filters by business name when searching', function () {

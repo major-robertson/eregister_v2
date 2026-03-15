@@ -252,6 +252,7 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                         $isInFulfillment = $step->status === DeadlineStatus::InFulfillment;
                         $isAwaitingClient = $step->status === DeadlineStatus::AwaitingClient;
                         $isAwaitingEsign = $step->status === DeadlineStatus::AwaitingEsign;
+                        $isAwaitingNotary = $step->status === DeadlineStatus::AwaitingNotary;
                         $isMailed = $step->status === DeadlineStatus::Mailed;
                         $isRecorded = $step->status === DeadlineStatus::Recorded;
                         $isNotStarted = $step->status === DeadlineStatus::NotStarted;
@@ -283,6 +284,7 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                                     'bg-zinc-400 text-white' => $isNotApplicable || $isLocked,
                                     'bg-orange-500 text-white' => $isAwaitingClient,
                                     'bg-purple-500 text-white' => $isAwaitingEsign,
+                                    'bg-violet-500 text-white' => $isAwaitingNotary,
                                     'bg-teal-500 text-white' => $isMailed,
                                     'bg-cyan-500 text-white' => $isRecorded,
                                     'bg-sky-500 text-white' => $isPurchased || $isInFulfillment,
@@ -328,6 +330,8 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                                     $isAwaitingClient,
                                     'border bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800' =>
                                     $isAwaitingEsign,
+                                    'border bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800' =>
+                                    $isAwaitingNotary,
                                     'border bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800' =>
                                     $isMailed,
                                     'border bg-cyan-50 dark:bg-cyan-900/20 border-cyan-200 dark:border-cyan-800' =>
@@ -337,7 +341,7 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                                     'border border-zinc-200 dark:border-zinc-700' => !$isCompleted && !$isMissed &&
                                     !$isNextStepHighlighted && !($isDueSoon || $isAwaitingPayment ||
                                     $hasPropertyWarning) && !$isNotApplicable && !($isPurchased || $isInFulfillment) &&
-                                    !$isAwaitingClient && !$isAwaitingEsign && !$isMailed && !$isRecorded,
+                                    !$isAwaitingClient && !$isAwaitingEsign && !$isAwaitingNotary && !$isMailed && !$isRecorded,
                                     ])>
                                     <div class="flex-1 min-w-0">
                                         <div class="flex items-center gap-2 flex-wrap">
@@ -433,6 +437,8 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                                         <flux:badge color="orange" size="sm">Awaiting Client</flux:badge>
                                         @elseif($isAwaitingEsign)
                                         <flux:badge color="purple" size="sm">Awaiting E-Signature</flux:badge>
+                                        @elseif($isAwaitingNotary)
+                                        <flux:badge color="violet" size="sm">Awaiting Notary</flux:badge>
                                         @elseif($isMailed)
                                         <flux:badge color="teal" size="sm">Mailed</flux:badge>
                                         @elseif($isRecorded)
@@ -451,7 +457,7 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                                                 size="sm" variant="outline">
                                                 View
                                             </flux:button>
-                                            @elseif($isPurchased || $isInFulfillment || $isAwaitingClient || $isAwaitingEsign || $isMailed || $isRecorded)
+                                            @elseif($isPurchased || $isInFulfillment || $isAwaitingClient || $isAwaitingEsign || $isAwaitingNotary || $isMailed || $isRecorded)
                                             @if($step->activeFiling)
                                             <flux:button href="{{ route('lien.filings.show', $step->activeFiling) }}"
                                                 size="sm" variant="outline">

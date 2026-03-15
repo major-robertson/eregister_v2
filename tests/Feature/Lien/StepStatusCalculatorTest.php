@@ -210,6 +210,7 @@ describe('status precedence', function () {
         'Recorded' => [FilingStatus::Recorded, DeadlineStatus::Recorded],
         'AwaitingClient' => [FilingStatus::AwaitingClient, DeadlineStatus::AwaitingClient],
         'AwaitingEsign' => [FilingStatus::AwaitingEsign, DeadlineStatus::AwaitingEsign],
+        'AwaitingNotary' => [FilingStatus::AwaitingNotary, DeadlineStatus::AwaitingNotary],
         'AwaitingPayment' => [FilingStatus::AwaitingPayment, DeadlineStatus::AwaitingPayment],
         'Draft -> InDraft' => [FilingStatus::Draft, DeadlineStatus::InDraft],
     ]);

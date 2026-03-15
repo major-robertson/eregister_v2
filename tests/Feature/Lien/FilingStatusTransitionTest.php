@@ -92,22 +92,27 @@ it('allows valid status transitions', function (FilingStatus $from, FilingStatus
 })->with([
     'paid → awaiting_client' => [FilingStatus::Paid, FilingStatus::AwaitingClient, ['paid_at' => '2026-01-01']],
     'paid → awaiting_esign' => [FilingStatus::Paid, FilingStatus::AwaitingEsign, ['paid_at' => '2026-01-01']],
+    'paid → awaiting_notary' => [FilingStatus::Paid, FilingStatus::AwaitingNotary, ['paid_at' => '2026-01-01']],
     'in_fulfillment → awaiting_client' => [FilingStatus::InFulfillment, FilingStatus::AwaitingClient],
     'in_fulfillment → awaiting_esign' => [FilingStatus::InFulfillment, FilingStatus::AwaitingEsign],
+    'in_fulfillment → awaiting_notary' => [FilingStatus::InFulfillment, FilingStatus::AwaitingNotary],
     'awaiting_client → in_fulfillment' => [FilingStatus::AwaitingClient, FilingStatus::InFulfillment],
     'awaiting_esign → in_fulfillment' => [FilingStatus::AwaitingEsign, FilingStatus::InFulfillment],
+    'awaiting_notary → in_fulfillment' => [FilingStatus::AwaitingNotary, FilingStatus::InFulfillment],
 ]);
 
-it('can transition to any status except itself', function (FilingStatus $status) {
+it('can transition to any status except itself and refunded', function (FilingStatus $status) {
     $this->filing->update(['status' => $status]);
 
     $allowed = $this->filing->allowedTransitions();
 
     expect($allowed)->not->toContain($status);
-    expect(count($allowed))->toBe(count(FilingStatus::cases()) - 1);
+    expect($allowed)->not->toContain(FilingStatus::Refunded);
+    expect(count($allowed))->toBe(count(FilingStatus::cases()) - 2);
 })->with([
     'awaiting_client' => [FilingStatus::AwaitingClient],
     'awaiting_esign' => [FilingStatus::AwaitingEsign],
+    'awaiting_notary' => [FilingStatus::AwaitingNotary],
 ]);
 
 it('does not allow transition from complete', function () {

@@ -343,7 +343,7 @@ describe('board cards display', function () {
             ->assertSee('Beta LLC');
     });
 
-    it('does not show draft or canceled filings', function () {
+    it('does not show draft, canceled, or refunded filings', function () {
         $admin = User::factory()->create();
         $admin->givePermissionTo('lien.view');
 
@@ -359,10 +359,18 @@ describe('board cards display', function () {
             'status' => FilingStatus::Canceled,
         ]);
 
+        $refundedBusiness = Business::factory()->create(['name' => 'Refunded Co']);
+        $refundedProject = LienProject::factory()->create(['business_id' => $refundedBusiness->id]);
+        LienFiling::factory()->forProject($refundedProject)->create([
+            'status' => FilingStatus::Refunded,
+            'paid_at' => now(),
+        ]);
+
         $this->actingAs($admin);
 
         Livewire::test(LienBoard::class)
             ->assertDontSee('Draft Co')
-            ->assertDontSee('Canceled Co');
+            ->assertDontSee('Canceled Co')
+            ->assertDontSee('Refunded Co');
     });
 });

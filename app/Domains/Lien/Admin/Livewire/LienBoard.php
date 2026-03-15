@@ -42,6 +42,7 @@ class LienBoard extends Component
                 FilingStatus::AwaitingPayment,
                 FilingStatus::Complete,
                 FilingStatus::Canceled,
+                FilingStatus::Refunded,
             ])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {

@@ -11,7 +11,6 @@ enum KanbanColumn: string
     case AwaitingClient = 'awaiting_client';
     case AwaitingSignatures = 'awaiting_signatures';
     case Mailed = 'mailed';
-    case Refunded = 'refunded';
 
     public function label(): string
     {
@@ -20,7 +19,6 @@ enum KanbanColumn: string
             self::AwaitingClient => 'Awaiting Client',
             self::AwaitingSignatures => 'Awaiting Signatures',
             self::Mailed => 'Mailed',
-            self::Refunded => 'Refunded',
         };
     }
 
@@ -31,7 +29,6 @@ enum KanbanColumn: string
             self::AwaitingClient => 'orange',
             self::AwaitingSignatures => 'purple',
             self::Mailed => 'indigo',
-            self::Refunded => 'red',
         };
     }
 
@@ -42,7 +39,6 @@ enum KanbanColumn: string
             self::AwaitingClient => 'user',
             self::AwaitingSignatures => 'pencil-square',
             self::Mailed => 'envelope',
-            self::Refunded => 'arrow-uturn-left',
         };
     }
 
@@ -51,10 +47,6 @@ enum KanbanColumn: string
      */
     public static function forFiling(LienFiling $filing): self
     {
-        if ($filing->status === FilingStatus::Refunded) {
-            return self::Refunded;
-        }
-
         if ($filing->status === FilingStatus::AwaitingClient) {
             return self::AwaitingClient;
         }

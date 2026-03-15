@@ -13,9 +13,11 @@ use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienProjectDeadline;
 use App\Domains\Lien\Models\LienStateRule;
+use App\Mail\HawaiiAttorneyReferral;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -87,6 +89,9 @@ class FilingWizard extends Component
 
     // File uploads
     public array $attachments = [];
+
+    // Hawaii referral
+    public bool $referralSent = false;
 
     // Party management modal
     public bool $showPartyModal = false;
@@ -441,6 +446,10 @@ class FilingWizard extends Component
 
     public function proceedToCheckout(): void
     {
+        if ($this->isHawaiiLien) {
+            abort(403, 'Hawaii mechanics liens must be filed directly with the court.');
+        }
+
         // Validate service level selection
         $this->validate([
             'service_level' => ['required', 'in:self_serve,full_service'],
@@ -720,6 +729,38 @@ class FilingWizard extends Component
         $balance = $base + $changes - $credits - $payments - $uncompleted;
 
         return number_format($balance, 2);
+    }
+
+    /**
+     * Check if this is a Hawaii mechanics lien filing (not available for online purchase).
+     */
+    public function getIsHawaiiLienProperty(): bool
+    {
+        return $this->project->jobsite_state === 'HI'
+            && $this->deadline->documentType->slug === 'mechanics_lien';
+    }
+
+    /**
+     * Send a referral request email to connect the user with a Hawaii attorney.
+     */
+    public function requestAttorneyReferral(): void
+    {
+        if ($this->referralSent) {
+            return;
+        }
+
+        $user = Auth::user();
+        $business = $user->currentBusiness();
+
+        Mail::to('contact@eregister.com')->send(new HawaiiAttorneyReferral(
+            firstName: $user->first_name,
+            lastName: $user->last_name,
+            businessName: $business?->name ?? $business?->legal_name ?? 'N/A',
+            userEmail: $user->email,
+            phone: $business?->phone,
+        ));
+
+        $this->referralSent = true;
     }
 
     public function render(): View

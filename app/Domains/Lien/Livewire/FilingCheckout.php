@@ -49,6 +49,10 @@ class FilingCheckout extends Component
             abort(403);
         }
 
+        if ($filing->jurisdiction_state === 'HI' && $filing->documentType->slug === 'mechanics_lien') {
+            abort(403, 'Hawaii mechanics liens must be filed directly with the court.');
+        }
+
         $this->business = $business;
         $this->filing = $filing;
 

@@ -9,7 +9,7 @@ enum KanbanColumn: string
 {
     case New = 'new';
     case AwaitingClient = 'awaiting_client';
-    case AwaitingEsign = 'awaiting_esign';
+    case AwaitingSignatures = 'awaiting_signatures';
     case Mailed = 'mailed';
     case Refunded = 'refunded';
 
@@ -18,7 +18,7 @@ enum KanbanColumn: string
         return match ($this) {
             self::New => 'New',
             self::AwaitingClient => 'Awaiting Client',
-            self::AwaitingEsign => 'Awaiting E-Signature',
+            self::AwaitingSignatures => 'Awaiting Signatures',
             self::Mailed => 'Mailed',
             self::Refunded => 'Refunded',
         };
@@ -29,7 +29,7 @@ enum KanbanColumn: string
         return match ($this) {
             self::New => 'blue',
             self::AwaitingClient => 'orange',
-            self::AwaitingEsign => 'purple',
+            self::AwaitingSignatures => 'purple',
             self::Mailed => 'indigo',
             self::Refunded => 'red',
         };
@@ -40,7 +40,7 @@ enum KanbanColumn: string
         return match ($this) {
             self::New => 'inbox',
             self::AwaitingClient => 'user',
-            self::AwaitingEsign => 'pencil-square',
+            self::AwaitingSignatures => 'pencil-square',
             self::Mailed => 'envelope',
             self::Refunded => 'arrow-uturn-left',
         };
@@ -59,8 +59,8 @@ enum KanbanColumn: string
             return self::AwaitingClient;
         }
 
-        if ($filing->status === FilingStatus::AwaitingEsign) {
-            return self::AwaitingEsign;
+        if ($filing->status === FilingStatus::AwaitingEsign || $filing->status === FilingStatus::AwaitingNotary) {
+            return self::AwaitingSignatures;
         }
 
         if ($filing->status === FilingStatus::Mailed) {

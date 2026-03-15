@@ -53,6 +53,7 @@
                 'bg-sky-100 text-sky-600' => $filing->status->value === 'paid',
                 'bg-orange-100 text-orange-600' => $filing->status->value === 'awaiting_client',
                 'bg-purple-100 text-purple-600' => $filing->status->value === 'awaiting_esign',
+                'bg-violet-100 text-violet-600' => $filing->status->value === 'awaiting_notary',
                 'bg-blue-100 text-blue-600' => $filing->status->value === 'in_fulfillment',
                 'bg-indigo-100 text-indigo-600' => $filing->status->value === 'mailed',
                 'bg-violet-100 text-violet-600' => $filing->status->value === 'recorded',

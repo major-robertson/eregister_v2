@@ -8,7 +8,7 @@
     <body class="min-h-screen bg-bg-light">
         <flux:sidebar sticky collapsible class="border-e border-border bg-zinc-50">
             <flux:sidebar.header>
-                <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
+                <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" badge="Home" badge-color="blue" wire:navigate />
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 

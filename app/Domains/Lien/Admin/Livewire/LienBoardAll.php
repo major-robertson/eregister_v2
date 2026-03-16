@@ -27,26 +27,7 @@ class LienBoardAll extends Component
     {
         return LienFiling::query()
             ->withoutGlobalScope('business')
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->whereHas('project', function ($pq) {
-                        $pq->where('name', 'like', "%{$this->search}%")
-                            ->orWhere('jobsite_address1', 'like', "%{$this->search}%")
-                            ->orWhere('jobsite_city', 'like', "%{$this->search}%")
-                            ->orWhere('jobsite_state', 'like', "%{$this->search}%")
-                            ->orWhere('jobsite_zip', 'like', "%{$this->search}%")
-                            ->orWhere('jobsite_county', 'like', "%{$this->search}%");
-                    })
-                        ->orWhereHas('project.business', function ($bq) {
-                            $bq->where('name', 'like', "%{$this->search}%");
-                        })
-                        ->orWhereHas('createdBy', function ($uq) {
-                            $uq->where('email', 'like', "%{$this->search}%")
-                                ->orWhere('first_name', 'like', "%{$this->search}%")
-                                ->orWhere('last_name', 'like', "%{$this->search}%");
-                        });
-                });
-            })
+            ->when($this->search, fn ($query) => $query->adminSearch($this->search))
             ->with([
                 'project',
                 'project.business',

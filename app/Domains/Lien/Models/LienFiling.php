@@ -9,6 +9,7 @@ use App\Domains\Lien\Exceptions\InvalidStatusTransitionException;
 use App\Models\EmailSequence;
 use App\Models\User;
 use Database\Factories\Lien\LienFilingFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -96,6 +97,31 @@ class LienFiling extends Model implements HasMedia
         $this->addMediaCollection('proofs')
             ->acceptsMimeTypes(['application/pdf', 'image/jpeg', 'image/png'])
             ->useDisk('s3');
+    }
+
+    /**
+     * Scope for admin search across project, business, and creator fields.
+     */
+    public function scopeAdminSearch(Builder $query, string $term): Builder
+    {
+        return $query->where(function (Builder $q) use ($term) {
+            $q->whereHas('project', function (Builder $pq) use ($term) {
+                $pq->where('name', 'like', "%{$term}%")
+                    ->orWhere('jobsite_address1', 'like', "%{$term}%")
+                    ->orWhere('jobsite_city', 'like', "%{$term}%")
+                    ->orWhere('jobsite_state', 'like', "%{$term}%")
+                    ->orWhere('jobsite_zip', 'like', "%{$term}%")
+                    ->orWhere('jobsite_county', 'like', "%{$term}%");
+            })
+                ->orWhereHas('project.business', function (Builder $bq) use ($term) {
+                    $bq->where('name', 'like', "%{$term}%");
+                })
+                ->orWhereHas('createdBy', function (Builder $uq) use ($term) {
+                    $uq->where('email', 'like', "%{$term}%")
+                        ->orWhere('first_name', 'like', "%{$term}%")
+                        ->orWhere('last_name', 'like', "%{$term}%");
+                });
+        });
     }
 
     public function project(): BelongsTo

@@ -6,6 +6,7 @@ use App\Domains\Forms\Models\FormApplication;
 use App\Domains\Lien\Models\LienProject;
 use App\Models\User;
 use Database\Factories\Business\BusinessFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -49,6 +50,22 @@ class Business extends Model implements HasMedia
             'lien_onboarding_completed_at' => 'datetime',
             'trial_ends_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Scope for admin search across business name and associated user fields.
+     */
+    public function scopeAdminSearch(Builder $query, string $term): Builder
+    {
+        return $query->where(function (Builder $q) use ($term) {
+            $q->where('name', 'like', "%{$term}%")
+                ->orWhere('legal_name', 'like', "%{$term}%")
+                ->orWhereHas('users', function (Builder $uq) use ($term) {
+                    $uq->where('email', 'like', "%{$term}%")
+                        ->orWhere('first_name', 'like', "%{$term}%")
+                        ->orWhere('last_name', 'like', "%{$term}%");
+                });
+        });
     }
 
     public function users(): BelongsToMany

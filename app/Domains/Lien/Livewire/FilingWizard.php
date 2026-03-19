@@ -423,6 +423,11 @@ class FilingWizard extends Component
             'owner_is_tenant' => $this->owner_is_tenant,
             'property_class' => $this->project_type_category,
             'has_written_contract' => $this->has_written_contract === '1',
+            'base_contract_amount_cents' => $this->base_contract_amount !== null && $this->base_contract_amount !== '' ? (int) (round((float) $this->base_contract_amount * 100)) : null,
+            'change_orders_cents' => $this->change_orders !== null && $this->change_orders !== '' ? (int) (round((float) $this->change_orders * 100)) : null,
+            'credits_deductions_cents' => $this->credits_deductions !== null && $this->credits_deductions !== '' ? (int) (round((float) $this->credits_deductions * 100)) : null,
+            'payments_received_cents' => $this->payments_received !== null && $this->payments_received !== '' ? (int) (round((float) $this->payments_received * 100)) : null,
+            'uncompleted_work_cents' => $this->uncompleted_work !== null && $this->uncompleted_work !== '' ? (int) (round((float) $this->uncompleted_work * 100)) : null,
         ];
 
         if ($this->step >= 3) {

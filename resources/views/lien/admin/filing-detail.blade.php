@@ -76,14 +76,14 @@
                     <div>
                         <flux:text class="text-sm text-gray-500">Payments Received</flux:text>
                         <flux:text class="font-medium">
-                            ${{ number_format(($filing->project?->payments_received_cents ?? 0) / 100, 2) }}
+                            ${{ number_format((float) ($filing->payload_json['amount_breakdown']['payments_received'] ?? 0), 2) }}
                         </flux:text>
                     </div>
 
                     <div>
                         <flux:text class="text-sm text-gray-500">Credit Deductions</flux:text>
                         <flux:text class="font-medium">
-                            ${{ number_format(($filing->project?->credits_deductions_cents ?? 0) / 100, 2) }}
+                            ${{ number_format((float) ($filing->payload_json['amount_breakdown']['credits_deductions'] ?? 0), 2) }}
                         </flux:text>
                     </div>
 

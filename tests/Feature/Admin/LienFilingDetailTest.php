@@ -73,10 +73,15 @@ describe('filing detail sections', function () {
         $business = Business::factory()->create();
         $project = LienProject::factory()->create([
             'business_id' => $business->id,
-            'payments_received_cents' => 150000,
-            'credits_deductions_cents' => 25000,
         ]);
-        $filing = LienFiling::factory()->forProject($project)->create();
+        $filing = LienFiling::factory()->forProject($project)->create([
+            'payload_json' => [
+                'amount_breakdown' => [
+                    'payments_received' => '1500.00',
+                    'credits_deductions' => '250.00',
+                ],
+            ],
+        ]);
 
         $this->actingAs($admin);
 
@@ -94,10 +99,15 @@ describe('filing detail sections', function () {
         $business = Business::factory()->create();
         $project = LienProject::factory()->create([
             'business_id' => $business->id,
-            'payments_received_cents' => null,
-            'credits_deductions_cents' => null,
         ]);
-        $filing = LienFiling::factory()->forProject($project)->create();
+        $filing = LienFiling::factory()->forProject($project)->create([
+            'payload_json' => [
+                'amount_breakdown' => [
+                    'payments_received' => null,
+                    'credits_deductions' => null,
+                ],
+            ],
+        ]);
 
         $this->actingAs($admin);
 

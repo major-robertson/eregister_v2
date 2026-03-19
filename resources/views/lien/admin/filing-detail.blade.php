@@ -61,6 +61,10 @@
             <div class="rounded-lg border border-border bg-white p-6">
                 <flux:heading size="lg" class="mb-4">Filing Summary</flux:heading>
 
+                @php
+                    $breakdown = $filing->payload_json['amount_breakdown'] ?? [];
+                @endphp
+
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
                         <flux:text class="text-sm text-gray-500">Amount Claimed</flux:text>
@@ -74,16 +78,48 @@
                     </div>
 
                     <div>
+                        <flux:text class="text-sm text-gray-500">Base Contract Amount</flux:text>
+                        <flux:text class="font-medium">
+                            @if (!empty($breakdown['base_contract_amount']))
+                            ${{ number_format((float) $breakdown['base_contract_amount'], 2) }}
+                            @else
+                            N/A
+                            @endif
+                        </flux:text>
+                    </div>
+
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Change Orders</flux:text>
+                        <flux:text class="font-medium">
+                            ${{ number_format((float) ($breakdown['change_orders'] ?? 0), 2) }}
+                        </flux:text>
+                    </div>
+
+                    <div>
                         <flux:text class="text-sm text-gray-500">Payments Received</flux:text>
                         <flux:text class="font-medium">
-                            ${{ number_format((float) ($filing->payload_json['amount_breakdown']['payments_received'] ?? 0), 2) }}
+                            ${{ number_format((float) ($breakdown['payments_received'] ?? 0), 2) }}
                         </flux:text>
                     </div>
 
                     <div>
                         <flux:text class="text-sm text-gray-500">Credit Deductions</flux:text>
                         <flux:text class="font-medium">
-                            ${{ number_format((float) ($filing->payload_json['amount_breakdown']['credits_deductions'] ?? 0), 2) }}
+                            ${{ number_format((float) ($breakdown['credits_deductions'] ?? 0), 2) }}
+                        </flux:text>
+                    </div>
+
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Uncompleted Work</flux:text>
+                        <flux:text class="font-medium">
+                            ${{ number_format((float) ($breakdown['uncompleted_work'] ?? 0), 2) }}
+                        </flux:text>
+                    </div>
+
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Written Contract</flux:text>
+                        <flux:text class="font-medium">
+                            {{ ($breakdown['has_written_contract'] ?? null) === '1' ? 'Yes' : 'No' }}
                         </flux:text>
                     </div>
 

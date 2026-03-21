@@ -48,6 +48,8 @@ it('queues payment receipt after successful payment', function () {
 
     $stripePaymentIntent = new \Stripe\PaymentIntent('pi_test_123');
     $stripePaymentIntent->latest_charge = 'ch_test_123';
+    $stripePaymentIntent->amount_received = $payment->amount_cents;
+    $stripePaymentIntent->currency = 'usd';
 
     app(LienPaymentService::class)->markSucceeded($payment, $stripePaymentIntent);
 
@@ -71,6 +73,8 @@ it('does not send receipt twice for the same payment (idempotency)', function ()
 
     $stripePaymentIntent = new \Stripe\PaymentIntent('pi_test_123');
     $stripePaymentIntent->latest_charge = 'ch_test_123';
+    $stripePaymentIntent->amount_received = $payment->amount_cents;
+    $stripePaymentIntent->currency = 'usd';
 
     app(LienPaymentService::class)->markSucceeded($payment, $stripePaymentIntent);
 
@@ -113,6 +117,8 @@ it('records sent email in sent_emails table', function () {
 
     $stripePaymentIntent = new \Stripe\PaymentIntent('pi_test_123');
     $stripePaymentIntent->latest_charge = 'ch_test_123';
+    $stripePaymentIntent->amount_received = $payment->amount_cents;
+    $stripePaymentIntent->currency = 'usd';
 
     app(LienPaymentService::class)->markSucceeded($payment, $stripePaymentIntent);
 

@@ -15,6 +15,8 @@ use Stripe\Event;
 
 class LienStripeWebhookHandler implements StripeWebhookHandlerInterface
 {
+    public function __construct(private LienPaymentService $paymentService) {}
+
     /**
      * Handle a Stripe webhook event for the lien domain.
      */
@@ -42,81 +44,15 @@ class LienStripeWebhookHandler implements StripeWebhookHandlerInterface
             return response('No app_payment_id', 200);
         }
 
-        // Transaction + row lock for idempotency
-        DB::transaction(function () use ($pi, $paymentId) {
-            $payment = Payment::lockForUpdate()->find($paymentId);
+        $payment = Payment::find($paymentId);
 
-            if (! $payment) {
-                Log::warning('Lien webhook: Payment not found', ['payment_id' => $paymentId]);
+        if (! $payment) {
+            Log::warning('Lien webhook: Payment not found', ['payment_id' => $paymentId]);
 
-                return;
-            }
+            return response('Payment not found', 200);
+        }
 
-            // Already succeeded - idempotent return
-            if ($payment->status === PaymentStatus::Succeeded) {
-                return;
-            }
-
-            $flagForReview = false;
-            $errorMessages = [];
-
-            // Verify amount matches - flag for review instead of auto-fail
-            if ($pi->amount_received !== $payment->amount_cents) {
-                Log::error('Lien webhook: Amount mismatch - flagging for review', [
-                    'payment_id' => $paymentId,
-                    'expected' => $payment->amount_cents,
-                    'received' => $pi->amount_received,
-                ]);
-                $flagForReview = true;
-                $errorMessages[] = 'Amount mismatch: expected '.$payment->amount_cents.', received '.$pi->amount_received;
-            }
-
-            // Verify currency - flag for review
-            if (strtolower($pi->currency) !== 'usd') {
-                Log::error('Lien webhook: Currency mismatch - flagging for review', ['currency' => $pi->currency]);
-                $flagForReview = true;
-                $errorMessages[] = 'Currency mismatch: '.$pi->currency;
-            }
-
-            // Update payment as succeeded
-            $payment->update([
-                'status' => PaymentStatus::Succeeded,
-                'stripe_charge_id' => $pi->latest_charge,
-                'paid_at' => now(),
-                'requires_manual_review' => $flagForReview,
-                'error_message' => $flagForReview ? implode('; ', $errorMessages) : null,
-            ]);
-
-            // Only proceed with fulfillment if NOT flagged for review
-            if (! $flagForReview) {
-                $filing = $payment->purchasable;
-
-                if ($filing->status === FilingStatus::AwaitingPayment) {
-                    $filing->transitionTo(FilingStatus::Paid);
-                }
-
-                if ($filing->isFullService() && $filing->status === FilingStatus::Paid) {
-                    $filing->transitionTo(FilingStatus::InFulfillment);
-                    LienFulfillmentTask::firstOrCreate(
-                        ['filing_id' => $filing->id],
-                        ['business_id' => $filing->business_id, 'status' => 'queued']
-                    );
-                }
-
-                // Mark deadline as completed
-                if ($filing->projectDeadline && $filing->projectDeadline->status->value === 'pending') {
-                    $filing->projectDeadline->update([
-                        'status' => 'completed',
-                        'completed_filing_id' => $filing->id,
-                    ]);
-                }
-            }
-
-            Log::info('Lien webhook: Payment succeeded', [
-                'payment_id' => $paymentId,
-                'requires_review' => $flagForReview,
-            ]);
-        });
+        $this->paymentService->markSucceeded($payment, $pi);
 
         return response('OK', 200);
     }

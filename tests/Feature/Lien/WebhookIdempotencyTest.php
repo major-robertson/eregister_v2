@@ -6,9 +6,14 @@ use App\Domains\Lien\Models\LienDocumentType;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienProject;
 use App\Enums\PaymentStatus;
+use App\Jobs\SendWorkingOnOrderEmail;
+use App\Mail\PaymentReceipt;
 use App\Models\Payment;
+use App\Models\Price;
 use App\Models\StripeWebhookEvent;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
     config(['cashier.webhook.secret' => 'whsec_test_secret']);
@@ -25,6 +30,16 @@ beforeEach(function () {
         'status' => FilingStatus::AwaitingPayment,
     ]);
 
+    $this->price = Price::create([
+        'product_family' => 'lien',
+        'product_key' => 'prelim_notice',
+        'variant_key' => 'full_service',
+        'billing_type' => 'one_time',
+        'amount_cents' => 4900,
+        'currency' => 'usd',
+        'active' => true,
+    ]);
+
     $this->payment = Payment::create([
         'purchasable_type' => $this->filing->getMorphClass(),
         'purchasable_id' => $this->filing->id,
@@ -35,6 +50,7 @@ beforeEach(function () {
         'status' => PaymentStatus::Initiated,
         'provider' => 'stripe',
         'livemode' => false,
+        'price_id' => $this->price->id,
     ]);
 });
 
@@ -63,7 +79,10 @@ function postWebhook($test, array $payload): \Illuminate\Testing\TestResponse
     );
 }
 
-it('processes payment_intent.succeeded webhook', function () {
+it('processes payment_intent.succeeded webhook and sends emails', function () {
+    Queue::fake([SendWorkingOnOrderEmail::class]);
+    Mail::fake();
+
     $payload = [
         'id' => 'evt_test_pi_succeeded',
         'type' => 'payment_intent.succeeded',
@@ -98,6 +117,11 @@ it('processes payment_intent.succeeded webhook', function () {
 
     $this->filing->refresh();
     expect($this->filing->status)->toBeIn([FilingStatus::Paid, FilingStatus::InFulfillment]);
+
+    Mail::assertQueued(PaymentReceipt::class);
+    Queue::assertPushed(SendWorkingOnOrderEmail::class, function ($job) {
+        return $job->payment->id === $this->payment->id;
+    });
 });
 
 it('is idempotent - duplicate events are ignored after processing', function () {
@@ -182,7 +206,10 @@ it('handles payment_intent.canceled', function () {
     expect($this->payment->status)->toBe(PaymentStatus::Canceled);
 });
 
-it('flags payment for manual review on amount mismatch', function () {
+it('flags payment for manual review on amount mismatch and skips emails', function () {
+    Queue::fake([SendWorkingOnOrderEmail::class]);
+    Mail::fake();
+
     $payload = [
         'id' => 'evt_test_amount_mismatch',
         'type' => 'payment_intent.succeeded',
@@ -212,6 +239,9 @@ it('flags payment for manual review on amount mismatch', function () {
 
     $this->filing->refresh();
     expect($this->filing->status)->toBe(FilingStatus::AwaitingPayment);
+
+    Mail::assertNothingQueued();
+    Queue::assertNothingPushed();
 });
 
 it('returns 400 for invalid signature', function () {

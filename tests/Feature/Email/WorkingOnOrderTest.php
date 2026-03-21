@@ -52,6 +52,8 @@ it('dispatches working on order job for registration orders', function () {
 
     $stripePaymentIntent = new \Stripe\PaymentIntent('pi_test_123');
     $stripePaymentIntent->latest_charge = 'ch_test_123';
+    $stripePaymentIntent->amount_received = $payment->amount_cents;
+    $stripePaymentIntent->currency = 'usd';
 
     app(LienPaymentService::class)->markSucceeded($payment, $stripePaymentIntent);
 
@@ -86,6 +88,8 @@ it('does not dispatch for saas product family', function () {
 
     $stripePaymentIntent = new \Stripe\PaymentIntent('pi_test_123');
     $stripePaymentIntent->latest_charge = 'ch_test_123';
+    $stripePaymentIntent->amount_received = $payment->amount_cents;
+    $stripePaymentIntent->currency = 'usd';
 
     app(LienPaymentService::class)->markSucceeded($payment, $stripePaymentIntent);
 
@@ -142,6 +146,8 @@ it('records scheduled_at in the future and sent_at as null until job runs', func
 
     $stripePaymentIntent = new \Stripe\PaymentIntent('pi_test_123');
     $stripePaymentIntent->latest_charge = 'ch_test_123';
+    $stripePaymentIntent->amount_received = $payment->amount_cents;
+    $stripePaymentIntent->currency = 'usd';
 
     app(LienPaymentService::class)->markSucceeded($payment, $stripePaymentIntent);
 

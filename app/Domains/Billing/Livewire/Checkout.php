@@ -3,7 +3,6 @@
 namespace App\Domains\Billing\Livewire;
 
 use App\Domains\Business\Models\Business;
-use App\Domains\Forms\Engine\FormRegistry;
 use App\Domains\Forms\FormTypeConfig;
 use App\Domains\Forms\Models\FormApplication;
 use App\Models\EmailSequence;
@@ -41,11 +40,6 @@ class Checkout extends Component
     public function checkout(): void
     {
         $config = FormTypeConfig::get($this->application->form_type);
-
-        // Store definition snapshot before checkout
-        $this->application->update([
-            'definition_snapshot' => $this->buildDefinitionSnapshot(),
-        ]);
 
         // Check if Stripe is configured
         if (empty($config['stripe_price_id'])) {
@@ -98,7 +92,7 @@ class Checkout extends Component
         $session = $this->business->checkout([
             $config['stripe_price_id'] => $quantity,
         ], [
-            'success_url' => route('forms.application', $this->application).'?checkout=success',
+            'success_url' => route('dashboard').'?checkout=success',
             'cancel_url' => route('portal.checkout', $this->application),
             'metadata' => [
                 'application_id' => $this->application->id,
@@ -125,10 +119,15 @@ class Checkout extends Component
     {
         $config = FormTypeConfig::get($this->application->form_type);
 
-        // Development stub: mark as paid immediately
-        $this->application->update([
-            'paid_at' => now(),
-        ]);
+        $updates = ['paid_at' => now()];
+
+        if (in_array($config['billing_type'], ['one_time_per_state', 'one_time'])) {
+            $updates['status'] = 'submitted';
+            $updates['submitted_at'] = now();
+            $updates['locked_at'] = now();
+        }
+
+        $this->application->update($updates);
 
         // For subscription billing, create a stub subscription record
         if ($config['billing_type'] === 'subscription') {
@@ -146,19 +145,9 @@ class Checkout extends Component
             }
         }
 
-        $this->redirect(route('forms.application', $this->application));
-    }
+        session()->flash('success', 'Your application has been submitted successfully.');
 
-    private function buildDefinitionSnapshot(): array
-    {
-        $registry = app(FormRegistry::class);
-        $snapshots = ['base' => $registry->getBase($this->application->form_type)];
-
-        foreach ($this->application->selected_states as $stateCode) {
-            $snapshots['states'][$stateCode] = $registry->get($this->application->form_type, $stateCode);
-        }
-
-        return $snapshots;
+        $this->redirect(route('dashboard'));
     }
 
     public function render(): View

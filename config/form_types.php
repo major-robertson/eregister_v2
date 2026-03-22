@@ -6,7 +6,7 @@ return [
         'billing_type' => 'one_time_per_state', // qty = state count
         'stripe_price_id' => env('STRIPE_PRICE_SALES_TAX'),
         'state_mode' => 'multi', // multi, single, none
-        'max_states' => 40,
+        'max_states' => null,
         'definition_dir' => 'SalesTaxPermit',
     ],
     'llc' => [

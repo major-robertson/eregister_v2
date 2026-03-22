@@ -144,9 +144,9 @@ class OnboardingWizard extends Component
 
         if ($isFirstBusiness && $landingPath === '/liens') {
             $redirectRoute = route('lien.onboarding');
+        } elseif ($isFirstBusiness && $landingPath === '/sales-tax-registration') {
+            $redirectRoute = route('forms.start', 'sales_tax_permit');
         } elseif ($isFirstBusiness && $landingPath === '/llc') {
-            // TODO: Add LLC onboarding route when available
-            // For now, redirect to dashboard where they can start LLC application
             $redirectRoute = route('dashboard');
         } else {
             $redirectRoute = route('dashboard');

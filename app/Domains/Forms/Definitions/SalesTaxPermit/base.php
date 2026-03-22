@@ -8,6 +8,10 @@ return [
         'business' => [
             'title' => 'Business Information',
             'description' => 'Tell us about your business.',
+            'groups' => [
+                ['fields' => ['legal_name', 'dba_name', 'entity_type']],
+                ['title' => 'Business Address', 'fields' => ['business_address', 'mailing_address_same', 'mailing_address']],
+            ],
             'fields' => [
                 'legal_name' => [
                     'type' => 'text',
@@ -49,7 +53,7 @@ return [
                     'type' => 'address',
                     'label' => 'Mailing Address',
                     'rules' => ['required'],
-                    'when' => ['==' => [['var' => 'mailing_address_same'], false]],
+                    'when' => ['==' => [['var' => 'mailing_address_same'], '0']],
                     'persist_to_business' => true,
                 ],
             ],
@@ -145,5 +149,12 @@ return [
         ],
     ],
 
-    'available_states' => array_keys(config('states')),
+    'excluded_states' => [
+        'DE' => 'No general state sales tax registration required',
+        'MT' => 'No general state sales tax registration required',
+        'NH' => 'No general state sales tax registration required',
+        'OR' => 'No general state sales tax registration required',
+    ],
+
+    'available_states' => array_diff(array_keys(config('states')), ['DE', 'MT', 'NH', 'OR']),
 ];

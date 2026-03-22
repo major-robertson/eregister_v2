@@ -29,9 +29,12 @@ class StateSelector extends Component
     /** @var array<int, string> States with existing paid/submitted applications */
     public array $blockedStates = [];
 
+    /** @var array<string, string> States excluded from selection with reason */
+    public array $excludedStates = [];
+
     public string $stateMode = 'multi';
 
-    public int $maxStates = 40;
+    public ?int $maxStates = null;
 
     public ?FormApplication $existingDraft = null;
 
@@ -53,10 +56,11 @@ class StateSelector extends Component
         // Load form type configuration
         $config = FormTypeConfig::get($formType);
         $this->stateMode = $config['state_mode'];
-        $this->maxStates = $config['max_states'] ?? ($this->stateMode === 'single' ? 1 : 40);
+        $this->maxStates = $config['max_states'] ?? ($this->stateMode === 'single' ? 1 : null);
 
         $definition = app(FormRegistry::class)->getBase($formType);
         $this->availableStates = $definition['available_states'] ?? array_keys(config('states'));
+        $this->excludedStates = $definition['excluded_states'] ?? [];
 
         // Query blocked states from normalized FormApplicationState table
         $this->blockedStates = FormApplicationState::query()
@@ -104,7 +108,7 @@ class StateSelector extends Component
             if (in_array($stateCode, $this->selectedStates)) {
                 $this->selectedStates = array_values(array_diff($this->selectedStates, [$stateCode]));
             } else {
-                if (count($this->selectedStates) < $this->maxStates) {
+                if ($this->maxStates === null || count($this->selectedStates) < $this->maxStates) {
                     $this->selectedStates[] = $stateCode;
                 }
             }
@@ -118,8 +122,10 @@ class StateSelector extends Component
         }
 
         // Exclude blocked states when selecting all
-        $selectableStates = array_diff($this->availableStates, $this->blockedStates);
-        $this->selectedStates = array_slice(array_values($selectableStates), 0, $this->maxStates);
+        $selectableStates = array_values(array_diff($this->availableStates, $this->blockedStates));
+        $this->selectedStates = $this->maxStates !== null
+            ? array_slice($selectableStates, 0, $this->maxStates)
+            : $selectableStates;
     }
 
     public function clearAll(): void
@@ -135,7 +141,7 @@ class StateSelector extends Component
             return;
         }
 
-        $this->redirect(route('portal.checkout', $this->existingDraft));
+        $this->redirect(route('forms.application', $this->existingDraft));
     }
 
     public function startOver(): void
@@ -156,8 +162,13 @@ class StateSelector extends Component
         // Get selectable states (exclude blocked)
         $selectableStates = array_diff($this->availableStates, $this->blockedStates);
 
+        $rules = ['required', 'array', 'min:1'];
+        if ($this->maxStates !== null) {
+            $rules[] = "max:{$this->maxStates}";
+        }
+
         $this->validate([
-            'selectedStates' => ['required', 'array', 'min:1', "max:{$this->maxStates}"],
+            'selectedStates' => $rules,
             'selectedStates.*' => ['required', 'string', Rule::in($selectableStates)],
         ]);
 
@@ -190,10 +201,26 @@ class StateSelector extends Component
                 ]);
             }
 
+            $application->update([
+                'definition_snapshot' => $this->buildDefinitionSnapshot($application),
+            ]);
+
             return $application;
         });
 
-        $this->redirect(route('portal.checkout', $application));
+        $this->redirect(route('forms.application', $application));
+    }
+
+    private function buildDefinitionSnapshot(FormApplication $application): array
+    {
+        $registry = app(FormRegistry::class);
+        $snapshots = ['base' => $registry->getBase($application->form_type)];
+
+        foreach ($application->selected_states as $stateCode) {
+            $snapshots['states'][$stateCode] = $registry->get($application->form_type, $stateCode);
+        }
+
+        return $snapshots;
     }
 
     public function render(): View
@@ -209,6 +236,7 @@ class StateSelector extends Component
             'maxStates' => $this->maxStates,
             'blockedStates' => $this->blockedStates,
             'formTypeName' => $config['name'],
+            'excludedStates' => $this->excludedStates,
         ])->layout('layouts.app', ['title' => 'Select States']);
     }
 }

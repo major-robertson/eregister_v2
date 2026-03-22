@@ -71,15 +71,10 @@
                             <div class="flex items-center gap-4">
                                 @if ($application->status === 'submitted')
                                     <flux:badge color="green" size="sm">Submitted</flux:badge>
-                                @elseif ($application->isPaid())
+                                @else
                                     <span class="text-sm text-text-secondary">Draft</span>
                                     <flux:button href="{{ route('forms.application', $application) }}" size="sm" variant="filled">
                                         Continue
-                                    </flux:button>
-                                @else
-                                    <span class="text-sm text-text-secondary">Unpaid</span>
-                                    <flux:button href="{{ route('portal.checkout', $application) }}" size="sm" variant="primary">
-                                        Pay Now
                                     </flux:button>
                                 @endif
                             </div>

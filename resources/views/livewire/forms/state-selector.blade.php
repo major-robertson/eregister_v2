@@ -2,7 +2,7 @@
     class="mx-auto max-w-4xl px-4 py-12"
     x-data="{
         selected: $wire.entangle('selectedStates'),
-        blocked: @js($blockedStates),
+        blocked: @js(array_merge($blockedStates, array_keys($excludedStates))),
         toggle(code) {
             if (this.blocked.includes(code)) return;
             if ({{ $stateMode === 'single' ? 'true' : 'false' }}) {
@@ -10,7 +10,7 @@
             } else {
                 if (this.selected.includes(code)) {
                     this.selected = this.selected.filter(s => s !== code);
-                } else if (this.selected.length < {{ $maxStates }}) {
+                } else if ({{ $maxStates === null ? 'true' : "this.selected.length < {$maxStates}" }}) {
                     this.selected = [...this.selected, code];
                 }
             }
@@ -24,7 +24,7 @@
         @if ($stateMode === 'single')
             Choose the state for your {{ $formTypeName }}
         @else
-            Choose the states where you need a {{ $formTypeName }} (max {{ $maxStates }})
+            Choose the states where you need a {{ $formTypeName }}
         @endif
     </p>
 
@@ -64,22 +64,25 @@
 
     <div class="mb-8 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
         @foreach ($states as $code => $name)
-            @if (in_array($code, $availableStates))
-                @php
-                    $isBlocked = in_array($code, $blockedStates);
-                @endphp
+            @php
+                $isBlocked = in_array($code, $blockedStates);
+                $isExcluded = array_key_exists($code, $excludedStates);
+                $isDisabled = $isBlocked || $isExcluded;
+            @endphp
+            @if (in_array($code, $availableStates) || $isExcluded)
                 <button
                     wire:key="state-{{ $code }}"
                     x-on:click="toggle('{{ $code }}')"
                     type="button"
-                    {{ $isBlocked ? 'disabled' : '' }}
+                    {{ $isDisabled ? 'disabled' : '' }}
                     @if ($isBlocked) title="Already applied" @endif
+                    @if ($isExcluded) title="{{ $excludedStates[$code] }}" @endif
                     :class="selected.includes('{{ $code }}')
                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                         : 'border-zinc-200 bg-white hover:border-blue-300 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:border-blue-600'"
                     @class([
                         'rounded-lg border p-3 text-left transition',
-                        'cursor-not-allowed !border-zinc-200 !bg-zinc-100 opacity-50 dark:!border-zinc-700 dark:!bg-zinc-900' => $isBlocked,
+                        'cursor-not-allowed !border-zinc-200 !bg-zinc-100 opacity-50 dark:!border-zinc-700 dark:!bg-zinc-900' => $isDisabled,
                     ])
                 >
                     <div class="flex items-center gap-2">
@@ -91,7 +94,7 @@
                                     : 'border-zinc-300 dark:border-zinc-600'"
                                 @class([
                                     'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
-                                    '!border-zinc-300 dark:!border-zinc-600' => $isBlocked,
+                                    '!border-zinc-300 dark:!border-zinc-600' => $isDisabled,
                                 ])
                             >
                                 <div x-show="selected.includes('{{ $code }}')" x-cloak class="h-2 w-2 rounded-full bg-white"></div>
@@ -104,10 +107,10 @@
                                     : 'border-zinc-300 dark:border-zinc-600'"
                                 @class([
                                     'flex h-5 w-5 shrink-0 items-center justify-center rounded border',
-                                    '!border-zinc-300 dark:!border-zinc-600' => $isBlocked,
+                                    '!border-zinc-300 dark:!border-zinc-600' => $isDisabled,
                                 ])
                             >
-                                @if ($isBlocked)
+                                @if ($isDisabled)
                                     <flux:icon name="x-mark" class="size-3 text-zinc-400" />
                                 @else
                                     <flux:icon x-show="selected.includes('{{ $code }}')" x-cloak name="check" class="size-3" />
@@ -115,10 +118,12 @@
                             </div>
                         @endif
                         <div>
-                            <div class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $code }}</div>
+                            <div class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $name }}</div>
                             <div class="text-xs text-zinc-500 dark:text-zinc-400">
-                                {{ $name }}
-                                @if ($isBlocked)
+                                {{ $code }}
+                                @if ($isExcluded)
+                                    <span class="text-zinc-400 dark:text-zinc-500">N/A</span>
+                                @elseif ($isBlocked)
                                     <span class="text-yellow-600 dark:text-yellow-400">(Applied)</span>
                                 @endif
                             </div>
@@ -137,7 +142,7 @@
 
     <div class="flex justify-center">
         <flux:button wire:click="proceed" variant="primary" x-bind:disabled="selected.length === 0">
-            Continue to Checkout (<span x-text="selected.length"></span> state<span x-show="selected.length !== 1">s</span>)
+            Continue (<span x-text="selected.length"></span> state<span x-show="selected.length !== 1">s</span>)
         </flux:button>
     </div>
 </div>

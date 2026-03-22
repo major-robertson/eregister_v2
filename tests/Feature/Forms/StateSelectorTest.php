@@ -65,24 +65,20 @@ describe('StateSelector', function () {
             ->assertSet('selectedStates', ['TX']); // Should replace, not add
     });
 
-    it('limits selection to 40 states', function () {
+    it('allows selecting all available states with no limit', function () {
         $this->actingAs($this->user);
 
         $component = Livewire::test(StateSelector::class, [
             'formType' => 'sales_tax_permit',
         ]);
 
-        // Add 40 states
-        $states = array_keys(config('states'));
-        foreach (array_slice($states, 0, 40) as $state) {
+        $availableStates = $component->get('availableStates');
+
+        foreach ($availableStates as $state) {
             $component->call('toggleState', $state);
         }
 
-        expect($component->get('selectedStates'))->toHaveCount(40);
-
-        // Try to add 41st state - should not be added
-        $component->call('toggleState', $states[40] ?? 'ZZ');
-        expect($component->get('selectedStates'))->toHaveCount(40);
+        expect($component->get('selectedStates'))->toHaveCount(count($availableStates));
     });
 
     it('can select all and clear all in multi mode', function () {
@@ -92,12 +88,12 @@ describe('StateSelector', function () {
             'formType' => 'sales_tax_permit',
         ])
             ->call('selectAll')
-            ->assertSet('selectedStates', fn ($states) => count($states) === 40)
+            ->assertSet('selectedStates', fn ($states) => count($states) > 0)
             ->call('clearAll')
             ->assertSet('selectedStates', []);
     });
 
-    it('creates application and redirects to checkout on proceed', function () {
+    it('creates application and redirects to form runner on proceed', function () {
         $this->actingAs($this->user);
 
         Livewire::test(StateSelector::class, [
@@ -114,6 +110,8 @@ describe('StateSelector', function () {
         expect($application->selected_states)->toBe(['CA', 'TX']);
         expect($application->status)->toBe('draft');
         expect($application->states)->toHaveCount(2);
+        expect($application->definition_snapshot)->not->toBeNull();
+        expect($application->definition_snapshot)->toHaveKeys(['base', 'states']);
     });
 
     it('detects and can resume existing draft', function () {

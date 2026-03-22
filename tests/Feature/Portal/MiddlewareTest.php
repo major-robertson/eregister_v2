@@ -94,7 +94,7 @@ describe('EnsureBusinessProfileComplete Middleware', function () {
 });
 
 describe('EnsureHasAccess Middleware', function () {
-    it('redirects to checkout when one-time application is not paid', function () {
+    it('allows access to one-time application even when not paid', function () {
         $user = User::factory()->create();
         $business = Business::create([
             'name' => 'Test Business',
@@ -113,10 +113,17 @@ describe('EnsureHasAccess Middleware', function () {
             'created_by_user_id' => $user->id,
         ]);
 
+        FormApplicationState::create([
+            'form_application_id' => $application->id,
+            'state_code' => 'CA',
+            'status' => 'pending',
+            'data' => [],
+        ]);
+
         $this->actingAs($user)
             ->withSession(['current_business_id' => $business->id])
             ->get("/portal/forms/applications/{$application->id}")
-            ->assertRedirect(route('portal.checkout', $application));
+            ->assertOk();
     });
 
     it('allows access when one-time application is paid', function () {

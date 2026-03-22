@@ -31,6 +31,14 @@ class MultiStateFormRunner extends Component
 
     public int $currentStateIndex = 0;
 
+    public bool $showRepeaterModal = false;
+
+    public ?int $editingRepeaterIndex = null;
+
+    public string $editingRepeaterField = '';
+
+    public array $repeaterForm = [];
+
     private array $definition = [];
 
     /**
@@ -679,17 +687,68 @@ class MultiStateFormRunner extends Component
         $this->validate($validation['rules'], [], $validation['attributes']);
     }
 
-    public function addRepeaterItem(string $fieldKey): void
+    public function openRepeaterModal(string $fieldKey, ?int $index = null): void
+    {
+        $this->assertNotLocked();
+        $this->editingRepeaterField = $fieldKey;
+        $this->editingRepeaterIndex = $index;
+
+        if ($index !== null) {
+            $items = $this->currentPhase === 'core'
+                ? ($this->coreData[$fieldKey] ?? [])
+                : ($this->stateData[$fieldKey] ?? []);
+            $this->repeaterForm = $items[$index] ?? [];
+        } else {
+            $this->repeaterForm = ['_id' => Str::uuid()->toString()];
+        }
+
+        $this->showRepeaterModal = true;
+    }
+
+    public function closeRepeaterModal(): void
+    {
+        $this->showRepeaterModal = false;
+        $this->editingRepeaterIndex = null;
+        $this->editingRepeaterField = '';
+        $this->repeaterForm = [];
+        $this->resetValidation();
+    }
+
+    public function saveRepeaterItem(): void
     {
         $this->assertNotLocked();
 
-        $newItem = ['_id' => Str::uuid()->toString()];
+        $fieldKey = $this->editingRepeaterField;
+        $step = $this->getCurrentStepProperty();
+        $schema = $step['fields'][$fieldKey]['schema'] ?? [];
 
-        if ($this->currentPhase === 'core') {
-            $this->coreData[$fieldKey][] = $newItem;
-        } else {
-            $this->stateData[$fieldKey][] = $newItem;
+        $rules = [];
+        $attributes = [];
+        foreach ($schema as $subKey => $subField) {
+            $subRules = $subField['rules'] ?? [];
+            if (! empty($subRules)) {
+                $rules["repeaterForm.{$subKey}"] = $subRules;
+                $attributes["repeaterForm.{$subKey}"] = $subField['label'] ?? $subKey;
+            }
         }
+
+        $this->validate($rules, [], $attributes);
+
+        if ($this->editingRepeaterIndex !== null) {
+            if ($this->currentPhase === 'core') {
+                $this->coreData[$fieldKey][$this->editingRepeaterIndex] = $this->repeaterForm;
+            } else {
+                $this->stateData[$fieldKey][$this->editingRepeaterIndex] = $this->repeaterForm;
+            }
+        } else {
+            if ($this->currentPhase === 'core') {
+                $this->coreData[$fieldKey][] = $this->repeaterForm;
+            } else {
+                $this->stateData[$fieldKey][] = $this->repeaterForm;
+            }
+        }
+
+        $this->closeRepeaterModal();
     }
 
     public function removeRepeaterItem(string $fieldKey, string $id): void
@@ -723,16 +782,19 @@ class MultiStateFormRunner extends Component
         // Run cross-field validators
         $this->runCrossFieldValidators();
 
-        // Mark as submitted
-        $this->application->update([
-            'status' => 'submitted',
-            'submitted_at' => now(),
-            'locked_at' => now(),
-        ]);
+        if ($this->application->isPaid()) {
+            $this->application->update([
+                'status' => 'submitted',
+                'submitted_at' => now(),
+                'locked_at' => now(),
+            ]);
 
-        session()->flash('success', 'Your application has been submitted successfully.');
+            session()->flash('success', 'Your application has been submitted successfully.');
 
-        $this->redirect(route('dashboard'));
+            $this->redirect(route('dashboard'));
+        } else {
+            $this->redirect(route('portal.checkout', $this->application));
+        }
     }
 
     protected function validateAllSteps(): void

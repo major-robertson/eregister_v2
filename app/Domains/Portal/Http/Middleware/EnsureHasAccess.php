@@ -48,7 +48,7 @@ class EnsureHasAccess
 
         return match ($config['billing_type']) {
             'subscription' => $business->subscribed($config['subscription_name']),
-            'one_time_per_state', 'one_time' => $application->paid_at !== null,
+            'one_time_per_state', 'one_time' => true,
             default => false,
         };
     }

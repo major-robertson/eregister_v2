@@ -6,8 +6,11 @@ use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Mail\WelcomeEmail;
 use App\Models\User;
+use App\Rules\Recaptcha;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
 class CreateNewUser implements CreatesNewUsers
@@ -21,9 +24,14 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
+        $this->checkRateLimit();
+        RateLimiter::hit($this->rateLimitKey(), 60 * 15);
+
         Validator::make($input, [
             ...$this->profileRules(),
             'password' => $this->passwordRules(),
+            'website' => ['prohibited'],
+            'g-recaptcha-response' => [new Recaptcha],
         ])->validate();
 
         $user = User::create([
@@ -65,6 +73,27 @@ class CreateNewUser implements CreatesNewUsers
             'attributed_marketing_lead_id' => session('active_marketing_lead_id'),
             'attributed_at' => session('active_marketing_lead_id') ? now() : null,
         ];
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    protected function checkRateLimit(): void
+    {
+        $key = $this->rateLimitKey();
+
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            $seconds = RateLimiter::availableIn($key);
+
+            throw ValidationException::withMessages([
+                'email' => "Too many registration attempts. Please try again in {$seconds} seconds.",
+            ]);
+        }
+    }
+
+    protected function rateLimitKey(): string
+    {
+        return 'registration:'.request()->ip();
     }
 
     /**

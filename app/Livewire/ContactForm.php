@@ -2,7 +2,10 @@
 
 namespace App\Livewire;
 
+use App\Rules\Recaptcha;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 class ContactForm extends Component
@@ -15,10 +18,14 @@ class ContactForm extends Component
 
     public string $message = '';
 
+    public string $website = '';
+
+    public string $recaptchaToken = '';
+
     public bool $submitted = false;
 
     /**
-     * @return array<string, array<string>>
+     * @return array<string, array<int, \Illuminate\Contracts\Validation\ValidationRule|string>>
      */
     protected function rules(): array
     {
@@ -27,6 +34,8 @@ class ContactForm extends Component
             'business_name' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'message' => ['required', 'string', 'min:10', 'max:5000'],
+            'website' => ['prohibited'],
+            'recaptchaToken' => [new Recaptcha],
         ];
     }
 
@@ -44,11 +53,16 @@ class ContactForm extends Component
         ];
     }
 
+    /**
+     * @throws ValidationException
+     */
     public function submit(): void
     {
+        $this->checkRateLimit();
+        RateLimiter::hit($this->rateLimitKey(), 60 * 15);
+
         $validated = $this->validate();
 
-        // Send email notification
         Mail::raw(
             "New contact form submission:\n\n".
             "Name: {$validated['name']}\n".
@@ -63,7 +77,28 @@ class ContactForm extends Component
         );
 
         $this->submitted = true;
-        $this->reset(['name', 'business_name', 'email', 'message']);
+        $this->reset(['name', 'business_name', 'email', 'message', 'website', 'recaptchaToken']);
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    protected function checkRateLimit(): void
+    {
+        $key = $this->rateLimitKey();
+
+        if (RateLimiter::tooManyAttempts($key, 3)) {
+            $seconds = RateLimiter::availableIn($key);
+
+            throw ValidationException::withMessages([
+                'email' => "Too many contact attempts. Please try again in {$seconds} seconds.",
+            ]);
+        }
+    }
+
+    protected function rateLimitKey(): string
+    {
+        return 'contact:'.request()->ip();
     }
 
     public function render()

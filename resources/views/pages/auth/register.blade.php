@@ -63,6 +63,14 @@
                 viewable
             />
 
+            <!-- Honeypot -->
+            <div aria-hidden="true" style="position: absolute; left: -9999px;">
+                <label for="website">Website</label>
+                <input type="text" name="website" id="website" tabindex="-1" autocomplete="off" />
+            </div>
+
+            <x-recaptcha />
+
             <div class="flex items-center justify-end">
                 <flux:button type="submit" variant="primary" class="w-full" data-test="register-user-button">
                     {{ __('Create account') }}

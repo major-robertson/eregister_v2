@@ -13,7 +13,19 @@
             </button>
         </div>
     @else
-        <form wire:submit="submit" class="space-y-6">
+        <form
+            x-data
+            x-on:submit.prevent="
+                if (typeof grecaptcha !== 'undefined') {
+                    $wire.recaptchaToken = grecaptcha.getResponse();
+                }
+                await $wire.submit();
+                if (typeof grecaptcha !== 'undefined') {
+                    grecaptcha.reset();
+                }
+            "
+            class="space-y-6"
+        >
             <div>
                 <flux:input
                     wire:model="name"
@@ -49,6 +61,16 @@
                     rows="5"
                     required
                 />
+            </div>
+
+            <!-- Honeypot -->
+            <div aria-hidden="true" style="position: absolute; left: -9999px;">
+                <label for="contact-website">Website</label>
+                <input type="text" wire:model="website" id="contact-website" tabindex="-1" autocomplete="off" />
+            </div>
+
+            <div wire:ignore>
+                <x-recaptcha />
             </div>
 
             <div>

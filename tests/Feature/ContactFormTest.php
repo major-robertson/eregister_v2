@@ -2,6 +2,7 @@
 
 use App\Livewire\ContactForm;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Livewire;
 
 it('displays the contact page', function () {
@@ -60,4 +61,29 @@ it('allows optional business name', function () {
         ->call('submit')
         ->assertHasNoErrors()
         ->assertSet('submitted', true);
+});
+
+it('rejects honeypot-filled submissions', function () {
+    Livewire::test(ContactForm::class)
+        ->set('name', 'John Doe')
+        ->set('email', 'john@example.com')
+        ->set('message', 'This is a test message from the contact form.')
+        ->set('website', 'http://spam.com')
+        ->call('submit')
+        ->assertHasErrors(['website']);
+});
+
+it('is rate limited after too many attempts', function () {
+    $key = 'contact:127.0.0.1';
+
+    for ($i = 0; $i < 3; $i++) {
+        RateLimiter::hit($key, 60 * 15);
+    }
+
+    Livewire::test(ContactForm::class)
+        ->set('name', 'John Doe')
+        ->set('email', 'john@example.com')
+        ->set('message', 'This is a test message from the contact form.')
+        ->call('submit')
+        ->assertHasErrors(['email']);
 });

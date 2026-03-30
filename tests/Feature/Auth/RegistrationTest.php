@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Facades\RateLimiter;
 
 test('registration screen can be rendered', function () {
     $response = $this->get(route('register'));
@@ -180,3 +181,36 @@ test('registration accepts valid names with special characters', function (strin
     'accented names' => ['François', 'Müller'],
     'names with periods' => ['J.', 'Smith Jr.'],
 ]);
+
+test('registration rejects honeypot-filled submissions', function () {
+    $response = $this->post(route('register.store'), [
+        'first_name' => 'John',
+        'last_name' => 'Doe',
+        'email' => 'test@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'website' => 'http://spam.com',
+    ]);
+
+    $response->assertSessionHasErrors('website');
+    $this->assertGuest();
+});
+
+test('registration is rate limited after too many attempts', function () {
+    $key = 'registration:127.0.0.1';
+
+    for ($i = 0; $i < 5; $i++) {
+        RateLimiter::hit($key, 60 * 15);
+    }
+
+    $response = $this->post(route('register.store'), [
+        'first_name' => 'John',
+        'last_name' => 'Doe',
+        'email' => 'ratelimited@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ]);
+
+    $response->assertSessionHasErrors('email');
+    $this->assertGuest();
+});

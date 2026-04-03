@@ -13,6 +13,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 class MultiStateFormRunner extends Component
@@ -685,6 +686,47 @@ class MultiStateFormRunner extends Component
         );
 
         $this->validate($validation['rules'], [], $validation['attributes']);
+
+        $data = $this->currentPhase === 'core' ? $this->coreData : $this->stateData;
+        $prefix = $this->currentPhase === 'core' ? 'coreData' : 'stateData';
+        $this->validateConditionalMins($step, $data, $prefix);
+    }
+
+    /**
+     * Validate conditional_min constraints on repeater fields.
+     *
+     * @throws ValidationException
+     */
+    protected function validateConditionalMins(array $step, array $data, string $prefix): void
+    {
+        foreach ($step['fields'] ?? [] as $fieldKey => $field) {
+            $conditionalMin = $field['conditional_min'] ?? null;
+            if (! $conditionalMin) {
+                continue;
+            }
+
+            $condField = $conditionalMin['field'];
+            $condValues = $conditionalMin['values'] ?? [];
+            $currentValue = data_get($data, $condField);
+
+            if ($currentValue === null || ! isset($condValues[$currentValue])) {
+                continue;
+            }
+
+            $requiredMin = $condValues[$currentValue];
+            $items = data_get($data, $fieldKey, []);
+            $count = is_array($items) ? count($items) : 0;
+
+            if ($count < $requiredMin) {
+                $entityLabel = ucfirst(str_replace('_', ' ', $currentValue));
+                $itemLabel = $field['item_label'] ?? $field['label'] ?? $fieldKey;
+                $pluralLabel = strtolower(Str::plural($itemLabel, $requiredMin));
+
+                throw ValidationException::withMessages([
+                    "{$prefix}.{$fieldKey}" => ["{$entityLabel}s require at least {$requiredMin} {$pluralLabel}."],
+                ]);
+            }
+        }
     }
 
     public function openRepeaterModal(string $fieldKey, ?int $index = null): void
@@ -849,6 +891,8 @@ class MultiStateFormRunner extends Component
                     );
                 }
             }
+
+            $this->validateConditionalMins($step, $this->coreData, 'coreData');
         }
     }
 

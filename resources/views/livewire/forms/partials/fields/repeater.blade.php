@@ -3,20 +3,21 @@
     $min = $field['min'] ?? 0;
     $itemLabel = $field['item_label'] ?? 'Item';
     $schema = $field['schema'] ?? [];
+
+    $effectiveMin = $min;
+    if (!empty($field['conditional_min'])) {
+        $condField = $field['conditional_min']['field'];
+        $condValues = $field['conditional_min']['values'] ?? [];
+        $currentValue = $data[$condField] ?? null;
+        if ($currentValue !== null && isset($condValues[$currentValue])) {
+            $effectiveMin = max($min, $condValues[$currentValue]);
+        }
+    }
 @endphp
 
 <div class="space-y-4">
-    <div class="flex items-center justify-between">
+    <div>
         <flux:label class="text-base font-medium">{{ $label }}</flux:label>
-        <flux:button
-            wire:click="openRepeaterModal('{{ $fieldKey }}')"
-            type="button"
-            size="sm"
-            variant="primary"
-            icon="plus"
-        >
-            Add {{ $itemLabel }}
-        </flux:button>
     </div>
 
     @error("{$prefix}.{$fieldKey}")
@@ -24,7 +25,7 @@
     @enderror
 
     <div class="space-y-3">
-        @forelse ($items as $index => $item)
+        @foreach ($items as $index => $item)
             <div wire:key="repeater-{{ $item['_id'] ?? $index }}" class="flex items-start justify-between rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
                 <button
                     type="button"
@@ -57,7 +58,7 @@
                         variant="ghost"
                         icon="pencil"
                     />
-                    @if (count($items) > $min)
+                    @if (count($items) > $effectiveMin)
                         <flux:button
                             wire:click="removeRepeaterItem('{{ $fieldKey }}', '{{ $item['_id'] ?? '' }}')"
                             wire:loading.attr="disabled"
@@ -72,14 +73,15 @@
                     @endif
                 </div>
             </div>
-        @empty
+        @endforeach
+
+        {{-- Empty required slots for positions not yet filled --}}
+        @for ($i = count($items); $i < $effectiveMin; $i++)
             <div class="rounded-lg border-2 border-dashed border-zinc-300 px-5 py-6 dark:border-zinc-600">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <span class="font-semibold text-zinc-700 dark:text-zinc-300">{{ $itemLabel }}</span>
-                        @if ($min > 0)
-                            <flux:badge size="sm" color="red">Required</flux:badge>
-                        @endif
+                        <span class="font-semibold text-zinc-700 dark:text-zinc-300">{{ $itemLabel }} {{ $i + 1 }}</span>
+                        <flux:badge size="sm" color="red">Required</flux:badge>
                     </div>
                     <flux:button
                         wire:click="openRepeaterModal('{{ $fieldKey }}')"
@@ -92,8 +94,26 @@
                     </flux:button>
                 </div>
             </div>
-        @endforelse
+        @endfor
     </div>
+
+    {{-- Optional add row --}}
+    @if (count($items) >= $effectiveMin)
+        <div class="rounded-lg border border-dashed border-zinc-200 px-5 py-4 dark:border-zinc-700">
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-zinc-400 dark:text-zinc-500">Add another {{ strtolower($itemLabel) }} (optional)</span>
+                <flux:button
+                    wire:click="openRepeaterModal('{{ $fieldKey }}')"
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    icon="plus"
+                >
+                    Add
+                </flux:button>
+            </div>
+        </div>
+    @endif
 
     {{-- Repeater Modal --}}
     <flux:modal wire:model="showRepeaterModal" class="max-w-lg">

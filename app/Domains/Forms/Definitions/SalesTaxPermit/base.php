@@ -66,7 +66,13 @@ return [
                     'type' => 'repeater',
                     'label' => 'Responsible People',
                     'min' => 1,
-                    'item_label' => 'Person',
+                    'conditional_min' => [
+                        'field' => 'entity_type',
+                        'values' => [
+                            'partnership' => 2,
+                        ],
+                    ],
+                    'item_label' => 'Responsible Person',
                     'persist_to_business' => true, // Non-sensitive fields only
                     'schema' => [
                         'full_name' => [

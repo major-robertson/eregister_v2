@@ -76,7 +76,7 @@ it('creates event for each transition', function () {
 
     expect($this->filing->events()->count())->toBe(2);
 
-    $lastEvent = $this->filing->events()->latest()->first();
+    $lastEvent = $this->filing->events()->latest('id')->first();
     expect($lastEvent->event_type)->toBe('status_changed');
     expect($lastEvent->payload_json['from'])->toBe('awaiting_payment');
     expect($lastEvent->payload_json['to'])->toBe('paid');

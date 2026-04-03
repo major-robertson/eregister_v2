@@ -179,6 +179,53 @@
                 </div>
             @endif
         </div>
+
+        {{-- Missing Info --}}
+        <div @class([
+            'rounded-xl border p-5',
+            'border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-900/20' => $missingInfoCount > 0,
+            'border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800' => $missingInfoCount === 0,
+        ])>
+            <div class="flex items-start justify-between">
+                <div>
+                    <div @class([
+                        'text-3xl font-bold',
+                        'text-orange-600 dark:text-orange-400' => $missingInfoCount > 0,
+                        'text-zinc-900 dark:text-white' => $missingInfoCount === 0,
+                    ])>{{ $missingInfoCount }}</div>
+                    <div class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">Missing Info</div>
+                </div>
+                <div @class([
+                    'flex size-10 items-center justify-center rounded-lg',
+                    'bg-orange-100 dark:bg-orange-800/50' => $missingInfoCount > 0,
+                    'bg-zinc-100 dark:bg-zinc-700' => $missingInfoCount === 0,
+                ])>
+                    <flux:icon name="information-circle" @class([
+                        'size-5',
+                        'text-orange-600 dark:text-orange-400' => $missingInfoCount > 0,
+                        'text-zinc-400' => $missingInfoCount === 0,
+                    ]) />
+                </div>
+            </div>
+            @if($missingInfoProjects->isNotEmpty())
+                <ul class="mt-3 space-y-1 text-sm">
+                    @foreach($missingInfoProjects as $info)
+                        <li class="truncate text-zinc-700 dark:text-zinc-300">
+                            <a href="{{ route('lien.projects.show', $info['project']) }}" class="hover:underline" wire:navigate>
+                                {{ $info['project']->name }}
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+            @if($missingInfoCount > 0)
+                <div class="mt-3">
+                    <flux:button href="{{ route('lien.projects.index') }}" variant="ghost" size="sm">
+                        Review Projects
+                    </flux:button>
+                </div>
+            @endif
+        </div>
     </div>
 
     {{-- Recent Activity Feed --}}

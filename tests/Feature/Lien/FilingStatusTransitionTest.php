@@ -91,32 +91,48 @@ it('allows valid status transitions', function (FilingStatus $from, FilingStatus
     expect($this->filing->status)->toBe($to);
 })->with([
     'paid → awaiting_client' => [FilingStatus::Paid, FilingStatus::AwaitingClient, ['paid_at' => '2026-01-01']],
-    'paid → awaiting_esign' => [FilingStatus::Paid, FilingStatus::AwaitingEsign, ['paid_at' => '2026-01-01']],
-    'paid → awaiting_notary' => [FilingStatus::Paid, FilingStatus::AwaitingNotary, ['paid_at' => '2026-01-01']],
-    'in_fulfillment → awaiting_client' => [FilingStatus::InFulfillment, FilingStatus::AwaitingClient],
-    'in_fulfillment → awaiting_esign' => [FilingStatus::InFulfillment, FilingStatus::AwaitingEsign],
-    'in_fulfillment → awaiting_notary' => [FilingStatus::InFulfillment, FilingStatus::AwaitingNotary],
-    'awaiting_client → in_fulfillment' => [FilingStatus::AwaitingClient, FilingStatus::InFulfillment],
+    'paid → needs_review' => [FilingStatus::Paid, FilingStatus::NeedsReview, ['paid_at' => '2026-01-01']],
+    'paid → ready_to_file' => [FilingStatus::Paid, FilingStatus::ReadyToFile, ['paid_at' => '2026-01-01']],
+    'paid → hold' => [FilingStatus::Paid, FilingStatus::Hold, ['paid_at' => '2026-01-01']],
+    'awaiting_client → needs_review' => [FilingStatus::AwaitingClient, FilingStatus::NeedsReview],
+    'awaiting_client → ready_to_file' => [FilingStatus::AwaitingClient, FilingStatus::ReadyToFile],
     'awaiting_esign → in_fulfillment' => [FilingStatus::AwaitingEsign, FilingStatus::InFulfillment],
-    'awaiting_notary → in_fulfillment' => [FilingStatus::AwaitingNotary, FilingStatus::InFulfillment],
+    'awaiting_notary → awaiting_client' => [FilingStatus::AwaitingNotary, FilingStatus::AwaitingClient],
+    'needs_review → ready_to_file' => [FilingStatus::NeedsReview, FilingStatus::ReadyToFile],
+    'needs_review → awaiting_client' => [FilingStatus::NeedsReview, FilingStatus::AwaitingClient],
+    'ready_to_file → in_fulfillment' => [FilingStatus::ReadyToFile, FilingStatus::InFulfillment],
+    'ready_to_file → mailed' => [FilingStatus::ReadyToFile, FilingStatus::Mailed],
+    'waiting_on_next_step → needs_review' => [FilingStatus::WaitingOnNextStep, FilingStatus::NeedsReview],
+    'hold → needs_review' => [FilingStatus::Hold, FilingStatus::NeedsReview],
+    'hold → ready_to_file' => [FilingStatus::Hold, FilingStatus::ReadyToFile],
+    'in_fulfillment → mailed' => [FilingStatus::InFulfillment, FilingStatus::Mailed],
+    'in_fulfillment → needs_review' => [FilingStatus::InFulfillment, FilingStatus::NeedsReview],
+    'in_fulfillment → waiting_on_next_step' => [FilingStatus::InFulfillment, FilingStatus::WaitingOnNextStep],
+    'in_fulfillment → complete' => [FilingStatus::InFulfillment, FilingStatus::Complete],
+    'recorded → complete' => [FilingStatus::Recorded, FilingStatus::Complete],
+    'complete → needs_review' => [FilingStatus::Complete, FilingStatus::NeedsReview],
+    'canceled → needs_review' => [FilingStatus::Canceled, FilingStatus::NeedsReview],
 ]);
 
-it('can transition to any status except itself and refunded', function (FilingStatus $status) {
+it('returns correct allowed transitions for each status', function (FilingStatus $status, array $expected) {
     $this->filing->update(['status' => $status]);
 
     $allowed = $this->filing->allowedTransitions();
 
-    expect($allowed)->not->toContain($status);
-    expect($allowed)->not->toContain(FilingStatus::Refunded);
-    expect(count($allowed))->toBe(count(FilingStatus::cases()) - 2);
+    expect($allowed)->toBe($expected);
 })->with([
-    'awaiting_client' => [FilingStatus::AwaitingClient],
-    'awaiting_esign' => [FilingStatus::AwaitingEsign],
-    'awaiting_notary' => [FilingStatus::AwaitingNotary],
+    'paid' => [FilingStatus::Paid, [FilingStatus::AwaitingClient, FilingStatus::AwaitingEsign, FilingStatus::AwaitingNotary, FilingStatus::NeedsReview, FilingStatus::ReadyToFile, FilingStatus::WaitingOnNextStep, FilingStatus::Hold, FilingStatus::InFulfillment, FilingStatus::Mailed, FilingStatus::Complete]],
+    'awaiting_client' => [FilingStatus::AwaitingClient, [FilingStatus::NeedsReview, FilingStatus::ReadyToFile, FilingStatus::Hold, FilingStatus::Canceled]],
+    'awaiting_esign' => [FilingStatus::AwaitingEsign, [FilingStatus::NeedsReview, FilingStatus::ReadyToFile, FilingStatus::Hold, FilingStatus::InFulfillment, FilingStatus::Mailed, FilingStatus::Recorded, FilingStatus::Canceled]],
+    'awaiting_notary' => [FilingStatus::AwaitingNotary, [FilingStatus::AwaitingClient, FilingStatus::NeedsReview, FilingStatus::ReadyToFile, FilingStatus::Hold, FilingStatus::InFulfillment, FilingStatus::Mailed, FilingStatus::Recorded, FilingStatus::Canceled]],
+    'needs_review' => [FilingStatus::NeedsReview, [FilingStatus::AwaitingClient, FilingStatus::AwaitingEsign, FilingStatus::AwaitingNotary, FilingStatus::ReadyToFile, FilingStatus::WaitingOnNextStep, FilingStatus::Hold, FilingStatus::InFulfillment, FilingStatus::Mailed, FilingStatus::Recorded, FilingStatus::Complete, FilingStatus::Canceled]],
+    'ready_to_file' => [FilingStatus::ReadyToFile, [FilingStatus::AwaitingClient, FilingStatus::AwaitingEsign, FilingStatus::AwaitingNotary, FilingStatus::NeedsReview, FilingStatus::Hold, FilingStatus::InFulfillment, FilingStatus::Mailed, FilingStatus::Recorded, FilingStatus::Complete, FilingStatus::Canceled]],
+    'waiting_on_next_step' => [FilingStatus::WaitingOnNextStep, [FilingStatus::NeedsReview, FilingStatus::ReadyToFile, FilingStatus::Hold, FilingStatus::InFulfillment, FilingStatus::Mailed, FilingStatus::Recorded, FilingStatus::Complete, FilingStatus::Canceled]],
+    'hold' => [FilingStatus::Hold, [FilingStatus::AwaitingClient, FilingStatus::AwaitingEsign, FilingStatus::AwaitingNotary, FilingStatus::NeedsReview, FilingStatus::ReadyToFile, FilingStatus::WaitingOnNextStep, FilingStatus::InFulfillment, FilingStatus::Mailed, FilingStatus::Recorded, FilingStatus::Complete, FilingStatus::Canceled]],
+    'in_fulfillment' => [FilingStatus::InFulfillment, [FilingStatus::AwaitingClient, FilingStatus::AwaitingEsign, FilingStatus::AwaitingNotary, FilingStatus::NeedsReview, FilingStatus::ReadyToFile, FilingStatus::WaitingOnNextStep, FilingStatus::Hold, FilingStatus::Mailed, FilingStatus::Complete, FilingStatus::Canceled]],
+    'mailed' => [FilingStatus::Mailed, [FilingStatus::NeedsReview, FilingStatus::Hold, FilingStatus::Recorded, FilingStatus::Complete]],
+    'recorded' => [FilingStatus::Recorded, [FilingStatus::NeedsReview, FilingStatus::Hold, FilingStatus::Complete, FilingStatus::Canceled]],
+    'complete' => [FilingStatus::Complete, [FilingStatus::NeedsReview, FilingStatus::Hold]],
+    'canceled' => [FilingStatus::Canceled, [FilingStatus::NeedsReview]],
+    'refunded' => [FilingStatus::Refunded, []],
 ]);
-
-it('does not allow transition from complete', function () {
-    $this->filing->update(['status' => FilingStatus::Complete]);
-
-    expect($this->filing->allowedTransitions())->toBe([]);
-});

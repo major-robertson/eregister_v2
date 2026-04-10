@@ -180,49 +180,99 @@ describe('board cards display', function () {
             ->assertSee('Missing notarization on page 3.');
     });
 
-    it('places awaiting_client filings in the Awaiting Client column', function () {
+    it('places needs_review filings in the Needs Review column', function () {
         $admin = User::factory()->create();
         $admin->givePermissionTo('lien.view');
 
-        $business = Business::factory()->create(['name' => 'Waiting Co']);
+        $business = Business::factory()->create(['name' => 'Review Co']);
         $project = LienProject::factory()->create(['business_id' => $business->id]);
         LienFiling::factory()->forProject($project)->create([
+            'status' => FilingStatus::NeedsReview,
+            'paid_at' => now(),
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienBoard::class)
+            ->assertSee('Needs Review')
+            ->assertSee('Review Co');
+    });
+
+    it('places ready_to_send filings in the Ready to Send column', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $business = Business::factory()->create(['name' => 'Send Co']);
+        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        LienFiling::factory()->forProject($project)->create([
+            'status' => FilingStatus::ReadyToSend,
+            'paid_at' => now(),
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienBoard::class)
+            ->assertSee('Ready to Send')
+            ->assertSee('Send Co');
+    });
+
+    it('places waiting_on_next_step filings in the Waiting on Next Step column', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $business = Business::factory()->create(['name' => 'NextStep Co']);
+        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        LienFiling::factory()->forProject($project)->create([
+            'status' => FilingStatus::WaitingOnNextStep,
+            'paid_at' => now(),
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienBoard::class)
+            ->assertSee('Waiting on Next Step')
+            ->assertSee('NextStep Co');
+    });
+
+    it('places hold filings in the Hold column', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $business = Business::factory()->create(['name' => 'Hold Co']);
+        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        LienFiling::factory()->forProject($project)->create([
+            'status' => FilingStatus::Hold,
+            'paid_at' => now(),
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienBoard::class)
+            ->assertSee('Hold')
+            ->assertSee('Hold Co');
+    });
+
+    it('does not show awaiting_client, awaiting_esign, or awaiting_notary filings', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $awaitingClientBusiness = Business::factory()->create(['name' => 'Waiting Client Co']);
+        $awaitingClientProject = LienProject::factory()->create(['business_id' => $awaitingClientBusiness->id]);
+        LienFiling::factory()->forProject($awaitingClientProject)->create([
             'status' => FilingStatus::AwaitingClient,
             'paid_at' => now(),
         ]);
 
-        $this->actingAs($admin);
-
-        Livewire::test(LienBoard::class)
-            ->assertSee('Awaiting Client')
-            ->assertSee('Waiting Co');
-    });
-
-    it('places awaiting_esign filings in the Awaiting Signatures column', function () {
-        $admin = User::factory()->create();
-        $admin->givePermissionTo('lien.view');
-
-        $business = Business::factory()->create(['name' => 'Signing Co']);
-        $project = LienProject::factory()->create(['business_id' => $business->id]);
-        LienFiling::factory()->forProject($project)->create([
+        $awaitingEsignBusiness = Business::factory()->create(['name' => 'Signing Co']);
+        $awaitingEsignProject = LienProject::factory()->create(['business_id' => $awaitingEsignBusiness->id]);
+        LienFiling::factory()->forProject($awaitingEsignProject)->create([
             'status' => FilingStatus::AwaitingEsign,
             'paid_at' => now(),
         ]);
 
-        $this->actingAs($admin);
-
-        Livewire::test(LienBoard::class)
-            ->assertSee('Awaiting Signatures')
-            ->assertSee('Signing Co');
-    });
-
-    it('places awaiting_notary filings in the Awaiting Signatures column', function () {
-        $admin = User::factory()->create();
-        $admin->givePermissionTo('lien.view');
-
-        $business = Business::factory()->create(['name' => 'Notary Co']);
-        $project = LienProject::factory()->create(['business_id' => $business->id]);
-        LienFiling::factory()->forProject($project)->create([
+        $awaitingNotaryBusiness = Business::factory()->create(['name' => 'Notary Co']);
+        $awaitingNotaryProject = LienProject::factory()->create(['business_id' => $awaitingNotaryBusiness->id]);
+        LienFiling::factory()->forProject($awaitingNotaryProject)->create([
             'status' => FilingStatus::AwaitingNotary,
             'paid_at' => now(),
         ]);
@@ -230,8 +280,9 @@ describe('board cards display', function () {
         $this->actingAs($admin);
 
         Livewire::test(LienBoard::class)
-            ->assertSee('Awaiting Signatures')
-            ->assertSee('Notary Co');
+            ->assertDontSee('Waiting Client Co')
+            ->assertDontSee('Signing Co')
+            ->assertDontSee('Notary Co');
     });
 
     it('filters by business name when searching', function () {

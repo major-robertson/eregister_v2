@@ -10,6 +10,10 @@ enum FilingStatus: string
     case AwaitingClient = 'awaiting_client';
     case AwaitingEsign = 'awaiting_esign';
     case AwaitingNotary = 'awaiting_notary';
+    case NeedsReview = 'needs_review';
+    case ReadyToSend = 'ready_to_send';
+    case WaitingOnNextStep = 'waiting_on_next_step';
+    case Hold = 'hold';
     case InFulfillment = 'in_fulfillment';
     case Mailed = 'mailed';
     case Recorded = 'recorded';
@@ -26,6 +30,10 @@ enum FilingStatus: string
             self::AwaitingClient => 'Awaiting Client',
             self::AwaitingEsign => 'Awaiting E-Signature',
             self::AwaitingNotary => 'Awaiting Notary',
+            self::NeedsReview => 'Needs Review',
+            self::ReadyToSend => 'Ready to Send',
+            self::WaitingOnNextStep => 'Waiting on Next Step',
+            self::Hold => 'Hold',
             self::InFulfillment => 'In Fulfillment',
             self::Mailed => 'Mailed',
             self::Recorded => 'Recorded',
@@ -44,6 +52,10 @@ enum FilingStatus: string
             self::AwaitingClient => 'orange',
             self::AwaitingEsign => 'purple',
             self::AwaitingNotary => 'violet',
+            self::NeedsReview => 'amber',
+            self::ReadyToSend => 'lime',
+            self::WaitingOnNextStep => 'cyan',
+            self::Hold => 'red',
             self::InFulfillment => 'blue',
             self::Mailed => 'indigo',
             self::Recorded => 'violet',
@@ -62,6 +74,10 @@ enum FilingStatus: string
             self::AwaitingClient => 'user',
             self::AwaitingEsign => 'pencil-square',
             self::AwaitingNotary => 'stamp',
+            self::NeedsReview => 'eye',
+            self::ReadyToSend => 'paper-airplane',
+            self::WaitingOnNextStep => 'queue-list',
+            self::Hold => 'pause-circle',
             self::InFulfillment => 'clock',
             self::Mailed => 'envelope',
             self::Recorded => 'document-check',
@@ -83,6 +99,10 @@ enum FilingStatus: string
             self::AwaitingClient => 'We need additional information from you to continue processing your filing.',
             self::AwaitingEsign => 'An e-signature request has been sent to you. Please check your email.',
             self::AwaitingNotary => 'Your document is awaiting notarization.',
+            self::NeedsReview => 'Your response has been received and is being reviewed by our team.',
+            self::ReadyToSend => 'Your filing has been reviewed and is ready to be sent.',
+            self::WaitingOnNextStep => 'Your filing is waiting for a prerequisite step to be completed.',
+            self::Hold => 'Your filing is on hold while an issue is being resolved.',
             self::InFulfillment => 'We are preparing and sending your notice.',
             self::Mailed => 'Your notice has been mailed to all recipients.',
             self::Recorded => 'Your document has been recorded with the county.',
@@ -103,7 +123,7 @@ enum FilingStatus: string
             self::AwaitingClient => 'Please respond to our email so we can continue processing your filing.',
             self::AwaitingEsign => 'Please complete the e-signature request sent to your email.',
             self::AwaitingNotary => 'Your document will be notarized shortly.',
-            self::Paid, self::InFulfillment, self::Mailed, self::Recorded => 'We will email you when there is an update or if we need additional information.',
+            self::Paid, self::NeedsReview, self::ReadyToSend, self::WaitingOnNextStep, self::Hold, self::InFulfillment, self::Mailed, self::Recorded => 'We will email you when there is an update or if we need additional information.',
             self::Complete, self::Canceled, self::Refunded => null,
         };
     }
@@ -149,7 +169,7 @@ enum FilingStatus: string
     public function isUserMilestone(): bool
     {
         return match ($this) {
-            self::Paid, self::AwaitingClient, self::AwaitingEsign, self::AwaitingNotary, self::InFulfillment, self::Mailed, self::Recorded, self::Complete, self::Canceled, self::Refunded => true,
+            self::Paid, self::AwaitingClient, self::AwaitingEsign, self::AwaitingNotary, self::NeedsReview, self::ReadyToSend, self::WaitingOnNextStep, self::Hold, self::InFulfillment, self::Mailed, self::Recorded, self::Complete, self::Canceled, self::Refunded => true,
             self::Draft, self::AwaitingPayment => false,
         };
     }

@@ -183,7 +183,7 @@
     @else
         {{-- Kanban Board (default) / All-status board (when searching) --}}
         @php $isSearching = strlen($search) > 0; @endphp
-        <div class="{{ $isSearching ? 'flex gap-4 overflow-x-auto pb-4' : 'grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4' }}">
+        <div class="{{ $isSearching ? 'flex gap-4 overflow-x-auto pb-4' : 'grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6' }}">
             @foreach ($columns as $column)
             @php
             $columnFilings = $filings->get($column->value) ?? collect();

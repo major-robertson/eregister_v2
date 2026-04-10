@@ -8,16 +8,20 @@ use App\Domains\Lien\Models\LienFiling;
 enum KanbanColumn: string
 {
     case New = 'new';
-    case AwaitingClient = 'awaiting_client';
-    case AwaitingSignatures = 'awaiting_signatures';
+    case NeedsReview = 'needs_review';
+    case ReadyToSend = 'ready_to_send';
+    case WaitingOnNextStep = 'waiting_on_next_step';
+    case Hold = 'hold';
     case Mailed = 'mailed';
 
     public function label(): string
     {
         return match ($this) {
             self::New => 'New',
-            self::AwaitingClient => 'Awaiting Client',
-            self::AwaitingSignatures => 'Awaiting Signatures',
+            self::NeedsReview => 'Needs Review',
+            self::ReadyToSend => 'Ready to Send',
+            self::WaitingOnNextStep => 'Waiting on Next Step',
+            self::Hold => 'Hold',
             self::Mailed => 'Mailed',
         };
     }
@@ -26,8 +30,10 @@ enum KanbanColumn: string
     {
         return match ($this) {
             self::New => 'blue',
-            self::AwaitingClient => 'orange',
-            self::AwaitingSignatures => 'purple',
+            self::NeedsReview => 'amber',
+            self::ReadyToSend => 'lime',
+            self::WaitingOnNextStep => 'cyan',
+            self::Hold => 'red',
             self::Mailed => 'indigo',
         };
     }
@@ -36,8 +42,10 @@ enum KanbanColumn: string
     {
         return match ($this) {
             self::New => 'inbox',
-            self::AwaitingClient => 'user',
-            self::AwaitingSignatures => 'pencil-square',
+            self::NeedsReview => 'eye',
+            self::ReadyToSend => 'paper-airplane',
+            self::WaitingOnNextStep => 'queue-list',
+            self::Hold => 'pause-circle',
             self::Mailed => 'envelope',
         };
     }
@@ -47,18 +55,13 @@ enum KanbanColumn: string
      */
     public static function forFiling(LienFiling $filing): self
     {
-        if ($filing->status === FilingStatus::AwaitingClient) {
-            return self::AwaitingClient;
-        }
-
-        if ($filing->status === FilingStatus::AwaitingEsign || $filing->status === FilingStatus::AwaitingNotary) {
-            return self::AwaitingSignatures;
-        }
-
-        if ($filing->status === FilingStatus::Mailed) {
-            return self::Mailed;
-        }
-
-        return self::New;
+        return match ($filing->status) {
+            FilingStatus::NeedsReview => self::NeedsReview,
+            FilingStatus::ReadyToSend => self::ReadyToSend,
+            FilingStatus::WaitingOnNextStep => self::WaitingOnNextStep,
+            FilingStatus::Hold => self::Hold,
+            FilingStatus::Mailed => self::Mailed,
+            default => self::New,
+        };
     }
 }

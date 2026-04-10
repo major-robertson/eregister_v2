@@ -104,6 +104,9 @@ class LienBoard extends Component
                 ->whereNotIn('status', [
                     FilingStatus::Draft,
                     FilingStatus::AwaitingPayment,
+                    FilingStatus::AwaitingClient,
+                    FilingStatus::AwaitingEsign,
+                    FilingStatus::AwaitingNotary,
                     FilingStatus::Complete,
                     FilingStatus::Canceled,
                     FilingStatus::Refunded,

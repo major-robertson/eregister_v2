@@ -690,6 +690,20 @@ class MultiStateFormRunner extends Component
         $data = $this->currentPhase === 'core' ? $this->coreData : $this->stateData;
         $prefix = $this->currentPhase === 'core' ? 'coreData' : 'stateData';
         $this->validateConditionalMins($step, $data, $prefix);
+
+        $registry = app(CrossFieldValidatorRegistry::class);
+        foreach ($step['cross_validations'] ?? [] as $crossValidation) {
+            $phase = $crossValidation['phase'] ?? 'core';
+            if ($phase === $this->currentPhase || $phase === 'core') {
+                $registry->validateWithPrefix(
+                    $crossValidation['rule'],
+                    $data,
+                    $crossValidation['field'],
+                    $crossValidation,
+                    $prefix
+                );
+            }
+        }
     }
 
     /**

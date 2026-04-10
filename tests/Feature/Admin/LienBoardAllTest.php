@@ -46,7 +46,7 @@ describe('all statuses board', function () {
             ->assertSee('Submitted')
             ->assertSee('Awaiting Client')
             ->assertSee('Needs Review')
-            ->assertSee('Ready to Send')
+            ->assertSee('Ready to File')
             ->assertSee('Waiting on Next Step')
             ->assertSee('Hold')
             ->assertSee('In Fulfillment')

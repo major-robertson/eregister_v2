@@ -198,22 +198,22 @@ describe('board cards display', function () {
             ->assertSee('Review Co');
     });
 
-    it('places ready_to_send filings in the Ready to Send column', function () {
+    it('places ready_to_file filings in the Ready to File column', function () {
         $admin = User::factory()->create();
         $admin->givePermissionTo('lien.view');
 
-        $business = Business::factory()->create(['name' => 'Send Co']);
+        $business = Business::factory()->create(['name' => 'File Co']);
         $project = LienProject::factory()->create(['business_id' => $business->id]);
         LienFiling::factory()->forProject($project)->create([
-            'status' => FilingStatus::ReadyToSend,
+            'status' => FilingStatus::ReadyToFile,
             'paid_at' => now(),
         ]);
 
         $this->actingAs($admin);
 
         Livewire::test(LienBoard::class)
-            ->assertSee('Ready to Send')
-            ->assertSee('Send Co');
+            ->assertSee('Ready to File')
+            ->assertSee('File Co');
     });
 
     it('places waiting_on_next_step filings in the Waiting on Next Step column', function () {

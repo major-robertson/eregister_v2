@@ -9,7 +9,7 @@ enum KanbanColumn: string
 {
     case New = 'new';
     case NeedsReview = 'needs_review';
-    case ReadyToSend = 'ready_to_send';
+    case ReadyToFile = 'ready_to_file';
     case WaitingOnNextStep = 'waiting_on_next_step';
     case Hold = 'hold';
     case Mailed = 'mailed';
@@ -19,7 +19,7 @@ enum KanbanColumn: string
         return match ($this) {
             self::New => 'New',
             self::NeedsReview => 'Needs Review',
-            self::ReadyToSend => 'Ready to Send',
+            self::ReadyToFile => 'Ready to File',
             self::WaitingOnNextStep => 'Waiting on Next Step',
             self::Hold => 'Hold',
             self::Mailed => 'Mailed',
@@ -31,7 +31,7 @@ enum KanbanColumn: string
         return match ($this) {
             self::New => 'blue',
             self::NeedsReview => 'amber',
-            self::ReadyToSend => 'lime',
+            self::ReadyToFile => 'lime',
             self::WaitingOnNextStep => 'cyan',
             self::Hold => 'red',
             self::Mailed => 'indigo',
@@ -43,7 +43,7 @@ enum KanbanColumn: string
         return match ($this) {
             self::New => 'inbox',
             self::NeedsReview => 'eye',
-            self::ReadyToSend => 'paper-airplane',
+            self::ReadyToFile => 'paper-airplane',
             self::WaitingOnNextStep => 'queue-list',
             self::Hold => 'pause-circle',
             self::Mailed => 'envelope',
@@ -57,7 +57,7 @@ enum KanbanColumn: string
     {
         return match ($filing->status) {
             FilingStatus::NeedsReview => self::NeedsReview,
-            FilingStatus::ReadyToSend => self::ReadyToSend,
+            FilingStatus::ReadyToFile => self::ReadyToFile,
             FilingStatus::WaitingOnNextStep => self::WaitingOnNextStep,
             FilingStatus::Hold => self::Hold,
             FilingStatus::Mailed => self::Mailed,

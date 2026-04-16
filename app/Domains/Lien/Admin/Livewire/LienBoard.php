@@ -97,7 +97,7 @@ class LienBoard extends Component
                 'createdBy',
                 'events' => fn ($q) => $q->where('event_type', 'note_added')->latest()->limit(1),
             ])
-            ->orderBy('created_at', 'asc');
+            ->orderBy('paid_at', 'asc');
 
         if (! $this->search) {
             $query->whereNotNull('paid_at')

@@ -261,7 +261,11 @@
                         @endif
 
                         <flux:text class="mt-2 text-xs text-gray-400">
-                            {{ $filing->created_at->diffForHumans() }}
+                            @if ($filing->paid_at)
+                                Paid {{ $filing->paid_at->diffForHumans() }}
+                            @else
+                                {{ $filing->created_at->diffForHumans() }}
+                            @endif
                         </flux:text>
                     </a>
                     @empty

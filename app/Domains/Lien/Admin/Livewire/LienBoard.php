@@ -89,7 +89,7 @@ class LienBoard extends Component
     {
         $query = LienFiling::query()
             ->withoutGlobalScope('business')
-            ->when($this->search, fn ($query) => $query->adminSearch($this->search))
+            ->when($this->search, fn ($query) => $query->withTrashed()->adminSearch($this->search))
             ->with([
                 'project',
                 'project.business',
@@ -148,6 +148,7 @@ class LienBoard extends Component
     {
         return LienFiling::query()
             ->withoutGlobalScope('business')
+            ->withTrashed()
             ->when($this->search, fn ($query) => $query->adminSearch($this->search))
             ->with([
                 'project',

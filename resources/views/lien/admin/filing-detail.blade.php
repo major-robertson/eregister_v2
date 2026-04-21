@@ -10,9 +10,13 @@
                 {{ $filing->project?->business?->name }} — {{ $filing->project?->name }}
             </flux:text>
         </div>
+        @if ($isDeleted)
+        <flux:badge color="zinc" size="lg">Deleted</flux:badge>
+        @else
         <flux:badge color="{{ $kanbanColumn->color() }}" size="lg">
             {{ $kanbanColumn->label() }}
         </flux:badge>
+        @endif
     </div>
 
     @if (session('success'))
@@ -24,6 +28,16 @@
     @if (session('error'))
     <flux:callout variant="danger" icon="x-circle">
         {{ session('error') }}
+    </flux:callout>
+    @endif
+
+    @if ($isDeleted)
+    <flux:callout variant="danger" icon="trash">
+        <flux:callout.heading>Filing deleted</flux:callout.heading>
+        <flux:callout.text>
+            Deleted on {{ $filing->deleted_at?->format('M j, Y g:i A') ?? 'unknown' }}.
+            This filing is no longer visible to the customer and all automated emails have been stopped.
+        </flux:callout.text>
     </flux:callout>
     @endif
 
@@ -54,6 +68,65 @@
         </div>
     </div>
 
+    @if ($isDeleted)
+    <div class="grid gap-6 lg:grid-cols-2">
+        <div class="rounded-lg border border-border bg-white p-6">
+            <flux:heading size="lg" class="mb-4">Filing Reference</flux:heading>
+            <div class="space-y-3 text-sm">
+                <div class="flex items-center justify-between">
+                    <flux:text class="text-gray-500">Filing ID</flux:text>
+                    <flux:text class="font-mono">{{ $filing->public_id }}</flux:text>
+                </div>
+                <div class="flex items-center justify-between">
+                    <flux:text class="text-gray-500">Deleted</flux:text>
+                    <flux:text class="font-medium text-red-600">{{ $filing->deleted_at?->format('M j, Y g:i A') ?? '—' }}</flux:text>
+                </div>
+                <div class="flex items-center justify-between">
+                    <flux:text class="text-gray-500">Created</flux:text>
+                    <flux:text class="font-medium">{{ $filing->created_at->format('M j, Y') }}</flux:text>
+                </div>
+                @if ($filing->createdBy)
+                <div class="flex items-center justify-between">
+                    <flux:text class="text-gray-500">Filed By</flux:text>
+                    <flux:text class="font-medium">{{ $filing->createdBy->email }}</flux:text>
+                </div>
+                @endif
+            </div>
+        </div>
+
+        <div class="rounded-lg border border-border bg-white p-6">
+            <flux:heading size="lg" class="mb-4">Payment Info</flux:heading>
+            <div class="space-y-3 text-sm">
+                <div class="flex items-center justify-between">
+                    <flux:text class="text-gray-500">Amount Claimed</flux:text>
+                    <flux:text class="font-medium">{{ $filing->formattedAmountClaimed() ?? 'N/A' }}</flux:text>
+                </div>
+                <div class="flex items-center justify-between">
+                    <flux:text class="text-gray-500">Paid</flux:text>
+                    <flux:text class="font-medium">
+                        @if ($filing->paid_at)
+                        {{ $filing->paid_at->format('M j, Y g:i A') }}
+                        @else
+                        Not paid
+                        @endif
+                    </flux:text>
+                </div>
+                @if ($refundablePayment)
+                <div class="flex items-center justify-between">
+                    <flux:text class="text-gray-500">Payment Amount</flux:text>
+                    <flux:text class="font-medium">{{ $refundablePayment->formattedAmount() }}</flux:text>
+                </div>
+                @if ($refundablePayment->isRefunded())
+                <div class="flex items-center justify-between">
+                    <flux:text class="text-gray-500">Refunded</flux:text>
+                    <flux:text class="font-medium text-red-600">{{ $refundablePayment->refunded_at->format('M j, Y g:i A') }}</flux:text>
+                </div>
+                @endif
+                @endif
+            </div>
+        </div>
+    </div>
+    @else
     <div class="grid gap-6 lg:grid-cols-3">
         <!-- Main Content -->
         <div class="space-y-6 lg:col-span-2">
@@ -599,6 +672,40 @@
                 @endif
             </div>
 
+            {{-- Danger Zone --}}
+            @if ($canDelete)
+            <div class="rounded-lg border border-red-200 bg-red-50 p-6">
+                <flux:heading size="lg" class="mb-2 text-red-800">Danger Zone</flux:heading>
+                <flux:text class="mb-4 text-sm text-red-700">
+                    Deleting this filing will hide it from the customer and stop all automated emails. Admins will still see it marked as deleted.
+                </flux:text>
+                <flux:button wire:click="confirmDelete" variant="danger" class="w-full" icon="trash">
+                    Delete Filing
+                </flux:button>
+            </div>
+
+            <flux:modal wire:model="showDeleteModal" class="max-w-md">
+                <div class="space-y-6">
+                    <div>
+                        <flux:heading size="lg">Delete this filing?</flux:heading>
+                        <flux:subheading class="mt-2">
+                            The customer will no longer be able to see this filing, and all automated reminder emails for it will stop. Admins will still see it marked as deleted.
+                        </flux:subheading>
+                    </div>
+
+                    <div class="flex justify-end gap-2">
+                        <flux:modal.close>
+                            <flux:button variant="filled">Cancel</flux:button>
+                        </flux:modal.close>
+
+                        <flux:button wire:click="deleteFiling" variant="danger" icon="trash">
+                            Delete Filing
+                        </flux:button>
+                    </div>
+                </div>
+            </flux:modal>
+            @endif
+
             <!-- Refund Confirmation Modal -->
             @if ($canRefund)
             <flux:modal wire:model="showRefundModal" class="max-w-md">
@@ -859,6 +966,7 @@
 
         </div>
     </div>
+    @endif
 
     <!-- All Fields Collapsible -->
     <div x-data="{ open: false }" class="rounded-lg border border-border bg-white">

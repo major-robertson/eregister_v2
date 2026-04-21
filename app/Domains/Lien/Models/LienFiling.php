@@ -17,13 +17,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 class LienFiling extends Model implements HasMedia
 {
-    use BelongsToBusiness, HasFactory, InteractsWithMedia;
+    use BelongsToBusiness, HasFactory, InteractsWithMedia, SoftDeletes;
 
     protected static function newFactory(): LienFilingFactory
     {
@@ -77,6 +78,22 @@ class LienFiling extends Model implements HasMedia
             if (! $filing->public_id) {
                 $filing->public_id = Str::ulid()->toBase32();
             }
+        });
+
+        static::deleting(function (self $filing): void {
+            if ($filing->isForceDeleting()) {
+                return;
+            }
+
+            EmailSequence::suppressReminderFor($filing);
+
+            EmailSequence::query()
+                ->where('sequenceable_type', $filing->getMorphClass())
+                ->where('sequenceable_id', $filing->getKey())
+                ->whereNull('suppressed_at')
+                ->whereNull('completed_at')
+                ->get()
+                ->each(fn (EmailSequence $seq) => $seq->suppress('filing_deleted'));
         });
     }
 

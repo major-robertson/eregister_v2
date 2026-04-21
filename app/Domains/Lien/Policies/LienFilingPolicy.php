@@ -57,13 +57,12 @@ class LienFilingPolicy
     }
 
     /**
-     * Determine if the user can delete the filing.
+     * Determine if the user can delete the filing (admin-only soft delete).
      */
     public function delete(User $user, LienFiling $filing): bool
     {
-        // Can only delete drafts
-        return $this->belongsToBusiness($user, $filing)
-            && $filing->status->value === 'draft';
+        return $this->hasAdminPermission($user, 'lien.delete')
+            && ! $filing->trashed();
     }
 
     /**

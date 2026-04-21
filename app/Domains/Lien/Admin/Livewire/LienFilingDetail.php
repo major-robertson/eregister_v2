@@ -30,10 +30,13 @@ class LienFilingDetail extends Component
 
     public bool $showRefundModal = false;
 
+    public bool $showDeleteModal = false;
+
     public function mount(string|LienFiling $lienFiling): void
     {
         if (is_string($lienFiling)) {
             $lienFiling = LienFiling::withoutGlobalScope('business')
+                ->withTrashed()
                 ->where('public_id', $lienFiling)
                 ->firstOrFail();
         }
@@ -69,7 +72,10 @@ class LienFilingDetail extends Component
             ->latest('paid_at')
             ->first();
 
-        $canRefund = auth()->user()->can('refund', $this->lienFiling)
+        $isDeleted = $this->lienFiling->trashed();
+
+        $canRefund = ! $isDeleted
+            && auth()->user()->can('refund', $this->lienFiling)
             && $refundablePayment?->isRefundable();
 
         return view('lien.admin.filing-detail', [
@@ -77,10 +83,12 @@ class LienFilingDetail extends Component
             'kanbanColumn' => KanbanColumn::forFiling($this->lienFiling),
             'allowedTransitions' => $this->lienFiling->allowedTransitions(),
             'activityLog' => $this->getActivityLog(),
-            'canChangeStatus' => auth()->user()->can('changeStatus', $this->lienFiling),
-            'canUpdate' => auth()->user()->can('update', $this->lienFiling),
-            'canAddComment' => auth()->user()->can('addComment', $this->lienFiling),
+            'canChangeStatus' => ! $isDeleted && auth()->user()->can('changeStatus', $this->lienFiling),
+            'canUpdate' => ! $isDeleted && auth()->user()->can('update', $this->lienFiling),
+            'canAddComment' => ! $isDeleted && auth()->user()->can('addComment', $this->lienFiling),
             'canRefund' => $canRefund,
+            'canDelete' => auth()->user()->can('delete', $this->lienFiling),
+            'isDeleted' => $isDeleted,
             'refundablePayment' => $refundablePayment,
             'requiredDeadlines' => $requiredDeadlines,
             'filingDocStatus' => $filingDocStatus,
@@ -329,6 +337,40 @@ class LienFilingDetail extends Component
 
             session()->flash('error', 'Stripe error: '.$e->getMessage());
         }
+    }
+
+    /**
+     * Show the delete confirmation modal.
+     */
+    public function confirmDelete(): void
+    {
+        $this->authorize('delete', $this->lienFiling);
+
+        $this->showDeleteModal = true;
+    }
+
+    /**
+     * Soft-delete the filing. Email sequences are suppressed by the model's
+     * deleting hook. The filing remains visible to admins via withTrashed().
+     */
+    public function deleteFiling()
+    {
+        $this->authorize('delete', $this->lienFiling);
+
+        $this->lienFiling->events()->create([
+            'business_id' => $this->lienFiling->business_id,
+            'event_type' => 'filing_deleted',
+            'payload_json' => [
+                'status_at_delete' => $this->lienFiling->status->value,
+            ],
+            'created_by' => auth()->id(),
+        ]);
+
+        $this->lienFiling->delete();
+
+        session()->flash('success', 'Filing deleted. Customer can no longer see it and automated emails have stopped.');
+
+        return $this->redirectRoute('admin.liens.board', navigate: true);
     }
 
     /**

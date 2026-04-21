@@ -23,6 +23,7 @@ class PermissionsSeeder extends Seeder
             'lien.update',
             'lien.change_status',
             'lien.assign',
+            'lien.delete',
 
             // LLC permissions (future)
             'llc.view',

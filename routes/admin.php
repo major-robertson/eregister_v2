@@ -36,7 +36,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
             Route::get('/board', LienBoard::class)->name('board');
             Route::get('/board/all', LienBoardAll::class)->name('board-all');
             Route::get('/lien-rules-overview', LienRulesOverview::class)->name('lien-rules-overview');
-            Route::get('/{lienFiling:public_id}', LienFilingDetail::class)->name('show');
+            Route::get('/{lienFiling:public_id}', LienFilingDetail::class)->name('show')->withTrashed();
         });
 
     // Users management - admin role only

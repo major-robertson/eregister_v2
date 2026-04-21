@@ -341,3 +341,35 @@ describe('helper fields', function () {
         expect($step->canMarkDoneMyself)->toBeTrue();
     });
 });
+
+/*
+|--------------------------------------------------------------------------
+| FilingStatus Coverage (regression)
+|--------------------------------------------------------------------------
+| Guards against UnhandledMatchError when new FilingStatus cases are
+| added to the enum but downstream consumers (notably getFilingPriority())
+| are not updated. See: production error 2026-04-20 on ProjectShow.
+*/
+
+describe('FilingStatus coverage', function () {
+    it('handles every FilingStatus case without throwing', function (FilingStatus $status) {
+        [$project, $deadline] = createProjectWithDeadline();
+
+        LienFiling::factory()->forProject($project)->create([
+            'document_type_id' => $deadline->document_type_id,
+            'project_deadline_id' => $deadline->id,
+            'status' => $status,
+        ]);
+
+        $steps = $this->calculator->forProject($project->unsetRelations());
+
+        expect($steps)->toHaveKey('prelim_notice');
+        expect($steps['prelim_notice'])->not->toBeNull();
+    })->with(collect(FilingStatus::cases())
+        ->mapWithKeys(fn (FilingStatus $s) => [$s->name => [$s]])
+        ->all());
+
+    // NOTE: a faster, DB-free unit-level guard for getFilingPriority() lives in
+    // tests/Unit/Lien/StepStatusCalculatorPriorityTest.php so it runs even in
+    // environments without the test database available.
+});

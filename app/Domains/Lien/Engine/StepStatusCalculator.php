@@ -30,6 +30,10 @@ class StepStatusCalculator
         FilingStatus::AwaitingClient,
         FilingStatus::AwaitingEsign,
         FilingStatus::AwaitingNotary,
+        FilingStatus::NeedsReview,
+        FilingStatus::ReadyToFile,
+        FilingStatus::WaitingOnNextStep,
+        FilingStatus::Hold,
         FilingStatus::InFulfillment,
         FilingStatus::Mailed,
         FilingStatus::Recorded,
@@ -94,6 +98,10 @@ class StepStatusCalculator
             FilingStatus::AwaitingClient,
             FilingStatus::AwaitingEsign,
             FilingStatus::AwaitingNotary,
+            FilingStatus::NeedsReview,
+            FilingStatus::ReadyToFile,
+            FilingStatus::WaitingOnNextStep,
+            FilingStatus::Hold,
             FilingStatus::InFulfillment,
             FilingStatus::Mailed,
             FilingStatus::Recorded,
@@ -388,7 +396,7 @@ class StepStatusCalculator
         // Then look for any active filing for this document type
         return $deadline->project->filings
             ->where('document_type_id', $deadline->document_type_id)
-            ->whereNotIn('status', [FilingStatus::Canceled])
+            ->whereNotIn('status', [FilingStatus::Canceled, FilingStatus::Refunded])
             ->sortByDesc(fn (LienFiling $f) => $this->getFilingPriority($f->status))
             ->first();
     }
@@ -403,13 +411,18 @@ class StepStatusCalculator
             FilingStatus::Recorded => 90,
             FilingStatus::Mailed => 80,
             FilingStatus::InFulfillment => 70,
+            FilingStatus::ReadyToFile => 68,
             FilingStatus::AwaitingClient => 65,
             FilingStatus::AwaitingEsign => 65,
             FilingStatus::AwaitingNotary => 65,
+            FilingStatus::WaitingOnNextStep => 63,
+            FilingStatus::NeedsReview => 62,
             FilingStatus::Paid => 60,
+            FilingStatus::Hold => 55,
             FilingStatus::AwaitingPayment => 50,
             FilingStatus::Draft => 40,
             FilingStatus::Canceled => 0,
+            FilingStatus::Refunded => 0,
         };
     }
 

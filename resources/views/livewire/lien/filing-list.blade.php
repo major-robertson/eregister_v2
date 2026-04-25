@@ -93,19 +93,27 @@
                                     {{ $filing->created_at->format('M j, Y') }}
                                 </td>
                                 <td class="px-4 py-4 whitespace-nowrap text-right text-sm">
-                                    @if($filing->status === \App\Domains\Lien\Enums\FilingStatus::Draft)
-                                        <flux:button href="{{ route('lien.filings.show', $filing) }}" variant="primary" size="sm" wire:navigate>
-                                            Resume
-                                        </flux:button>
-                                    @elseif($filing->status === \App\Domains\Lien\Enums\FilingStatus::AwaitingPayment)
-                                        <flux:button href="{{ route('lien.filings.checkout', $filing) }}" variant="primary" size="sm" wire:navigate>
-                                            Pay
-                                        </flux:button>
-                                    @else
+                                    <div class="flex items-center justify-end gap-2">
                                         <flux:button href="{{ route('lien.filings.show', $filing) }}" variant="ghost" size="sm" wire:navigate>
                                             View
                                         </flux:button>
-                                    @endif
+
+                                        @if($filing->status === \App\Domains\Lien\Enums\FilingStatus::Draft && $filing->project_deadline_id)
+                                            <flux:button
+                                                href="{{ route('lien.filings.start', ['project' => $filing->project, 'deadline' => $filing->project_deadline_id]) }}"
+                                                variant="primary"
+                                                size="sm"
+                                                wire:navigate
+                                            >
+                                                Resume
+                                            </flux:button>
+                                        @elseif($filing->status === \App\Domains\Lien\Enums\FilingStatus::AwaitingPayment)
+                                            {{-- No wire:navigate: checkout uses layouts.minimal and Stripe.js needs a full page load to mount the Payment Element --}}
+                                            <flux:button href="{{ route('lien.filings.checkout', $filing) }}" variant="primary" size="sm">
+                                                Pay
+                                            </flux:button>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach

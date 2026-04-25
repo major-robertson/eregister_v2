@@ -35,6 +35,7 @@ class StepStatusCalculator
         FilingStatus::WaitingOnNextStep,
         FilingStatus::Hold,
         FilingStatus::InFulfillment,
+        FilingStatus::SubmittedForRecording,
         FilingStatus::Mailed,
         FilingStatus::Recorded,
         FilingStatus::Complete,
@@ -103,6 +104,7 @@ class StepStatusCalculator
             FilingStatus::WaitingOnNextStep,
             FilingStatus::Hold,
             FilingStatus::InFulfillment,
+            FilingStatus::SubmittedForRecording,
             FilingStatus::Mailed,
             FilingStatus::Recorded,
             FilingStatus::Complete,
@@ -265,6 +267,11 @@ class StepStatusCalculator
             return [DeadlineStatus::Recorded, $statusReason, $statusMeta];
         }
 
+        // 3a. Filing is SubmittedForRecording → InFulfillment (still in progress with the county)
+        if ($filingStatus === FilingStatus::SubmittedForRecording) {
+            return [DeadlineStatus::InFulfillment, $statusReason, $statusMeta];
+        }
+
         // 4. Filing is Mailed → Mailed
         if ($filingStatus === FilingStatus::Mailed) {
             return [DeadlineStatus::Mailed, $statusReason, $statusMeta];
@@ -409,6 +416,7 @@ class StepStatusCalculator
         return match ($status) {
             FilingStatus::Complete => 100,
             FilingStatus::Recorded => 90,
+            FilingStatus::SubmittedForRecording => 85,
             FilingStatus::Mailed => 80,
             FilingStatus::InFulfillment => 70,
             FilingStatus::ReadyToFile => 68,

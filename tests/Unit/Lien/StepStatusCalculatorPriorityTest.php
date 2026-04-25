@@ -43,6 +43,8 @@ describe('StepStatusCalculator::getFilingPriority', function () {
         expect($priority(FilingStatus::Complete))
             ->toBeGreaterThan($priority(FilingStatus::Recorded))
             ->and($priority(FilingStatus::Recorded))
+            ->toBeGreaterThan($priority(FilingStatus::SubmittedForRecording))
+            ->and($priority(FilingStatus::SubmittedForRecording))
             ->toBeGreaterThan($priority(FilingStatus::Mailed))
             ->and($priority(FilingStatus::Mailed))
             ->toBeGreaterThan($priority(FilingStatus::InFulfillment));

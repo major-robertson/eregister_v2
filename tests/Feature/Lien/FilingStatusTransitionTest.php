@@ -109,10 +109,25 @@ it('allows valid status transitions', function (FilingStatus $from, FilingStatus
     'in_fulfillment → needs_review' => [FilingStatus::InFulfillment, FilingStatus::NeedsReview],
     'in_fulfillment → waiting_on_next_step' => [FilingStatus::InFulfillment, FilingStatus::WaitingOnNextStep],
     'in_fulfillment → complete' => [FilingStatus::InFulfillment, FilingStatus::Complete],
+    'in_fulfillment → submitted_for_recording' => [FilingStatus::InFulfillment, FilingStatus::SubmittedForRecording],
+    'submitted_for_recording → recorded' => [FilingStatus::SubmittedForRecording, FilingStatus::Recorded],
+    'recorded → mailed' => [FilingStatus::Recorded, FilingStatus::Mailed],
     'recorded → complete' => [FilingStatus::Recorded, FilingStatus::Complete],
     'complete → needs_review' => [FilingStatus::Complete, FilingStatus::NeedsReview],
     'canceled → needs_review' => [FilingStatus::Canceled, FilingStatus::NeedsReview],
 ]);
+
+it('rejects submitted_for_recording → mailed (must record first)', function () {
+    $this->filing->update(['status' => FilingStatus::SubmittedForRecording]);
+
+    $this->filing->transitionTo(FilingStatus::Mailed);
+})->throws(InvalidStatusTransitionException::class);
+
+it('rejects mailed → recorded (mailing happens after recording)', function () {
+    $this->filing->update(['status' => FilingStatus::Mailed]);
+
+    $this->filing->transitionTo(FilingStatus::Recorded);
+})->throws(InvalidStatusTransitionException::class);
 
 it('returns correct allowed transitions for each status', function (FilingStatus $status, array $expected) {
     $this->filing->update(['status' => $status]);
@@ -121,17 +136,18 @@ it('returns correct allowed transitions for each status', function (FilingStatus
 
     expect($allowed)->toBe($expected);
 })->with([
-    'paid' => [FilingStatus::Paid, [FilingStatus::AwaitingClient, FilingStatus::AwaitingEsign, FilingStatus::AwaitingNotary, FilingStatus::NeedsReview, FilingStatus::ReadyToFile, FilingStatus::WaitingOnNextStep, FilingStatus::Hold, FilingStatus::InFulfillment, FilingStatus::Mailed, FilingStatus::Complete]],
+    'paid' => [FilingStatus::Paid, [FilingStatus::AwaitingClient, FilingStatus::AwaitingEsign, FilingStatus::AwaitingNotary, FilingStatus::NeedsReview, FilingStatus::ReadyToFile, FilingStatus::WaitingOnNextStep, FilingStatus::Hold, FilingStatus::InFulfillment, FilingStatus::SubmittedForRecording, FilingStatus::Mailed, FilingStatus::Complete]],
     'awaiting_client' => [FilingStatus::AwaitingClient, [FilingStatus::NeedsReview, FilingStatus::ReadyToFile, FilingStatus::Hold, FilingStatus::Canceled]],
     'awaiting_esign' => [FilingStatus::AwaitingEsign, [FilingStatus::NeedsReview, FilingStatus::ReadyToFile, FilingStatus::Hold, FilingStatus::InFulfillment, FilingStatus::Mailed, FilingStatus::Recorded, FilingStatus::Canceled]],
     'awaiting_notary' => [FilingStatus::AwaitingNotary, [FilingStatus::AwaitingClient, FilingStatus::NeedsReview, FilingStatus::ReadyToFile, FilingStatus::Hold, FilingStatus::InFulfillment, FilingStatus::Mailed, FilingStatus::Recorded, FilingStatus::Canceled]],
-    'needs_review' => [FilingStatus::NeedsReview, [FilingStatus::AwaitingClient, FilingStatus::AwaitingEsign, FilingStatus::AwaitingNotary, FilingStatus::ReadyToFile, FilingStatus::WaitingOnNextStep, FilingStatus::Hold, FilingStatus::InFulfillment, FilingStatus::Mailed, FilingStatus::Recorded, FilingStatus::Complete, FilingStatus::Canceled]],
-    'ready_to_file' => [FilingStatus::ReadyToFile, [FilingStatus::AwaitingClient, FilingStatus::AwaitingEsign, FilingStatus::AwaitingNotary, FilingStatus::NeedsReview, FilingStatus::Hold, FilingStatus::InFulfillment, FilingStatus::Mailed, FilingStatus::Recorded, FilingStatus::Complete, FilingStatus::Canceled]],
-    'waiting_on_next_step' => [FilingStatus::WaitingOnNextStep, [FilingStatus::NeedsReview, FilingStatus::ReadyToFile, FilingStatus::Hold, FilingStatus::InFulfillment, FilingStatus::Mailed, FilingStatus::Recorded, FilingStatus::Complete, FilingStatus::Canceled]],
-    'hold' => [FilingStatus::Hold, [FilingStatus::AwaitingClient, FilingStatus::AwaitingEsign, FilingStatus::AwaitingNotary, FilingStatus::NeedsReview, FilingStatus::ReadyToFile, FilingStatus::WaitingOnNextStep, FilingStatus::InFulfillment, FilingStatus::Mailed, FilingStatus::Recorded, FilingStatus::Complete, FilingStatus::Canceled]],
-    'in_fulfillment' => [FilingStatus::InFulfillment, [FilingStatus::AwaitingClient, FilingStatus::AwaitingEsign, FilingStatus::AwaitingNotary, FilingStatus::NeedsReview, FilingStatus::ReadyToFile, FilingStatus::WaitingOnNextStep, FilingStatus::Hold, FilingStatus::Mailed, FilingStatus::Complete, FilingStatus::Canceled]],
-    'mailed' => [FilingStatus::Mailed, [FilingStatus::NeedsReview, FilingStatus::Hold, FilingStatus::Recorded, FilingStatus::Complete]],
-    'recorded' => [FilingStatus::Recorded, [FilingStatus::NeedsReview, FilingStatus::Hold, FilingStatus::Complete, FilingStatus::Canceled]],
+    'needs_review' => [FilingStatus::NeedsReview, [FilingStatus::AwaitingClient, FilingStatus::AwaitingEsign, FilingStatus::AwaitingNotary, FilingStatus::ReadyToFile, FilingStatus::WaitingOnNextStep, FilingStatus::Hold, FilingStatus::InFulfillment, FilingStatus::SubmittedForRecording, FilingStatus::Mailed, FilingStatus::Recorded, FilingStatus::Complete, FilingStatus::Canceled]],
+    'ready_to_file' => [FilingStatus::ReadyToFile, [FilingStatus::AwaitingClient, FilingStatus::AwaitingEsign, FilingStatus::AwaitingNotary, FilingStatus::NeedsReview, FilingStatus::Hold, FilingStatus::InFulfillment, FilingStatus::SubmittedForRecording, FilingStatus::Mailed, FilingStatus::Recorded, FilingStatus::Complete, FilingStatus::Canceled]],
+    'waiting_on_next_step' => [FilingStatus::WaitingOnNextStep, [FilingStatus::NeedsReview, FilingStatus::ReadyToFile, FilingStatus::Hold, FilingStatus::InFulfillment, FilingStatus::SubmittedForRecording, FilingStatus::Mailed, FilingStatus::Recorded, FilingStatus::Complete, FilingStatus::Canceled]],
+    'hold' => [FilingStatus::Hold, [FilingStatus::AwaitingClient, FilingStatus::AwaitingEsign, FilingStatus::AwaitingNotary, FilingStatus::NeedsReview, FilingStatus::ReadyToFile, FilingStatus::WaitingOnNextStep, FilingStatus::InFulfillment, FilingStatus::SubmittedForRecording, FilingStatus::Mailed, FilingStatus::Recorded, FilingStatus::Complete, FilingStatus::Canceled]],
+    'in_fulfillment' => [FilingStatus::InFulfillment, [FilingStatus::AwaitingClient, FilingStatus::AwaitingEsign, FilingStatus::AwaitingNotary, FilingStatus::NeedsReview, FilingStatus::ReadyToFile, FilingStatus::WaitingOnNextStep, FilingStatus::Hold, FilingStatus::SubmittedForRecording, FilingStatus::Mailed, FilingStatus::Complete, FilingStatus::Canceled]],
+    'submitted_for_recording' => [FilingStatus::SubmittedForRecording, [FilingStatus::Recorded, FilingStatus::Hold, FilingStatus::NeedsReview, FilingStatus::Canceled]],
+    'mailed' => [FilingStatus::Mailed, [FilingStatus::NeedsReview, FilingStatus::Hold, FilingStatus::Complete]],
+    'recorded' => [FilingStatus::Recorded, [FilingStatus::NeedsReview, FilingStatus::Hold, FilingStatus::Mailed, FilingStatus::Complete, FilingStatus::Canceled]],
     'complete' => [FilingStatus::Complete, [FilingStatus::NeedsReview, FilingStatus::Hold]],
     'canceled' => [FilingStatus::Canceled, [FilingStatus::NeedsReview]],
     'refunded' => [FilingStatus::Refunded, []],

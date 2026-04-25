@@ -206,6 +206,7 @@ describe('status precedence', function () {
     })->with([
         'Paid -> Purchased' => [FilingStatus::Paid, DeadlineStatus::Purchased],
         'InFulfillment' => [FilingStatus::InFulfillment, DeadlineStatus::InFulfillment],
+        'SubmittedForRecording -> InFulfillment' => [FilingStatus::SubmittedForRecording, DeadlineStatus::InFulfillment],
         'Mailed' => [FilingStatus::Mailed, DeadlineStatus::Mailed],
         'Recorded' => [FilingStatus::Recorded, DeadlineStatus::Recorded],
         'AwaitingClient' => [FilingStatus::AwaitingClient, DeadlineStatus::AwaitingClient],

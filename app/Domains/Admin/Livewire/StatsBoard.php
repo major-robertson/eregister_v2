@@ -126,6 +126,7 @@ class StatsBoard extends Component
             FilingStatus::AwaitingEsign,
             FilingStatus::AwaitingNotary,
             FilingStatus::InFulfillment,
+            FilingStatus::SubmittedForRecording,
             FilingStatus::Mailed,
             FilingStatus::Recorded,
             FilingStatus::Complete,

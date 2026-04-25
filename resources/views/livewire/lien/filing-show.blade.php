@@ -56,6 +56,7 @@
                 'bg-violet-100 text-violet-600' => $filing->status->value === 'awaiting_notary',
                 'bg-blue-100 text-blue-600' => $filing->status->value === 'in_fulfillment',
                 'bg-indigo-100 text-indigo-600' => $filing->status->value === 'mailed',
+                'bg-teal-100 text-teal-600' => $filing->status->value === 'submitted_for_recording',
                 'bg-violet-100 text-violet-600' => $filing->status->value === 'recorded',
                 'bg-green-100 text-green-600' => $filing->status->value === 'complete',
                 'bg-red-100 text-red-600' => $filing->status->value === 'canceled',

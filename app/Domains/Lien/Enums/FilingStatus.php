@@ -16,6 +16,7 @@ enum FilingStatus: string
     case Hold = 'hold';
     case InFulfillment = 'in_fulfillment';
     case Mailed = 'mailed';
+    case SubmittedForRecording = 'submitted_for_recording';
     case Recorded = 'recorded';
     case Complete = 'complete';
     case Canceled = 'canceled';
@@ -35,7 +36,8 @@ enum FilingStatus: string
             self::WaitingOnNextStep => 'Waiting on Next Step',
             self::Hold => 'Hold',
             self::InFulfillment => 'In Fulfillment',
-            self::Mailed => 'Mailed',
+            self::Mailed => 'Mailed to Parties',
+            self::SubmittedForRecording => 'Submitted for Recording',
             self::Recorded => 'Recorded',
             self::Complete => 'Complete',
             self::Canceled => 'Canceled',
@@ -58,6 +60,7 @@ enum FilingStatus: string
             self::Hold => 'red',
             self::InFulfillment => 'blue',
             self::Mailed => 'indigo',
+            self::SubmittedForRecording => 'teal',
             self::Recorded => 'violet',
             self::Complete => 'green',
             self::Canceled => 'red',
@@ -80,6 +83,7 @@ enum FilingStatus: string
             self::Hold => 'pause-circle',
             self::InFulfillment => 'clock',
             self::Mailed => 'envelope',
+            self::SubmittedForRecording => 'arrow-up-tray',
             self::Recorded => 'document-check',
             self::Complete => 'check-circle',
             self::Canceled => 'x-circle',
@@ -105,6 +109,7 @@ enum FilingStatus: string
             self::Hold => 'Your filing is on hold while an issue is being resolved.',
             self::InFulfillment => 'We are preparing and sending your notice.',
             self::Mailed => 'Your notice has been mailed to all recipients.',
+            self::SubmittedForRecording => 'Your document has been submitted to the county for recording.',
             self::Recorded => 'Your document has been recorded with the county.',
             self::Complete => 'Your filing is complete. All notices have been delivered.',
             self::Canceled => 'This filing has been canceled.',
@@ -123,7 +128,7 @@ enum FilingStatus: string
             self::AwaitingClient => 'Please respond to our email so we can continue processing your filing.',
             self::AwaitingEsign => 'Please complete the e-signature request sent to your email.',
             self::AwaitingNotary => 'Your document will be notarized shortly.',
-            self::Paid, self::NeedsReview, self::ReadyToFile, self::WaitingOnNextStep, self::Hold, self::InFulfillment, self::Mailed, self::Recorded => 'We will email you when there is an update or if we need additional information.',
+            self::Paid, self::NeedsReview, self::ReadyToFile, self::WaitingOnNextStep, self::Hold, self::InFulfillment, self::Mailed, self::SubmittedForRecording, self::Recorded => 'We will email you when there is an update or if we need additional information.',
             self::Complete, self::Canceled, self::Refunded => null,
         };
     }
@@ -169,7 +174,7 @@ enum FilingStatus: string
     public function isUserMilestone(): bool
     {
         return match ($this) {
-            self::Paid, self::AwaitingClient, self::AwaitingEsign, self::AwaitingNotary, self::NeedsReview, self::ReadyToFile, self::WaitingOnNextStep, self::Hold, self::InFulfillment, self::Mailed, self::Recorded, self::Complete, self::Canceled, self::Refunded => true,
+            self::Paid, self::AwaitingClient, self::AwaitingEsign, self::AwaitingNotary, self::NeedsReview, self::ReadyToFile, self::WaitingOnNextStep, self::Hold, self::InFulfillment, self::Mailed, self::SubmittedForRecording, self::Recorded, self::Complete, self::Canceled, self::Refunded => true,
             self::Draft, self::AwaitingPayment => false,
         };
     }

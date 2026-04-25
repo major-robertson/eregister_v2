@@ -14,7 +14,9 @@
         <flux:badge color="zinc" size="lg">Deleted</flux:badge>
         @else
         <flux:badge color="{{ $kanbanColumn->color() }}" size="lg">
-            {{ $kanbanColumn->label() }}
+            {{ $kanbanColumn->label() }}@if ($filing->status === \App\Domains\Lien\Enums\FilingStatus::SubmittedForRecording && $filing->recording_method)
+                <span class="ml-1 opacity-80">— {{ $filing->recording_method->label() }}</span>
+            @endif
         </flux:badge>
         @endif
     </div>
@@ -214,7 +216,9 @@
                     <div>
                         <flux:text class="text-sm text-gray-500">Current Status</flux:text>
                         <flux:badge color="{{ $filing->status->color() }}">
-                            {{ $filing->status->label() }}
+                            {{ $filing->status->label() }}@if ($filing->status === \App\Domains\Lien\Enums\FilingStatus::SubmittedForRecording && $filing->recording_method)
+                                <span class="ml-1 opacity-80">— {{ $filing->recording_method->label() }}</span>
+                            @endif
                         </flux:badge>
                     </div>
                 </div>
@@ -576,7 +580,7 @@
                 <form wire:submit="updateStatus" class="space-y-4">
                     <flux:field>
                         <flux:label>Change Status</flux:label>
-                        <flux:select wire:model="newStatus">
+                        <flux:select wire:model.live="newStatus">
                             <flux:select.option value="">Select new status...</flux:select.option>
                             @foreach ($allowedTransitions as $status)
                             <flux:select.option value="{{ $status->value }}">
@@ -586,6 +590,33 @@
                         </flux:select>
                         <flux:error name="newStatus" />
                     </flux:field>
+
+                    {{-- Recording-detail capture: required only when transitioning to SubmittedForRecording.
+                         Submitted-at is prefilled with now() by LienFilingDetail::updatedNewStatus(). --}}
+                    @if ($newStatus === \App\Domains\Lien\Enums\FilingStatus::SubmittedForRecording->value)
+                    <div class="space-y-3 rounded-lg border border-teal-200 bg-teal-50 p-4">
+                        <flux:text class="text-sm font-medium text-teal-900">
+                            How was this submitted to the county?
+                        </flux:text>
+
+                        <flux:field>
+                            <flux:label>Recording Method <span class="text-red-500">*</span></flux:label>
+                            <flux:select wire:model="recordingMethod">
+                                <flux:select.option value="">Select method...</flux:select.option>
+                                @foreach (\App\Domains\Lien\Enums\RecordingMethod::cases() as $method)
+                                <flux:select.option value="{{ $method->value }}">{{ $method->label() }}</flux:select.option>
+                                @endforeach
+                            </flux:select>
+                            <flux:error name="recordingMethod" />
+                        </flux:field>
+
+                        <flux:field>
+                            <flux:label>Submitted At <span class="text-red-500">*</span></flux:label>
+                            <flux:input type="datetime-local" wire:model="recordingSubmittedAt" />
+                            <flux:error name="recordingSubmittedAt" />
+                        </flux:field>
+                    </div>
+                    @endif
 
                     <flux:field>
                         <flux:label>Note (optional)</flux:label>
@@ -609,6 +640,37 @@
                 @endif
 
             </div>
+
+            {{-- Recording Details Card: appears once recording_method has been set on this filing.
+                 Lets admins fill in or correct provider/reference/submitted_at after the SubmittedForRecording
+                 transition without needing to re-run a status change. --}}
+            @if ($filing->recording_method !== null && $canUpdate)
+            <div class="rounded-lg border border-border bg-white p-6">
+                <flux:heading size="lg" class="mb-4">Recording Details</flux:heading>
+
+                <form wire:submit="updateRecordingDetails" class="space-y-4">
+                    <flux:field>
+                        <flux:label>Recording Method <span class="text-red-500">*</span></flux:label>
+                        <flux:select wire:model="recordingMethod">
+                            @foreach (\App\Domains\Lien\Enums\RecordingMethod::cases() as $method)
+                            <flux:select.option value="{{ $method->value }}">{{ $method->label() }}</flux:select.option>
+                            @endforeach
+                        </flux:select>
+                        <flux:error name="recordingMethod" />
+                    </flux:field>
+
+                    <flux:field>
+                        <flux:label>Submitted At <span class="text-red-500">*</span></flux:label>
+                        <flux:input type="datetime-local" wire:model="recordingSubmittedAt" />
+                        <flux:error name="recordingSubmittedAt" />
+                    </flux:field>
+
+                    <flux:button type="submit" variant="primary" class="w-full">
+                        Save Recording Details
+                    </flux:button>
+                </form>
+            </div>
+            @endif
 
             <!-- Payment & Filing Info Card -->
             <div class="rounded-lg border border-border bg-white p-6">
@@ -762,11 +824,25 @@
                         @php
                         $toStatus = \App\Domains\Lien\Enums\FilingStatus::tryFrom($event->payload_json['to'] ?? '');
                         $note = $event->payload_json['meta']['note'] ?? null;
+                        // Prefer the historical snapshot from event meta. For events written
+                        // before we started snapshotting recording_method, fall back to the
+                        // filing's current recording_method when the transition was into
+                        // SubmittedForRecording — best-effort label so old entries aren't blank.
+                        $recordingMethodAtTime = \App\Domains\Lien\Enums\RecordingMethod::tryFrom(
+                            $event->payload_json['meta']['recording_method'] ?? ''
+                        );
+                        if (! $recordingMethodAtTime
+                            && $toStatus === \App\Domains\Lien\Enums\FilingStatus::SubmittedForRecording
+                            && $filing->recording_method) {
+                            $recordingMethodAtTime = $filing->recording_method;
+                        }
                         @endphp
                         <div class="flex items-center gap-2 flex-wrap">
                             @if ($toStatus)
                             <flux:badge size="sm" color="{{ $toStatus->color() }}">
-                                {{ $toStatus->label() }}
+                                {{ $toStatus->label() }}@if ($recordingMethodAtTime)
+                                    <span class="ml-1 opacity-80">— {{ $recordingMethodAtTime->label() }}</span>
+                                @endif
                             </flux:badge>
                             @endif
                             <flux:text class="text-xs text-gray-400">
@@ -797,6 +873,32 @@
                             <flux:icon name="arrow-uturn-left" class="mt-0.5 size-4 shrink-0 text-red-400" />
                             <div class="min-w-0">
                                 <flux:text class="text-sm font-medium text-red-600">Refunded {{ $event->payload_json['amount'] ?? '' }}</flux:text>
+                                <flux:text class="text-xs text-gray-400">
+                                    {{ $event->created_at->format('M j, g:i A') }}
+                                    @if ($event->creator)
+                                    &middot; {{ $event->creator->name }}
+                                    @endif
+                                </flux:text>
+                            </div>
+                        </div>
+                        @elseif ($event->event_type === 'recording_details_updated')
+                        @php $changes = $event->payload_json['changes'] ?? []; @endphp
+                        <div class="flex items-start gap-2">
+                            <flux:icon name="arrow-up-tray" class="mt-0.5 size-4 shrink-0 text-teal-500" />
+                            <div class="min-w-0">
+                                <flux:text class="text-sm font-medium text-teal-700">Recording details updated</flux:text>
+                                @if (! empty($changes))
+                                <ul class="mt-1 space-y-0.5 text-xs text-gray-600">
+                                    @foreach ($changes as $field => $change)
+                                    <li>
+                                        <span class="font-medium">{{ str_replace('_', ' ', \Illuminate\Support\Str::after($field, 'recording_')) }}:</span>
+                                        <span class="text-gray-400">{{ $change['from'] ?? 'empty' }}</span>
+                                        &rarr;
+                                        <span>{{ $change['to'] ?? 'empty' }}</span>
+                                    </li>
+                                    @endforeach
+                                </ul>
+                                @endif
                                 <flux:text class="text-xs text-gray-400">
                                     {{ $event->created_at->format('M j, g:i A') }}
                                     @if ($event->creator)

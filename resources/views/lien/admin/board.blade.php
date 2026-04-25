@@ -162,7 +162,9 @@
                             </td>
                             <td class="whitespace-nowrap px-4 py-3">
                                 <flux:badge size="sm" color="{{ $filing->status->color() }}">
-                                    {{ $filing->status->label() }}
+                                    {{ $filing->status->label() }}@if ($filing->status === \App\Domains\Lien\Enums\FilingStatus::SubmittedForRecording && $filing->recording_method)
+                                        <span class="ml-1 opacity-80">— {{ $filing->recording_method->label() }}</span>
+                                    @endif
                                 </flux:badge>
                             </td>
                             <td class="whitespace-nowrap px-4 py-3">
@@ -254,7 +256,9 @@
                             </flux:badge>
                             @if (! $isSearching)
                             <flux:badge size="sm" color="{{ $filing->status->color() }}">
-                                {{ $filing->status->label() }}
+                                {{ $filing->status->label() }}@if ($filing->status === \App\Domains\Lien\Enums\FilingStatus::SubmittedForRecording && $filing->recording_method)
+                                    <span class="ml-1 opacity-80">— {{ $filing->recording_method->label() }}</span>
+                                @endif
                             </flux:badge>
                             @endif
                         </div>

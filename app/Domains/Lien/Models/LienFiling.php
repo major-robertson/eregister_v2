@@ -4,6 +4,7 @@ namespace App\Domains\Lien\Models;
 
 use App\Domains\Lien\Concerns\BelongsToBusiness;
 use App\Domains\Lien\Enums\FilingStatus;
+use App\Domains\Lien\Enums\RecordingMethod;
 use App\Domains\Lien\Enums\ServiceLevel;
 use App\Domains\Lien\Exceptions\InvalidStatusTransitionException;
 use App\Models\EmailSequence;
@@ -51,6 +52,10 @@ class LienFiling extends Model implements HasMedia
         'paid_at',
         'mailed_at',
         'mailing_tracking_number',
+        'recording_method',
+        'recording_provider',
+        'recording_reference',
+        'recording_submitted_at',
         'recorded_at',
         'completed_at',
         'created_by_user_id',
@@ -67,6 +72,8 @@ class LienFiling extends Model implements HasMedia
             'parties_snapshot_json' => 'array',
             'paid_at' => 'datetime',
             'mailed_at' => 'datetime',
+            'recording_method' => RecordingMethod::class,
+            'recording_submitted_at' => 'datetime',
             'recorded_at' => 'datetime',
             'completed_at' => 'datetime',
         ];

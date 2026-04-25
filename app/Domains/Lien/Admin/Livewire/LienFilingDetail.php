@@ -5,13 +5,16 @@ namespace App\Domains\Lien\Admin\Livewire;
 use App\Domains\Lien\Admin\Actions\AddFilingComment;
 use App\Domains\Lien\Admin\Actions\ChangeFilingStatus;
 use App\Domains\Lien\Admin\Actions\RefundPayment;
+use App\Domains\Lien\Admin\Actions\UpdateRecordingDetails;
 use App\Domains\Lien\Admin\Enums\KanbanColumn;
 use App\Domains\Lien\Enums\DeadlineStatus;
 use App\Domains\Lien\Enums\FilingStatus;
+use App\Domains\Lien\Enums\RecordingMethod;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienStateRule;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -32,6 +35,20 @@ class LienFilingDetail extends Component
 
     public bool $showDeleteModal = false;
 
+    /**
+     * Recording-detail form fields. Bound to the conditional sub-form inside
+     * the status-change panel (when transitioning to SubmittedForRecording)
+     * AND to the always-visible "Recording details" edit panel that appears
+     * once recording_method has been set.
+     */
+    public string $recordingMethod = '';
+
+    public string $recordingProvider = '';
+
+    public string $recordingReference = '';
+
+    public string $recordingSubmittedAt = '';
+
     public function mount(string|LienFiling $lienFiling): void
     {
         if (is_string($lienFiling)) {
@@ -48,9 +65,38 @@ class LienFilingDetail extends Component
             'project.deadlines.rule',
             'project.deadlines.documentType',
             'documentType',
-            'events' => fn ($q) => $q->whereIn('event_type', ['status_changed', 'note_added', 'payment_refunded'])->latest()->limit(50),
+            'events' => fn ($q) => $q->whereIn('event_type', ['status_changed', 'note_added', 'payment_refunded', 'recording_details_updated'])->latest()->limit(50),
             'events.creator',
         ]);
+
+        $this->hydrateRecordingFields();
+    }
+
+    /**
+     * Populate recording-detail form fields from the underlying filing so
+     * the edit panel always reflects current persisted values.
+     */
+    protected function hydrateRecordingFields(): void
+    {
+        $this->recordingMethod = $this->lienFiling->recording_method?->value ?? '';
+        $this->recordingProvider = (string) ($this->lienFiling->recording_provider ?? '');
+        $this->recordingReference = (string) ($this->lienFiling->recording_reference ?? '');
+        $this->recordingSubmittedAt = $this->lienFiling->recording_submitted_at
+            ? $this->lienFiling->recording_submitted_at->format('Y-m-d\TH:i')
+            : '';
+    }
+
+    /**
+     * Livewire hook fired when the admin picks a new target status. When the
+     * pick is SubmittedForRecording and no submitted-at value has been entered
+     * yet, prefill it with "now" so the typical case (admin just submitted it)
+     * requires zero typing.
+     */
+    public function updatedNewStatus(string $value): void
+    {
+        if ($value === FilingStatus::SubmittedForRecording->value && $this->recordingSubmittedAt === '') {
+            $this->recordingSubmittedAt = now()->format('Y-m-d\TH:i');
+        }
     }
 
     public function render(): View
@@ -243,7 +289,7 @@ class LienFilingDetail extends Component
     public function getActivityLog(): Collection
     {
         return $this->lienFiling->events()
-            ->whereIn('event_type', ['status_changed', 'note_added', 'payment_refunded'])
+            ->whereIn('event_type', ['status_changed', 'note_added', 'payment_refunded', 'recording_details_updated'])
             ->with('creator')
             ->latest()
             ->limit(50)
@@ -252,27 +298,85 @@ class LienFilingDetail extends Component
 
     /**
      * Update the filing status.
+     *
+     * When transitioning to SubmittedForRecording, recording_method is required
+     * (the other three recording_* fields stay optional). The action persists
+     * the recording fields in the same DB transaction as the status change.
      */
     public function updateStatus(): void
     {
         $this->authorize('changeStatus', $this->lienFiling);
 
-        $this->validate([
+        $isRecordingTransition = $this->newStatus === FilingStatus::SubmittedForRecording->value;
+
+        $rules = [
             'newStatus' => ['required', Rule::enum(FilingStatus::class)],
             'note' => ['nullable', 'string', 'max:1000'],
-        ]);
+        ];
+
+        if ($isRecordingTransition) {
+            $rules['recordingMethod'] = ['required', Rule::enum(RecordingMethod::class)];
+            $rules['recordingProvider'] = ['nullable', 'string', 'max:255'];
+            $rules['recordingReference'] = ['nullable', 'string', 'max:255'];
+            $rules['recordingSubmittedAt'] = ['required', 'date'];
+        }
+
+        $this->validate($rules);
 
         $action = app(ChangeFilingStatus::class);
         $action->execute(
             filing: $this->lienFiling,
             newStatus: FilingStatus::from($this->newStatus),
             note: $this->note ?: null,
+            recordingMethod: $isRecordingTransition && $this->recordingMethod
+                ? RecordingMethod::from($this->recordingMethod)
+                : null,
+            recordingProvider: $isRecordingTransition ? ($this->recordingProvider ?: null) : null,
+            recordingReference: $isRecordingTransition ? ($this->recordingReference ?: null) : null,
+            recordingSubmittedAt: $isRecordingTransition && $this->recordingSubmittedAt
+                ? Carbon::parse($this->recordingSubmittedAt)
+                : null,
         );
 
         $this->lienFiling->refresh();
+        $this->hydrateRecordingFields();
         $this->reset(['newStatus', 'note']);
 
         session()->flash('success', 'Status updated successfully.');
+    }
+
+    /**
+     * Update recording details on a filing without changing status.
+     *
+     * Used after the SubmittedForRecording transition when the admin later
+     * gets a tracking/confirmation number from the e-recording portal or
+     * mail carrier, or needs to correct the originally entered values.
+     */
+    public function updateRecordingDetails(): void
+    {
+        $this->authorize('update', $this->lienFiling);
+
+        $this->validate([
+            'recordingMethod' => ['required', Rule::enum(RecordingMethod::class)],
+            'recordingProvider' => ['nullable', 'string', 'max:255'],
+            'recordingReference' => ['nullable', 'string', 'max:255'],
+            'recordingSubmittedAt' => ['required', 'date'],
+        ]);
+
+        app(UpdateRecordingDetails::class)->execute(
+            filing: $this->lienFiling,
+            recordingMethod: RecordingMethod::from($this->recordingMethod),
+            recordingProvider: $this->recordingProvider ?: null,
+            recordingReference: $this->recordingReference ?: null,
+            recordingSubmittedAt: $this->recordingSubmittedAt
+                ? Carbon::parse($this->recordingSubmittedAt)
+                : null,
+        );
+
+        $this->lienFiling->refresh();
+        $this->hydrateRecordingFields();
+
+        session()->flash('success', 'Recording details updated.');
     }
 
     /**

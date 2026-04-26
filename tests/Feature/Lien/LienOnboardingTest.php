@@ -148,3 +148,17 @@ it('profile complete page shows correct progress dots for standalone flow', func
     Livewire::test(LienProfileComplete::class)
         ->assertSet('isContinuousFlow', false);
 });
+
+it('treats /liens sub-pages as continuous flow on profile complete page', function () {
+    $this->user->update(['signup_landing_path' => '/liens/payment-demand-letter']);
+
+    Livewire::test(LienProfileComplete::class)
+        ->assertSet('isContinuousFlow', true);
+});
+
+it('treats /liens sub-pages as continuous flow on lien onboarding', function () {
+    $this->user->update(['signup_landing_path' => '/liens/notice-of-intent-to-lien']);
+
+    Livewire::test(LienOnboarding::class)
+        ->assertSet('isContinuousFlow', true);
+});

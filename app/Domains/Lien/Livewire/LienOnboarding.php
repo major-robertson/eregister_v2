@@ -66,7 +66,7 @@ class LienOnboarding extends Component
         $user = Auth::user();
 
         // Determine if this is continuous flow (from liens signup, first business)
-        $this->isContinuousFlow = $user->signup_landing_path === '/liens'
+        $this->isContinuousFlow = $user->signedUpFromLiens()
             && $user->businesses()->count() === 1;
         $this->stepOffset = $this->isContinuousFlow ? 2 : 0;
         $responsiblePerson = $business->getResponsiblePersonForUser($user->id);

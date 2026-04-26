@@ -142,7 +142,7 @@ class OnboardingWizard extends Component
         $isFirstBusiness = $user->businesses()->count() === 1;
         $landingPath = $user->signup_landing_path;
 
-        if ($isFirstBusiness && $landingPath === '/liens') {
+        if ($isFirstBusiness && $user->signedUpFromLiens()) {
             $redirectRoute = route('lien.onboarding');
         } elseif ($isFirstBusiness && $landingPath === '/sales-tax-registration') {
             $redirectRoute = route('forms.start', 'sales_tax_permit');

@@ -13,7 +13,7 @@
     {{-- Progress dots: 2/4 if from liens + first business (continuous flow), 2/2 otherwise --}}
     @php
         $user = auth()->user();
-        $isFromLiens = $user->signup_landing_path === '/liens';
+        $isFromLiens = $user->signedUpFromLiens();
         $isFirstBusiness = $user->businesses()->count() === 1;
         $isContinuousFlow = $isFromLiens && $isFirstBusiness;
     @endphp

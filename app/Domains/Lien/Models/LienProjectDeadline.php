@@ -101,7 +101,11 @@ class LienProjectDeadline extends Model
 
         $timezone = $this->project->business->timezone ?? 'America/Los_Angeles';
         $now = now()->timezone($timezone)->startOfDay();
-        $due = $this->due_date->timezone($timezone)->startOfDay();
+        // due_date is cast as a date (no time component), so treat its
+        // calendar date as midnight in the business timezone instead of
+        // shifting the UTC instant — otherwise any timezone west of UTC
+        // rolls the date back by a day.
+        $due = \Illuminate\Support\Carbon::parse($this->due_date->format('Y-m-d'), $timezone)->startOfDay();
 
         return (int) $now->diffInDays($due, false);
     }

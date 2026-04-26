@@ -3,7 +3,7 @@
         {{-- No businesses - show create form (typeform style) --}}
 
         {{-- Progress dots: 4 dots if from liens (continuous flow), 2 dots otherwise --}}
-        @php $isFromLiens = auth()->user()->signup_landing_path === '/liens'; @endphp
+        @php $isFromLiens = auth()->user()->signedUpFromLiens(); @endphp
         <div class="mb-16 flex justify-center gap-2">
             <div class="h-2 w-2 rounded-full bg-primary"></div>
             <div class="h-2 w-2 rounded-full bg-zinc-300 dark:bg-zinc-600"></div>

@@ -118,4 +118,19 @@ class User extends Authenticatable
     {
         return $this->businesses()->where('businesses.id', $business->id)->exists();
     }
+
+    /**
+     * Whether the user signed up from any /liens marketing page
+     * (the main /liens page or any sub-page like /liens/payment-demand-letter).
+     */
+    public function signedUpFromLiens(): bool
+    {
+        $path = $this->signup_landing_path;
+
+        if (! $path) {
+            return false;
+        }
+
+        return $path === '/liens' || str_starts_with($path, '/liens/');
+    }
 }

@@ -3,7 +3,7 @@
 @section('title', 'Payment Demand Letter | Construction Payment Demand Notice')
 
 @section('meta')
-<meta name="description" content="Send a professional payment demand letter for construction work. Our service creates legally effective demand letters to help contractors, subcontractors, and suppliers collect overdue payments.">
+<meta name="description" content="Send a professional payment demand letter for construction work. Our service creates clear, formal demand letters to help contractors, subcontractors, and suppliers collect overdue payments.">
 @endsection
 
 @section('content')
@@ -17,7 +17,7 @@
             Send a Payment Demand Letter<br>
             <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Collect Overdue Construction Payments</span>
         </h1>
-        <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">Professional payment demand letters for construction work. Our service creates legally effective demand notices that help contractors, subcontractors, and suppliers collect overdue payments—often before escalating to liens or litigation.</p>
+        <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">Professional payment demand letters for construction work. We draft clear, formal demand notices that help contractors, subcontractors, and suppliers collect overdue payments—often before escalating to liens or litigation.</p>
         <div class="mt-10">
             <a href="{{ route('register') }}" class="group inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#B91C1C]">
                 Get Started
@@ -112,7 +112,7 @@
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div class="text-center">
             <h2 class="text-3xl font-bold text-zinc-900">What's Included in a Payment Demand Letter</h2>
-            <p class="mx-auto mt-4 max-w-2xl text-lg text-zinc-600">Our demand letters are comprehensive and legally effective.</p>
+            <p class="mx-auto mt-4 max-w-2xl text-lg text-zinc-600">Our demand letters are comprehensive, professional, and clear.</p>
         </div>
         <div class="mt-12 grid gap-4 sm:grid-cols-2">
             <div class="flex items-start gap-4 rounded-xl border border-zinc-200 bg-zinc-50 p-5">
@@ -181,7 +181,7 @@
                 <div class="relative text-center">
                     <div class="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-xl font-bold text-white">2</div>
                     <h3 class="mt-6 text-xl font-semibold text-zinc-900">We draft your demand letter</h3>
-                    <p class="mt-2 text-zinc-600">Our team creates a professional, legally effective payment demand letter tailored to construction collections and your situation.</p>
+                    <p class="mt-2 text-zinc-600">Our team creates a professional payment demand letter tailored to construction collections and your situation.</p>
                 </div>
                 <div class="text-center">
                     <div class="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-xl font-bold text-white">3</div>
@@ -254,7 +254,7 @@
     <div class="overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-800 py-20">
         <div class="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
             <h2 class="text-3xl font-bold text-white sm:text-4xl">Ready to Send Your Payment Demand?</h2>
-            <p class="mt-4 text-lg text-zinc-400">Professional payment demand letters for construction work. Collect overdue payments with a formal, legally effective demand notice.</p>
+            <p class="mt-4 text-lg text-zinc-400">Professional payment demand letters for construction work. Collect overdue payments with a clear, formal demand notice.</p>
             <div class="mt-8">
                 <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 font-semibold text-zinc-900 shadow-lg transition hover:scale-105 hover:bg-zinc-50">
                     Get Started

@@ -4,6 +4,7 @@ namespace App\Domains\Lien\Models;
 
 use App\Domains\Lien\Concerns\BelongsToBusiness;
 use App\Domains\Lien\Enums\FilingStatus;
+use App\Domains\Lien\Enums\RecordingMethod;
 use App\Domains\Lien\Enums\ServiceLevel;
 use App\Domains\Lien\Exceptions\InvalidStatusTransitionException;
 use App\Models\EmailSequence;
@@ -17,13 +18,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 class LienFiling extends Model implements HasMedia
 {
-    use BelongsToBusiness, HasFactory, InteractsWithMedia;
+    use BelongsToBusiness, HasFactory, InteractsWithMedia, SoftDeletes;
 
     protected static function newFactory(): LienFilingFactory
     {
@@ -50,6 +52,10 @@ class LienFiling extends Model implements HasMedia
         'paid_at',
         'mailed_at',
         'mailing_tracking_number',
+        'recording_method',
+        'recording_provider',
+        'recording_reference',
+        'recording_submitted_at',
         'recorded_at',
         'completed_at',
         'created_by_user_id',
@@ -66,6 +72,8 @@ class LienFiling extends Model implements HasMedia
             'parties_snapshot_json' => 'array',
             'paid_at' => 'datetime',
             'mailed_at' => 'datetime',
+            'recording_method' => RecordingMethod::class,
+            'recording_submitted_at' => 'datetime',
             'recorded_at' => 'datetime',
             'completed_at' => 'datetime',
         ];
@@ -77,6 +85,22 @@ class LienFiling extends Model implements HasMedia
             if (! $filing->public_id) {
                 $filing->public_id = Str::ulid()->toBase32();
             }
+        });
+
+        static::deleting(function (self $filing): void {
+            if ($filing->isForceDeleting()) {
+                return;
+            }
+
+            EmailSequence::suppressReminderFor($filing);
+
+            EmailSequence::query()
+                ->where('sequenceable_type', $filing->getMorphClass())
+                ->where('sequenceable_id', $filing->getKey())
+                ->whereNull('suppressed_at')
+                ->whereNull('completed_at')
+                ->get()
+                ->each(fn (EmailSequence $seq) => $seq->suppress('filing_deleted'));
         });
     }
 

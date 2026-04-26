@@ -39,7 +39,7 @@
                         @endphp
                         <a
                             href="{{ route('admin.liens.show', $filing->public_id) }}"
-                            class="block rounded-lg border border-border bg-white p-3 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+                            class="block rounded-lg border p-3 shadow-sm transition hover:shadow-md {{ $filing->trashed() ? 'border-red-200 bg-red-50/50 opacity-75 hover:border-red-300' : 'border-border bg-white hover:border-blue-300' }}"
                             wire:navigate
                         >
                             <div class="flex items-start justify-between gap-2">
@@ -47,6 +47,9 @@
                                     {{ $filing->project?->business?->name ?? 'Unknown Business' }}
                                 </flux:text>
                                 <div class="flex shrink-0 items-center gap-1">
+                                    @if ($filing->trashed())
+                                        <flux:badge color="red" size="sm">Deleted</flux:badge>
+                                    @endif
                                     @if ($filing->project?->jobsite_state)
                                         <flux:badge size="sm" color="zinc">{{ $filing->project->jobsite_state }}</flux:badge>
                                     @endif

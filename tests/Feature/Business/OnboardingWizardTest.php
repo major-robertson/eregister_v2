@@ -72,6 +72,24 @@ describe('OnboardingWizard', function () {
             ->assertRedirect(route('lien.onboarding'));
     });
 
+    it('redirects to lien onboarding when user signed up from a /liens sub-page', function () {
+        $user = User::factory()->create(['signup_landing_path' => '/liens/payment-demand-letter']);
+        $business = Business::create(['name' => 'Demand Letter Biz', 'legal_name' => 'Demand Letter Biz']);
+        $user->businesses()->attach($business->id, ['role' => 'owner']);
+
+        $this->actingAs($user)
+            ->withSession(['current_business_id' => $business->id]);
+
+        Livewire::test(OnboardingWizard::class)
+            ->set('businessAddress.line1', '789 Demand Lane')
+            ->set('businessAddress.city', 'Austin')
+            ->set('businessAddress.state', 'TX')
+            ->set('businessAddress.zip', '73301')
+            ->call('complete')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('lien.onboarding'));
+    });
+
     it('redirects to dashboard when user from liens adds second business', function () {
         $user = User::factory()->create(['signup_landing_path' => '/liens']);
 

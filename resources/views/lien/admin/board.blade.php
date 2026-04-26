@@ -136,13 +136,18 @@
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white">
                         @foreach ($lienResults as $filing)
-                        <tr wire:key="filing-{{ $filing->id }}" class="transition hover:bg-gray-50">
+                        <tr wire:key="filing-{{ $filing->id }}" class="transition hover:bg-gray-50 {{ $filing->trashed() ? 'bg-red-50/40' : '' }}">
                             <td class="whitespace-nowrap px-4 py-3">
-                                <a href="{{ route('admin.liens.show', $filing->public_id) }}"
-                                    class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
-                                    wire:navigate>
-                                    {{ $filing->project?->business?->name ?? 'Unknown' }}
-                                </a>
+                                <div class="flex items-center gap-2">
+                                    <a href="{{ route('admin.liens.show', $filing->public_id) }}"
+                                        class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                                        wire:navigate>
+                                        {{ $filing->project?->business?->name ?? 'Unknown' }}
+                                    </a>
+                                    @if ($filing->trashed())
+                                    <flux:badge color="red" size="sm">Deleted</flux:badge>
+                                    @endif
+                                </div>
                             </td>
                             <td class="whitespace-nowrap px-4 py-3">
                                 @if ($filing->createdBy)
@@ -157,7 +162,9 @@
                             </td>
                             <td class="whitespace-nowrap px-4 py-3">
                                 <flux:badge size="sm" color="{{ $filing->status->color() }}">
-                                    {{ $filing->status->label() }}
+                                    {{ $filing->status->label() }}@if ($filing->status === \App\Domains\Lien\Enums\FilingStatus::SubmittedForRecording && $filing->recording_method)
+                                        <span class="ml-1 opacity-80">— {{ $filing->recording_method->label() }}</span>
+                                    @endif
                                 </flux:badge>
                             </td>
                             <td class="whitespace-nowrap px-4 py-3">
@@ -208,13 +215,16 @@
                     $latestComment = $filing->events->first();
                     @endphp
                     <a href="{{ route('admin.liens.show', $filing->public_id) }}"
-                        class="block rounded-lg border border-border bg-white p-3 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+                        class="block rounded-lg border p-3 shadow-sm transition hover:shadow-md {{ $filing->trashed() ? 'border-red-200 bg-red-50/50 opacity-75 hover:border-red-300' : 'border-border bg-white hover:border-blue-300' }}"
                         wire:navigate>
                         <div class="flex items-start justify-between gap-2">
                             <flux:text class="font-medium text-gray-900 truncate">
                                 {{ $filing->project?->business?->name ?? 'Unknown Business' }}
                             </flux:text>
                             <div class="flex shrink-0 items-center gap-1">
+                                @if ($filing->trashed())
+                                <flux:badge color="red" size="sm">Deleted</flux:badge>
+                                @endif
                                 @if ($filing->project?->jobsite_state)
                                 <flux:badge size="sm" color="zinc">{{ $filing->project->jobsite_state }}</flux:badge>
                                 @endif
@@ -246,7 +256,9 @@
                             </flux:badge>
                             @if (! $isSearching)
                             <flux:badge size="sm" color="{{ $filing->status->color() }}">
-                                {{ $filing->status->label() }}
+                                {{ $filing->status->label() }}@if ($filing->status === \App\Domains\Lien\Enums\FilingStatus::SubmittedForRecording && $filing->recording_method)
+                                    <span class="ml-1 opacity-80">— {{ $filing->recording_method->label() }}</span>
+                                @endif
                             </flux:badge>
                             @endif
                         </div>

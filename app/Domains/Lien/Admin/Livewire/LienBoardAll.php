@@ -27,6 +27,7 @@ class LienBoardAll extends Component
     {
         return LienFiling::query()
             ->withoutGlobalScope('business')
+            ->withTrashed()
             ->when($this->search, fn ($query) => $query->adminSearch($this->search))
             ->with([
                 'project',

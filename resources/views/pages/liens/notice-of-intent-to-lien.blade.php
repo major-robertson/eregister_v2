@@ -3,7 +3,7 @@
 @section('title', 'Notice of Intent to Lien | Send a Lien Intent Notice')
 
 @section('meta')
-<meta name="description" content="Send a notice of intent to lien before filing a mechanics lien. Our service prepares and delivers intent to lien notices to help you get paid without filing. Available in all 50 states.">
+<meta name="description" content="Send a notice of intent to lien before filing a mechanics lien. Our service prepares and delivers intent to lien notices that often get you paid before a lien needs to be filed. Available in all 50 states.">
 @endsection
 
 @section('content')
@@ -15,9 +15,9 @@
         </div>
         <h1 class="mt-8 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
             Send a Notice of Intent to Lien<br>
-            <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Get Paid Without Filing</span>
+            <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Often Paid Before Filing a Lien</span>
         </h1>
-        <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">Send a formal intent to lien notice before filing a mechanics lien. Our service prepares and delivers legally effective notices that often trigger payment without ever filing a construction lien.</p>
+        <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">Send a formal intent to lien notice before filing a mechanics lien. We prepare and deliver state-compliant notices that often trigger payment without ever needing to file a construction lien.</p>
         <div class="mt-10">
             <a href="{{ route('register') }}" class="group inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#B91C1C]">
                 Get Started
@@ -60,7 +60,7 @@
                     </li>
                     <li class="flex items-start gap-2">
                         <span class="mt-1 text-amber-500">✓</span>
-                        Professional, legally effective format
+                        Professional, state-compliant format
                     </li>
                 </ul>
             </div>

@@ -7,6 +7,7 @@ use App\Domains\Forms\Engine\FormRegistry;
 use App\Domains\Forms\FormTypeConfig;
 use App\Domains\Forms\Models\FormApplication;
 use App\Domains\Forms\Models\FormApplicationState;
+use App\Support\Workspaces\WorkspaceRegistry;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -226,6 +227,13 @@ class StateSelector extends Component
     public function render(): View
     {
         $config = FormTypeConfig::get($this->formType);
+        $workspace = app(WorkspaceRegistry::class)->findByFormType($this->formType);
+
+        $layout = $workspace ? 'layouts.workspace' : 'layouts.app';
+        $layoutData = ['title' => 'Select States'];
+        if ($workspace) {
+            $layoutData['key'] = $workspace->key;
+        }
 
         return view('livewire.forms.state-selector', [
             'stateCount' => count($this->selectedStates),
@@ -237,6 +245,6 @@ class StateSelector extends Component
             'blockedStates' => $this->blockedStates,
             'formTypeName' => $config['name'],
             'excludedStates' => $this->excludedStates,
-        ])->layout('layouts.app', ['title' => 'Select States']);
+        ])->layout($layout, $layoutData);
     }
 }

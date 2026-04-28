@@ -3,6 +3,14 @@
 
 @source '../views';
 
+/* Workspace registry classes that are looked up dynamically (color name
+   stored in config/workspaces.php, mapped to the literal class string at
+   runtime). Tailwind cannot detect these from token scanning alone, so we
+   safelist the full set with @source inline. */
+@source inline("bg-{amber,emerald,blue,zinc}-50/30");
+@source inline("bg-{amber,emerald,blue,zinc}-500/10");
+@source inline("text-{amber,emerald,blue,zinc}-600");
+
 /* Dark mode only activates with .dark class - we never add it, so always light */
 @custom-variant dark (&:where(.dark, .dark *));
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';

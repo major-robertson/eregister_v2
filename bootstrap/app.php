@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('web')->group(base_path('routes/portal.php'));
             Route::middleware('web')->group(base_path('routes/forms.php'));
             Route::middleware('web')->group(base_path('routes/lien.php'));
+            Route::middleware('web')->group(base_path('routes/sales-tax.php'));
             Route::middleware('web')->group(base_path('routes/admin.php'));
 
             // API routes (no session, no CSRF)

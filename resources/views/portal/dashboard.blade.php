@@ -20,27 +20,54 @@
             </x-ui.card>
         @endif
 
-        {{-- Quick Actions --}}
+        {{-- Workspaces --}}
         <section class="mb-12">
-            <h2 class="mb-6 text-lg font-semibold text-text-primary">Quick Actions</h2>
+            <h2 class="mb-6 text-lg font-semibold text-text-primary">Workspaces</h2>
+            @php
+                $workspaces = app(\App\Support\Workspaces\WorkspaceRegistry::class)->enabledFor($business);
+
+                // Tailwind v4 only detects classes that appear as literals in
+                // scanned files, so the per-workspace icon classes are kept
+                // here as static strings (not built from `badge_color` at
+                // runtime) to stay JIT-detectable.
+                $iconClassMap = [
+                    'amber' => 'bg-amber-500/10 text-amber-600',
+                    'emerald' => 'bg-emerald-500/10 text-emerald-600',
+                    'blue' => 'bg-blue-500/10 text-blue-600',
+                    'zinc' => 'bg-zinc-500/10 text-zinc-600',
+                ];
+            @endphp
             <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {{-- Lien Projects Card --}}
-                <div class="group rounded-xl border border-border bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md">
-                    <div class="flex items-start gap-4">
-                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
-                            <flux:icon name="scale" class="size-6" />
+                @foreach ($workspaces as $workspace)
+                    @php
+                        $cardState = $workspace->cardState($business);
+                        $iconClasses = $iconClassMap[$workspace->badgeColor] ?? $iconClassMap['zinc'];
+                    @endphp
+                    <div class="group rounded-xl border border-border bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+                        <div class="flex items-start gap-4">
+                            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg {{ $iconClasses }}">
+                                <flux:icon :name="$workspace->icon" class="size-6" />
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-base font-semibold text-text-primary">{{ $workspace->name }}</h3>
+                                <p class="mt-1 text-sm text-text-secondary">{{ $workspace->description }}</p>
+                                @if ($cardState->summary)
+                                    <p class="mt-2 text-xs font-medium text-text-secondary">{{ $cardState->summary }}</p>
+                                @endif
+                            </div>
                         </div>
-                        <div class="flex-1">
-                            <h3 class="text-base font-semibold text-text-primary">Lien Projects</h3>
-                            <p class="mt-1 text-sm text-text-secondary">Track deadlines & file liens</p>
+                        <div class="mt-5 pt-5 border-t border-border">
+                            <flux:button
+                                :href="route($workspace->dashboardRoute)"
+                                variant="primary"
+                                class="w-full justify-center"
+                                wire:navigate
+                            >
+                                {{ $cardState->ctaLabel }}
+                            </flux:button>
                         </div>
                     </div>
-                    <div class="mt-5 pt-5 border-t border-border">
-                        <flux:button href="{{ route('lien.projects.index') }}" variant="primary" class="w-full justify-center">
-                            View Projects
-                        </flux:button>
-                    </div>
-                </div>
+                @endforeach
             </div>
         </section>
 

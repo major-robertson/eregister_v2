@@ -119,4 +119,44 @@ class FormApplication extends Model
     {
         return $this->completedStateCount() === $this->stateCount();
     }
+
+    /**
+     * User-facing label for the application's state. Composes the existing
+     * `status` string and `paid_at` timestamp; does not introduce any new
+     * fields or enums.
+     */
+    public function getDisplayStatusAttribute(): string
+    {
+        if ($this->status === 'submitted') {
+            return 'Submitted';
+        }
+
+        if ($this->paid_at !== null) {
+            return 'Paid';
+        }
+
+        if ($this->status === 'draft') {
+            return 'Draft';
+        }
+
+        return ucfirst((string) $this->status);
+    }
+
+    /**
+     * Whether the application can still be edited by the customer. Reuses
+     * the existing `isLocked()` semantics (locked_at OR submitted) so this
+     * accessor never drifts from the form runner's lock rules.
+     */
+    public function getIsEditableAttribute(): bool
+    {
+        return $this->status === 'draft' && ! $this->isLocked();
+    }
+
+    /**
+     * CTA label shown next to a registration on workspace dashboards.
+     */
+    public function getDashboardActionLabelAttribute(): string
+    {
+        return $this->is_editable ? 'Continue' : 'View';
+    }
 }

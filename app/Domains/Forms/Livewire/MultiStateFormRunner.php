@@ -9,6 +9,7 @@ use App\Domains\Forms\Engine\SensitiveDataProtector;
 use App\Domains\Forms\Engine\Validation\CrossFieldValidatorRegistry;
 use App\Domains\Forms\Engine\VisibleFieldResolver;
 use App\Domains\Forms\Models\FormApplication;
+use App\Support\Workspaces\WorkspaceRegistry;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -922,6 +923,14 @@ class MultiStateFormRunner extends Component
         $currentStep = $this->getCurrentStepProperty();
         $stepKeys = array_keys($this->getCurrentSteps());
 
+        $workspace = app(WorkspaceRegistry::class)->findByFormType($this->application->form_type);
+
+        $layout = $workspace ? 'layouts.workspace' : 'layouts.app';
+        $layoutData = ['title' => 'Application'];
+        if ($workspace) {
+            $layoutData['key'] = $workspace->key;
+        }
+
         return view('livewire.forms.multi-state-form-runner', [
             'currentStep' => $currentStep,
             'visibleFields' => $this->getVisibleFieldsProperty(),
@@ -938,6 +947,6 @@ class MultiStateFormRunner extends Component
             'allStatesComplete' => $this->application->allStatesComplete(),
             'states' => config('states'),
             'statePersonFields' => $this->getStatePersonFieldsProperty(),
-        ])->layout('layouts.app', ['title' => 'Application']);
+        ])->layout($layout, $layoutData);
     }
 }

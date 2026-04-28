@@ -13,6 +13,7 @@ use App\Domains\Lien\Policies\LienFilingPolicy;
 use App\Domains\Lien\Policies\LienProjectPolicy;
 use App\Domains\Portal\Policies\BusinessPolicy;
 use App\Domains\Portal\Policies\FormApplicationPolicy;
+use App\Support\Workspaces\WorkspaceRegistry;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Date;
@@ -44,6 +45,10 @@ class AppServiceProvider extends ServiceProvider
 
             return $registry;
         });
+
+        // Register the workspace registry as a singleton so the cached
+        // Workspace DTOs are reused for the lifetime of the request.
+        $this->app->singleton(WorkspaceRegistry::class);
     }
 
     /**
@@ -92,6 +97,9 @@ class AppServiceProvider extends ServiceProvider
         // Lien admin components
         Livewire::component('lien.admin.board', \App\Domains\Lien\Admin\Livewire\LienBoard::class);
         Livewire::component('lien.admin.filing-detail', \App\Domains\Lien\Admin\Livewire\LienFilingDetail::class);
+
+        // Sales Tax domain components
+        Livewire::component('sales-tax.dashboard', \App\Domains\SalesTax\Livewire\Dashboard::class);
 
         // Marketing domain components
         Livewire::component('marketing.contractor-landing', \App\Domains\Marketing\Livewire\ContractorLanding::class);

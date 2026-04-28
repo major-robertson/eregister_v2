@@ -13,6 +13,7 @@ enum KanbanColumn: string
     case WaitingOnNextStep = 'waiting_on_next_step';
     case Hold = 'hold';
     case SubmittedForRecording = 'submitted_for_recording';
+    case Recorded = 'recorded';
     case Mailed = 'mailed';
 
     public function label(): string
@@ -24,6 +25,7 @@ enum KanbanColumn: string
             self::WaitingOnNextStep => 'Waiting on Next Step',
             self::Hold => 'Hold',
             self::SubmittedForRecording => 'Submitted for Recording',
+            self::Recorded => 'Recorded',
             self::Mailed => 'Mailed to Parties',
         };
     }
@@ -37,6 +39,7 @@ enum KanbanColumn: string
             self::WaitingOnNextStep => 'cyan',
             self::Hold => 'red',
             self::SubmittedForRecording => 'teal',
+            self::Recorded => 'violet',
             self::Mailed => 'indigo',
         };
     }
@@ -50,6 +53,7 @@ enum KanbanColumn: string
             self::WaitingOnNextStep => 'queue-list',
             self::Hold => 'pause-circle',
             self::SubmittedForRecording => 'arrow-up-tray',
+            self::Recorded => 'document-check',
             self::Mailed => 'envelope',
         };
     }
@@ -65,6 +69,7 @@ enum KanbanColumn: string
             FilingStatus::WaitingOnNextStep => self::WaitingOnNextStep,
             FilingStatus::Hold => self::Hold,
             FilingStatus::SubmittedForRecording => self::SubmittedForRecording,
+            FilingStatus::Recorded => self::Recorded,
             FilingStatus::Mailed => self::Mailed,
             default => self::New,
         };

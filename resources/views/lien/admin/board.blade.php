@@ -190,104 +190,90 @@
     @else
         {{-- Kanban Board (default) / All-status board (when searching) --}}
         @php $isSearching = strlen($search) > 0; @endphp
-        <div class="{{ $isSearching ? 'flex gap-4 overflow-x-auto pb-4' : 'grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6' }}">
+        <x-admin.kanban.grid :compact="! $isSearching">
             @foreach ($columns as $column)
-            @php
-            $columnFilings = $filings->get($column->value) ?? collect();
-            $count = $columnFilings->count();
-            @endphp
+                @php
+                    $columnFilings = $filings->get($column->value) ?? collect();
+                @endphp
+                <x-admin.kanban.column
+                    :column="$column"
+                    :count="$columnFilings->count()"
+                    :compact="! $isSearching"
+                    empty-text="No filings"
+                >
+                    @foreach ($columnFilings as $filing)
+                        @php $latestComment = $filing->events->first(); @endphp
+                        <x-admin.kanban.card-frame
+                            :href="route('admin.liens.show', $filing->public_id)"
+                            :trashed="$filing->trashed()"
+                            wire:key="filing-{{ $filing->id }}"
+                        >
+                            <div class="flex items-start justify-between gap-2">
+                                <flux:text class="font-medium text-gray-900 truncate">
+                                    {{ $filing->project?->business?->name ?? 'Unknown Business' }}
+                                </flux:text>
+                                <div class="flex shrink-0 items-center gap-1">
+                                    @if ($filing->trashed())
+                                    <flux:badge color="red" size="sm">Deleted</flux:badge>
+                                    @endif
+                                    @if ($filing->project?->jobsite_state)
+                                    <flux:badge size="sm" color="zinc">{{ $filing->project->jobsite_state }}</flux:badge>
+                                    @endif
+                                    @if ($filing->needs_review)
+                                    <flux:badge color="amber" size="sm">Review</flux:badge>
+                                    @endif
+                                </div>
+                            </div>
 
-            <div class="{{ $isSearching ? 'flex w-72 shrink-0 flex-col' : 'flex flex-col' }} rounded-lg border border-border bg-white">
-                <!-- Column Header -->
-                <div class="flex items-center justify-between border-b border-border px-4 py-3">
-                    <div class="flex items-center gap-2">
-                        <flux:badge color="{{ $column->color() }}" size="sm">
-                            {{ $count }}
-                        </flux:badge>
-                        <flux:heading size="sm">{{ $column->label() }}</flux:heading>
-                    </div>
-                </div>
-
-                <!-- Column Content -->
-                <div class="flex-1 space-y-3 overflow-y-auto p-3" style="max-height: 70vh;">
-                    @forelse ($columnFilings as $filing)
-                    @php
-                    $latestComment = $filing->events->first();
-                    @endphp
-                    <a href="{{ route('admin.liens.show', $filing->public_id) }}"
-                        class="block rounded-lg border p-3 shadow-sm transition hover:shadow-md {{ $filing->trashed() ? 'border-red-200 bg-red-50/50 opacity-75 hover:border-red-300' : 'border-border bg-white hover:border-blue-300' }}"
-                        wire:navigate>
-                        <div class="flex items-start justify-between gap-2">
-                            <flux:text class="font-medium text-gray-900 truncate">
-                                {{ $filing->project?->business?->name ?? 'Unknown Business' }}
+                            @if ($filing->createdBy)
+                            <flux:text class="mt-1 text-xs text-gray-500 truncate">
+                                {{ $filing->createdBy->name }} &middot; {{ $filing->createdBy->email }}
                             </flux:text>
-                            <div class="flex shrink-0 items-center gap-1">
-                                @if ($filing->trashed())
-                                <flux:badge color="red" size="sm">Deleted</flux:badge>
-                                @endif
-                                @if ($filing->project?->jobsite_state)
-                                <flux:badge size="sm" color="zinc">{{ $filing->project->jobsite_state }}</flux:badge>
-                                @endif
-                                @if ($filing->needs_review)
-                                <flux:badge color="amber" size="sm">Review</flux:badge>
+                            @endif
+
+                            @if ($filing->project?->jobsite_address1)
+                            <flux:text class="mt-1 text-xs text-gray-500 truncate">
+                                {{ $filing->project->jobsiteAddressLine() }}
+                            </flux:text>
+                            @endif
+
+                            <div class="mt-2 flex flex-wrap items-center gap-1">
+                                <flux:badge size="sm" color="zinc">
+                                    {{ $filing->documentType?->name ?? 'Unknown' }}
+                                </flux:badge>
+                                <flux:badge size="sm"
+                                    color="{{ $filing->service_level === \App\Domains\Lien\Enums\ServiceLevel::FullService ? 'indigo' : 'zinc' }}">
+                                    {{ $filing->service_level?->label() ?? 'Unknown' }}
+                                </flux:badge>
+                                @if (! $isSearching)
+                                <flux:badge size="sm" color="{{ $filing->status->color() }}">
+                                    {{ $filing->status->label() }}@if ($filing->status === \App\Domains\Lien\Enums\FilingStatus::SubmittedForRecording && $filing->recording_method)
+                                        <span class="ml-1 opacity-80">— {{ $filing->recording_method->label() }}</span>
+                                    @endif
+                                </flux:badge>
                                 @endif
                             </div>
-                        </div>
 
-                        @if ($filing->createdBy)
-                        <flux:text class="mt-1 text-xs text-gray-500 truncate">
-                            {{ $filing->createdBy->name }} &middot; {{ $filing->createdBy->email }}
-                        </flux:text>
-                        @endif
+                            @if ($latestComment)
+                            <div class="mt-2 flex items-start gap-1.5">
+                                <flux:icon name="chat-bubble-left" class="mt-0.5 size-3 shrink-0 text-gray-400" />
+                                <flux:text class="text-xs text-gray-500 line-clamp-2">
+                                    {{ Str::limit($latestComment->payload_json['comment'] ?? '', 200) }}
+                                </flux:text>
+                            </div>
+                            @endif
 
-                        @if ($filing->project?->jobsite_address1)
-                        <flux:text class="mt-1 text-xs text-gray-500 truncate">
-                            {{ $filing->project->jobsiteAddressLine() }}
-                        </flux:text>
-                        @endif
-
-                        <div class="mt-2 flex flex-wrap items-center gap-1">
-                            <flux:badge size="sm" color="zinc">
-                                {{ $filing->documentType?->name ?? 'Unknown' }}
-                            </flux:badge>
-                            <flux:badge size="sm"
-                                color="{{ $filing->service_level === \App\Domains\Lien\Enums\ServiceLevel::FullService ? 'indigo' : 'zinc' }}">
-                                {{ $filing->service_level?->label() ?? 'Unknown' }}
-                            </flux:badge>
-                            @if (! $isSearching)
-                            <flux:badge size="sm" color="{{ $filing->status->color() }}">
-                                {{ $filing->status->label() }}@if ($filing->status === \App\Domains\Lien\Enums\FilingStatus::SubmittedForRecording && $filing->recording_method)
-                                    <span class="ml-1 opacity-80">— {{ $filing->recording_method->label() }}</span>
+                            <flux:text class="mt-2 text-xs text-gray-400">
+                                @if ($filing->paid_at)
+                                    Paid {{ $filing->paid_at->diffForHumans() }}
+                                @else
+                                    {{ $filing->created_at->diffForHumans() }}
                                 @endif
-                            </flux:badge>
-                            @endif
-                        </div>
-
-                        @if ($latestComment)
-                        <div class="mt-2 flex items-start gap-1.5">
-                            <flux:icon name="chat-bubble-left" class="mt-0.5 size-3 shrink-0 text-gray-400" />
-                            <flux:text class="text-xs text-gray-500 line-clamp-2">
-                                {{ Str::limit($latestComment->payload_json['comment'] ?? '', 200) }}
                             </flux:text>
-                        </div>
-                        @endif
-
-                        <flux:text class="mt-2 text-xs text-gray-400">
-                            @if ($filing->paid_at)
-                                Paid {{ $filing->paid_at->diffForHumans() }}
-                            @else
-                                {{ $filing->created_at->diffForHumans() }}
-                            @endif
-                        </flux:text>
-                    </a>
-                    @empty
-                    <div class="flex h-24 items-center justify-center text-center">
-                        <flux:text class="text-gray-400">No filings</flux:text>
-                    </div>
-                    @endforelse
-                </div>
-            </div>
+                        </x-admin.kanban.card-frame>
+                    @endforeach
+                </x-admin.kanban.column>
             @endforeach
-        </div>
+        </x-admin.kanban.grid>
     @endif
 </div>

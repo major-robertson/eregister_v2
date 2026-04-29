@@ -20,6 +20,12 @@
                     :current="request()->routeIs('admin.liens.*')" wire:navigate>
                     {{ __('Liens') }}
                 </flux:sidebar.item>
+                @can('tax.view')
+                <flux:sidebar.item icon="receipt-percent" :href="route('admin.sales-tax.board')"
+                    :current="request()->routeIs('admin.sales-tax.*')" wire:navigate>
+                    {{ __('Sales Tax') }}
+                </flux:sidebar.item>
+                @endcan
             </flux:sidebar.group>
 
             @role('admin')

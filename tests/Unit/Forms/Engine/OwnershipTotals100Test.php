@@ -8,8 +8,8 @@ describe('OwnershipTotals100', function () {
 
         $data = [
             'responsible_people' => [
-                ['_id' => 'a', 'full_name' => 'Person A', 'ownership_percent' => 50],
-                ['_id' => 'b', 'full_name' => 'Person B', 'ownership_percent' => 50],
+                ['_id' => 'a', 'first_name' => 'Person', 'last_name' => 'A', 'ownership_percent' => 50],
+                ['_id' => 'b', 'first_name' => 'Person', 'last_name' => 'B', 'ownership_percent' => 50],
             ],
         ];
 
@@ -23,8 +23,8 @@ describe('OwnershipTotals100', function () {
 
         $data = [
             'responsible_people' => [
-                ['_id' => 'a', 'full_name' => 'Person A', 'ownership_percent' => 50],
-                ['_id' => 'b', 'full_name' => 'Person B', 'ownership_percent' => 40],
+                ['_id' => 'a', 'first_name' => 'Person', 'last_name' => 'A', 'ownership_percent' => 50],
+                ['_id' => 'b', 'first_name' => 'Person', 'last_name' => 'B', 'ownership_percent' => 40],
             ],
         ];
 
@@ -39,8 +39,8 @@ describe('OwnershipTotals100', function () {
 
         $data = [
             'responsible_people' => [
-                ['_id' => 'a', 'full_name' => 'Person A', 'ownership_percent' => 60],
-                ['_id' => 'b', 'full_name' => 'Person B', 'ownership_percent' => 60],
+                ['_id' => 'a', 'first_name' => 'Person', 'last_name' => 'A', 'ownership_percent' => 60],
+                ['_id' => 'b', 'first_name' => 'Person', 'last_name' => 'B', 'ownership_percent' => 60],
             ],
         ];
 

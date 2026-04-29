@@ -7,10 +7,14 @@
     <flux:label class="text-base font-medium">{{ $fieldLabel }}</flux:label>
 
     @forelse ($responsiblePeople as $person)
-        @php $personId = $person['_id'] ?? null; @endphp
+        @php
+            $personId = $person['_id'] ?? null;
+            $displayName = trim(($person['first_name'] ?? '') . ' ' . ($person['last_name'] ?? ''));
+            $displayName = $displayName !== '' ? $displayName : 'Person';
+        @endphp
         @if ($personId)
             <div wire:key="person-extra-{{ $personId }}" class="rounded-lg border border-neutral-200 p-4 dark:border-neutral-700">
-                <div class="mb-3 font-medium">{{ $person['full_name'] ?? 'Person' }}</div>
+                <div class="mb-3 font-medium">{{ $displayName }}</div>
 
                 <div class="space-y-4">
                     @foreach ($field['schema'] ?? [] as $subKey => $subField)

@@ -176,6 +176,12 @@ class MultiStateFormRunner extends Component
         }
         if ($business->mailing_address) {
             $this->coreData['mailing_address'] = $business->mailing_address;
+            $this->coreData['mailing_address_same'] = '0';
+        } else {
+            // Default to "mailing address same as business address" so the
+            // conditional mailing_address field is hidden + not required
+            // unless the user explicitly toggles the switch on.
+            $this->coreData['mailing_address_same'] = '1';
         }
 
         // Pre-fill responsible people (non-sensitive fields only)

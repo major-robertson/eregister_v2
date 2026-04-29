@@ -227,12 +227,15 @@ class RulesBuilder
                 continue;
             }
 
+            $personLabel = trim(($person['first_name'] ?? '').' '.($person['last_name'] ?? ''));
+            $personLabel = $personLabel !== '' ? $personLabel : 'Person';
+
             foreach ($field['schema'] ?? [] as $subKey => $subField) {
                 $subRules = $subField['rules'] ?? [];
                 if (! empty($subRules)) {
                     $path = "stateData.responsible_people_extra.{$personId}.{$subKey}";
                     $rules[$path] = $subRules;
-                    $attributes[$path] = ($person['full_name'] ?? 'Person').' - '.($subField['label'] ?? $subKey);
+                    $attributes[$path] = $personLabel.' - '.($subField['label'] ?? $subKey);
                 }
             }
         }

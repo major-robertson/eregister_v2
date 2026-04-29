@@ -47,8 +47,12 @@
                     <div class="mt-6">
                         <flux:heading size="base" class="mb-3">Responsible People</flux:heading>
                         @foreach ($this->coreData['responsible_people'] as $person)
+                            @php
+                                $displayName = trim(($person['first_name'] ?? '') . ' ' . ($person['last_name'] ?? ''));
+                                $displayName = $displayName !== '' ? $displayName : 'Person';
+                            @endphp
                             <div class="mb-2 rounded border border-border p-3">
-                                <p class="font-medium text-text-primary">{{ $person['full_name'] ?? 'Person' }}</p>
+                                <p class="font-medium text-text-primary">{{ $displayName }}</p>
                                 <p class="text-sm text-text-secondary">Ownership: {{ $person['ownership_percent'] ?? 0 }}%</p>
                             </div>
                         @endforeach

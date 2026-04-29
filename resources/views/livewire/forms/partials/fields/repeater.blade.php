@@ -32,15 +32,27 @@
                     wire:click="openRepeaterModal('{{ $fieldKey }}', {{ $index }})"
                     class="flex-1 text-left"
                 >
+                    @php
+                        // Repeaters that hold person records (responsible_people, members)
+                        // always have first_name + last_name in their schema; combine them.
+                        // Use `title` as the badge when present (e.g. "Owner", "Member").
+                        $hasFirstLast = isset($schema['first_name']) && isset($schema['last_name']);
+                        if ($hasFirstLast) {
+                            $combined = trim(($item['first_name'] ?? '') . ' ' . ($item['last_name'] ?? ''));
+                            $primaryLabel = $combined !== '' ? $combined : ($itemLabel . ' ' . ($index + 1));
+                            $badgeKey = isset($schema['title']) ? 'title' : null;
+                        } else {
+                            // Non-person repeaters fall back to "first schema key" display.
+                            $primaryLabel = $item[$schema ? array_key_first($schema) : ''] ?? ($itemLabel . ' ' . ($index + 1));
+                            $badgeKey = array_keys($schema)[1] ?? null;
+                        }
+                    @endphp
                     <div class="flex items-center gap-2">
                         <span class="font-medium text-zinc-900 dark:text-zinc-100">
-                            {{ $item[$schema ? array_key_first($schema) : ''] ?? $itemLabel . ' ' . ($index + 1) }}
+                            {{ $primaryLabel }}
                         </span>
-                        @php
-                            $secondKey = array_keys($schema)[1] ?? null;
-                        @endphp
-                        @if ($secondKey && !empty($item[$secondKey]))
-                            <flux:badge size="sm">{{ $item[$secondKey] }}</flux:badge>
+                        @if ($badgeKey && !empty($item[$badgeKey]))
+                            <flux:badge size="sm">{{ $item[$badgeKey] }}</flux:badge>
                         @endif
                     </div>
                     @if (!empty($item['ownership_percent']))

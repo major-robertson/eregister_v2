@@ -61,10 +61,16 @@ return [
                     'min' => 1,
                     'item_label' => 'Member',
                     'schema' => [
-                        'full_name' => [
+                        'first_name' => [
                             'type' => 'text',
-                            'label' => 'Full Name',
-                            'rules' => ['required', 'string', 'max:120'],
+                            'label' => 'First Name',
+                            'rules' => ['required', 'string', 'max:60'],
+                            'persist_to_business' => true,
+                        ],
+                        'last_name' => [
+                            'type' => 'text',
+                            'label' => 'Last Name',
+                            'rules' => ['required', 'string', 'max:60'],
                             'persist_to_business' => true,
                         ],
                         'email' => [

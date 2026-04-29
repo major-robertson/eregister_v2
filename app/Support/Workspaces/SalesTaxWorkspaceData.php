@@ -3,23 +3,21 @@
 namespace App\Support\Workspaces;
 
 use App\Domains\Business\Models\Business;
-use App\Domains\Forms\Models\FormApplication;
+use App\Domains\Forms\Models\SalesTaxRegistration;
 
 class SalesTaxWorkspaceData implements WorkspaceDataResolver
 {
     public function hasData(Business $business): bool
     {
-        return FormApplication::query()
+        return SalesTaxRegistration::query()
             ->where('business_id', $business->id)
-            ->whereIn('form_type', $this->formTypes())
             ->exists();
     }
 
     public function summary(Business $business): ?string
     {
-        $count = FormApplication::query()
+        $count = SalesTaxRegistration::query()
             ->where('business_id', $business->id)
-            ->whereIn('form_type', $this->formTypes())
             ->count();
 
         if ($count === 0) {
@@ -27,13 +25,5 @@ class SalesTaxWorkspaceData implements WorkspaceDataResolver
         }
 
         return $count === 1 ? '1 registration' : "{$count} registrations";
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private function formTypes(): array
-    {
-        return (array) config('workspaces.sales_tax.form_types', []);
     }
 }

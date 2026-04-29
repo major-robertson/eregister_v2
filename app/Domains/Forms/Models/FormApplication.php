@@ -60,7 +60,11 @@ class FormApplication extends Model
 
     public function states(): HasMany
     {
-        return $this->hasMany(FormApplicationState::class);
+        // Explicit foreign key so child models like SalesTaxRegistration
+        // and LlcFormation don't trigger Eloquent to infer
+        // `sales_tax_registration_id` / `llc_formation_id` from the calling
+        // class name.
+        return $this->hasMany(FormApplicationState::class, 'form_application_id');
     }
 
     public function stateRecord(string $stateCode): ?FormApplicationState

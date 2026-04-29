@@ -49,16 +49,14 @@
             <div class="space-y-4">
                 @foreach ($this->formations->take(10) as $formation)
                     @php
-                        // Map form_type to a friendly label. Adding a new
-                        // formation type later just needs an entry here.
-                        $typeLabels = [
-                            'llc' => 'LLC Formation',
-                            'corporation' => 'Corporation',
-                            'dba' => 'DBA Registration',
-                            'nonprofit' => 'Nonprofit Formation',
-                            'sole_proprietorship' => 'Sole Proprietorship',
-                        ];
-                        $typeLabel = $typeLabels[$formation->form_type] ?? \Illuminate\Support\Str::headline((string) $formation->form_type);
+                        // Pull the user-facing label from config/form_types.php
+                        // so adding a new formation type is a config-only change.
+                        // Falls back to a humanized form_type if the type isn't
+                        // registered (defensive — shouldn't happen given the
+                        // workspace's form_types constraint).
+                        $typeLabel = \App\Domains\Forms\FormTypeConfig::exists($formation->form_type)
+                            ? \App\Domains\Forms\FormTypeConfig::get($formation->form_type)['name']
+                            : \Illuminate\Support\Str::headline((string) $formation->form_type);
                     @endphp
                     <div class="flex items-center justify-between rounded-xl border border-border bg-white px-6 py-5 shadow-sm">
                         <div class="flex items-center gap-4">
@@ -121,7 +119,7 @@
                 <div>
                     <div class="font-medium text-text-primary">Coming soon</div>
                     <p class="mt-1 text-sm text-text-secondary">
-                        Corporation, DBA, Nonprofit, and Sole Proprietorship formations will be available here.
+                        Additional formation types will be available here as they roll out.
                     </p>
                 </div>
             </div>

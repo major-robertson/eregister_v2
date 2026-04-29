@@ -3,7 +3,7 @@
 namespace App\Domains\SalesTax\Livewire;
 
 use App\Domains\Business\Models\Business;
-use App\Domains\Forms\Models\FormApplication;
+use App\Domains\Forms\Models\SalesTaxRegistration;
 use App\Support\Workspaces\Workspace;
 use App\Support\Workspaces\WorkspaceRegistry;
 use Illuminate\Contracts\View\View;
@@ -51,15 +51,18 @@ class Dashboard extends Component
      * extra row so the view can detect "more than 10 exist" without
      * issuing a second count query.
      *
-     * @return Collection<int, FormApplication>
+     * Uses the SalesTaxRegistration child model whose global scope
+     * filters to form_type = 'sales_tax_permit' automatically; we no
+     * longer need a whereIn() clause referencing the workspace config.
+     *
+     * @return Collection<int, SalesTaxRegistration>
      */
     #[Computed]
     public function registrations(): Collection
     {
-        return FormApplication::query()
+        return SalesTaxRegistration::query()
             ->with('states')
             ->where('business_id', $this->business->id)
-            ->whereIn('form_type', $this->workspace->formTypes)
             ->latest()
             ->limit(11)
             ->get();

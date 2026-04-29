@@ -1,5 +1,7 @@
 <?php
 
+use App\Domains\Forms\Models\LlcFormation;
+use App\Domains\Forms\Models\SalesTaxRegistration;
 use App\Support\Workspaces\FormationsWorkspaceData;
 use App\Support\Workspaces\LienWorkspaceData;
 use App\Support\Workspaces\SalesTaxWorkspaceData;
@@ -81,7 +83,10 @@ return [
         'bg_class' => 'bg-emerald-50/30',
         'dashboard_route' => 'sales-tax.dashboard',
         'enabled' => true,
-        'form_types' => ['sales_tax_permit'],
+        // Sourced from the child model so the SalesTaxRegistration global
+        // scope, the workspace registry, and the data resolver share one
+        // source of truth.
+        'form_types' => [SalesTaxRegistration::FORM_TYPE],
         'start_route_name' => 'sales-tax.registrations.start',
         'application_route_name' => 'sales-tax.registrations.show',
         'start_route_param' => null, // form_type baked in via Route::defaults()
@@ -109,7 +114,9 @@ return [
         'enabled' => true,
         // Add more form types here (corporation, dba, nonprofit, sole_proprietorship)
         // and the start route's whereIn() constraint picks them up automatically.
-        'form_types' => ['llc'],
+        // Sourced from the child models so each model's global scope and the
+        // workspace registry stay aligned without string drift.
+        'form_types' => [LlcFormation::FORM_TYPE],
         'start_route_name' => 'formations.start',
         'application_route_name' => 'formations.show',
         'start_route_param' => 'formType', // {formType} URL segment, hydrates StateSelector::mount(string $formType)

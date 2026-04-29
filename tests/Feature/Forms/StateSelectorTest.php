@@ -96,17 +96,20 @@ describe('StateSelector', function () {
     it('creates application and redirects to form runner on proceed', function () {
         $this->actingAs($this->user);
 
-        Livewire::test(StateSelector::class, [
+        $component = Livewire::test(StateSelector::class, [
             'formType' => 'sales_tax_permit',
         ])
             ->call('toggleState', 'CA')
             ->call('toggleState', 'TX')
-            ->call('proceed')
-            ->assertRedirect();
+            ->call('proceed');
 
         $application = FormApplication::where('business_id', $this->business->id)->first();
-
         expect($application)->not->toBeNull();
+
+        // Workspace-aware redirect: sales_tax_permit applications now live
+        // under the Sales Tax workspace's show route.
+        $component->assertRedirect(route('sales-tax.registrations.show', ['application' => $application]));
+
         expect($application->selected_states)->toBe(['CA', 'TX']);
         expect($application->status)->toBe('draft');
         expect($application->states)->toHaveCount(2);

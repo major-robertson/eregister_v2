@@ -2,7 +2,7 @@
     <x-ui.page-header title="Sales Tax" subtitle="Register for sales and use tax permits across one or more states.">
         <x-slot:actions>
             <flux:button
-                href="{{ route('forms.start', $this->workspace->formType) }}"
+                href="{{ $this->workspace->startRouteFor($this->workspace->primaryFormType()) }}"
                 variant="primary"
                 icon="plus"
                 wire:navigate
@@ -36,7 +36,7 @@
                 </p>
                 <div class="mt-5">
                     <flux:button
-                        href="{{ route('forms.start', $this->workspace->formType) }}"
+                        href="{{ $this->workspace->startRouteFor($this->workspace->primaryFormType()) }}"
                         variant="primary"
                         icon="plus"
                         wire:navigate
@@ -75,14 +75,16 @@
                                 <flux:badge color="zinc" size="sm">{{ $registration->display_status }}</flux:badge>
                             @endif
 
-                            <flux:button
-                                href="{{ route('forms.application', $registration) }}"
-                                size="sm"
-                                :variant="$registration->is_editable ? 'filled' : 'ghost'"
-                                wire:navigate
-                            >
-                                {{ $registration->dashboard_action_label }}
-                            </flux:button>
+                            @if ($registration->dashboard_action_url)
+                                <flux:button
+                                    href="{{ $registration->dashboard_action_url }}"
+                                    size="sm"
+                                    :variant="$registration->is_editable ? 'filled' : 'ghost'"
+                                    wire:navigate
+                                >
+                                    {{ $registration->dashboard_action_label }}
+                                </flux:button>
+                            @endif
                         </div>
                     </div>
                 @endforeach

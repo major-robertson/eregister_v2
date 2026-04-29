@@ -6,6 +6,7 @@ use App\Domains\Business\Models\Business;
 use App\Domains\Forms\FormTypeConfig;
 use App\Domains\Forms\Models\FormApplication;
 use App\Models\EmailSequence;
+use App\Support\Workspaces\WorkspaceRegistry;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -62,7 +63,7 @@ class Checkout extends Component
         $session = $this->business
             ->newSubscription($config['subscription_name'], $config['stripe_price_id'])
             ->checkout([
-                'success_url' => route('forms.application', $this->application).'?checkout=success',
+                'success_url' => $this->checkoutSuccessUrl(),
                 'cancel_url' => route('portal.checkout', $this->application),
                 'metadata' => [
                     'application_id' => $this->application->id,
@@ -92,7 +93,7 @@ class Checkout extends Component
         $session = $this->business->checkout([
             $config['stripe_price_id'] => $quantity,
         ], [
-            'success_url' => route('dashboard').'?checkout=success',
+            'success_url' => $this->checkoutSuccessUrl(),
             'cancel_url' => route('portal.checkout', $this->application),
             'metadata' => [
                 'application_id' => $this->application->id,
@@ -113,6 +114,22 @@ class Checkout extends Component
         );
 
         $this->redirect($session->url);
+    }
+
+    /**
+     * Build the Stripe `success_url` for both subscription and one-time
+     * checkouts. Uses the workspace-aware route helper so users land back
+     * on the correct workspace-prefixed application URL after payment;
+     * falls back to the generic dashboard when no workspace claims the
+     * form type (defensive — should not happen with current config).
+     */
+    protected function checkoutSuccessUrl(): string
+    {
+        $workspace = app(WorkspaceRegistry::class)
+            ->findByFormType($this->application->form_type);
+
+        return $workspace?->applicationRouteFor($this->application, ['checkout' => 'success'])
+            ?? route('dashboard').'?checkout=success';
     }
 
     protected function stubCheckout(): void

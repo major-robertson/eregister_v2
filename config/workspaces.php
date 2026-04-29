@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\Workspaces\FormationsWorkspaceData;
 use App\Support\Workspaces\LienWorkspaceData;
 use App\Support\Workspaces\SalesTaxWorkspaceData;
 
@@ -16,6 +17,12 @@ use App\Support\Workspaces\SalesTaxWorkspaceData;
 | All values must be config-cache-safe scalars or class strings — no
 | closures — so `php artisan config:cache` works in production.
 |
+| `form_types` lists the forms-runner form types this workspace claims.
+| When non-empty, the workspace's `start_route_name` and
+| `application_route_name` host the form runner UI (state selector +
+| MultiStateFormRunner). When empty (e.g. Liens), the workspace owns its
+| own non-form routes and models.
+|
 */
 
 return [
@@ -30,7 +37,10 @@ return [
         'bg_class' => 'bg-amber-50/30',
         'dashboard_route' => 'lien.dashboard',
         'enabled' => true,
-        'form_type' => null,
+        'form_types' => [],
+        'start_route_name' => null,
+        'application_route_name' => null,
+        'start_route_param' => null,
         'data_resolver' => LienWorkspaceData::class,
         'nav' => [
             [
@@ -71,7 +81,10 @@ return [
         'bg_class' => 'bg-emerald-50/30',
         'dashboard_route' => 'sales-tax.dashboard',
         'enabled' => true,
-        'form_type' => 'sales_tax_permit',
+        'form_types' => ['sales_tax_permit'],
+        'start_route_name' => 'sales-tax.registrations.start',
+        'application_route_name' => 'sales-tax.registrations.show',
+        'start_route_param' => null, // form_type baked in via Route::defaults()
         'data_resolver' => SalesTaxWorkspaceData::class,
         'nav' => [
             [
@@ -82,6 +95,34 @@ return [
             ],
         ],
         'nav_heading' => 'Sales Tax',
+    ],
+
+    'formations' => [
+        'name' => 'Formations',
+        'slug' => 'formations',
+        'description' => 'Form your business and manage your formation documents.',
+        'icon' => 'building-office-2',
+        'badge' => 'Formations',
+        'badge_color' => 'indigo',
+        'bg_class' => 'bg-indigo-50/30',
+        'dashboard_route' => 'formations.dashboard',
+        'enabled' => true,
+        // Add more form types here (corporation, dba, nonprofit, sole_proprietorship)
+        // and the start route's whereIn() constraint picks them up automatically.
+        'form_types' => ['llc'],
+        'start_route_name' => 'formations.start',
+        'application_route_name' => 'formations.show',
+        'start_route_param' => 'formType', // {formType} URL segment, hydrates StateSelector::mount(string $formType)
+        'data_resolver' => FormationsWorkspaceData::class,
+        'nav' => [
+            [
+                'label' => 'Dashboard',
+                'icon' => 'home',
+                'route' => 'formations.dashboard',
+                'current_pattern' => 'formations.dashboard',
+            ],
+        ],
+        'nav_heading' => 'Formations',
     ],
 
 ];

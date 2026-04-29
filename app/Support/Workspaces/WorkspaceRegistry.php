@@ -45,7 +45,7 @@ class WorkspaceRegistry
     public function findByFormType(string $formType): ?Workspace
     {
         foreach ($this->all() as $workspace) {
-            if ($workspace->formType === $formType) {
+            if ($workspace->claimsFormType($formType)) {
                 return $workspace;
             }
         }

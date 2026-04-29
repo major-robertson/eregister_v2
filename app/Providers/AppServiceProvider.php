@@ -101,6 +101,9 @@ class AppServiceProvider extends ServiceProvider
         // Sales Tax domain components
         Livewire::component('sales-tax.dashboard', \App\Domains\SalesTax\Livewire\Dashboard::class);
 
+        // Formations domain components
+        Livewire::component('formations.dashboard', \App\Domains\Formations\Livewire\Dashboard::class);
+
         // Marketing domain components
         Livewire::component('marketing.contractor-landing', \App\Domains\Marketing\Livewire\ContractorLanding::class);
     }

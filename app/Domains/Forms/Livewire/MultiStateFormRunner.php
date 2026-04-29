@@ -75,6 +75,12 @@ class MultiStateFormRunner extends Component
 
         Gate::authorize('update', $application);
 
+        // Workspace alignment is enforced by the application.access
+        // middleware (EnsureHasAccess), which fires before this mount
+        // and 404s when the request URL belongs to a workspace that
+        // doesn't claim the application's form_type. Livewire::test()
+        // bypasses the middleware by design, so no in-mount guard here.
+
         if ($application->isLocked()) {
             session()->flash('error', 'This application has been submitted and cannot be edited.');
 

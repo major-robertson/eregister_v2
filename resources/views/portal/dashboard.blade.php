@@ -96,12 +96,21 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-4">
-                                @if ($application->status === 'submitted')
-                                    <flux:badge color="green" size="sm">Submitted</flux:badge>
+                                @if ($application->display_status === 'Submitted')
+                                    <flux:badge color="green" size="sm">{{ $application->display_status }}</flux:badge>
+                                @elseif ($application->display_status === 'Paid')
+                                    <flux:badge color="blue" size="sm">{{ $application->display_status }}</flux:badge>
                                 @else
-                                    <span class="text-sm text-text-secondary">Draft</span>
-                                    <flux:button href="{{ route('forms.application', $application) }}" size="sm" variant="filled">
-                                        Continue
+                                    <span class="text-sm text-text-secondary">{{ $application->display_status }}</span>
+                                @endif
+
+                                @if ($application->dashboard_action_url)
+                                    <flux:button
+                                        href="{{ $application->dashboard_action_url }}"
+                                        size="sm"
+                                        :variant="$application->is_editable ? 'filled' : 'ghost'"
+                                    >
+                                        {{ $application->dashboard_action_label }}
                                     </flux:button>
                                 @endif
                             </div>

@@ -142,7 +142,7 @@ class StateSelector extends Component
             return;
         }
 
-        $this->redirect(route('forms.application', $this->existingDraft));
+        $this->redirect($this->applicationUrlFor($this->existingDraft));
     }
 
     public function startOver(): void
@@ -209,7 +209,28 @@ class StateSelector extends Component
             return $application;
         });
 
-        $this->redirect(route('forms.application', $application));
+        $this->redirect($this->applicationUrlFor($application));
+    }
+
+    /**
+     * Resolve the workspace-owned application URL for the given form
+     * application. Throws if no workspace claims the form_type — this
+     * is a config bug that should fail loudly rather than fall back to
+     * a removed generic route.
+     */
+    private function applicationUrlFor(FormApplication $application): string
+    {
+        $workspace = app(WorkspaceRegistry::class)->findByFormType($application->form_type);
+        $url = $workspace?->applicationRouteFor($application);
+
+        if (! $url) {
+            throw new \LogicException(
+                "No application route configured for form type [{$application->form_type}]. ".
+                'Add the form_type to a workspace in config/workspaces.php.'
+            );
+        }
+
+        return $url;
     }
 
     private function buildDefinitionSnapshot(FormApplication $application): array

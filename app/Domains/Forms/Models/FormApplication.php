@@ -159,4 +159,18 @@ class FormApplication extends Model
     {
         return $this->is_editable ? 'Continue' : 'View';
     }
+
+    /**
+     * Workspace-aware URL to the application's detail/wizard page.
+     * Returns null when no workspace claims this form_type, in which
+     * case Blade should hide the action button rather than 500 on a
+     * missing route.
+     */
+    public function getDashboardActionUrlAttribute(): ?string
+    {
+        $workspace = app(\App\Support\Workspaces\WorkspaceRegistry::class)
+            ->findByFormType($this->form_type);
+
+        return $workspace?->applicationRouteFor($this);
+    }
 }

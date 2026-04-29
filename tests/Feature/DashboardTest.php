@@ -63,6 +63,7 @@ test('the dashboard renders a workspace card for every enabled registry entry', 
         ->assertSee('Workspaces')
         ->assertSee('Liens')
         ->assertSee('Sales Tax')
+        ->assertSee('Formations')
         ->assertSee('Get Started');
 });
 

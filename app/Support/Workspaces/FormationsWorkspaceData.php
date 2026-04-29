@@ -5,7 +5,7 @@ namespace App\Support\Workspaces;
 use App\Domains\Business\Models\Business;
 use App\Domains\Forms\Models\FormApplication;
 
-class SalesTaxWorkspaceData implements WorkspaceDataResolver
+class FormationsWorkspaceData implements WorkspaceDataResolver
 {
     public function hasData(Business $business): bool
     {
@@ -26,7 +26,7 @@ class SalesTaxWorkspaceData implements WorkspaceDataResolver
             return null;
         }
 
-        return $count === 1 ? '1 registration' : "{$count} registrations";
+        return $count === 1 ? '1 formation' : "{$count} formations";
     }
 
     /**
@@ -34,6 +34,6 @@ class SalesTaxWorkspaceData implements WorkspaceDataResolver
      */
     private function formTypes(): array
     {
-        return (array) config('workspaces.sales_tax.form_types', []);
+        return (array) config('workspaces.formations.form_types', []);
     }
 }

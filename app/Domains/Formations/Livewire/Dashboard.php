@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domains\SalesTax\Livewire;
+namespace App\Domains\Formations\Livewire;
 
 use App\Domains\Business\Models\Business;
 use App\Domains\Forms\Models\FormApplication;
@@ -30,31 +30,32 @@ class Dashboard extends Component
     }
 
     /**
-     * The Sales Tax workspace metadata. Resolved once per request via
+     * The Formations workspace metadata. Resolved once per request via
      * Livewire's #[Computed] memoization; access in Blade as
      * `$this->workspace->...`, NOT `$this->workspace()`.
      */
     #[Computed]
     public function workspace(): Workspace
     {
-        $workspace = app(WorkspaceRegistry::class)->find('sales_tax');
+        $workspace = app(WorkspaceRegistry::class)->find('formations');
 
         if (! $workspace) {
-            throw new \RuntimeException('Sales Tax workspace is not registered in config/workspaces.php');
+            throw new \RuntimeException('Formations workspace is not registered in config/workspaces.php');
         }
 
         return $workspace;
     }
 
     /**
-     * Most recent registrations for the current business. Fetches one
-     * extra row so the view can detect "more than 10 exist" without
+     * Most recent formations for the current business across every form
+     * type the workspace claims (LLC today; corporation/dba/etc. later).
+     * Fetches one extra row so the view can detect "more than 10" without
      * issuing a second count query.
      *
      * @return Collection<int, FormApplication>
      */
     #[Computed]
-    public function registrations(): Collection
+    public function formations(): Collection
     {
         return FormApplication::query()
             ->with('states')
@@ -66,17 +67,17 @@ class Dashboard extends Component
     }
 
     #[Computed]
-    public function hasMoreRegistrations(): bool
+    public function hasMoreFormations(): bool
     {
-        return $this->registrations->count() > 10;
+        return $this->formations->count() > 10;
     }
 
     public function render(): View
     {
-        return view('livewire.sales-tax.dashboard')
+        return view('livewire.formations.dashboard')
             ->layout('layouts.workspace', [
-                'key' => 'sales_tax',
-                'title' => 'Sales Tax',
+                'key' => 'formations',
+                'title' => 'Formations',
             ]);
     }
 }

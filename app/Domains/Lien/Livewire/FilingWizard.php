@@ -13,7 +13,7 @@ use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienProjectDeadline;
 use App\Domains\Lien\Models\LienStateRule;
-use App\Mail\HawaiiAttorneyReferral;
+use App\Mail\AttorneyReferral;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -90,7 +90,7 @@ class FilingWizard extends Component
     // File uploads
     public array $attachments = [];
 
-    // Hawaii referral
+    // Attorney referral (HI, MD, DE mechanics liens)
     public bool $referralSent = false;
 
     // Party management modal
@@ -451,8 +451,8 @@ class FilingWizard extends Component
 
     public function proceedToCheckout(): void
     {
-        if ($this->isHawaiiLien) {
-            abort(403, 'Hawaii mechanics liens must be filed directly with the court.');
+        if ($this->requiresAttorneyReferral) {
+            abort(403, $this->referralStateName.' mechanics liens must be filed directly with the court.');
         }
 
         // Validate service level selection
@@ -737,16 +737,30 @@ class FilingWizard extends Component
     }
 
     /**
-     * Check if this is a Hawaii mechanics lien filing (not available for online purchase).
+     * Check whether this filing requires an attorney referral (states where
+     * mechanics liens must be filed directly with the court, not via eRegister).
      */
-    public function getIsHawaiiLienProperty(): bool
+    public function getRequiresAttorneyReferralProperty(): bool
     {
-        return $this->project->jobsite_state === 'HI'
+        $referralStates = config('lien.attorney_referral_states', []);
+
+        return in_array($this->project->jobsite_state, $referralStates, true)
             && $this->deadline->documentType->slug === 'mechanics_lien';
     }
 
     /**
-     * Send a referral request email to connect the user with a Hawaii attorney.
+     * Get the human-readable state name for the attorney referral state.
+     */
+    public function getReferralStateNameProperty(): string
+    {
+        $states = config('states', []);
+
+        return $states[$this->project->jobsite_state] ?? $this->project->jobsite_state;
+    }
+
+    /**
+     * Send a referral request email to connect the user with an attorney
+     * licensed in the project's jobsite state.
      */
     public function requestAttorneyReferral(): void
     {
@@ -757,11 +771,13 @@ class FilingWizard extends Component
         $user = Auth::user();
         $business = $user->currentBusiness();
 
-        Mail::to('contact@eregister.com')->send(new HawaiiAttorneyReferral(
+        Mail::to('contact@eregister.com')->send(new AttorneyReferral(
             firstName: $user->first_name,
             lastName: $user->last_name,
             businessName: $business?->name ?? $business?->legal_name ?? 'N/A',
             userEmail: $user->email,
+            stateName: $this->referralStateName,
+            stateCode: $this->project->jobsite_state,
             phone: $business?->phone,
         ));
 

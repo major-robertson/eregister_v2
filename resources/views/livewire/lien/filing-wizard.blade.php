@@ -431,19 +431,19 @@
             {{-- Step 4: Checkout (Service + Review combined) - 2-column layout --}}
             <x-slot:header class="lg:hidden">Service & Review</x-slot:header>
 
-            @if($this->isHawaiiLien)
-                {{-- Hawaii Mechanics Lien: must file at court --}}
+            @if($this->requiresAttorneyReferral)
+                {{-- Attorney-referral state mechanics lien: must file at court --}}
                 <div class="space-y-6">
                     <div class="p-6 rounded-xl border-2 border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20">
                         <div class="flex items-start gap-4">
                             <flux:icon name="exclamation-triangle" class="w-8 h-8 text-amber-500 shrink-0 mt-0.5" />
                             <div class="space-y-3">
-                                <flux:heading size="lg">Hawaii Liens Must Be Filed at Court</flux:heading>
+                                <flux:heading size="lg">{{ $this->referralStateName }} Liens Must Be Filed at Court</flux:heading>
                                 <flux:text class="text-zinc-600 dark:text-zinc-400">
-                                    In Hawaii, mechanics liens must be filed directly with the Circuit Court in the county where the property is located. Online filing through eRegister is not available for Hawaii mechanics liens.
+                                    In {{ $this->referralStateName }}, mechanics liens must be filed directly with the court in the county where the property is located. Online filing through eRegister is not available for {{ $this->referralStateName }} mechanics liens.
                                 </flux:text>
                                 <flux:text class="text-zinc-600 dark:text-zinc-400">
-                                    We can connect you with a Hawaii attorney who specializes in construction lien filings.
+                                    We can connect you with a {{ $this->referralStateName }} attorney who specializes in construction lien filings.
                                 </flux:text>
                             </div>
                         </div>
@@ -451,11 +451,11 @@
 
                     @if($referralSent)
                         <flux:callout color="green" icon="check-circle">
-                            Your request has been sent! Our team will be in touch shortly to connect you with a Hawaii attorney.
+                            Your request has been sent! Our team will be in touch shortly to connect you with a {{ $this->referralStateName }} attorney.
                         </flux:callout>
                     @else
                         <flux:button wire:click="requestAttorneyReferral" variant="primary" class="w-full" icon="phone">
-                            Connect Me with a Hawaii Attorney
+                            Connect Me with a {{ $this->referralStateName }} Attorney
                         </flux:button>
                     @endif
                 </div>
@@ -653,7 +653,7 @@
                 </div>
             </div>
 
-            @endif {{-- end Hawaii lien check --}}
+            @endif {{-- end attorney-referral lien check --}}
         @endif
     </x-ui.card>
 
@@ -672,7 +672,7 @@
                 <flux:button wire:click="nextStep" variant="primary" :disabled="$step === 2 && !$ownerParty">
                     Continue
                 </flux:button>
-            @elseif(!$this->isHawaiiLien)
+            @elseif(!$this->requiresAttorneyReferral)
                 <flux:button wire:click="proceedToCheckout" variant="primary">
                     Proceed to Payment
                 </flux:button>

@@ -93,6 +93,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Attorney Referral States (Mechanics Lien)
+    |--------------------------------------------------------------------------
+    |
+    | States where mechanics liens cannot be filed online and require an
+    | attorney to file directly with the court (e.g. Hawaii, Maryland,
+    | Delaware). The wizard will block self-serve / full-service checkout
+    | and surface the attorney-referral CTA for these states.
+    |
+    */
+    'attorney_referral_states' => ['HI', 'MD', 'DE'],
+
+    /*
+    |--------------------------------------------------------------------------
     | Upload Constraints
     |--------------------------------------------------------------------------
     |

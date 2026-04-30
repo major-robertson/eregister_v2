@@ -1,8 +1,16 @@
 <div class="mx-auto max-w-3xl px-4 py-8">
-    {{-- Progress indicator --}}
+    {{-- Progress indicator: each segment fills proportionally to step
+         progress within its phase, so multi-step phases (Core Info,
+         State Details across N states) actually show movement as the
+         user advances. --}}
     <div class="mb-8">
         <div class="mb-2 flex items-center justify-between text-sm">
-            <span class="font-medium {{ $isCore ? 'text-primary' : 'text-text-secondary' }}">Core Info</span>
+            <span class="font-medium {{ $isCore ? 'text-primary' : 'text-text-secondary' }}">
+                Core Info
+                @if ($isCore && $phaseProgress['core']['total'] > 1)
+                    ({{ $phaseProgress['core']['current'] }}/{{ $phaseProgress['core']['total'] }})
+                @endif
+            </span>
             <span class="font-medium {{ $isStates ? 'text-primary' : 'text-text-secondary' }}">
                 @if ($isStates)
                     {{ $currentStateName }} ({{ $stateProgress['current'] }}/{{ $stateProgress['total'] }})
@@ -13,9 +21,24 @@
             <span class="font-medium {{ $isReview ? 'text-primary' : 'text-text-secondary' }}">Review</span>
         </div>
         <div class="flex gap-1">
-            <div class="h-2 flex-1 rounded {{ $isCore || $isStates || $isReview ? 'bg-primary' : 'bg-zinc-200' }}"></div>
-            <div class="h-2 flex-1 rounded {{ $isStates || $isReview ? 'bg-primary' : 'bg-zinc-200' }}"></div>
-            <div class="h-2 flex-1 rounded {{ $isReview ? 'bg-primary' : 'bg-zinc-200' }}"></div>
+            <div class="relative h-2 flex-1 overflow-hidden rounded bg-zinc-200">
+                <div
+                    class="absolute inset-y-0 left-0 rounded bg-primary transition-all duration-300"
+                    style="width: {{ $phaseProgress['core']['fill'] }}%"
+                ></div>
+            </div>
+            <div class="relative h-2 flex-1 overflow-hidden rounded bg-zinc-200">
+                <div
+                    class="absolute inset-y-0 left-0 rounded bg-primary transition-all duration-300"
+                    style="width: {{ $phaseProgress['states']['fill'] }}%"
+                ></div>
+            </div>
+            <div class="relative h-2 flex-1 overflow-hidden rounded bg-zinc-200">
+                <div
+                    class="absolute inset-y-0 left-0 rounded bg-primary transition-all duration-300"
+                    style="width: {{ $phaseProgress['review']['fill'] }}%"
+                ></div>
+            </div>
         </div>
     </div>
 

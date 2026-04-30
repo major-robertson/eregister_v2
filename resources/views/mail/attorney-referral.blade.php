@@ -1,7 +1,7 @@
 <x-mail::message>
-# Hawaii Attorney Referral Request
+# {{ $stateName }} Attorney Referral Request
 
-A user has requested to be connected with a Hawaii attorney for mechanics lien filing.
+A user has requested to be connected with a {{ $stateName }} attorney for mechanics lien filing.
 
 **Name:** {{ $firstName }} {{ $lastName }}
 
@@ -12,6 +12,8 @@ A user has requested to be connected with a Hawaii attorney for mechanics lien f
 @if($phone)
 **Phone:** {{ $phone }}
 @endif
+
+**State:** {{ $stateName }} ({{ $stateCode }})
 
 Thanks,<br>
 eRegister

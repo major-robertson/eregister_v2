@@ -98,18 +98,23 @@ class MultiStateFormRunner extends Component
 
     protected function loadDefinition(): void
     {
-        if ($this->application->definition_snapshot) {
-            $this->definition = $this->application->definition_snapshot;
-        } else {
-            $registry = app(FormRegistry::class);
-            $this->definition = [
-                'base' => $registry->getBase($this->application->form_type),
-                'states' => [],
-            ];
+        // Always load fresh from FormRegistry rather than reading
+        // $application->definition_snapshot. The snapshot is stored in a
+        // MySQL JSON column, which normalizes object keys (sort by length,
+        // then lexicographically) and destroys the step ordering authored in
+        // base.php. The snapshot is still written at application creation
+        // for historical/audit purposes — we just don't use it to drive the
+        // form runtime. If you ever need to switch back to snapshot-driven
+        // behavior, migrate definition_snapshot from JSON to LONGTEXT first
+        // so insertion order is preserved.
+        $registry = app(FormRegistry::class);
+        $this->definition = [
+            'base' => $registry->getBase($this->application->form_type),
+            'states' => [],
+        ];
 
-            foreach ($this->application->selected_states as $stateCode) {
-                $this->definition['states'][$stateCode] = $registry->get($this->application->form_type, $stateCode);
-            }
+        foreach ($this->application->selected_states as $stateCode) {
+            $this->definition['states'][$stateCode] = $registry->get($this->application->form_type, $stateCode);
         }
     }
 
@@ -142,8 +147,16 @@ class MultiStateFormRunner extends Component
             }
         }
 
-        // Set current step key
+        // Set current step key. If the stored key no longer exists in the
+        // current step set (e.g. step was renamed/split in a definition update
+        // and the application is still on the old key), fall back to the first
+        // step in the current phase rather than letting skipEmptyStepsForward
+        // bail out into the next phase entirely.
         $this->currentStepKey = $this->application->current_step_key ?? $this->getFirstStepKey();
+        $availableStepKeys = array_keys($this->getCurrentSteps());
+        if ($this->currentStepKey !== null && ! in_array($this->currentStepKey, $availableStepKeys, true)) {
+            $this->currentStepKey = $this->getFirstStepKey();
+        }
 
         // Skip forward past any empty steps on initial load
         if ($this->currentPhase !== 'review') {
@@ -959,6 +972,10 @@ class MultiStateFormRunner extends Component
             'allStatesComplete' => $this->application->allStatesComplete(),
             'states' => config('states'),
             'statePersonFields' => $this->getStatePersonFieldsProperty(),
+            // URL to return to when the user clicks Previous on the very first
+            // step of the wizard. Falls back to the dashboard if the workspace
+            // doesn't expose a start route (shouldn't happen in practice).
+            'startUrl' => $workspace?->startRouteFor($this->application->form_type) ?? route('dashboard'),
         ])->layout($layout, $layoutData);
     }
 }

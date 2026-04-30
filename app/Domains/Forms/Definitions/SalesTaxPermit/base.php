@@ -33,17 +33,9 @@ return [
     'version' => 2,
 
     'core_steps' => [
-        'business' => [
-            'title' => 'Business Information',
-            'description' => 'Tell us about your business. This information is used across every state you selected.',
-            'groups' => [
-                ['title' => 'Legal Identity', 'fields' => ['legal_name', 'dba_name', 'entity_type']],
-                ['title' => 'Federal Tax Identifiers', 'fields' => ['fein', 'individual_ssn']],
-                ['title' => 'Business Activity', 'fields' => ['naics_code', 'business_description', 'reason_for_applying']],
-                ['title' => 'Business Contact', 'fields' => ['business_phone', 'business_email']],
-                ['title' => 'Formation', 'fields' => ['formation_state', 'business_start_date']],
-                ['title' => 'Business Address', 'fields' => ['business_address', 'mailing_address_same', 'mailing_address']],
-            ],
+        'identity' => [
+            'title' => 'Business Identity',
+            'description' => "Tell us who you legally are. We'll use this on every state filing.",
             'fields' => [
                 'legal_name' => [
                     'type' => 'text',
@@ -83,7 +75,11 @@ return [
                 'fein' => [
                     'type' => 'text',
                     'label' => 'Federal Employer Identification Number (FEIN/EIN)',
-                    'rules' => ['nullable', 'regex:/^\d{2}-?\d{7}$/'],
+                    // `required` is safe here: the field is hidden via `when`
+                    // when entity_type is sole_prop, and RulesBuilder only
+                    // emits rules for visible fields. So required enforces
+                    // only when the field is actually shown.
+                    'rules' => ['required', 'regex:/^\d{2}-?\d{7}$/'],
                     'help' => 'Format: 12-3456789. Required for entities other than sole proprietors. Apply at https://www.irs.gov/businesses/employer-identification-number',
                     'when' => ['!=' => [['var' => 'entity_type'], 'sole_prop']],
                     'sensitive' => true,
@@ -92,11 +88,17 @@ return [
                 'individual_ssn' => [
                     'type' => 'text',
                     'label' => 'Owner Social Security Number',
-                    'rules' => ['nullable', 'regex:/^\d{3}-?\d{2}-?\d{4}$/'],
+                    'rules' => ['required', 'regex:/^\d{3}-?\d{2}-?\d{4}$/'],
                     'help' => 'Sole proprietors only. Format: 123-45-6789. Encrypted at rest.',
                     'when' => ['==' => [['var' => 'entity_type'], 'sole_prop']],
                     'sensitive' => true,
                 ],
+            ],
+        ],
+        'activity' => [
+            'title' => 'Business Activity',
+            'description' => "What you do, why you're registering, and when you started operating.",
+            'fields' => [
                 'naics_code' => [
                     'type' => 'text',
                     'label' => 'NAICS Code',
@@ -125,19 +127,6 @@ return [
                     ],
                     'rules' => ['required'],
                 ],
-                'business_phone' => [
-                    'type' => 'text',
-                    'label' => 'Business Phone Number',
-                    'rules' => ['required', 'string', 'max:20'],
-                    'placeholder' => '123-456-7890',
-                    'persist_to_business' => true,
-                ],
-                'business_email' => [
-                    'type' => 'email',
-                    'label' => 'Business Email Address',
-                    'rules' => ['required', 'email', 'max:255'],
-                    'persist_to_business' => true,
-                ],
                 'formation_state' => [
                     'type' => 'select',
                     'label' => 'State of Formation / Registration',
@@ -154,6 +143,25 @@ return [
                     'label' => 'Date Business Began Operating',
                     'rules' => ['required', 'date', 'before_or_equal:today'],
                     'help' => 'The date your business legally began operating (not when sales tax collection begins — that is asked per state).',
+                    'persist_to_business' => true,
+                ],
+            ],
+        ],
+        'contact_and_address' => [
+            'title' => 'Contact & Address',
+            'description' => 'Where the business operates and how states can reach you.',
+            'fields' => [
+                'business_phone' => [
+                    'type' => 'text',
+                    'label' => 'Business Phone Number',
+                    'rules' => ['required', 'string', 'max:20'],
+                    'placeholder' => '123-456-7890',
+                    'persist_to_business' => true,
+                ],
+                'business_email' => [
+                    'type' => 'email',
+                    'label' => 'Business Email Address',
+                    'rules' => ['required', 'email', 'max:255'],
                     'persist_to_business' => true,
                 ],
                 'business_address' => [

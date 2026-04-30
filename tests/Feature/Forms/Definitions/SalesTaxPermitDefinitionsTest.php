@@ -72,7 +72,9 @@ describe('SalesTaxPermit definitions', function () {
     it('base core_steps contain the expected canonical step keys', function () {
         $base = app(FormRegistry::class)->getBase('sales_tax_permit');
 
-        expect($base['core_steps'])->toHaveKey('business');
+        expect($base['core_steps'])->toHaveKey('identity');
+        expect($base['core_steps'])->toHaveKey('activity');
+        expect($base['core_steps'])->toHaveKey('contact_and_address');
         expect($base['core_steps'])->toHaveKey('responsible_people');
     });
 

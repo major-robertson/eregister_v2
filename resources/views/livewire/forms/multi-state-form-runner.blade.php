@@ -237,12 +237,17 @@
             @endif
 
             <div class="flex justify-between pt-4">
-                @if (!($isCore && $currentStepKey === array_key_first($stepKeys)))
+                @if ($isCore && $currentStepKey === ($stepKeys[0] ?? null))
+                    {{-- First step: Previous returns to the state-selector page.
+                         $stepKeys is numerically indexed (from array_keys), so
+                         we compare against $stepKeys[0] not array_key_first(). --}}
+                    <flux:button :href="$startUrl" type="button" variant="ghost">
+                        Back to state selection
+                    </flux:button>
+                @else
                     <flux:button wire:click="previousStep" type="button" variant="ghost">
                         Previous
                     </flux:button>
-                @else
-                    <div></div>
                 @endif
 
                 <flux:button type="submit" variant="primary">

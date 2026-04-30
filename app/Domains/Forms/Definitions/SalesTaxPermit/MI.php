@@ -55,7 +55,7 @@ return [
                         'type' => 'text',
                         'label' => 'LARA ID (Michigan Licensing Authority ID)',
                         'rules' => ['nullable', 'string', 'max:30'],
-                        'when' => ['in' => [['var' => '$root.entity_type'], ['c_corp', 's_corp', 'llc_single', 'llc_multi', 'nonprofit']]],
+                        'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp', 'llc_single', 'llc_multi', 'nonprofit']]],
                         'source_name' => 'laraId',
                     ],
                     'mi_applied_for_corporate_id' => [
@@ -63,7 +63,7 @@ return [
                         'label' => 'Have you applied for a corporate ID?',
                         'options' => ['1' => 'Yes', '0' => 'No'],
                         'rules' => ['nullable', 'in:0,1'],
-                        'when' => ['in' => [['var' => '$root.entity_type'], ['c_corp', 's_corp', 'llc_single', 'llc_multi']]],
+                        'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp', 'llc_single', 'llc_multi']]],
                         'source_name' => 'appliedForCorporateId',
                     ],
                     'mi_state_of_incorporation' => [
@@ -74,14 +74,14 @@ return [
                             array_values(config('states'))
                         ),
                         'rules' => ['nullable', 'size:2'],
-                        'when' => ['in' => [['var' => '$root.entity_type'], ['c_corp', 's_corp', 'llc_single', 'llc_multi', 'nonprofit']]],
+                        'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp', 'llc_single', 'llc_multi', 'nonprofit']]],
                         'source_name' => 'stateOfIncorporation',
                     ],
                     'mi_date_of_incorporation' => [
                         'type' => 'date',
                         'label' => 'Date of Incorporation',
                         'rules' => ['nullable', 'date'],
-                        'when' => ['in' => [['var' => '$root.entity_type'], ['c_corp', 's_corp', 'llc_single', 'llc_multi', 'nonprofit']]],
+                        'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp', 'llc_single', 'llc_multi', 'nonprofit']]],
                         'source_name' => 'dateOfIncorporation',
                     ],
 

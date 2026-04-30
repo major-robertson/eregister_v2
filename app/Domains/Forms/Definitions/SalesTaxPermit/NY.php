@@ -20,7 +20,7 @@ return [
                         'label' => 'Does any shareholder own more than 50% of this corporation?',
                         'options' => ['1' => 'Yes', '0' => 'No'],
                         'rules' => ['nullable', 'in:0,1'],
-                        'when' => ['in' => [['var' => '$root.entity_type'], ['s_corp', 'c_corp']]],
+                        'when' => ['in' => [['var' => '$root.entity_type'], ['s_corp', 'corporation']]],
                         'drives_conditional' => true,
                         'source_name' => 'shareholderOwnMoreThan50',
                     ],
@@ -61,7 +61,7 @@ return [
                         'label' => 'Is the entity publicly traded?',
                         'options' => ['1' => 'Yes', '0' => 'No'],
                         'rules' => ['nullable', 'in:0,1'],
-                        'when' => ['in' => [['var' => '$root.entity_type'], ['s_corp', 'c_corp']]],
+                        'when' => ['in' => [['var' => '$root.entity_type'], ['s_corp', 'corporation']]],
                         'source_name' => 'publiclyTraded',
                     ],
 

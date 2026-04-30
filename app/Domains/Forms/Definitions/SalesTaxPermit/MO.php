@@ -87,7 +87,7 @@ return [
                         'type' => 'date',
                         'label' => 'Date of Incorporation',
                         'rules' => ['nullable', 'date', 'before_or_equal:today'],
-                        'when' => ['in' => [['var' => '$root.entity_type'], ['c_corp', 's_corp', 'nonprofit', 'llc_single', 'llc_multi']]],
+                        'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp', 'nonprofit', 'llc_single', 'llc_multi']]],
                         'source_name' => 'missouri_date_of_incorporation',
                     ],
                     'mo_state_of_incorporation' => [
@@ -98,7 +98,7 @@ return [
                             array_values(config('states'))
                         ),
                         'rules' => ['nullable', 'size:2'],
-                        'when' => ['in' => [['var' => '$root.entity_type'], ['c_corp', 's_corp', 'nonprofit', 'llc_single', 'llc_multi']]],
+                        'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp', 'nonprofit', 'llc_single', 'llc_multi']]],
                         'source_name' => 'missouri_state_of_incorporation',
                     ],
                     'mo_charter_number' => [

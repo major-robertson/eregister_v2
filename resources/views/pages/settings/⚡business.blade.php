@@ -107,7 +107,7 @@ new #[Title('Business Settings')] class extends Component {
         return [
             'sole_proprietorship' => 'Sole Proprietorship',
             'llc' => 'Limited Liability Company (LLC)',
-            'corporation' => 'C Corporation',
+            'corporation' => 'Corporation',
             'partnership' => 'Partnership',
             's_corp' => 'S Corporation',
         ];

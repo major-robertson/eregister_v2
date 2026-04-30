@@ -237,7 +237,7 @@ return [
                         'label' => 'Is the corporation/association taxed as a corporation with CT nexus?',
                         'options' => ['1' => 'Yes', '0' => 'No'],
                         'rules' => ['nullable', 'in:0,1'],
-                        'when' => ['in' => [['var' => '$root.entity_type'], ['c_corp', 's_corp']]],
+                        'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp']]],
                         'source_name' => 'coporationOrAssociationTaxedAsCorpWithNexus',
                     ],
                     'ct_federal_corp_income_tax_exemption' => [
@@ -245,7 +245,7 @@ return [
                         'label' => 'Federal corporate income tax exempt?',
                         'options' => ['1' => 'Yes', '0' => 'No'],
                         'rules' => ['nullable', 'in:0,1'],
-                        'when' => ['in' => [['var' => '$root.entity_type'], ['c_corp', 's_corp', 'nonprofit']]],
+                        'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp', 'nonprofit']]],
                         'source_name' => 'federalCorporateIncomeTaxExemption',
                     ],
                     'ct_state_organized_under' => [
@@ -256,7 +256,7 @@ return [
                             array_values(config('states'))
                         ),
                         'rules' => ['nullable', 'size:2'],
-                        'when' => ['in' => [['var' => '$root.entity_type'], ['c_corp', 's_corp']]],
+                        'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp']]],
                         'source_name' => 'stateOrganizedUnder',
                     ],
                     'ct_month_corporation_year_closes' => [
@@ -268,7 +268,7 @@ return [
                             '9' => 'September', '10' => 'October', '11' => 'November', '12' => 'December',
                         ],
                         'rules' => ['nullable'],
-                        'when' => ['in' => [['var' => '$root.entity_type'], ['c_corp', 's_corp']]],
+                        'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp']]],
                         'source_name' => 'monthCorporationYearCloses',
                     ],
 

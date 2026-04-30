@@ -186,7 +186,11 @@
                         @default
                             <flux:field>
                                 <flux:label>{{ $subLabel }}</flux:label>
-                                <flux:input wire:model="repeaterForm.{{ $subKey }}" placeholder="{{ $subField['placeholder'] ?? '' }}" />
+                                <flux:input
+                                    wire:model="repeaterForm.{{ $subKey }}"
+                                    placeholder="{{ $subField['placeholder'] ?? '' }}"
+                                    :mask="$subField['mask'] ?? null"
+                                />
                                 <flux:error name="repeaterForm.{{ $subKey }}" />
                             </flux:field>
                     @endswitch

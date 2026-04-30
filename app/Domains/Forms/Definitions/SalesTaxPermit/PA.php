@@ -82,19 +82,19 @@ $assetLabels = [
 
 $businessCategoryFields = [];
 foreach ($businessCategoryLabels as $value => $label) {
-    $key = 'pa_business_category_' . $value;
+    $key = 'pa_business_category_'.$value;
     $businessCategoryFields[$key] = $checkboxGrid($key, $label, 'businessCategories[]', (string) $value);
 }
 
 $countyFields = [];
 foreach ($countyLabels as $value => $label) {
-    $key = 'pa_county_' . $value;
+    $key = 'pa_county_'.$value;
     $countyFields[$key] = $checkboxGrid($key, $label, 'countiesWithTaxableSales[]', (string) $value);
 }
 
 $assetFields = [];
 foreach ($assetLabels as $value => $label) {
-    $key = 'pa_asset_' . $value;
+    $key = 'pa_asset_'.$value;
     $assetFields[$key] = $checkboxGrid(
         $key,
         $label,
@@ -336,43 +336,43 @@ return [
                     'pa_date_of_incorporation' => [
                         'type' => 'date', 'label' => 'Date of Incorporation',
                         'rules' => ['nullable', 'date'],
-                        'when' => ['in' => [['var' => '$root.entity_type'], ['c_corp', 's_corp', 'nonprofit']]],
+                        'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp', 'nonprofit']]],
                         'source_name' => 'dateOfIncorporation',
                     ],
                     'pa_certificate_of_authority_date' => [
                         'type' => 'date', 'label' => 'PA Certificate of Authority Date',
                         'rules' => ['nullable', 'date'],
-                        'when' => ['in' => [['var' => '$root.entity_type'], ['c_corp', 's_corp', 'nonprofit']]],
+                        'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp', 'nonprofit']]],
                         'source_name' => 'certificateOfAuthorityDate',
                     ],
                     'pa_country_of_incorporation' => [
                         'type' => 'text', 'label' => 'Country of Incorporation',
                         'rules' => ['nullable', 'string', 'max:60'],
-                        'when' => ['in' => [['var' => '$root.entity_type'], ['c_corp', 's_corp', 'nonprofit']]],
+                        'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp', 'nonprofit']]],
                         'source_name' => 'countryOfIncorporation',
                     ],
                     'pa_s_corporation_election' => [
                         'type' => 'radio', 'label' => 'Filed Federal S Corporation election?',
                         'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['nullable', 'in:0,1'],
-                        'when' => ['in' => [['var' => '$root.entity_type'], ['c_corp', 's_corp']]],
+                        'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp']]],
                         'source_name' => 'sCorporation',
                     ],
                     'pa_best_description_corporation' => [
                         'type' => 'text', 'label' => 'Best Description of the Corporation',
                         'rules' => ['nullable', 'string', 'max:255'],
-                        'when' => ['in' => [['var' => '$root.entity_type'], ['c_corp', 's_corp']]],
+                        'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp']]],
                         'source_name' => 'bestDescriptionCorporation',
                     ],
                     'pa_stock_publicly_traded' => [
                         'type' => 'radio', 'label' => 'Is the stock publicly traded?',
                         'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['nullable', 'in:0,1'],
-                        'when' => ['in' => [['var' => '$root.entity_type'], ['c_corp', 's_corp']]],
+                        'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp']]],
                         'source_name' => 'stockPubliclyTraded',
                     ],
                 ],
-                $businessCategoryFields,
-                $countyFields,
-                $assetFields),
+                    $businessCategoryFields,
+                    $countyFields,
+                    $assetFields),
             ],
         ],
 

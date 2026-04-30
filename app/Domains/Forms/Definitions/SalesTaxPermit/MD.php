@@ -53,7 +53,8 @@ return [
                         'type' => 'text',
                         'label' => 'Business Fax Number',
                         'rules' => ['nullable', 'string', 'max:20'],
-                        'placeholder' => '123-456-7890',
+                        'placeholder' => '(123) 456-7890',
+                        'mask' => '(999) 999-9999',
                         'source_name' => 'businessFaxNumber',
                     ],
                     'md_llc_classified_as_corp' => [

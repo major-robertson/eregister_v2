@@ -170,7 +170,11 @@
                         @case('email')
                             <flux:field>
                                 <flux:label>{{ $subLabel }}</flux:label>
-                                <flux:input type="email" wire:model="repeaterForm.{{ $subKey }}" />
+                                <flux:input
+                                    type="email"
+                                    wire:model="repeaterForm.{{ $subKey }}"
+                                    placeholder="{{ $subField['placeholder'] ?? '' }}"
+                                />
                                 <flux:error name="repeaterForm.{{ $subKey }}" />
                             </flux:field>
                             @break
@@ -179,6 +183,19 @@
                             <flux:field>
                                 <flux:label>{{ $subLabel }}</flux:label>
                                 <flux:input type="date" wire:model="repeaterForm.{{ $subKey }}" />
+                                <flux:error name="repeaterForm.{{ $subKey }}" />
+                            </flux:field>
+                            @break
+
+                        @case('select')
+                            <flux:field>
+                                <flux:label>{{ $subLabel }}</flux:label>
+                                <flux:select wire:model="repeaterForm.{{ $subKey }}">
+                                    <flux:select.option value="">Select...</flux:select.option>
+                                    @foreach ($subField['options'] ?? [] as $optValue => $optLabel)
+                                        <flux:select.option value="{{ $optValue }}">{{ $optLabel }}</flux:select.option>
+                                    @endforeach
+                                </flux:select>
                                 <flux:error name="repeaterForm.{{ $subKey }}" />
                             </flux:field>
                             @break

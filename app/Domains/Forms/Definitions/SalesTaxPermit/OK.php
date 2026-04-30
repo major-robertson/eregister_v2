@@ -230,12 +230,14 @@ return [
                     'ok_contact_email' => [
                         'type' => 'email', 'label' => 'Main Contact Email',
                         'rules' => ['required', 'email', 'max:255'],
+                        'placeholder' => 'name@example.com',
                         'source_name' => 'contactEmail',
                     ],
                     'ok_contact_phone_number' => [
                         'type' => 'text', 'label' => 'Main Contact Phone',
                         'rules' => ['required', 'string', 'max:20'],
-                        'placeholder' => '123-456-7890',
+                        'placeholder' => '(123) 456-7890',
+                        'mask' => '(999) 999-9999',
                         'source_name' => 'contactPhoneNumber',
                     ],
                 ],

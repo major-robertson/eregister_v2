@@ -46,6 +46,8 @@ return [
                         'type' => 'text',
                         'label' => 'Secondary NAICS Code (if applicable)',
                         'rules' => ['nullable', 'digits:6'],
+                        'placeholder' => '123456',
+                        'mask' => '999999',
                         'source_name' => 'secondaryNaics',
                     ],
 

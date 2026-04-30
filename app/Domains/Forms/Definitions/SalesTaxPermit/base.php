@@ -90,7 +90,7 @@ return [
                     // emits rules for visible fields. So required enforces
                     // only when the field is actually shown.
                     'rules' => ['required', 'regex:/^\d{2}-?\d{7}$/'],
-                    'help' => 'You can obtain an EIN number here: Apply at https://www.irs.gov/businesses/employer-identification-number',
+                    'help' => 'You can obtain an EIN number here: https://www.irs.gov/businesses/employer-identification-number',
                     'mask' => '99-9999999',
                     'when' => ['!=' => [['var' => 'entity_type'], 'sole_prop']],
                     'sensitive' => true,
@@ -116,6 +116,8 @@ return [
                     'label' => 'NAICS Code',
                     'rules' => ['required', 'digits:6'],
                     'help' => '6-digit North American Industry Classification System code. Look it up at https://www.census.gov/naics/',
+                    'placeholder' => '123456',
+                    'mask' => '999999',
                     'persist_to_business' => true,
                 ],
                 'business_description' => [
@@ -167,13 +169,15 @@ return [
                     'type' => 'text',
                     'label' => 'Business Phone Number',
                     'rules' => ['required', 'string', 'max:20'],
-                    'placeholder' => '123-456-7890',
+                    'placeholder' => '(123) 456-7890',
+                    'mask' => '(999) 999-9999',
                     'persist_to_business' => true,
                 ],
                 'business_email' => [
                     'type' => 'email',
                     'label' => 'Business Email Address',
                     'rules' => ['required', 'email', 'max:255'],
+                    'placeholder' => 'you@example.com',
                     'persist_to_business' => true,
                 ],
                 'business_address' => [
@@ -245,13 +249,15 @@ return [
                             'type' => 'text',
                             'label' => 'Phone Number',
                             'rules' => ['required', 'string', 'max:20'],
-                            'placeholder' => '123-456-7890',
+                            'placeholder' => '(123) 456-7890',
+                            'mask' => '(999) 999-9999',
                             'persist_to_business' => true,
                         ],
                         'email' => [
                             'type' => 'email',
                             'label' => 'Email Address',
                             'rules' => ['required', 'email', 'max:255'],
+                            'placeholder' => 'name@example.com',
                             'persist_to_business' => true,
                         ],
                         'dob' => [
@@ -337,8 +343,14 @@ return [
                 'estimated_monthly_sales' => [
                     'type' => 'text',
                     'label' => 'Estimated Monthly Taxable Sales in {state_name} (USD)',
-                    'rules' => ['required', 'numeric', 'min:0'],
-                    'help' => 'Your best estimate of monthly taxable sales in this state.',
+                    'rules' => ['required', 'integer', 'min:0'],
+                    'help' => 'Your best estimate of monthly taxable sales in this state. Whole dollars only.',
+                    'placeholder' => '10000',
+                    // Mask to digits only; the 13-digit pattern is a max
+                    // length cap (well above any realistic monthly figure)
+                    // and rejects decimals so we get whole dollars in line
+                    // with the integer validation rule.
+                    'mask' => '9999999999999',
                 ],
                 'home_based_business' => [
                     'type' => 'radio',

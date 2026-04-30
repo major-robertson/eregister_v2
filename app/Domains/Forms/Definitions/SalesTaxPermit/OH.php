@@ -26,13 +26,16 @@ return [
                         'type' => 'text',
                         'label' => 'Business Secondary Phone',
                         'rules' => ['nullable', 'string', 'max:20'],
-                        'placeholder' => '123-456-7890',
+                        'placeholder' => '(123) 456-7890',
+                        'mask' => '(999) 999-9999',
                         'source_name' => 'businessSecondaryPhoneNumber',
                     ],
                     'oh_business_fax_number' => [
                         'type' => 'text',
                         'label' => 'Business Fax Number',
                         'rules' => ['nullable', 'string', 'max:20'],
+                        'placeholder' => '(123) 456-7890',
+                        'mask' => '(999) 999-9999',
                         'source_name' => 'businessFaxNumber',
                     ],
                     'oh_date_started_taxable_sales_at_location' => [
@@ -121,17 +124,21 @@ return [
                     'oh_company_contact_email' => [
                         'type' => 'email', 'label' => 'Company Contact Email',
                         'rules' => ['required', 'email', 'max:255'],
+                        'placeholder' => 'name@example.com',
                         'source_name' => 'companyContactEmail',
                     ],
                     'oh_company_contact_phone' => [
                         'type' => 'text', 'label' => 'Company Contact Phone',
                         'rules' => ['required', 'string', 'max:20'],
-                        'placeholder' => '123-456-7890',
+                        'placeholder' => '(123) 456-7890',
+                        'mask' => '(999) 999-9999',
                         'source_name' => 'companyContactPhone',
                     ],
                     'oh_company_contact_fax' => [
                         'type' => 'text', 'label' => 'Company Contact Fax',
                         'rules' => ['nullable', 'string', 'max:20'],
+                        'placeholder' => '(123) 456-7890',
+                        'mask' => '(999) 999-9999',
                         'source_name' => 'companyContactFax',
                     ],
                     'oh_company_contact_ssn' => [

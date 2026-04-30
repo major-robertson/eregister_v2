@@ -234,7 +234,8 @@ return [
                         'type' => 'text',
                         'label' => 'Supplier Phone',
                         'rules' => ['required', 'string', 'max:20'],
-                        'placeholder' => '123-456-7890',
+                        'placeholder' => '(123) 456-7890',
+                        'mask' => '(999) 999-9999',
                         'source_name' => 'supplierPhoneNumber',
                     ],
                     'ca_supplier_address' => [

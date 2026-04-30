@@ -6,7 +6,10 @@
     @error($wireModel)
         <flux:text class="text-sm text-red-500">{{ $message }}</flux:text>
     @enderror
-    @if (!empty($field['help']))
-        <flux:text class="text-sm text-neutral-500">{{ $field['help'] }}</flux:text>
+    @if (! empty($field['help']))
+        @include('livewire.forms.partials.field-help', [
+            'help' => $field['help'],
+            'variant' => 'text',
+        ])
     @endif
 </flux:field>

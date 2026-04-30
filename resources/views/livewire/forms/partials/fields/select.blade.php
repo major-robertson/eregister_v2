@@ -5,7 +5,7 @@
 <flux:field wire:key="field-{{ $wireModel }}">
     <flux:label>{{ $label }}</flux:label>
     @if (! empty($field['help']))
-        <flux:description>{{ $field['help'] }}</flux:description>
+        @include('livewire.forms.partials.field-help', ['help' => $field['help']])
     @endif
     <flux:select wire:model.live="{{ $wireModel }}" name="{{ $wireModel }}">
         <flux:select.option value="">Select...</flux:select.option>

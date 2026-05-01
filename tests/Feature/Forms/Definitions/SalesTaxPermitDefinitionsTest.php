@@ -169,20 +169,37 @@ describe('SalesTaxPermit definitions', function () {
         expect($schema['ssn']['sensitive'] ?? false)->toBeTrue();
     });
 
-    it('TX merged definition includes tx_driver_license inside per-person schema', function () {
-        $merged = app(FormRegistry::class)->get('sales_tax_permit', 'TX');
+    it('CA and TX no longer redeclare per-person driver license fields', function () {
+        // Driver license state, number, and expiration are now collected
+        // once in the base responsible_people repeater for every entity,
+        // so the per-state appendices in CA and TX were dropped to avoid
+        // asking the user the same question twice.
+        foreach (['CA', 'TX'] as $stateCode) {
+            $merged = app(FormRegistry::class)->get('sales_tax_permit', $stateCode);
+            $personSchema = $merged['state_steps']['state_responsible_people']
+                ['fields']['responsible_people_extra']['schema'] ?? [];
 
-        $personSchema = $merged['state_steps']['state_responsible_people']['fields']['responsible_people_extra']['schema'] ?? [];
-        expect($personSchema)->toHaveKey('tx_driver_license');
-        expect($personSchema['tx_driver_license']['sensitive'] ?? false)->toBeTrue();
+            $dlKeys = array_filter(
+                array_keys($personSchema),
+                fn ($k) => str_contains(strtolower($k), 'driver_license'),
+            );
+
+            expect($dlKeys)->toBeEmpty(
+                "{$stateCode} should not redeclare per-person driver license fields"
+            );
+        }
     });
 
-    it('CA merged definition includes ca_driver_license_exp inside per-person schema', function () {
-        $merged = app(FormRegistry::class)->get('sales_tax_permit', 'CA');
+    it('responsible_people base schema covers driver license + expiration as required', function () {
+        $base = app(FormRegistry::class)->getBase('sales_tax_permit');
+        $schema = $base['core_steps']['responsible_people']['fields']['responsible_people']['schema'];
 
-        $personSchema = $merged['state_steps']['state_responsible_people']['fields']['responsible_people_extra']['schema'] ?? [];
-        expect($personSchema)->toHaveKey('ca_driver_license_exp');
-        expect($personSchema['ca_driver_license_exp']['type'])->toBe('date');
+        expect($schema)->toHaveKey('driver_license_state')
+            ->and($schema)->toHaveKey('driver_license_number')
+            ->and($schema)->toHaveKey('driver_license_expiration')
+            ->and($schema['driver_license_state']['rules'])->toContain('required')
+            ->and($schema['driver_license_number']['rules'])->toContain('required')
+            ->and($schema['driver_license_expiration']['rules'])->toContain('required');
     });
 
     it('PA merged definition includes the 21 business categories and 68 counties', function () {

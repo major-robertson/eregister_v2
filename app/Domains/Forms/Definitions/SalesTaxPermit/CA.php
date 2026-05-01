@@ -253,37 +253,8 @@ return [
             ],
         ],
 
-        'state_responsible_people' => [
-            'fields' => [
-                'responsible_people_extra' => [
-                    'schema' => [
-                        'append' => [
-                            'ca_driver_license_state' => [
-                                'type' => 'select',
-                                'label' => 'Driver License Issuing State',
-                                'options' => array_combine(
-                                    array_keys(config('states')),
-                                    array_values(config('states'))
-                                ),
-                                'rules' => ['required', 'size:2'],
-                                'source_name' => 'primaryContactDriverLicenceState',
-                            ],
-                            'ca_driver_license' => [
-                                'type' => 'text',
-                                'label' => 'California Driver License Number',
-                                'rules' => ['required', 'string', 'max:20'],
-                                'sensitive' => true,
-                                'source_name' => 'primaryContactDriverLicenceNumber',
-                            ],
-                            'ca_driver_license_exp' => [
-                                'type' => 'date',
-                                'label' => 'Driver License Expiration Date',
-                                'rules' => ['required', 'date', 'after:today'],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ],
+        // No state-specific responsible_people fields: driver license
+        // state, number, and expiration are now collected once in the
+        // base responsible_people repeater for every entity.
     ],
 ];

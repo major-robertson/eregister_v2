@@ -159,8 +159,11 @@ describe('Repeater modal sub-field rendering', function () {
         // a free-text input — the user could type "asdf" instead of
         // picking a state. We pin the structural shape of the modal so
         // any future refactor that drops the case fails the test.
+        // The @switch was extracted into repeater-subfield.blade.php so
+        // both the grouped (`schema_groups`) and flat layouts share one
+        // renderer. Pin the select case + flux:select binding there.
         $partial = file_get_contents(
-            resource_path('views/livewire/forms/partials/fields/repeater.blade.php')
+            resource_path('views/livewire/forms/partials/fields/repeater-subfield.blade.php')
         );
 
         expect($partial)->toContain("@case('select')")

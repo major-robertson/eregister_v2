@@ -272,6 +272,19 @@ return [
                     ],
                     'item_label' => 'Responsible Person',
                     'persist_to_business' => true, // Non-sensitive subfields only
+                    // Visual sections for the repeater modal so the 13+
+                    // base fields don't render as one wall. The
+                    // first/last name pair sits side-by-side via the
+                    // nested-array row syntax. State-specific fields
+                    // (if any) still render as separate sections after.
+                    'schema_groups' => [
+                        ['title' => 'Identity', 'fields' => [['first_name', 'last_name'], 'title']],
+                        ['title' => 'Contact', 'fields' => ['phone', 'email']],
+                        ['title' => 'Personal', 'fields' => ['dob', 'ssn']],
+                        ['title' => 'Driver License', 'fields' => ['driver_license_state', 'driver_license_number', 'driver_license_expiration']],
+                        ['title' => 'Home Address', 'fields' => ['home_address']],
+                        ['title' => 'Authorization', 'fields' => ['ownership_percent', 'is_authorized_signer']],
+                    ],
                     'schema' => [
                         // Split first/last so state PDFs that need separate fields
                         // can read them directly. Repeater list and review screens
@@ -327,6 +340,10 @@ return [
                             'sensitive' => true,
                             'persist_to_business' => false,
                         ],
+                        // Full DL block is required for every responsible
+                        // person — covers what CA/TX previously asked for
+                        // per-state and ensures non-CA/TX state filings
+                        // also have complete DL data when they need it.
                         'driver_license_state' => [
                             'type' => 'select',
                             'label' => 'Driver License State',
@@ -334,13 +351,23 @@ return [
                                 array_keys(config('states')),
                                 array_values(config('states'))
                             ),
-                            'rules' => ['nullable', 'size:2'],
+                            'rules' => ['required', 'size:2'],
                             'persist_to_business' => true,
                         ],
                         'driver_license_number' => [
                             'type' => 'text',
                             'label' => 'Driver License Number',
-                            'rules' => ['nullable', 'string', 'max:30'],
+                            'rules' => ['required', 'string', 'max:30'],
+                            'sensitive' => true,
+                            'persist_to_business' => false,
+                        ],
+                        'driver_license_expiration' => [
+                            'type' => 'date',
+                            'label' => 'Driver License Expiration',
+                            // after:today matches CA's old per-state rule
+                            // and surfaces the same "license must not be
+                            // expired" check for everyone.
+                            'rules' => ['required', 'date', 'after:today'],
                             'sensitive' => true,
                             'persist_to_business' => false,
                         ],

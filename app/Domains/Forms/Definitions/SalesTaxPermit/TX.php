@@ -353,32 +353,8 @@ return [
             ],
         ],
 
-        'state_responsible_people' => [
-            'fields' => [
-                'responsible_people_extra' => [
-                    'schema' => [
-                        'append' => [
-                            'tx_driver_license_state' => [
-                                'type' => 'select',
-                                'label' => 'Texas Driver License Issuing State',
-                                'options' => array_combine(
-                                    array_keys(config('states')),
-                                    array_values(config('states'))
-                                ),
-                                'rules' => ['required', 'size:2'],
-                                'source_name' => 'primaryContactDriverLicenceState',
-                            ],
-                            'tx_driver_license' => [
-                                'type' => 'text',
-                                'label' => 'Driver License Number (Texas requires this for each responsible person)',
-                                'rules' => ['required', 'string', 'max:20'],
-                                'sensitive' => true,
-                                'source_name' => 'primaryContactDriverLicenceNumber',
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ],
+        // No state-specific responsible_people fields: driver license
+        // state and number are now collected once in the base
+        // responsible_people repeater for every entity.
     ],
 ];

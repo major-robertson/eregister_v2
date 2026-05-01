@@ -133,85 +133,50 @@
             <flux:heading>{{ $this->editingRepeaterIndex !== null ? 'Edit' : 'Add' }} {{ $itemLabel }}</flux:heading>
 
             <div class="space-y-4" @keydown.enter.prevent="$wire.saveRepeaterItem()">
-                @foreach ($schema as $subKey => $subField)
-                    @php
-                        $subLabel = $subField['label'] ?? ucwords(str_replace('_', ' ', $subKey));
-                        $subType = $subField['type'] ?? 'text';
-                    @endphp
-
-                    @switch($subType)
-                        @case('percent')
-                            <flux:field>
-                                <flux:label>{{ $subLabel }}</flux:label>
-                                <div class="relative">
-                                    <flux:input
-                                        type="number"
-                                        wire:model="repeaterForm.{{ $subKey }}"
-                                        min="0"
-                                        max="100"
-                                        step="0.01"
-                                    />
-                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400">%</span>
-                                </div>
-                                <flux:error name="repeaterForm.{{ $subKey }}" />
-                            </flux:field>
-                            @break
-
-                        @case('checkbox')
-                            <flux:field>
-                                <label class="flex items-center gap-2">
-                                    <flux:checkbox wire:model="repeaterForm.{{ $subKey }}" />
-                                    <span>{{ $subLabel }}</span>
-                                </label>
-                                <flux:error name="repeaterForm.{{ $subKey }}" />
-                            </flux:field>
-                            @break
-
-                        @case('email')
-                            <flux:field>
-                                <flux:label>{{ $subLabel }}</flux:label>
-                                <flux:input
-                                    type="email"
-                                    wire:model="repeaterForm.{{ $subKey }}"
-                                    placeholder="{{ $subField['placeholder'] ?? '' }}"
-                                />
-                                <flux:error name="repeaterForm.{{ $subKey }}" />
-                            </flux:field>
-                            @break
-
-                        @case('date')
-                            <flux:field>
-                                <flux:label>{{ $subLabel }}</flux:label>
-                                <flux:input type="date" wire:model="repeaterForm.{{ $subKey }}" />
-                                <flux:error name="repeaterForm.{{ $subKey }}" />
-                            </flux:field>
-                            @break
-
-                        @case('select')
-                            <flux:field>
-                                <flux:label>{{ $subLabel }}</flux:label>
-                                <flux:select wire:model="repeaterForm.{{ $subKey }}">
-                                    <flux:select.option value="">Select...</flux:select.option>
-                                    @foreach ($subField['options'] ?? [] as $optValue => $optLabel)
-                                        <flux:select.option value="{{ $optValue }}">{{ $optLabel }}</flux:select.option>
+                @if (! empty($field['schema_groups']))
+                    {{-- Grouped layout: each group renders as a section
+                         with a separator + heading. A group's `fields`
+                         entry can be a string (full-width) or an array
+                         of strings (rendered side-by-side in a 2-col
+                         grid for first/last name and similar pairs). --}}
+                    @foreach ($field['schema_groups'] as $groupIndex => $group)
+                        @if ($groupIndex > 0 || ! empty($group['title']))
+                            <flux:separator />
+                        @endif
+                        @if (! empty($group['title']))
+                            <flux:heading size="sm" class="text-zinc-600 dark:text-zinc-400">
+                                {{ $group['title'] }}
+                            </flux:heading>
+                        @endif
+                        @foreach ($group['fields'] ?? [] as $entry)
+                            @if (is_array($entry))
+                                <div class="grid grid-cols-2 gap-4">
+                                    @foreach ($entry as $rowKey)
+                                        @if (isset($schema[$rowKey]))
+                                            @include('livewire.forms.partials.fields.repeater-subfield', [
+                                                'subKey' => $rowKey,
+                                                'subField' => $schema[$rowKey],
+                                            ])
+                                        @endif
                                     @endforeach
-                                </flux:select>
-                                <flux:error name="repeaterForm.{{ $subKey }}" />
-                            </flux:field>
-                            @break
-
-                        @default
-                            <flux:field>
-                                <flux:label>{{ $subLabel }}</flux:label>
-                                <flux:input
-                                    wire:model="repeaterForm.{{ $subKey }}"
-                                    placeholder="{{ $subField['placeholder'] ?? '' }}"
-                                    :mask="$subField['mask'] ?? null"
-                                />
-                                <flux:error name="repeaterForm.{{ $subKey }}" />
-                            </flux:field>
-                    @endswitch
-                @endforeach
+                                </div>
+                            @elseif (isset($schema[$entry]))
+                                @include('livewire.forms.partials.fields.repeater-subfield', [
+                                    'subKey' => $entry,
+                                    'subField' => $schema[$entry],
+                                ])
+                            @endif
+                        @endforeach
+                    @endforeach
+                @else
+                    {{-- Flat layout: render every schema entry in declaration order. --}}
+                    @foreach ($schema as $subKey => $subField)
+                        @include('livewire.forms.partials.fields.repeater-subfield', [
+                            'subKey' => $subKey,
+                            'subField' => $subField,
+                        ])
+                    @endforeach
+                @endif
 
                 {{-- State-specific person fields --}}
                 @if ($fieldKey === 'responsible_people' && !empty($statePersonFields ?? []))

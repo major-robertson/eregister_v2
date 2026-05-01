@@ -82,28 +82,16 @@ return [
                     'rules' => ['required'],
                     'persist_to_business' => true,
                 ],
-                'fein' => [
-                    'type' => 'text',
-                    'label' => 'Federal Employer Identification Number (FEIN/EIN)',
-                    // `required` is safe here: the field is hidden via `when`
-                    // when entity_type is sole_prop, and RulesBuilder only
-                    // emits rules for visible fields. So required enforces
-                    // only when the field is actually shown.
-                    'rules' => ['required', 'regex:/^\d{2}-?\d{7}$/'],
-                    'help' => 'You can obtain an EIN number here: https://www.irs.gov/businesses/employer-identification-number',
-                    'mask' => '99-9999999',
-                    'when' => ['!=' => [['var' => 'entity_type'], 'sole_prop']],
-                    'sensitive' => true,
+                'formation_state' => [
+                    'type' => 'select',
+                    'label' => 'State of Formation / Registration',
+                    'options' => array_combine(
+                        array_keys(config('states')),
+                        array_values(config('states'))
+                    ),
+                    'rules' => ['required', 'size:2'],
+                    'help' => 'The state where your business was legally formed or registered.',
                     'persist_to_business' => true,
-                ],
-                'individual_ssn' => [
-                    'type' => 'text',
-                    'label' => 'Owner Social Security Number',
-                    'rules' => ['required', 'regex:/^\d{3}-?\d{2}-?\d{4}$/'],
-                    'help' => 'Your data is encrypted.',
-                    'mask' => '999-99-9999',
-                    'when' => ['==' => [['var' => 'entity_type'], 'sole_prop']],
-                    'sensitive' => true,
                 ],
             ],
         ],
@@ -141,23 +129,59 @@ return [
                     ],
                     'rules' => ['required'],
                 ],
-                'formation_state' => [
-                    'type' => 'select',
-                    'label' => 'State of Formation / Registration',
-                    'options' => array_combine(
-                        array_keys(config('states')),
-                        array_values(config('states'))
-                    ),
-                    'rules' => ['required', 'size:2'],
-                    'help' => 'The state where your business was legally formed or registered.',
-                    'persist_to_business' => true,
-                ],
                 'business_start_date' => [
                     'type' => 'date',
                     'label' => 'Date Business Began Operating',
                     'rules' => ['required', 'date', 'before_or_equal:today'],
                     'help' => 'The date your business legally began operating (not when sales tax collection begins — that is asked per state).',
                     'persist_to_business' => true,
+                ],
+            ],
+        ],
+        'tax_identification' => [
+            'title' => 'Tax Identification',
+            'description' => "Federal IDs we'll share with state revenue departments. Your data is encrypted at rest.",
+            'fields' => [
+                'fein' => [
+                    'type' => 'text',
+                    'label' => 'Federal Employer Identification Number (FEIN/EIN)',
+                    // EIN is required for every entity type EXCEPT sole
+                    // proprietors, who may optionally have one. The
+                    // `{prefix}` token resolves to `coreData.` for per-step
+                    // Livewire validation and to `` (empty) for the final
+                    // submit-time validation, so `entity_type` is found in
+                    // both contexts. `nullable` lets sole props leave the
+                    // field blank without tripping the regex check.
+                    'rules' => [
+                        'nullable',
+                        'regex:/^\d{2}-?\d{7}$/',
+                        'required_unless:{prefix}entity_type,sole_prop',
+                    ],
+                    'help' => 'Required for most entities. Sole proprietors may leave blank, but providing one is recommended if you have it. Get an EIN at https://www.irs.gov/businesses/employer-identification-number',
+                    'mask' => '99-9999999',
+                    // Show an "Optional" badge next to the label only when
+                    // the user picked Sole Proprietor. Default state (and
+                    // every other entity type) shows nothing — required-ness
+                    // is conveyed by the help text + validation, matching
+                    // how the rest of the form treats required fields.
+                    'badge_when' => [
+                        [
+                            'condition' => ['==' => [['var' => 'entity_type'], 'sole_prop']],
+                            'label' => 'Optional',
+                            'color' => 'zinc',
+                        ],
+                    ],
+                    'sensitive' => true,
+                    'persist_to_business' => true,
+                ],
+                'individual_ssn' => [
+                    'type' => 'text',
+                    'label' => 'Owner Social Security Number',
+                    'rules' => ['required', 'regex:/^\d{3}-?\d{2}-?\d{4}$/'],
+                    'help' => "Required by every state's revenue department for tax filing. Your data is encrypted.",
+                    'mask' => '999-99-9999',
+                    'when' => ['==' => [['var' => 'entity_type'], 'sole_prop']],
+                    'sensitive' => true,
                 ],
             ],
         ],
@@ -272,7 +296,7 @@ return [
                             'label' => 'Social Security Number',
                             'rules' => ['required', 'regex:/^\d{3}-?\d{2}-?\d{4}$/'],
                             'placeholder' => '123-45-6789',
-                            'help' => 'Your data is encrypted.',
+                            'help' => 'Required by tax authorities. Encrypted at rest.',
                             'mask' => '999-99-9999',
                             'sensitive' => true,
                             'persist_to_business' => false,

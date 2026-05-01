@@ -33,14 +33,14 @@ function renderTextPartial(array $field, string $wireModel = 'foo', bool $needsL
 describe('Input mask definitions', function () {
     it('marks individual_ssn with the SSN mask', function () {
         $base = app(FormRegistry::class)->getBase('sales_tax_permit');
-        $field = $base['core_steps']['identity']['fields']['individual_ssn'];
+        $field = $base['core_steps']['tax_identification']['fields']['individual_ssn'];
 
         expect($field['mask'] ?? null)->toBe('999-99-9999');
     });
 
     it('marks fein with the FEIN mask', function () {
         $base = app(FormRegistry::class)->getBase('sales_tax_permit');
-        $field = $base['core_steps']['identity']['fields']['fein'];
+        $field = $base['core_steps']['tax_identification']['fields']['fein'];
 
         expect($field['mask'] ?? null)->toBe('99-9999999');
     });

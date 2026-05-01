@@ -184,6 +184,13 @@ class MultiStateFormRunner extends Component
         if ($business->entity_type) {
             $this->coreData['entity_type'] = $business->entity_type;
         }
+        // EIN is sensitive but persisted (encrypted at rest) so returning
+        // users don't have to look it up again. SSN intentionally NOT
+        // prefilled — even encrypted, surfacing it without an explicit
+        // re-entry would be poor security UX.
+        if ($business->fein) {
+            $this->coreData['fein'] = $business->fein;
+        }
         if ($business->business_address) {
             $this->coreData['business_address'] = $business->business_address;
         }

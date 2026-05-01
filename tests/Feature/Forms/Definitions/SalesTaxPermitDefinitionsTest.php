@@ -13,7 +13,6 @@ use App\Domains\Forms\Engine\FormRegistry;
  * state definition files at once and we want a single canary that catches
  * typos / bad merges before they hit the form runner.
  */
-
 const SUPPORTED_FIELD_TYPES = [
     'text', 'email', 'select', 'radio', 'checkbox', 'date',
     'percent', 'address', 'repeater', 'person_state_extra',
@@ -74,8 +73,21 @@ describe('SalesTaxPermit definitions', function () {
 
         expect($base['core_steps'])->toHaveKey('identity');
         expect($base['core_steps'])->toHaveKey('activity');
+        expect($base['core_steps'])->toHaveKey('tax_identification');
         expect($base['core_steps'])->toHaveKey('contact_and_address');
         expect($base['core_steps'])->toHaveKey('responsible_people');
+    });
+
+    it('places tax_identification between activity and contact_and_address', function () {
+        $base = app(FormRegistry::class)->getBase('sales_tax_permit');
+        $stepKeys = array_keys($base['core_steps']);
+
+        $activityIndex = array_search('activity', $stepKeys, true);
+        $taxIdIndex = array_search('tax_identification', $stepKeys, true);
+        $contactIndex = array_search('contact_and_address', $stepKeys, true);
+
+        expect($taxIdIndex)->toBe($activityIndex + 1)
+            ->and($contactIndex)->toBe($taxIdIndex + 1);
     });
 
     it('base state_steps contain the expected canonical step keys', function () {

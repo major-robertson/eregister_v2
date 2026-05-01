@@ -40,7 +40,7 @@ class RulesBuilder
             } elseif ($type === 'person_state_extra') {
                 $this->buildPersonExtrasRulesLivewire($rules, $attributes, $field, $coreData, $stateCode);
             } else {
-                $fieldRules = $field['rules'] ?? [];
+                $fieldRules = $this->rewritePrefixTokens($field['rules'] ?? [], "{$prefix}.");
                 if (! empty($fieldRules)) {
                     $rules["{$prefix}.{$fieldKey}"] = $fieldRules;
                     $attributes["{$prefix}.{$fieldKey}"] = $this->replaceStateName($field['label'] ?? $fieldKey, $stateName);
@@ -57,6 +57,28 @@ class RulesBuilder
     private function replaceStateName(string $label, string $stateName): string
     {
         return str_replace('{state_name}', $stateName, $label);
+    }
+
+    /**
+     * Rewrite the `{prefix}` token used in cross-field validators
+     * (e.g. `required_unless:{prefix}entity_type,sole_prop`) so the same
+     * field definition can target the correct path in both the prefixed
+     * Livewire context (`coreData.entity_type`) and the unprefixed
+     * final-submit context (`entity_type`).
+     *
+     * Pass `''` for unprefixed contexts and `"{$prefix}."` for Livewire
+     * contexts. Non-string rule entries (e.g. Rule objects, closures)
+     * pass through untouched.
+     *
+     * @param  array<int, mixed>  $rules
+     * @return array<int, mixed>
+     */
+    private function rewritePrefixTokens(array $rules, string $replacement): array
+    {
+        return array_map(
+            fn ($rule) => is_string($rule) ? str_replace('{prefix}', $replacement, $rule) : $rule,
+            $rules
+        );
     }
 
     /**
@@ -88,7 +110,7 @@ class RulesBuilder
             } elseif ($type === 'person_state_extra') {
                 // Handled separately per state
             } else {
-                $fieldRules = $field['rules'] ?? [];
+                $fieldRules = $this->rewritePrefixTokens($field['rules'] ?? [], '');
                 if (! empty($fieldRules)) {
                     $rules[$fieldKey] = $fieldRules;
                     $attributes[$fieldKey] = $this->replaceStateName($field['label'] ?? $fieldKey, $stateName);

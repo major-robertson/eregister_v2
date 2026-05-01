@@ -6,20 +6,39 @@ $needsLive = ($drivesConditional ?? false) || in_array($type, ['checkbox', 'radi
 $stateCode = $stateCode ?? null;
 $stateName = $stateCode ? config("states.{$stateCode}", '') : '';
 $label = str_replace('{state_name}', $stateName, $field['label'] ?? ucwords(str_replace('_', ' ', $fieldKey)));
+
+// Compute the contextual badge once here so each typed partial just
+// renders the result. `badge_when` is a list of {condition, label, color}
+// entries evaluated first-match-wins via the existing ConditionEvaluator.
+// No match (or no badge_when at all) leaves $badge null.
+$badge = null;
+if (! empty($field['badge_when'])) {
+    $evaluator = app(\App\Domains\Forms\Engine\ConditionEvaluator::class);
+    $badgeContext = [
+        'coreData' => $this->coreData ?? [],
+        'stateData' => $this->stateData ?? [],
+    ];
+    foreach ($field['badge_when'] as $candidate) {
+        if ($evaluator->evaluate($candidate['condition'] ?? [], $badgeContext)) {
+            $badge = $candidate;
+            break;
+        }
+    }
+}
 @endphp
 
 @switch($type)
 @case('text')
-@include('livewire.forms.partials.fields.text', compact('fieldKey', 'field', 'wireModel', 'needsLive', 'label'))
+@include('livewire.forms.partials.fields.text', compact('fieldKey', 'field', 'wireModel', 'needsLive', 'label', 'badge'))
 @break
 
 @case('email')
 @include('livewire.forms.partials.fields.text', array_merge(compact('fieldKey', 'field', 'wireModel', 'needsLive',
-'label'), ['inputType' => 'email']))
+'label', 'badge'), ['inputType' => 'email']))
 @break
 
 @case('select')
-@include('livewire.forms.partials.fields.select', compact('fieldKey', 'field', 'wireModel', 'needsLive', 'label'))
+@include('livewire.forms.partials.fields.select', compact('fieldKey', 'field', 'wireModel', 'needsLive', 'label', 'badge'))
 @break
 
 @case('radio')
@@ -31,11 +50,11 @@ $label = str_replace('{state_name}', $stateName, $field['label'] ?? ucwords(str_
 @break
 
 @case('date')
-@include('livewire.forms.partials.fields.date', compact('fieldKey', 'field', 'wireModel', 'needsLive', 'label'))
+@include('livewire.forms.partials.fields.date', compact('fieldKey', 'field', 'wireModel', 'needsLive', 'label', 'badge'))
 @break
 
 @case('percent')
-@include('livewire.forms.partials.fields.percent', compact('fieldKey', 'field', 'wireModel', 'needsLive', 'label'))
+@include('livewire.forms.partials.fields.percent', compact('fieldKey', 'field', 'wireModel', 'needsLive', 'label', 'badge'))
 @break
 
 @case('address')
@@ -62,5 +81,5 @@ $label = str_replace('{state_name}', $stateName, $field['label'] ?? ucwords(str_
 @break
 
 @default
-@include('livewire.forms.partials.fields.text', compact('fieldKey', 'field', 'wireModel', 'needsLive', 'label'))
+@include('livewire.forms.partials.fields.text', compact('fieldKey', 'field', 'wireModel', 'needsLive', 'label', 'badge'))
 @endswitch

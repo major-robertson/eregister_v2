@@ -3,7 +3,9 @@
     $isGrouped = ! empty($rawOptions) && collect($rawOptions)->contains(fn ($v) => is_array($v));
 @endphp
 <flux:field wire:key="field-{{ $wireModel }}">
-    <flux:label>{{ $label }}</flux:label>
+    <flux:label :badge="$badge['label'] ?? null" :badge-color="$badge['color'] ?? null">
+        {{ $label }}
+    </flux:label>
     @if (! empty($field['help']))
         @include('livewire.forms.partials.field-help', ['help' => $field['help']])
     @endif

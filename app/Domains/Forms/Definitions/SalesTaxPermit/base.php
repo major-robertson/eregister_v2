@@ -190,7 +190,7 @@ return [
                     'type' => 'text',
                     'label' => 'Owner Social Security Number',
                     'rules' => ['required', 'regex:/^\d{3}-?\d{2}-?\d{4}$/'],
-                    'help' => "Required by every state's revenue department for tax filing. Your data is encrypted.",
+                    'help' => "Required by every state's revenue department for tax filing.",
                     'placeholder' => '123-45-6789',
                     'mask' => '999-99-9999',
                     'when' => ['==' => [['var' => 'entity_type'], 'sole_prop']],

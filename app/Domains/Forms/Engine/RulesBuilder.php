@@ -198,13 +198,15 @@ class RulesBuilder
         $fieldRules = $field['rules'] ?? [];
         $basePath = "{$prefix}.{$fieldKey}";
 
-        // Address is a nested object with line1, line2, city, state, zip
+        // Address is a nested object with line1, line2, city, state, zip.
+        // Zip is locked to 5 digits — the address partial enforces this
+        // client-side via mask="99999"; digits:5 is the server-side guard.
         $addressFields = [
             'line1' => ['label' => 'Street Address', 'rules' => ['required', 'string', 'max:100']],
             'line2' => ['label' => 'Address Line 2', 'rules' => ['nullable', 'string', 'max:100']],
             'city' => ['label' => 'City', 'rules' => ['required', 'string', 'max:50']],
             'state' => ['label' => 'State', 'rules' => ['required', 'string', 'size:2']],
-            'zip' => ['label' => 'ZIP Code', 'rules' => ['required', 'string', 'max:10']],
+            'zip' => ['label' => 'ZIP Code', 'rules' => ['required', 'digits:5']],
         ];
 
         foreach ($addressFields as $subKey => $subField) {
@@ -225,7 +227,7 @@ class RulesBuilder
             'line2' => ['label' => 'Address Line 2', 'rules' => ['nullable', 'string', 'max:100']],
             'city' => ['label' => 'City', 'rules' => ['required', 'string', 'max:50']],
             'state' => ['label' => 'State', 'rules' => ['required', 'string', 'size:2']],
-            'zip' => ['label' => 'ZIP Code', 'rules' => ['required', 'string', 'max:10']],
+            'zip' => ['label' => 'ZIP Code', 'rules' => ['required', 'digits:5']],
         ];
 
         foreach ($addressFields as $subKey => $subField) {

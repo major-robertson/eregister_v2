@@ -45,7 +45,12 @@ $hideLabel = $hideLabel ?? false;
 
         <flux:field class="col-span-2" wire:key="field-{{ $basePath }}-zip">
             <flux:label>ZIP Code</flux:label>
-            <flux:input wire:model="{{ $basePath }}.zip" placeholder="12345" name="{{ $basePath }}.zip" />
+            <flux:input
+                wire:model="{{ $basePath }}.zip"
+                placeholder="12345"
+                name="{{ $basePath }}.zip"
+                mask="99999"
+            />
             @error("{$basePath}.zip")
             <flux:text class="text-sm text-red-500">{{ $message }}</flux:text>
             @enderror

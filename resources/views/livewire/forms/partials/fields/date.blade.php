@@ -2,8 +2,8 @@
     <flux:label :badge="$badge['label'] ?? null" :badge-color="$badge['color'] ?? null">
         {{ $label }}
     </flux:label>
-    @if (! empty($field['help']))
-        @include('livewire.forms.partials.field-help', ['help' => $field['help']])
+    @if (! empty($resolvedHelp))
+        @include('livewire.forms.partials.field-help', ['help' => $resolvedHelp])
     @endif
     @if ($needsLive)
         <flux:input

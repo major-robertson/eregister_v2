@@ -157,7 +157,19 @@ return [
                         'regex:/^\d{2}-?\d{7}$/',
                         'required_unless:{prefix}entity_type,sole_prop',
                     ],
-                    'help' => 'Required for most entities. Sole proprietors may leave blank, but providing one is recommended if you have it. Get an EIN at https://www.irs.gov/businesses/employer-identification-number',
+                    'help' => 'Get an EIN at https://www.irs.gov/businesses/employer-identification-number',
+                    // Sole proprietors get a longer note explaining the
+                    // optional-with-recommendation framing, since EIN is
+                    // an unusual ask for them. Every other entity type
+                    // sees the short default — they already know they
+                    // need one and don't need a wall of text.
+                    'help_when' => [
+                        [
+                            'condition' => ['==' => [['var' => 'entity_type'], 'sole_prop']],
+                            'help' => 'You may leave blank, but having an EIN is highly recommended. Get an EIN at https://www.irs.gov/businesses/employer-identification-number',
+                        ],
+                    ],
+                    'placeholder' => '12-3456789',
                     'mask' => '99-9999999',
                     // Show an "Optional" badge next to the label only when
                     // the user picked Sole Proprietor. Default state (and
@@ -179,6 +191,7 @@ return [
                     'label' => 'Owner Social Security Number',
                     'rules' => ['required', 'regex:/^\d{3}-?\d{2}-?\d{4}$/'],
                     'help' => "Required by every state's revenue department for tax filing. Your data is encrypted.",
+                    'placeholder' => '123-45-6789',
                     'mask' => '999-99-9999',
                     'when' => ['==' => [['var' => 'entity_type'], 'sole_prop']],
                     'sensitive' => true,

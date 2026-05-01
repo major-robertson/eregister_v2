@@ -12,12 +12,17 @@ beforeEach(fn () => View::share('errors', new ViewErrorBag));
  */
 function renderTextFieldWithHelp(string $help): string
 {
+    // The text partial now reads `$resolvedHelp` (computed by the
+    // dispatcher in field.blade.php) rather than $field['help'] so the
+    // help_when conditional mechanism can override it. Standalone
+    // rendering must match that contract by passing resolvedHelp.
     return view('livewire.forms.partials.fields.text', [
         'field' => ['type' => 'text', 'label' => 'Field', 'help' => $help],
         'wireModel' => 'foo',
         'label' => 'Field',
         'needsLive' => false,
         'inputType' => 'text',
+        'resolvedHelp' => $help,
     ])->render();
 }
 

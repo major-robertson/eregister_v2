@@ -27,6 +27,9 @@ function renderTextPartial(array $field, string $wireModel = 'foo', bool $needsL
         'label' => $field['label'] ?? 'Test',
         'needsLive' => $needsLive,
         'inputType' => $field['type'] ?? 'text',
+        // The text partial reads $resolvedHelp (set by the dispatcher
+        // for help_when support); standalone renders must supply it.
+        'resolvedHelp' => $field['help'] ?? null,
     ])->render();
 }
 

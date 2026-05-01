@@ -194,6 +194,15 @@ class MultiStateFormRunner extends Component
         if ($business->business_address) {
             $this->coreData['business_address'] = $business->business_address;
         }
+        // Seed business_email from the signed-in user's email so the
+        // contact step has a sensible default. The user can edit it
+        // if the business uses a different contact address. Business
+        // model has no email column today, so the authed user is the
+        // canonical source.
+        $user = Auth::user();
+        if ($user && $user->email) {
+            $this->coreData['business_email'] = $user->email;
+        }
         if ($business->mailing_address) {
             $this->coreData['mailing_address'] = $business->mailing_address;
             $this->coreData['mailing_address_same'] = '0';

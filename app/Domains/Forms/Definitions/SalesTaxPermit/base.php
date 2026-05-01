@@ -95,6 +95,56 @@ return [
                 ],
             ],
         ],
+        'contact_and_address' => [
+            'title' => 'Contact & Address',
+            'description' => 'Where the business operates and how states can reach you.',
+            'groups' => [
+                // Email is intentionally first inside the Contact card so
+                // returning users immediately see the prefill from their
+                // signed-in user account — a "this form knows me" trust
+                // moment before they touch a field.
+                ['title' => 'Contact', 'fields' => ['business_email', 'business_phone']],
+                ['title' => 'Address', 'fields' => ['business_address', 'mailing_address_same', 'mailing_address']],
+            ],
+            'fields' => [
+                'business_email' => [
+                    'type' => 'email',
+                    'label' => 'Business Email Address',
+                    'rules' => ['required', 'email', 'max:255'],
+                    'placeholder' => 'you@example.com',
+                    'persist_to_business' => true,
+                ],
+                'business_phone' => [
+                    'type' => 'text',
+                    'label' => 'Business Phone Number',
+                    'rules' => ['required', 'string', 'max:20'],
+                    'placeholder' => '(123) 456-7890',
+                    'mask' => '(999) 999-9999',
+                    'persist_to_business' => true,
+                ],
+                'business_address' => [
+                    'type' => 'address',
+                    'label' => 'Principal Business Address',
+                    'rules' => ['required'],
+                    'persist_to_business' => true,
+                ],
+                'mailing_address_same' => [
+                    'type' => 'checkbox',
+                    'label' => 'Mailing address is the same as business address',
+                    'drives_conditional' => true,
+                ],
+                'mailing_address' => [
+                    'type' => 'address',
+                    'label' => 'Mailing Address',
+                    'rules' => ['required'],
+                    // Only show / require when the user explicitly toggles the
+                    // "different mailing address" switch on (sets value to '0').
+                    // Default behavior (null/unset) means mailing == business.
+                    'when' => ['==' => [['var' => 'mailing_address_same'], '0']],
+                    'persist_to_business' => true,
+                ],
+            ],
+        ],
         'activity' => [
             'title' => 'Business Activity',
             'description' => "What you do, why you're registering, and when you started operating.",
@@ -142,6 +192,21 @@ return [
             'title' => 'Tax Identification',
             'description' => "Federal IDs we'll share with state revenue departments. Your data is encrypted at rest.",
             'fields' => [
+                // SSN is rendered first because, for sole proprietors,
+                // it's the actually-required field of the two — EIN is
+                // optional. Non-sole-prop entities don't see SSN at all
+                // (the when clause hides it), so this ordering also
+                // surfaces EIN as the sole visible field for them.
+                'individual_ssn' => [
+                    'type' => 'text',
+                    'label' => 'Owner Social Security Number',
+                    'rules' => ['required', 'regex:/^\d{3}-?\d{2}-?\d{4}$/'],
+                    'help' => "Required by every state's revenue department for tax filing.",
+                    'placeholder' => '123-45-6789',
+                    'mask' => '999-99-9999',
+                    'when' => ['==' => [['var' => 'entity_type'], 'sole_prop']],
+                    'sensitive' => true,
+                ],
                 'fein' => [
                     'type' => 'text',
                     'label' => 'Federal Employer Identification Number (FEIN/EIN)',
@@ -184,58 +249,6 @@ return [
                         ],
                     ],
                     'sensitive' => true,
-                    'persist_to_business' => true,
-                ],
-                'individual_ssn' => [
-                    'type' => 'text',
-                    'label' => 'Owner Social Security Number',
-                    'rules' => ['required', 'regex:/^\d{3}-?\d{2}-?\d{4}$/'],
-                    'help' => "Required by every state's revenue department for tax filing.",
-                    'placeholder' => '123-45-6789',
-                    'mask' => '999-99-9999',
-                    'when' => ['==' => [['var' => 'entity_type'], 'sole_prop']],
-                    'sensitive' => true,
-                ],
-            ],
-        ],
-        'contact_and_address' => [
-            'title' => 'Contact & Address',
-            'description' => 'Where the business operates and how states can reach you.',
-            'fields' => [
-                'business_phone' => [
-                    'type' => 'text',
-                    'label' => 'Business Phone Number',
-                    'rules' => ['required', 'string', 'max:20'],
-                    'placeholder' => '(123) 456-7890',
-                    'mask' => '(999) 999-9999',
-                    'persist_to_business' => true,
-                ],
-                'business_email' => [
-                    'type' => 'email',
-                    'label' => 'Business Email Address',
-                    'rules' => ['required', 'email', 'max:255'],
-                    'placeholder' => 'you@example.com',
-                    'persist_to_business' => true,
-                ],
-                'business_address' => [
-                    'type' => 'address',
-                    'label' => 'Principal Business Address',
-                    'rules' => ['required'],
-                    'persist_to_business' => true,
-                ],
-                'mailing_address_same' => [
-                    'type' => 'checkbox',
-                    'label' => 'Mailing address is the same as business address',
-                    'drives_conditional' => true,
-                ],
-                'mailing_address' => [
-                    'type' => 'address',
-                    'label' => 'Mailing Address',
-                    'rules' => ['required'],
-                    // Only show / require when the user explicitly toggles the
-                    // "different mailing address" switch on (sets value to '0').
-                    // Default behavior (null/unset) means mailing == business.
-                    'when' => ['==' => [['var' => 'mailing_address_same'], '0']],
                     'persist_to_business' => true,
                 ],
             ],

@@ -78,16 +78,23 @@ describe('SalesTaxPermit definitions', function () {
         expect($base['core_steps'])->toHaveKey('responsible_people');
     });
 
-    it('places tax_identification between activity and contact_and_address', function () {
+    it('orders core steps to defer high-friction asks (NAICS, tax IDs) past easy ones', function () {
+        // Order: identity, contact_and_address, activity, tax_identification, responsible_people.
+        // - identity & contact_and_address come first because they prefill heavily for
+        //   returning users (instant-submit feel).
+        // - activity comes before tax_identification because the NAICS lookup is the
+        //   highest-friction non-PII ask and we want users invested before hitting it.
+        // - tax_identification before responsible_people keeps the deepest PII for last.
         $base = app(FormRegistry::class)->getBase('sales_tax_permit');
-        $stepKeys = array_keys($base['core_steps']);
+        $stepKeys = array_values(array_keys($base['core_steps']));
 
-        $activityIndex = array_search('activity', $stepKeys, true);
-        $taxIdIndex = array_search('tax_identification', $stepKeys, true);
-        $contactIndex = array_search('contact_and_address', $stepKeys, true);
-
-        expect($taxIdIndex)->toBe($activityIndex + 1)
-            ->and($contactIndex)->toBe($taxIdIndex + 1);
+        expect($stepKeys)->toBe([
+            'identity',
+            'contact_and_address',
+            'activity',
+            'tax_identification',
+            'responsible_people',
+        ]);
     });
 
     it('base state_steps contain the expected canonical step keys', function () {

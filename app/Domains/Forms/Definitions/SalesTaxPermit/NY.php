@@ -12,18 +12,43 @@ return [
 
     'state_steps' => [
         'state_details' => [
+            'groups' => ['append' => [
+                ['title' => 'Corporation-Specific (S/C corp)', 'fields' => [
+                    'ny_shareholder_owns_more_than_50',
+                    'ny_more_than_50_first_name', 'ny_more_than_50_last_name',
+                    'ny_shareholder_other_corp_tax_owed', 'ny_shareholder_tax_crime',
+                    'ny_publicly_traded',
+                ]],
+                ['title' => 'LLC-Specific', 'fields' => [
+                    'ny_llc_member_responsible_for_tax', 'ny_llc_member_owns_more_than_50',
+                ]],
+                ['title' => 'Banking', 'fields' => [
+                    'ny_bank_name', 'ny_routing_number', 'ny_account_number',
+                ]],
+                ['title' => 'Sales Projections', 'fields' => [
+                    'ny_describe_your_business', 'ny_expected_annual_sales',
+                    'ny_expected_annual_sales_tax', 'ny_last_date_of_taxable_sales',
+                ]],
+                ['title' => 'Multi-Location', 'fields' => [
+                    'ny_more_than_one_location', 'ny_file_separate_return',
+                ]],
+                ['title' => 'Tax Assessment / Preparer', 'fields' => [
+                    'ny_have_tax_preparer', 'ny_other_tax_id_numbers',
+                    'ny_other_tax_id_numbers_value',
+                ]],
+                ['title' => 'Industry Sales', 'fields' => [
+                    'ny_sell_fuel_retail', 'ny_sell_heating_fuels',
+                    'ny_passenger_car_rentals', 'ny_sell_diesel_retail',
+                    'ny_accept_credit_cards',
+                ]],
+            ]],
             'fields' => [
                 'append' => [
                     // ───────── Corporation-specific (S/C corp) ─────────
-                    'ny_shareholder_owns_more_than_50' => [
-                        'type' => 'radio',
-                        'label' => 'Does any shareholder own more than 50% of this corporation?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    'ny_shareholder_owns_more_than_50' => nullableYesNoField('Does any shareholder own more than 50% of this corporation?', 'shareholderOwnMoreThan50', [
                         'when' => ['in' => [['var' => '$root.entity_type'], ['s_corp', 'corporation']]],
                         'drives_conditional' => true,
-                        'source_name' => 'shareholderOwnMoreThan50',
-                    ],
+                    ]),
                     'ny_more_than_50_first_name' => [
                         'type' => 'text',
                         'label' => 'First Name of >50% Shareholder',
@@ -40,48 +65,23 @@ return [
                         'source_name' => 'moreThan50FullName',
                         'source_note' => 'Legacy form had a single "Full Name" input; split here to match the canonical convention.',
                     ],
-                    'ny_shareholder_other_corp_tax_owed' => [
-                        'type' => 'radio',
-                        'label' => 'Does the >50% shareholder own a different corporation that owes NY sales tax?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    'ny_shareholder_other_corp_tax_owed' => nullableYesNoField('Does the >50% shareholder own a different corporation that owes NY sales tax?', 'shareholderOwnMoreThan50DifferentCorporation', [
                         'when' => ['==' => [['var' => 'ny_shareholder_owns_more_than_50'], '1']],
-                        'source_name' => 'shareholderOwnMoreThan50DifferentCorporation',
-                    ],
-                    'ny_shareholder_tax_crime' => [
-                        'type' => 'radio',
-                        'label' => 'Has the >50% shareholder been convicted of a tax crime in the past year?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    ]),
+                    'ny_shareholder_tax_crime' => nullableYesNoField('Has the >50% shareholder been convicted of a tax crime in the past year?', 'shareholderTaxCrime', [
                         'when' => ['==' => [['var' => 'ny_shareholder_owns_more_than_50'], '1']],
-                        'source_name' => 'shareholderTaxCrime',
-                    ],
-                    'ny_publicly_traded' => [
-                        'type' => 'radio',
-                        'label' => 'Is the entity publicly traded?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    ]),
+                    'ny_publicly_traded' => nullableYesNoField('Is the entity publicly traded?', 'publiclyTraded', [
                         'when' => ['in' => [['var' => '$root.entity_type'], ['s_corp', 'corporation']]],
-                        'source_name' => 'publiclyTraded',
-                    ],
+                    ]),
 
                     // ───────── LLC-specific ─────────
-                    'ny_llc_member_responsible_for_tax' => [
-                        'type' => 'radio',
-                        'label' => 'Is there an LLC member responsible for the tax matters?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    'ny_llc_member_responsible_for_tax' => nullableYesNoField('Is there an LLC member responsible for the tax matters?', 'llcMemberResponsibleForTax', [
                         'when' => ['in' => [['var' => '$root.entity_type'], ['llc_single', 'llc_multi', 'llp']]],
-                        'source_name' => 'llcMemberResponsibleForTax',
-                    ],
-                    'ny_llc_member_owns_more_than_50' => [
-                        'type' => 'radio',
-                        'label' => 'Does any LLC member own more than 50%?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    ]),
+                    'ny_llc_member_owns_more_than_50' => nullableYesNoField('Does any LLC member own more than 50%?', 'llcMemberOwnMoreThan50', [
                         'when' => ['in' => [['var' => '$root.entity_type'], ['llc_single', 'llc_multi', 'llp']]],
-                        'source_name' => 'llcMemberOwnMoreThan50',
-                    ],
+                    ]),
 
                     // ───────── Banking ─────────
                     'ny_bank_name' => [
@@ -137,39 +137,14 @@ return [
                     ],
 
                     // ───────── Multi-location ─────────
-                    'ny_more_than_one_location' => [
-                        'type' => 'radio',
-                        'label' => 'Do you have more than one business location in NY?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'moreThanOneLocation',
-                    ],
-                    'ny_file_separate_return' => [
-                        'type' => 'radio',
-                        'label' => 'Will each location file a separate return?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    'ny_more_than_one_location' => yesNoField('Do you have more than one business location in NY?', 'moreThanOneLocation', ['drives_conditional' => true]),
+                    'ny_file_separate_return' => nullableYesNoField('Will each location file a separate return?', 'fileSeparateReturn', [
                         'when' => ['==' => [['var' => 'ny_more_than_one_location'], '1']],
-                        'source_name' => 'fileSeparateReturn',
-                    ],
+                    ]),
 
                     // ───────── Tax assessment / preparer ─────────
-                    'ny_have_tax_preparer' => [
-                        'type' => 'radio',
-                        'label' => 'Do you use a tax preparer?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'haveTaxPreparer',
-                    ],
-                    'ny_other_tax_id_numbers' => [
-                        'type' => 'radio',
-                        'label' => 'Do you have any other NY tax ID numbers (e.g., from another business)?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'otherTaxIDNumbers',
-                    ],
+                    'ny_have_tax_preparer' => yesNoField('Do you use a tax preparer?', 'haveTaxPreparer'),
+                    'ny_other_tax_id_numbers' => yesNoField('Do you have any other NY tax ID numbers (e.g., from another business)?', 'otherTaxIDNumbers', ['drives_conditional' => true]),
                     'ny_other_tax_id_numbers_value' => [
                         'type' => 'text',
                         'label' => 'Other NY Tax ID Number',
@@ -180,41 +155,11 @@ return [
                     ],
 
                     // ───────── Industry sales ─────────
-                    'ny_sell_fuel_retail' => [
-                        'type' => 'radio',
-                        'label' => 'Will you sell motor fuel at retail?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'sellFuelRetail',
-                    ],
-                    'ny_sell_heating_fuels' => [
-                        'type' => 'radio',
-                        'label' => 'Will you sell heating fuels?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'sellHeatingFuels',
-                    ],
-                    'ny_passenger_car_rentals' => [
-                        'type' => 'radio',
-                        'label' => 'Will you rent passenger cars?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'passengerCarRentals',
-                    ],
-                    'ny_sell_diesel_retail' => [
-                        'type' => 'radio',
-                        'label' => 'Will you sell diesel fuel at retail?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'sellDieselRetail',
-                    ],
-                    'ny_accept_credit_cards' => [
-                        'type' => 'radio',
-                        'label' => 'Will you accept credit cards?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'acceptCreditCards',
-                    ],
+                    'ny_sell_fuel_retail' => yesNoField('Will you sell motor fuel at retail?', 'sellFuelRetail'),
+                    'ny_sell_heating_fuels' => yesNoField('Will you sell heating fuels?', 'sellHeatingFuels'),
+                    'ny_passenger_car_rentals' => yesNoField('Will you rent passenger cars?', 'passengerCarRentals'),
+                    'ny_sell_diesel_retail' => yesNoField('Will you sell diesel fuel at retail?', 'sellDieselRetail'),
+                    'ny_accept_credit_cards' => yesNoField('Will you accept credit cards?', 'acceptCreditCards'),
                 ],
             ],
         ],

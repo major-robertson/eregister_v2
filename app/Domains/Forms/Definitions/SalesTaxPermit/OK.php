@@ -12,24 +12,44 @@ return [
 
     'state_steps' => [
         'state_details' => [
+            'groups' => ['append' => [
+                ['title' => 'OK Gates', 'fields' => [
+                    'ok_remote_seller', 'ok_ship_wine_directly', 'ok_ownership_type',
+                    'ok_contractor', 'ok_secretary_of_state_number',
+                ]],
+                ['title' => 'Sales Tax Account', 'fields' => [
+                    'ok_make_retail_sales', 'ok_date_of_first_sales_for_new_account',
+                ]],
+                ['title' => 'Vendor Use / Franchise / Vending', 'fields' => [
+                    'ok_need_vendor_use_account', 'ok_vendor_use_tax_start_date',
+                    'ok_franchise_tax_account', 'ok_vending_machine',
+                ]],
+                ['title' => 'Withholding', 'fields' => ['ok_oklahoma_income_tax_withheld']],
+                ['title' => 'Alcohol', 'fields' => ['ok_alcohol_retail', 'ok_alcohol_wholesale']],
+                ['title' => 'Tobacco Retailer & Agreements', 'fields' => [
+                    'ok_tobacco_or_cigarette_retail',
+                    'ok_tobacco_agreement_one', 'ok_tobacco_agreement_two',
+                    'ok_tobacco_agreement_three', 'ok_tobacco_agreement_four',
+                    'ok_tobacco_agreement_five', 'ok_tobacco_agreement_six',
+                    'ok_tobacco_agreement_seven', 'ok_tobacco_agreement_eight',
+                    'ok_tobacco_agreement_nine', 'ok_tobacco_agreement_ten',
+                ]],
+                ['title' => 'Lodging', 'fields' => ['ok_lodging_information_city_county']],
+                ['title' => 'Credit Card Processing', 'fields' => [
+                    'ok_accepting_credit_or_debit_cards', 'ok_ssn_or_fein_credit_card',
+                ]],
+                ['title' => 'Main Contact', 'fields' => [
+                    'ok_contact_first_name', 'ok_contact_last_name',
+                    'ok_contact_email', 'ok_contact_phone_number',
+                ]],
+            ]],
             'fields' => [
                 'append' => [
                     // ───────── OK-specific gates ─────────
-                    'ok_remote_seller' => [
-                        'type' => 'radio',
-                        'label' => 'Are you registering as a remote seller?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
+                    'ok_remote_seller' => yesNoField('Are you registering as a remote seller?', 'remoteSeller', [
                         'help' => 'Remote sellers may be subject to special OK rules.',
-                        'source_name' => 'remoteSeller',
-                    ],
-                    'ok_ship_wine_directly' => [
-                        'type' => 'radio',
-                        'label' => 'Will you ship wine directly to OK consumers?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'shipWineDirectly',
-                    ],
+                    ]),
+                    'ok_ship_wine_directly' => yesNoField('Will you ship wine directly to OK consumers?', 'shipWineDirectly'),
                     'ok_ownership_type' => [
                         'type' => 'select',
                         'label' => 'OK Ownership Type',
@@ -44,13 +64,7 @@ return [
                         'rules' => ['required'],
                         'source_name' => 'ownershipType',
                     ],
-                    'ok_contractor' => [
-                        'type' => 'radio',
-                        'label' => 'Are you a contractor?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'contractor',
-                    ],
+                    'ok_contractor' => yesNoField('Are you a contractor?', 'contractor'),
                     'ok_secretary_of_state_number' => [
                         'type' => 'text',
                         'label' => 'OK Secretary of State Number',
@@ -59,14 +73,7 @@ return [
                     ],
 
                     // ───────── Sales tax account ─────────
-                    'ok_make_retail_sales' => [
-                        'type' => 'radio',
-                        'label' => 'Will you make retail sales in Oklahoma?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'makeRetailSales',
-                    ],
+                    'ok_make_retail_sales' => yesNoField('Will you make retail sales in Oklahoma?', 'makeRetailSales', ['drives_conditional' => true]),
                     'ok_date_of_first_sales_for_new_account' => [
                         'type' => 'date',
                         'label' => 'Date of First OK Retail Sales',
@@ -76,59 +83,25 @@ return [
                     ],
 
                     // ───────── Vendor use / franchise / vending ─────────
-                    'ok_need_vendor_use_account' => [
-                        'type' => 'radio', 'label' => 'Do you need a Vendor Use account?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'needVendorUseAccount',
-                    ],
+                    'ok_need_vendor_use_account' => yesNoField('Do you need a Vendor Use account?', 'needVendorUseAccount', ['drives_conditional' => true]),
                     'ok_vendor_use_tax_start_date' => [
                         'type' => 'date', 'label' => 'Vendor Use Tax Start Date',
                         'rules' => ['nullable', 'date'],
                         'when' => ['==' => [['var' => 'ok_need_vendor_use_account'], '1']],
                         'source_name' => 'vendorUseTaxStartDate',
                     ],
-                    'ok_franchise_tax_account' => [
-                        'type' => 'radio', 'label' => 'Need a Franchise Tax account?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'franchiseTaxAccount',
-                    ],
-                    'ok_vending_machine' => [
-                        'type' => 'radio', 'label' => 'Operate vending machines?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'vendingMachine',
-                    ],
+                    'ok_franchise_tax_account' => yesNoField('Need a Franchise Tax account?', 'franchiseTaxAccount'),
+                    'ok_vending_machine' => yesNoField('Operate vending machines?', 'vendingMachine'),
 
                     // ───────── Withholding ─────────
-                    'ok_oklahoma_income_tax_withheld' => [
-                        'type' => 'radio',
-                        'label' => 'Will you withhold OK income tax?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'oklahomaIncomeTaxWithheld',
-                    ],
+                    'ok_oklahoma_income_tax_withheld' => yesNoField('Will you withhold OK income tax?', 'oklahomaIncomeTaxWithheld'),
 
                     // ───────── Alcohol ─────────
-                    'ok_alcohol_retail' => [
-                        'type' => 'radio', 'label' => 'Sell alcohol at retail?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'alcoholRetail',
-                    ],
-                    'ok_alcohol_wholesale' => [
-                        'type' => 'radio', 'label' => 'Sell alcohol at wholesale?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'alcoholWholesale',
-                    ],
+                    'ok_alcohol_retail' => yesNoField('Sell alcohol at retail?', 'alcoholRetail'),
+                    'ok_alcohol_wholesale' => yesNoField('Sell alcohol at wholesale?', 'alcoholWholesale'),
 
                     // ───────── Tobacco retailer / agreements ─────────
-                    'ok_tobacco_or_cigarette_retail' => [
-                        'type' => 'radio',
-                        'label' => 'Sell tobacco or cigarettes at retail?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'tobaccoOrCigaretteRetail',
-                    ],
+                    'ok_tobacco_or_cigarette_retail' => yesNoField('Sell tobacco or cigarettes at retail?', 'tobaccoOrCigaretteRetail', ['drives_conditional' => true]),
                     'ok_tobacco_agreement_one' => [
                         'type' => 'checkbox',
                         'label' => 'I will not sell tobacco products to anyone under 21.',
@@ -199,14 +172,7 @@ return [
                     ],
 
                     // ───────── Credit card processing ─────────
-                    'ok_accepting_credit_or_debit_cards' => [
-                        'type' => 'radio',
-                        'label' => 'Will you accept credit or debit card payments?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'acceptingCreditOrDebitCards',
-                    ],
+                    'ok_accepting_credit_or_debit_cards' => yesNoField('Will you accept credit or debit card payments?', 'acceptingCreditOrDebitCards', ['drives_conditional' => true]),
                     'ok_ssn_or_fein_credit_card' => [
                         'type' => 'text',
                         'label' => 'SSN or FEIN on file with payment processor',

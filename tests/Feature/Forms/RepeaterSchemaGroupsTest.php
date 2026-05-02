@@ -1,70 +1,13 @@
 <?php
 
-use App\Domains\Business\Models\Business;
 use App\Domains\Forms\Engine\FormRegistry;
 use App\Domains\Forms\Livewire\MultiStateFormRunner;
-use App\Domains\Forms\Models\FormApplication;
-use App\Domains\Forms\Models\FormApplicationState;
-use App\Models\User;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ViewErrorBag;
 use Livewire\Livewire;
+use Tests\Feature\Forms\Support\RunnerTestFactory;
 
 beforeEach(fn () => View::share('errors', new ViewErrorBag));
-
-/**
- * Boot a runner application that lands on the responsible_people step
- * with one in-flight repeater modal so we can exercise the modal markup.
- *
- * @return array{0: FormApplication, 1: User}
- */
-function bootRepeaterRunner(string $stateCode = 'CA'): array
-{
-    $user = User::factory()->create();
-    $business = Business::create([
-        'name' => 'Repeater Test',
-        'legal_name' => 'Repeater Test LLC',
-        'onboarding_completed_at' => now(),
-    ]);
-    $user->businesses()->attach($business->id, ['role' => 'owner']);
-
-    $application = FormApplication::create([
-        'business_id' => $business->id,
-        'form_type' => 'sales_tax_permit',
-        'definition_version' => 1,
-        'selected_states' => [$stateCode],
-        'status' => 'draft',
-        'current_phase' => 'core',
-        'current_step_key' => 'responsible_people',
-        'core_data' => [
-            'legal_name' => 'Repeater Test LLC',
-            'entity_type' => 'corporation',
-            'formation_state' => $stateCode,
-            'business_email' => 'owner@example.com',
-            'business_phone' => '(555) 555-1234',
-            'business_address' => ['line1' => '1 St', 'city' => 'X', 'state' => $stateCode, 'zip' => '00000'],
-            'mailing_address_same' => '1',
-            'naics_code' => '541512',
-            'business_description' => 'Software',
-            'reason_for_applying' => 'new_business',
-            'business_start_date' => '2020-01-01',
-            'fein' => '12-3456789',
-        ],
-        'created_by_user_id' => $user->id,
-        'paid_at' => now(),
-    ]);
-
-    FormApplicationState::create([
-        'form_application_id' => $application->id,
-        'state_code' => $stateCode,
-        'status' => 'pending',
-        'data' => [],
-    ]);
-
-    test()->actingAs($user)->withSession(['current_business_id' => $business->id]);
-
-    return [$application, $user];
-}
 
 describe('responsible_people schema_groups definition', function () {
     it('declares the expected six visual sections in order', function () {
@@ -125,7 +68,9 @@ describe('Driver License is now base + required', function () {
 
 describe('Repeater modal grouped rendering', function () {
     it('renders each schema group title and the side-by-side row in the modal markup', function () {
-        [$application] = bootRepeaterRunner('CA');
+        $application = RunnerTestFactory::make()
+            ->onStep('responsible_people')
+            ->boot();
 
         $html = Livewire::test(MultiStateFormRunner::class, ['application' => $application])
             ->html();
@@ -150,7 +95,9 @@ describe('Repeater modal grouped rendering', function () {
     });
 
     it('no longer renders the California Requirements per-state section', function () {
-        [$application] = bootRepeaterRunner('CA');
+        $application = RunnerTestFactory::make()
+            ->onStep('responsible_people')
+            ->boot();
 
         $html = Livewire::test(MultiStateFormRunner::class, ['application' => $application])
             ->html();

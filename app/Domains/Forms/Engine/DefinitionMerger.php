@@ -32,10 +32,42 @@ class DefinitionMerger
                         $result[$stepType][$stepKey][$prop] = $stepOverride[$prop];
                     }
                 }
+
+                // groups follows append-or-replace semantics, mirroring fields.
+                //   'groups' => [...]                  // replaces base.groups outright
+                //   'groups' => ['append' => [...]]    // appends to base.groups
+                // array_key_exists (not isset) so an explicit `groups => null`
+                // is honored as "intentionally empty".
+                if (array_key_exists('groups', $stepOverride)) {
+                    $result[$stepType][$stepKey]['groups'] = $this->mergeGroups(
+                        $result[$stepType][$stepKey]['groups'] ?? [],
+                        $stepOverride['groups']
+                    );
+                }
             }
         }
 
         return $result;
+    }
+
+    /**
+     * Apply a state's groups override to the base step's groups list.
+     *
+     * @param  array<int, array<string, mixed>>  $base
+     * @param  array<int|string, mixed>|null  $override
+     * @return array<int, array<string, mixed>>|null
+     */
+    private function mergeGroups(array $base, mixed $override): ?array
+    {
+        if ($override === null) {
+            return null;
+        }
+
+        if (is_array($override) && array_key_exists('append', $override)) {
+            return array_merge($base, $override['append'] ?? []);
+        }
+
+        return $override;
     }
 
     private function mergeFields(array $base, array $override): array

@@ -12,6 +12,27 @@ return [
 
     'state_steps' => [
         'state_details' => [
+            'groups' => ['append' => [
+                ['title' => 'Tennessee Identifiers', 'fields' => [
+                    'tn_secretary_of_state_number', 'tn_taxpayer_number',
+                ]],
+                ['title' => 'Sales / Liability (RAP)', 'fields' => [
+                    'tn_more_than_200_monthly', 'tn_exceed_4800_annual',
+                    'tn_exceed_1200_taxable_services', 'tn_suppliers_do_not_collect_sales_tax',
+                    'tn_more_than_500000', 'tn_over_50_affiliate',
+                    'tn_only_perishable_grocery_items', 'tn_rap_filing_frequency',
+                ]],
+                ['title' => 'Manufacturer / Wholesaler / Alcohol', 'fields' => [
+                    'tn_manufacturer_alcoholic_beverages', 'tn_distillery_in_tennessee',
+                    'tn_manufacturer_or_wholesaler', 'tn_physical_presence',
+                    'tn_direct_shipper_of_wine', 'tn_wholesaler_distributor_manufacturer',
+                    'tn_sell_beer_or_tobacco', 'tn_food_candy_nonalcoholic',
+                ]],
+                ['title' => 'Authorized Contact', 'fields' => [
+                    'tn_authorized_contact_name', 'tn_authorized_contact_phone',
+                    'tn_authorized_contact_email',
+                ]],
+            ]],
             'fields' => [
                 'append' => [
                     // ───────── Tennessee-specific identifiers ─────────
@@ -31,58 +52,25 @@ return [
                     ],
 
                     // ───────── Sales / liability questions (RAP) ─────────
-                    'tn_more_than_200_monthly' => [
-                        'type' => 'radio',
-                        'label' => 'Will your sales tax liability exceed $200 per month?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'moreThan200SalesTaxMonthly',
-                    ],
-                    'tn_exceed_4800_annual' => [
-                        'type' => 'radio',
-                        'label' => 'Will your annual gross sales exceed $4,800?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'exceed4800',
-                    ],
-                    'tn_exceed_1200_taxable_services' => [
-                        'type' => 'radio',
-                        'label' => 'Will your taxable services exceed $1,200 annually?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    'tn_more_than_200_monthly' => yesNoField('Will your sales tax liability exceed $200 per month?', 'moreThan200SalesTaxMonthly'),
+                    'tn_exceed_4800_annual' => yesNoField('Will your annual gross sales exceed $4,800?', 'exceed4800', ['drives_conditional' => true]),
+                    'tn_exceed_1200_taxable_services' => nullableYesNoField('Will your taxable services exceed $1,200 annually?', 'exceed1200', [
                         'when' => ['==' => [['var' => 'tn_exceed_4800_annual'], '0']],
-                        'source_name' => 'exceed1200',
-                    ],
+                    ]),
                     'tn_suppliers_do_not_collect_sales_tax' => [
+                        // Inverted options (No=1, Yes=0) — keeps the data
+                        // model consistent with the "do not collect" framing.
                         'type' => 'radio',
                         'label' => 'Do your suppliers collect Tennessee sales tax?',
                         'options' => ['1' => 'No', '0' => 'Yes'],
                         'rules' => ['required', 'in:0,1'],
                         'source_name' => 'suppliersDoNotCollectTnSalesTax',
                     ],
-                    'tn_more_than_500000' => [
-                        'type' => 'radio',
-                        'label' => 'Did you have more than $500,000 in TN sales in the last 12 months?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'moreThan500000',
-                    ],
-                    'tn_over_50_affiliate' => [
-                        'type' => 'radio',
-                        'label' => 'Are you affiliated (>50%) with a TN business?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'over50',
-                    ],
-                    'tn_only_perishable_grocery_items' => [
-                        'type' => 'radio',
-                        'label' => 'Do you sell only perishable grocery items?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'onlyPerishableGroceryItems',
-                    ],
+                    'tn_more_than_500000' => yesNoField('Did you have more than $500,000 in TN sales in the last 12 months?', 'moreThan500000'),
+                    'tn_over_50_affiliate' => yesNoField('Are you affiliated (>50%) with a TN business?', 'over50'),
+                    'tn_only_perishable_grocery_items' => yesNoField('Do you sell only perishable grocery items?', 'onlyPerishableGroceryItems'),
                     'tn_rap_filing_frequency' => [
+                        // Custom labels (Monthly / Quarterly) — not yes/no.
                         'type' => 'radio',
                         'label' => 'Filing Frequency',
                         'options' => ['1' => 'Monthly', '0' => 'Quarterly'],
@@ -91,64 +79,16 @@ return [
                     ],
 
                     // ───────── Manufacturer / wholesaler / alcohol ─────────
-                    'tn_manufacturer_alcoholic_beverages' => [
-                        'type' => 'radio',
-                        'label' => 'Are you a manufacturer of alcoholic beverages?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'manufacturerAlcoholicBeverages',
-                    ],
-                    'tn_distillery_in_tennessee' => [
-                        'type' => 'radio',
-                        'label' => 'Do you operate a distillery in Tennessee?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'distillaryInTennessee',
-                    ],
-                    'tn_manufacturer_or_wholesaler' => [
-                        'type' => 'radio',
-                        'label' => 'Are you a manufacturer or wholesaler?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'manufacturerOrWholesaler',
-                    ],
-                    'tn_physical_presence' => [
-                        'type' => 'radio',
-                        'label' => 'Do you have physical presence in Tennessee?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    'tn_manufacturer_alcoholic_beverages' => yesNoField('Are you a manufacturer of alcoholic beverages?', 'manufacturerAlcoholicBeverages'),
+                    'tn_distillery_in_tennessee' => yesNoField('Do you operate a distillery in Tennessee?', 'distillaryInTennessee'),
+                    'tn_manufacturer_or_wholesaler' => yesNoField('Are you a manufacturer or wholesaler?', 'manufacturerOrWholesaler', ['drives_conditional' => true]),
+                    'tn_physical_presence' => nullableYesNoField('Do you have physical presence in Tennessee?', 'physicalPresence', [
                         'when' => ['==' => [['var' => 'tn_manufacturer_or_wholesaler'], '1']],
-                        'source_name' => 'physicalPresence',
-                    ],
-                    'tn_direct_shipper_of_wine' => [
-                        'type' => 'radio',
-                        'label' => 'Are you an ABC-licensed direct shipper of wine?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'directShipperOfWine',
-                    ],
-                    'tn_wholesaler_distributor_manufacturer' => [
-                        'type' => 'radio',
-                        'label' => 'Are you a wholesaler, distributor, or manufacturer?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'wholesalerDistributorManfacturer',
-                    ],
-                    'tn_sell_beer_or_tobacco' => [
-                        'type' => 'radio',
-                        'label' => 'Will you sell beer or tobacco to retailers?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'sellBeerTobaccao',
-                    ],
-                    'tn_food_candy_nonalcoholic' => [
-                        'type' => 'radio',
-                        'label' => 'Will you sell food, candy, or non-alcoholic beverages to retailers?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'foodCandyNonAlcoholicBeverages',
-                    ],
+                    ]),
+                    'tn_direct_shipper_of_wine' => yesNoField('Are you an ABC-licensed direct shipper of wine?', 'directShipperOfWine'),
+                    'tn_wholesaler_distributor_manufacturer' => yesNoField('Are you a wholesaler, distributor, or manufacturer?', 'wholesalerDistributorManfacturer'),
+                    'tn_sell_beer_or_tobacco' => yesNoField('Will you sell beer or tobacco to retailers?', 'sellBeerTobaccao'),
+                    'tn_food_candy_nonalcoholic' => yesNoField('Will you sell food, candy, or non-alcoholic beverages to retailers?', 'foodCandyNonAlcoholicBeverages'),
 
                     // ───────── Authorized contact ─────────
                     'tn_authorized_contact_name' => [

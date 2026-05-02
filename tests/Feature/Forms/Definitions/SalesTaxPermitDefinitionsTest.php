@@ -176,8 +176,7 @@ describe('SalesTaxPermit definitions', function () {
         // asking the user the same question twice.
         foreach (['CA', 'TX'] as $stateCode) {
             $merged = app(FormRegistry::class)->get('sales_tax_permit', $stateCode);
-            $personSchema = $merged['state_steps']['state_responsible_people']
-                ['fields']['responsible_people_extra']['schema'] ?? [];
+            $personSchema = $merged['state_steps']['state_responsible_people']['fields']['responsible_people_extra']['schema'] ?? [];
 
             $dlKeys = array_filter(
                 array_keys($personSchema),
@@ -222,4 +221,103 @@ describe('SalesTaxPermit definitions', function () {
         // No AL.php exists, so merged should equal base.
         expect($alabama)->toEqual($base);
     });
+
+    /**
+     * Per-state `state_details.groups` integrity: every authored state
+     * appends an explicit grouping for its appended fields, replacing
+     * the orphan-fallback "Additional Information" card. These tests pin
+     * that contract — a typo in a group's `fields` list (or a stray
+     * field that escapes its group) silently falls back to the orphan
+     * card without these guards.
+     */
+    it('every state_details group field exists in the merged field list', function (string $stateCode) {
+        $merged = app(FormRegistry::class)->get('sales_tax_permit', $stateCode);
+        $step = $merged['state_steps']['state_details'] ?? [];
+        $fields = $step['fields'] ?? [];
+        $groups = $step['groups'] ?? [];
+
+        // Collect unknown references and assert all-or-nothing at the
+        // end so a regression report names every typo at once instead
+        // of stopping at the first one.
+        $unknown = [];
+        foreach ($groups as $group) {
+            foreach ($group['fields'] ?? [] as $entry) {
+                // Inline-row syntax: ['first', 'last']. Flatten it.
+                $keys = is_array($entry) ? $entry : [$entry];
+                foreach ($keys as $key) {
+                    if (! array_key_exists($key, $fields)) {
+                        $unknown[] = "{$group['title']}.{$key}";
+                    }
+                }
+            }
+        }
+
+        expect($unknown)->toBe(
+            [],
+            "{$stateCode} state_details groups reference unknown fields: ".implode(', ', $unknown)
+        );
+    })->with([
+        'TX', 'CA', 'TN', 'NY', 'NJ', 'MD', 'GA',
+        'FL', 'IL', 'CT', 'WA', 'WI', 'MO',
+        'PA', 'OK', 'OH', 'MI',
+    ]);
+
+    it('no state_details field appears in two groups simultaneously', function (string $stateCode) {
+        $merged = app(FormRegistry::class)->get('sales_tax_permit', $stateCode);
+        $groups = $merged['state_steps']['state_details']['groups'] ?? [];
+
+        $seen = [];
+        $duplicates = [];
+        foreach ($groups as $group) {
+            foreach ($group['fields'] ?? [] as $entry) {
+                $keys = is_array($entry) ? $entry : [$entry];
+                foreach ($keys as $key) {
+                    if (isset($seen[$key])) {
+                        $duplicates[] = "{$key} (in '{$seen[$key]}' and '{$group['title']}')";
+                    }
+                    $seen[$key] = $group['title'];
+                }
+            }
+        }
+
+        expect($duplicates)->toBe(
+            [],
+            "{$stateCode} state_details has fields in multiple groups: ".implode(', ', $duplicates)
+        );
+    })->with([
+        'TX', 'CA', 'TN', 'NY', 'NJ', 'MD', 'GA',
+        'FL', 'IL', 'CT', 'WA', 'WI', 'MO',
+        'PA', 'OK', 'OH', 'MI',
+    ]);
+
+    it('every appended state_details field is grouped (orphan-fallback card unused)', function (string $stateCode) {
+        $registry = app(FormRegistry::class);
+        $base = $registry->getBase('sales_tax_permit');
+        $merged = $registry->get('sales_tax_permit', $stateCode);
+
+        $baseFieldKeys = array_keys($base['state_steps']['state_details']['fields'] ?? []);
+        $mergedFieldKeys = array_keys($merged['state_steps']['state_details']['fields'] ?? []);
+        $appendedKeys = array_diff($mergedFieldKeys, $baseFieldKeys);
+
+        $groupedKeys = [];
+        foreach ($merged['state_steps']['state_details']['groups'] ?? [] as $group) {
+            foreach ($group['fields'] ?? [] as $entry) {
+                $keys = is_array($entry) ? $entry : [$entry];
+                foreach ($keys as $key) {
+                    $groupedKeys[$key] = true;
+                }
+            }
+        }
+
+        $orphans = array_filter($appendedKeys, fn ($k) => ! isset($groupedKeys[$k]));
+
+        expect($orphans)->toBe(
+            [],
+            "{$stateCode} has appended state_details fields not assigned to a group: ".implode(', ', $orphans)
+        );
+    })->with([
+        'TX', 'CA', 'TN', 'NY', 'NJ', 'MD', 'GA',
+        'FL', 'IL', 'CT', 'WA', 'WI', 'MO',
+        'PA', 'OK', 'OH', 'MI',
+    ]);
 });

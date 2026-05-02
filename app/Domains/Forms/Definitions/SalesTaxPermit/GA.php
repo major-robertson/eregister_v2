@@ -13,6 +13,31 @@ return [
 
     'state_steps' => [
         'state_details' => [
+            'groups' => ['append' => [
+                ['title' => 'Georgia Identifiers', 'fields' => [
+                    'ga_type_of_llc', 'ga_date_of_incorporation', 'ga_country_of_incorporation',
+                    'ga_secondary_naics',
+                ]],
+                ['title' => 'Sales & Use Tax Registration', 'fields' => [
+                    'ga_date_of_first_georgia_sales', 'ga_fiscal_year_end',
+                    'ga_accounting_method', 'ga_registering_as_result_from_dor',
+                    'ga_letter_id_on_notice', 'ga_motor_fuel_retailer',
+                    'ga_motor_fuel_wholesaler', 'ga_four_or_more_locations',
+                    'ga_contractor', 'ga_reporting_sales_as_marketplace',
+                ]],
+                ['title' => 'Tax Account Selections', 'fields' => [
+                    'ga_account_sales_and_use_tax', 'ga_account_withholding_tax',
+                    'ga_account_corporate_income_tax', 'ga_account_composite_tax',
+                    'ga_account_state_hotel_motel_fee', 'ga_account_alcohol_license',
+                    'ga_account_tobacco_license', 'ga_account_motor_fuel_distributor_tax',
+                    'ga_account_international_fuel_tax', 'ga_account_firework_excise_tax',
+                    'ga_account_adult_entertainment_tax', 'ga_account_non_prepaid_911',
+                    'ga_account_prepaid_wireless_911', 'ga_account_public_service_commission',
+                    'ga_account_public_utilities_and_airlines',
+                    'ga_account_qualified_timberland_property', 'ga_account_railroad_equipment',
+                    'ga_account_withholding_misc_film',
+                ]],
+            ]],
             'fields' => [
                 'append' => [
                     // ───────── GA-specific identifiers ─────────
@@ -76,14 +101,7 @@ return [
                         'rules' => ['required', 'in:accrual,cash'],
                         'source_name' => 'accountingMethod',
                     ],
-                    'ga_registering_as_result_from_dor' => [
-                        'type' => 'radio',
-                        'label' => 'Are you registering as a result of a Georgia DOR notice?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'registeringAsResultFromDOR',
-                    ],
+                    'ga_registering_as_result_from_dor' => yesNoField('Are you registering as a result of a Georgia DOR notice?', 'registeringAsResultFromDOR', ['drives_conditional' => true]),
                     'ga_letter_id_on_notice' => [
                         'type' => 'text',
                         'label' => 'Letter ID on the Notice',
@@ -91,134 +109,32 @@ return [
                         'when' => ['==' => [['var' => 'ga_registering_as_result_from_dor'], '1']],
                         'source_name' => 'letterIdOnNotice',
                     ],
-                    'ga_motor_fuel_retailer' => [
-                        'type' => 'radio',
-                        'label' => 'Are you a motor fuel retailer?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'motorFuelRetailer',
-                    ],
-                    'ga_motor_fuel_wholesaler' => [
-                        'type' => 'radio',
-                        'label' => 'Are you a motor fuel wholesaler?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'motorFuelWholesaler',
-                    ],
-                    'ga_four_or_more_locations' => [
-                        'type' => 'radio',
-                        'label' => 'Do you operate four or more Georgia locations?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'fourOrMoreLocationsGeorgia',
-                    ],
-                    'ga_contractor' => [
-                        'type' => 'radio',
-                        'label' => 'Are you a contractor?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'contractor',
-                    ],
-                    'ga_reporting_sales_as_marketplace' => [
-                        'type' => 'radio',
-                        'label' => 'Will you report sales as a marketplace facilitator?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'reportingSalesAsMarketplace',
-                    ],
+                    'ga_motor_fuel_retailer' => yesNoField('Are you a motor fuel retailer?', 'motorFuelRetailer'),
+                    'ga_motor_fuel_wholesaler' => yesNoField('Are you a motor fuel wholesaler?', 'motorFuelWholesaler'),
+                    'ga_four_or_more_locations' => yesNoField('Do you operate four or more Georgia locations?', 'fourOrMoreLocationsGeorgia'),
+                    'ga_contractor' => yesNoField('Are you a contractor?', 'contractor'),
+                    'ga_reporting_sales_as_marketplace' => yesNoField('Will you report sales as a marketplace facilitator?', 'reportingSalesAsMarketplace'),
 
                     // ───────── Tax account selections (selectAccounts blade) ─────────
                     // Each Yes/No flips on a separate Georgia DOR account registration.
-                    'ga_account_sales_and_use_tax' => [
-                        'type' => 'radio', 'label' => 'Sales and Use Tax',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'Sales_And_Use_Tax',
-                    ],
-                    'ga_account_withholding_tax' => [
-                        'type' => 'radio', 'label' => 'Withholding Tax',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'Withholding_Tax',
-                    ],
-                    'ga_account_corporate_income_tax' => [
-                        'type' => 'radio', 'label' => 'Corporate Income Tax',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'Corporate_Income_Tax',
-                    ],
-                    'ga_account_composite_tax' => [
-                        'type' => 'radio', 'label' => 'Composite Tax',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'Composite_Tax',
-                    ],
-                    'ga_account_state_hotel_motel_fee' => [
-                        'type' => 'radio', 'label' => 'State Hotel/Motel Fee',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'State_Hotel_Motel_Fee',
-                    ],
-                    'ga_account_alcohol_license' => [
-                        'type' => 'radio', 'label' => 'Alcohol License',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'Alcohol_License',
-                    ],
-                    'ga_account_tobacco_license' => [
-                        'type' => 'radio', 'label' => 'Tobacco License',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'Tobacco_License',
-                    ],
-                    'ga_account_motor_fuel_distributor_tax' => [
-                        'type' => 'radio', 'label' => 'Motor Fuel Distributor Tax',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'Motor_Fuel_Distributor_Tax',
-                    ],
-                    'ga_account_international_fuel_tax' => [
-                        'type' => 'radio', 'label' => 'International Fuel Tax (IFTA)',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'International_Fuel_Tax',
-                    ],
-                    'ga_account_firework_excise_tax' => [
-                        'type' => 'radio', 'label' => 'Firework Excise Tax',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'Firework_Excise_Tax',
-                    ],
-                    'ga_account_adult_entertainment_tax' => [
-                        'type' => 'radio', 'label' => 'Adult Entertainment Tax',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'Adult_Entertainment_Tax',
-                    ],
-                    'ga_account_non_prepaid_911' => [
-                        'type' => 'radio', 'label' => 'Non-Prepaid 911 Charge',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'Non_Prepaid_911_Charge',
-                    ],
-                    'ga_account_prepaid_wireless_911' => [
-                        'type' => 'radio', 'label' => 'Prepaid Wireless 911 Charge',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'Prepaid_Wireless_911_Charge',
-                    ],
-                    'ga_account_public_service_commission' => [
-                        'type' => 'radio', 'label' => 'Public Service Commission',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'Public_Service_Commision',
-                    ],
-                    'ga_account_public_utilities_and_airlines' => [
-                        'type' => 'radio', 'label' => 'Public Utilities and Airlines',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'Public_Utilities_And_Airlines',
-                    ],
-                    'ga_account_qualified_timberland_property' => [
-                        'type' => 'radio', 'label' => 'Qualified Timberland Property',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'Qualified_Timberland_Property',
-                    ],
-                    'ga_account_railroad_equipment' => [
-                        'type' => 'radio', 'label' => 'Railroad Equipment',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'Railroad_Equipment',
-                    ],
-                    'ga_account_withholding_misc_film' => [
-                        'type' => 'radio', 'label' => 'Withholding Misc/Film',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'Withholding_Misc_Film',
-                    ],
+                    'ga_account_sales_and_use_tax' => yesNoField('Sales and Use Tax', 'Sales_And_Use_Tax'),
+                    'ga_account_withholding_tax' => yesNoField('Withholding Tax', 'Withholding_Tax'),
+                    'ga_account_corporate_income_tax' => yesNoField('Corporate Income Tax', 'Corporate_Income_Tax'),
+                    'ga_account_composite_tax' => yesNoField('Composite Tax', 'Composite_Tax'),
+                    'ga_account_state_hotel_motel_fee' => yesNoField('State Hotel/Motel Fee', 'State_Hotel_Motel_Fee'),
+                    'ga_account_alcohol_license' => yesNoField('Alcohol License', 'Alcohol_License'),
+                    'ga_account_tobacco_license' => yesNoField('Tobacco License', 'Tobacco_License'),
+                    'ga_account_motor_fuel_distributor_tax' => yesNoField('Motor Fuel Distributor Tax', 'Motor_Fuel_Distributor_Tax'),
+                    'ga_account_international_fuel_tax' => yesNoField('International Fuel Tax (IFTA)', 'International_Fuel_Tax'),
+                    'ga_account_firework_excise_tax' => yesNoField('Firework Excise Tax', 'Firework_Excise_Tax'),
+                    'ga_account_adult_entertainment_tax' => yesNoField('Adult Entertainment Tax', 'Adult_Entertainment_Tax'),
+                    'ga_account_non_prepaid_911' => yesNoField('Non-Prepaid 911 Charge', 'Non_Prepaid_911_Charge'),
+                    'ga_account_prepaid_wireless_911' => yesNoField('Prepaid Wireless 911 Charge', 'Prepaid_Wireless_911_Charge'),
+                    'ga_account_public_service_commission' => yesNoField('Public Service Commission', 'Public_Service_Commision'),
+                    'ga_account_public_utilities_and_airlines' => yesNoField('Public Utilities and Airlines', 'Public_Utilities_And_Airlines'),
+                    'ga_account_qualified_timberland_property' => yesNoField('Qualified Timberland Property', 'Qualified_Timberland_Property'),
+                    'ga_account_railroad_equipment' => yesNoField('Railroad Equipment', 'Railroad_Equipment'),
+                    'ga_account_withholding_misc_film' => yesNoField('Withholding Misc/Film', 'Withholding_Misc_Film'),
                 ],
             ],
         ],

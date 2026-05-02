@@ -16,6 +16,35 @@ return [
 
     'state_steps' => [
         'state_details' => [
+            'groups' => ['append' => [
+                ['title' => 'California Identifiers', 'fields' => [
+                    'ca_seller_permit_number', 'ca_corporate_number', 'ca_llc_number',
+                    'ca_secretary_of_state_number', 'ca_state_employer_id',
+                ]],
+                ['title' => 'Business Location & Activity', 'fields' => [
+                    'ca_business_location_type', 'ca_retail_location',
+                    'ca_economic_nexus', 'ca_within_city_limits',
+                ]],
+                ['title' => 'Operations', 'fields' => [
+                    'ca_ship_or_deliver', 'ca_use_tax', 'ca_construction_contractor',
+                    'ca_itinerant_seller', 'ca_auction_sales', 'ca_vending_machines',
+                    'ca_lessor', 'ca_motor_vehicle_lessor',
+                ]],
+                ['title' => 'Banking & Payment', 'fields' => ['ca_bank_name', 'ca_branch_location']],
+                ['title' => 'Sales Projections', 'fields' => [
+                    'ca_projected_monthly_sales', 'ca_projected_monthly_taxable_sales',
+                    'ca_products_that_will_be_sold',
+                ]],
+                ['title' => 'Industry-Specific (CDTFA)', 'fields' => [
+                    'ca_holding_abc_license', 'ca_abc_license_number',
+                    'ca_sell_alcohol', 'ca_sell_tobacco', 'ca_sell_batteries',
+                    'ca_sell_fuel_products', 'ca_sell_covered_devices',
+                ]],
+                ['title' => 'Supplier', 'fields' => [
+                    'ca_supplier_name', 'ca_supplier_phone', 'ca_supplier_address',
+                    'ca_supplier_products_purchased',
+                ]],
+            ]],
             'fields' => [
                 'append' => [
                     // ───────── California-specific identifiers ─────────
@@ -66,77 +95,19 @@ return [
                         ],
                         'rules' => ['required'],
                     ],
-                    'ca_retail_location' => [
-                        'type' => 'radio',
-                        'label' => 'Will you operate a retail location in California?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'retailLocation',
-                    ],
-                    'ca_economic_nexus' => [
-                        'type' => 'radio',
-                        'label' => 'Do you meet California economic nexus thresholds (over $500,000 in sales)?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'economicNexus',
-                    ],
-                    'ca_within_city_limits' => [
-                        'type' => 'radio',
-                        'label' => 'Is the business address within city limits?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'withinCityLimits',
-                    ],
+                    'ca_retail_location' => yesNoField('Will you operate a retail location in California?', 'retailLocation'),
+                    'ca_economic_nexus' => yesNoField('Do you meet California economic nexus thresholds (over $500,000 in sales)?', 'economicNexus'),
+                    'ca_within_city_limits' => yesNoField('Is the business address within city limits?', 'withinCityLimits'),
 
                     // ───────── Operations radios (CA generalQuestions) ─────────
-                    'ca_ship_or_deliver' => [
-                        'type' => 'radio',
-                        'label' => 'Will you ship or deliver tangible personal property to California customers?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                    ],
-                    'ca_use_tax' => [
-                        'type' => 'radio',
-                        'label' => 'Will you owe California use tax on items purchased without sales tax?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                    ],
-                    'ca_construction_contractor' => [
-                        'type' => 'radio',
-                        'label' => 'Are you a construction contractor?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                    ],
-                    'ca_itinerant_seller' => [
-                        'type' => 'radio',
-                        'label' => 'Are you an itinerant seller (sell at temporary locations)?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                    ],
-                    'ca_auction_sales' => [
-                        'type' => 'radio',
-                        'label' => 'Will you conduct auction sales?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                    ],
-                    'ca_vending_machines' => [
-                        'type' => 'radio',
-                        'label' => 'Will you sell from vending machines?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                    ],
-                    'ca_lessor' => [
-                        'type' => 'radio',
-                        'label' => 'Are you a lessor of tangible personal property?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                    ],
-                    'ca_motor_vehicle_lessor' => [
-                        'type' => 'radio',
-                        'label' => 'Are you a motor vehicle lessor?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                    ],
+                    'ca_ship_or_deliver' => yesNoField('Will you ship or deliver tangible personal property to California customers?'),
+                    'ca_use_tax' => yesNoField('Will you owe California use tax on items purchased without sales tax?'),
+                    'ca_construction_contractor' => yesNoField('Are you a construction contractor?'),
+                    'ca_itinerant_seller' => yesNoField('Are you an itinerant seller (sell at temporary locations)?'),
+                    'ca_auction_sales' => yesNoField('Will you conduct auction sales?'),
+                    'ca_vending_machines' => yesNoField('Will you sell from vending machines?'),
+                    'ca_lessor' => yesNoField('Are you a lessor of tangible personal property?'),
+                    'ca_motor_vehicle_lessor' => yesNoField('Are you a motor vehicle lessor?'),
 
                     // ───────── Banking & payment ─────────
                     'ca_bank_name' => [
@@ -173,55 +144,18 @@ return [
                     ],
 
                     // ───────── Industry-specific (CDTFA) ─────────
-                    'ca_holding_abc_license' => [
-                        'type' => 'radio',
-                        'label' => 'Do you hold an ABC (Alcoholic Beverage Control) license?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'holdingABCLicense',
-                    ],
+                    'ca_holding_abc_license' => yesNoField('Do you hold an ABC (Alcoholic Beverage Control) license?', 'holdingABCLicense', ['drives_conditional' => true]),
                     'ca_abc_license_number' => [
                         'type' => 'text',
                         'label' => 'ABC License Number',
                         'rules' => ['nullable', 'string', 'max:30'],
                         'when' => ['==' => [['var' => 'ca_holding_abc_license'], '1']],
                     ],
-                    'ca_sell_alcohol' => [
-                        'type' => 'radio',
-                        'label' => 'Will you sell alcoholic beverages?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'sellAlcohol',
-                    ],
-                    'ca_sell_tobacco' => [
-                        'type' => 'radio',
-                        'label' => 'Will you sell tobacco or cigarettes?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'sellTobacco',
-                    ],
-                    'ca_sell_batteries' => [
-                        'type' => 'radio',
-                        'label' => 'Will you sell lead-acid batteries?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'sellBatteries',
-                    ],
-                    'ca_sell_fuel_products' => [
-                        'type' => 'radio',
-                        'label' => 'Will you sell fuel products?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'sellFuelProducts',
-                    ],
-                    'ca_sell_covered_devices' => [
-                        'type' => 'radio',
-                        'label' => 'Will you sell covered electronic devices subject to recycling fee?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'sellCoveredDevice',
-                    ],
+                    'ca_sell_alcohol' => yesNoField('Will you sell alcoholic beverages?', 'sellAlcohol'),
+                    'ca_sell_tobacco' => yesNoField('Will you sell tobacco or cigarettes?', 'sellTobacco'),
+                    'ca_sell_batteries' => yesNoField('Will you sell lead-acid batteries?', 'sellBatteries'),
+                    'ca_sell_fuel_products' => yesNoField('Will you sell fuel products?', 'sellFuelProducts'),
+                    'ca_sell_covered_devices' => yesNoField('Will you sell covered electronic devices subject to recycling fee?', 'sellCoveredDevice'),
 
                     // ───────── Supplier (CA-specific) ─────────
                     'ca_supplier_name' => [

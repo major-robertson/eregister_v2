@@ -134,40 +134,13 @@
 
             <div class="space-y-4" @keydown.enter.prevent="$wire.saveRepeaterItem()">
                 @if (! empty($field['schema_groups']))
-                    {{-- Grouped layout: each group renders as a section
-                         with a separator + heading. A group's `fields`
-                         entry can be a string (full-width) or an array
-                         of strings (rendered side-by-side in a 2-col
-                         grid for first/last name and similar pairs). --}}
-                    @foreach ($field['schema_groups'] as $groupIndex => $group)
-                        @if ($groupIndex > 0 || ! empty($group['title']))
-                            <flux:separator />
-                        @endif
-                        @if (! empty($group['title']))
-                            <flux:heading size="sm" class="text-zinc-600 dark:text-zinc-400">
-                                {{ $group['title'] }}
-                            </flux:heading>
-                        @endif
-                        @foreach ($group['fields'] ?? [] as $entry)
-                            @if (is_array($entry))
-                                <div class="grid grid-cols-2 gap-4">
-                                    @foreach ($entry as $rowKey)
-                                        @if (isset($schema[$rowKey]))
-                                            @include('livewire.forms.partials.fields.repeater-subfield', [
-                                                'subKey' => $rowKey,
-                                                'subField' => $schema[$rowKey],
-                                            ])
-                                        @endif
-                                    @endforeach
-                                </div>
-                            @elseif (isset($schema[$entry]))
-                                @include('livewire.forms.partials.fields.repeater-subfield', [
-                                    'subKey' => $entry,
-                                    'subField' => $schema[$entry],
-                                ])
-                            @endif
-                        @endforeach
-                    @endforeach
+                    @include('livewire.forms.partials.grouped-fields', [
+                        'groups' => $field['schema_groups'],
+                        'visibleFields' => $schema,
+                        'fieldPartial' => 'livewire.forms.partials.fields.repeater-subfield',
+                        'fieldContext' => [],
+                        'sectionWrapper' => 'separator',
+                    ])
                 @else
                     {{-- Flat layout: render every schema entry in declaration order. --}}
                     @foreach ($schema as $subKey => $subField)

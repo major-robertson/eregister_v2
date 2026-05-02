@@ -12,6 +12,44 @@ return [
 
     'state_steps' => [
         'state_details' => [
+            'groups' => ['append' => [
+                ['title' => 'Reasons for Applying', 'fields' => [
+                    'mi_reason_started_new_business', 'mi_reason_hired_employee',
+                    'mi_reason_incorporated_existing', 'mi_reason_acquired_transferred',
+                    'mi_reason_added_locations', 'mi_reason_peo_client_level',
+                    'mi_reason_report_after_total_transfer',
+                ]],
+                ['title' => 'MI Identifiers', 'fields' => [
+                    'mi_business_ownership_type', 'mi_number_of_business_locations_mi',
+                    'mi_acquired_employee_units', 'mi_lara_id',
+                    'mi_applied_for_corporate_id', 'mi_state_of_incorporation',
+                    'mi_date_of_incorporation',
+                ]],
+                ['title' => 'UIA / Employer', 'fields' => [
+                    'mi_registering_for_uia_employer_account',
+                    'mi_receive_uia_correspondence_electronically',
+                ]],
+                ['title' => 'Operations & Fiscal', 'fields' => [
+                    'mi_what_products_do_you_sell', 'mi_month_tax_year_ends',
+                    'mi_business_opening_month', 'mi_business_closing_month',
+                    'mi_employee_leasing_company', 'mi_use_payroll_service',
+                    'mi_incorporating_existing_business', 'mi_purchasing_existing_business',
+                ]],
+                ['title' => 'Addresses', 'fields' => ['mi_legal_address', 'mi_physical_address']],
+                ['title' => 'Tax Registrations', 'fields' => [
+                    'mi_sales_tax', 'mi_use_tax', 'mi_withholding_tax',
+                    'mi_corporate_income_tax', 'mi_flow_through_tax', 'mi_motor_fuel_tax',
+                    'mi_ifta_tax', 'mi_tobacco_tax',
+                ]],
+                ['title' => 'UIA Liability Schedule', 'fields' => [
+                    'mi_date_gross_payroll_reaches_1000', 'mi_date_week_20_reached',
+                ]],
+                ['title' => 'Successorship', 'fields' => [
+                    'mi_currently_forming_or_acquiring',
+                    'mi_currently_incorporating_existing_business',
+                ]],
+                ['title' => 'Annual Gross Receipts', 'fields' => ['mi_annual_gross_receipts']],
+            ]],
             'fields' => [
                 'append' => [
                     // ───────── reasonsForApplying[] (1-7) ─────────
@@ -58,14 +96,9 @@ return [
                         'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp', 'llc_single', 'llc_multi', 'nonprofit']]],
                         'source_name' => 'laraId',
                     ],
-                    'mi_applied_for_corporate_id' => [
-                        'type' => 'radio',
-                        'label' => 'Have you applied for a corporate ID?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    'mi_applied_for_corporate_id' => nullableYesNoField('Have you applied for a corporate ID?', 'appliedForCorporateId', [
                         'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp', 'llc_single', 'llc_multi']]],
-                        'source_name' => 'appliedForCorporateId',
-                    ],
+                    ]),
                     'mi_state_of_incorporation' => [
                         'type' => 'select',
                         'label' => 'State of Incorporation',
@@ -86,20 +119,8 @@ return [
                     ],
 
                     // ───────── UIA / employer ─────────
-                    'mi_registering_for_uia_employer_account' => [
-                        'type' => 'radio',
-                        'label' => 'Registering for a Michigan UIA Employer Account?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'registeringForUIAEmployerAccountNumber',
-                    ],
-                    'mi_receive_uia_correspondence_electronically' => [
-                        'type' => 'radio',
-                        'label' => 'Receive UIA correspondence electronically?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'recieveUIACorrespondenceElectronically',
-                    ],
+                    'mi_registering_for_uia_employer_account' => yesNoField('Registering for a Michigan UIA Employer Account?', 'registeringForUIAEmployerAccountNumber'),
+                    'mi_receive_uia_correspondence_electronically' => yesNoField('Receive UIA correspondence electronically?', 'recieveUIACorrespondenceElectronically'),
 
                     // ───────── Operations / fiscal ─────────
                     'mi_what_products_do_you_sell' => [
@@ -141,34 +162,10 @@ return [
                         'rules' => ['nullable'],
                         'source_name' => 'businessClosingMonth',
                     ],
-                    'mi_employee_leasing_company' => [
-                        'type' => 'radio',
-                        'label' => 'Are you an employee leasing company?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'employeeLeasingCompany',
-                    ],
-                    'mi_use_payroll_service' => [
-                        'type' => 'radio',
-                        'label' => 'Will you use a payroll service?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'usePayrollService',
-                    ],
-                    'mi_incorporating_existing_business' => [
-                        'type' => 'radio',
-                        'label' => 'Are you incorporating an existing business?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'incorporatingExistingBusiness',
-                    ],
-                    'mi_purchasing_existing_business' => [
-                        'type' => 'radio',
-                        'label' => 'Are you purchasing an existing business?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'purchasingExistingBusiness',
-                    ],
+                    'mi_employee_leasing_company' => yesNoField('Are you an employee leasing company?', 'employeeLeasingCompany'),
+                    'mi_use_payroll_service' => yesNoField('Will you use a payroll service?', 'usePayrollService'),
+                    'mi_incorporating_existing_business' => yesNoField('Are you incorporating an existing business?', 'incorporatingExistingBusiness'),
+                    'mi_purchasing_existing_business' => yesNoField('Are you purchasing an existing business?', 'purchasingExistingBusiness'),
 
                     // ───────── Addresses (MI requires 3) ─────────
                     'mi_legal_address' => [
@@ -183,46 +180,14 @@ return [
                     ],
 
                     // ───────── Tax registrations ─────────
-                    'mi_sales_tax' => [
-                        'type' => 'radio', 'label' => 'Register for Sales Tax?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'salesTax',
-                    ],
-                    'mi_use_tax' => [
-                        'type' => 'radio', 'label' => 'Register for Use Tax?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'useTax',
-                    ],
-                    'mi_withholding_tax' => [
-                        'type' => 'radio', 'label' => 'Register for Withholding Tax?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'withholdingTax',
-                    ],
-                    'mi_corporate_income_tax' => [
-                        'type' => 'radio', 'label' => 'Register for Corporate Income Tax?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'corporateIncomeTax',
-                    ],
-                    'mi_flow_through_tax' => [
-                        'type' => 'radio', 'label' => 'Register for Flow-Through Entity Tax?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'flowThroughTax',
-                    ],
-                    'mi_motor_fuel_tax' => [
-                        'type' => 'radio', 'label' => 'Register for Motor Fuel Tax?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'motorFuelTax',
-                    ],
-                    'mi_ifta_tax' => [
-                        'type' => 'radio', 'label' => 'Register for IFTA (International Fuel Tax)?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'iftaTax',
-                    ],
-                    'mi_tobacco_tax' => [
-                        'type' => 'radio', 'label' => 'Register for Tobacco Tax?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'tobaccoTax',
-                    ],
+                    'mi_sales_tax' => yesNoField('Register for Sales Tax?', 'salesTax'),
+                    'mi_use_tax' => yesNoField('Register for Use Tax?', 'useTax'),
+                    'mi_withholding_tax' => yesNoField('Register for Withholding Tax?', 'withholdingTax'),
+                    'mi_corporate_income_tax' => yesNoField('Register for Corporate Income Tax?', 'corporateIncomeTax'),
+                    'mi_flow_through_tax' => yesNoField('Register for Flow-Through Entity Tax?', 'flowThroughTax'),
+                    'mi_motor_fuel_tax' => yesNoField('Register for Motor Fuel Tax?', 'motorFuelTax'),
+                    'mi_ifta_tax' => yesNoField('Register for IFTA (International Fuel Tax)?', 'iftaTax'),
+                    'mi_tobacco_tax' => yesNoField('Register for Tobacco Tax?', 'tobaccoTax'),
 
                     // ───────── UIA liability schedule ─────────
                     'mi_date_gross_payroll_reaches_1000' => [
@@ -241,20 +206,8 @@ return [
                     ],
 
                     // ───────── Successorship ─────────
-                    'mi_currently_forming_or_acquiring' => [
-                        'type' => 'radio',
-                        'label' => 'Are you currently forming or acquiring a business?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'currentlyFormingOrAquiringBusiness',
-                    ],
-                    'mi_currently_incorporating_existing_business' => [
-                        'type' => 'radio',
-                        'label' => 'Currently incorporating an existing business?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'currentlyIncorporatingExistingBusiness',
-                    ],
+                    'mi_currently_forming_or_acquiring' => yesNoField('Are you currently forming or acquiring a business?', 'currentlyFormingOrAquiringBusiness'),
+                    'mi_currently_incorporating_existing_business' => yesNoField('Currently incorporating an existing business?', 'currentlyIncorporatingExistingBusiness'),
 
                     // ───────── Annual gross receipts ─────────
                     'mi_annual_gross_receipts' => [

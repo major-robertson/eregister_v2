@@ -1,11 +1,8 @@
 <?php
 
-use App\Domains\Business\Models\Business;
 use App\Domains\Forms\Livewire\MultiStateFormRunner;
-use App\Domains\Forms\Models\FormApplication;
-use App\Domains\Forms\Models\FormApplicationState;
-use App\Models\User;
 use Livewire\Livewire;
+use Tests\Feature\Forms\Support\RunnerTestFactory;
 
 /**
  * EIN/FEIN required-ness pivots on entity_type:
@@ -16,69 +13,25 @@ use Livewire\Livewire;
  *     advancing past the tax_identification step.
  *
  * EIN now lives in its own `tax_identification` step, after identity
- * and activity. The runner only validates the visible fields of the
- * current step, so the bootstrap below seeds prior-step data and
- * positions the runner directly on tax_identification.
+ * and activity. The factory below seeds every prior-step field, then
+ * lets each test override entity_type / fein to isolate the
+ * tax_identification step's validation.
  */
-function bootTaxIdentificationRunner(string $entityType, ?string $fein): array
+function feinRunner(string $entityType, ?string $fein)
 {
-    $user = User::factory()->create();
-    $business = Business::create([
-        'name' => 'EIN Test',
-        'legal_name' => 'EIN Test LLC',
-        'onboarding_completed_at' => now(),
-    ]);
-    $user->businesses()->attach($business->id, ['role' => 'owner']);
-
-    // Pre-fill every prior-step field so step navigation and any
-    // cross-step lookups succeed; the test only exercises the
-    // tax_identification step's validation.
-    $coreData = [
-        'legal_name' => 'EIN Test LLC',
-        'entity_type' => $entityType,
-        'formation_state' => 'CA',
-        'naics_code' => '541512',
-        'business_description' => 'Software development services',
-        'reason_for_applying' => 'new_business',
-        'business_start_date' => '2020-01-01',
-    ];
+    $core = ['entity_type' => $entityType];
     if ($fein !== null) {
-        $coreData['fein'] = $fein;
-    }
-    if ($entityType === 'sole_prop') {
-        // tax_identification step requires SSN for sole props; populate
-        // it so we isolate the test to FEIN-only validation behavior.
-        $coreData['individual_ssn'] = '123-45-6789';
+        $core['fein'] = $fein;
     }
 
-    $application = FormApplication::create([
-        'business_id' => $business->id,
-        'form_type' => 'sales_tax_permit',
-        'definition_version' => 1,
-        'selected_states' => ['CA'],
-        'status' => 'draft',
-        'current_phase' => 'core',
-        'current_step_key' => 'tax_identification',
-        'core_data' => $coreData,
-        'created_by_user_id' => $user->id,
-        'paid_at' => now(),
-    ]);
-
-    FormApplicationState::create([
-        'form_application_id' => $application->id,
-        'state_code' => 'CA',
-        'status' => 'pending',
-        'data' => [],
-    ]);
-
-    test()->actingAs($user)->withSession(['current_business_id' => $business->id]);
-
-    return [$application, $user];
+    return RunnerTestFactory::make()
+        ->coreData($core)
+        ->boot();
 }
 
 describe('FEIN conditional required behavior', function () {
     it('renders the EIN field on the tax_identification step for sole proprietors', function () {
-        [$application] = bootTaxIdentificationRunner('sole_prop', null);
+        $application = feinRunner('sole_prop', null);
 
         $component = Livewire::test(MultiStateFormRunner::class, ['application' => $application]);
 
@@ -88,7 +41,7 @@ describe('FEIN conditional required behavior', function () {
     });
 
     it('lets sole proprietors leave EIN blank without a validation error', function () {
-        [$application] = bootTaxIdentificationRunner('sole_prop', null);
+        $application = feinRunner('sole_prop', null);
 
         Livewire::test(MultiStateFormRunner::class, ['application' => $application])
             ->call('nextStep')
@@ -96,7 +49,7 @@ describe('FEIN conditional required behavior', function () {
     });
 
     it('accepts a valid EIN from a sole proprietor when they choose to provide one', function () {
-        [$application] = bootTaxIdentificationRunner('sole_prop', '12-3456789');
+        $application = feinRunner('sole_prop', '12-3456789');
 
         Livewire::test(MultiStateFormRunner::class, ['application' => $application])
             ->call('nextStep')
@@ -104,7 +57,7 @@ describe('FEIN conditional required behavior', function () {
     });
 
     it('rejects a malformed EIN even when the sole-prop opt-out is in play', function () {
-        [$application] = bootTaxIdentificationRunner('sole_prop', 'nope');
+        $application = feinRunner('sole_prop', 'nope');
 
         Livewire::test(MultiStateFormRunner::class, ['application' => $application])
             ->call('nextStep')
@@ -112,7 +65,11 @@ describe('FEIN conditional required behavior', function () {
     });
 
     it('requires an EIN from corporations', function () {
-        [$application] = bootTaxIdentificationRunner('corporation', null);
+        // Override the factory's default fein so the corporation case
+        // explicitly leaves it blank.
+        $application = RunnerTestFactory::make()
+            ->coreData(['entity_type' => 'corporation', 'fein' => null])
+            ->boot();
 
         Livewire::test(MultiStateFormRunner::class, ['application' => $application])
             ->call('nextStep')
@@ -120,7 +77,7 @@ describe('FEIN conditional required behavior', function () {
     });
 
     it('accepts a valid EIN from corporations', function () {
-        [$application] = bootTaxIdentificationRunner('corporation', '12-3456789');
+        $application = feinRunner('corporation', '12-3456789');
 
         Livewire::test(MultiStateFormRunner::class, ['application' => $application])
             ->call('nextStep')

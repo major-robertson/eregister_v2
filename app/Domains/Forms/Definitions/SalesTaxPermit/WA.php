@@ -14,6 +14,20 @@ return [
 
     'state_steps' => [
         'state_details' => [
+            'groups' => ['append' => [
+                ['title' => 'WA Identifiers & Income', 'fields' => [
+                    'wa_unified_business_identifier', 'wa_estimated_annual_income',
+                    'wa_estimated_employees',
+                ]],
+                ['title' => 'Location & Modifications', 'fields' => [
+                    'wa_business_address_in_residence', 'wa_square_footage_used',
+                    'wa_exterior_modifications',
+                ]],
+                ['title' => 'Environmental & Fire Safety', 'fields' => [
+                    'wa_compressed_gases', 'wa_smoke_detection', 'wa_discharge_to_sewer',
+                    'wa_any_toxic_materials', 'wa_any_floor_drains', 'wa_alarm_monitoring_service',
+                ]],
+            ]],
             'fields' => [
                 'append' => [
                     'wa_unified_business_identifier' => [
@@ -36,68 +50,20 @@ return [
                         'rules' => ['required', 'integer', 'min:0'],
                         'source_name' => 'washingtonEstimatedEmployees',
                     ],
-                    'wa_business_address_in_residence' => [
-                        'type' => 'radio',
-                        'label' => 'Is the WA business location in a residence?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'washingtonBusinessAddressInResidence',
-                    ],
+                    'wa_business_address_in_residence' => yesNoField('Is the WA business location in a residence?', 'washingtonBusinessAddressInResidence'),
                     'wa_square_footage_used' => [
                         'type' => 'text',
                         'label' => 'Square Footage Used for Business',
                         'rules' => ['required', 'integer', 'min:0'],
                         'source_name' => 'washingtonSquareFootageUsed',
                     ],
-                    'wa_exterior_modifications' => [
-                        'type' => 'radio',
-                        'label' => 'Will you make exterior modifications (signs, etc.)?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'washingtonExteriorModifications',
-                    ],
-                    'wa_compressed_gases' => [
-                        'type' => 'radio',
-                        'label' => 'Will you store or use compressed gases?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'washingtonCompressedGasses',
-                    ],
-                    'wa_smoke_detection' => [
-                        'type' => 'radio',
-                        'label' => 'Does the location have smoke detection / sprinkler systems?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'washingtonSmokeDetection',
-                    ],
-                    'wa_discharge_to_sewer' => [
-                        'type' => 'radio',
-                        'label' => 'Will the business discharge to a sewer?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'washingtonDischargeToSewerFromBusiness',
-                    ],
-                    'wa_any_toxic_materials' => [
-                        'type' => 'radio',
-                        'label' => 'Will you store flammable, hazardous, or toxic materials?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'washingtonAnyToxicMaterials',
-                    ],
-                    'wa_any_floor_drains' => [
-                        'type' => 'radio',
-                        'label' => 'Are there floor drains in the business location?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'washingtonAnyFloorDrains',
-                    ],
-                    'wa_alarm_monitoring_service' => [
-                        'type' => 'radio',
-                        'label' => 'Do you use an emergency alarm monitoring service?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'washingtonAlarmMonitoringService',
-                    ],
+                    'wa_exterior_modifications' => yesNoField('Will you make exterior modifications (signs, etc.)?', 'washingtonExteriorModifications'),
+                    'wa_compressed_gases' => yesNoField('Will you store or use compressed gases?', 'washingtonCompressedGasses'),
+                    'wa_smoke_detection' => yesNoField('Does the location have smoke detection / sprinkler systems?', 'washingtonSmokeDetection'),
+                    'wa_discharge_to_sewer' => yesNoField('Will the business discharge to a sewer?', 'washingtonDischargeToSewerFromBusiness'),
+                    'wa_any_toxic_materials' => yesNoField('Will you store flammable, hazardous, or toxic materials?', 'washingtonAnyToxicMaterials'),
+                    'wa_any_floor_drains' => yesNoField('Are there floor drains in the business location?', 'washingtonAnyFloorDrains'),
+                    'wa_alarm_monitoring_service' => yesNoField('Do you use an emergency alarm monitoring service?', 'washingtonAlarmMonitoringService'),
                 ],
             ],
         ],

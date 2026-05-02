@@ -12,6 +12,34 @@ return [
 
     'state_steps' => [
         'state_details' => [
+            'groups' => ['append' => [
+                ['title' => 'MD Identifiers', 'fields' => [
+                    'md_primary_id_type', 'md_business_taxpayer_id', 'md_da_ein',
+                    'md_owner_name', 'md_owner_ssn', 'md_business_fax_number',
+                    'md_llc_classified_as_corp',
+                ]],
+                ['title' => 'Reasons & Business Overview', 'fields' => [
+                    'md_reason_new_business', 'md_reason_reorganization',
+                    'md_reason_purchased', 'md_reason_remote_seller', 'md_reason_other',
+                    'md_type_of_business_overview', 'md_type_of_business_detail',
+                    'md_your_situation',
+                ]],
+                ['title' => 'Operations', 'fields' => [
+                    'md_multiple_locations', 'md_primarily_provide_support',
+                    'md_type_of_service_provided',
+                ]],
+                ['title' => 'Employer', 'fields' => [
+                    'md_pay_wages_in_maryland', 'md_first_date_paid_wages',
+                    'md_number_paid_wages', 'md_sole_prop_employ_under_21',
+                    'md_partnership_employ_anyone', 'md_llc_employ_other_members',
+                ]],
+                ['title' => 'Acquisitions', 'fields' => [
+                    'md_acquired_business', 'md_previous_employer_name',
+                    'md_previous_owner_address', 'md_acquired_date',
+                    'md_common_ownership_management', 'md_percent_acquired',
+                    'md_prior_unemployment_insurance_number',
+                ]],
+            ]],
             'fields' => [
                 'append' => [
                     // ───────── MD-specific identifiers ─────────
@@ -57,14 +85,9 @@ return [
                         'mask' => '(999) 999-9999',
                         'source_name' => 'businessFaxNumber',
                     ],
-                    'md_llc_classified_as_corp' => [
-                        'type' => 'radio',
-                        'label' => 'Is the LLC classified as a corporation for federal tax purposes?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    'md_llc_classified_as_corp' => nullableYesNoField('Is the LLC classified as a corporation for federal tax purposes?', 'llcAsClassifiedAsCorp', [
                         'when' => ['in' => [['var' => '$root.entity_type'], ['llc_single', 'llc_multi']]],
-                        'source_name' => 'llcAsClassifiedAsCorp',
-                    ],
+                    ]),
 
                     // ───────── Reasons for applying / business overview ─────────
                     'md_reason_new_business' => ['type' => 'checkbox', 'label' => 'New Business', 'source_name' => 'reasonsForApplying[]', 'source_value' => 'New Business'],
@@ -111,21 +134,8 @@ return [
                     ],
 
                     // ───────── Operations ─────────
-                    'md_multiple_locations' => [
-                        'type' => 'radio',
-                        'label' => 'Will you operate multiple locations in Maryland?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'multipleLocations',
-                    ],
-                    'md_primarily_provide_support' => [
-                        'type' => 'radio',
-                        'label' => 'Do you primarily provide support services?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'primarilyProvideSupport',
-                    ],
+                    'md_multiple_locations' => yesNoField('Will you operate multiple locations in Maryland?', 'multipleLocations'),
+                    'md_primarily_provide_support' => yesNoField('Do you primarily provide support services?', 'primarilyProvideSupport', ['drives_conditional' => true]),
                     'md_type_of_service_provided' => [
                         'type' => 'text',
                         'label' => 'Type of Service Provided',
@@ -135,14 +145,7 @@ return [
                     ],
 
                     // ───────── Employer ─────────
-                    'md_pay_wages_in_maryland' => [
-                        'type' => 'radio',
-                        'label' => 'Will you pay wages in Maryland?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'payWagesInMaryland',
-                    ],
+                    'md_pay_wages_in_maryland' => yesNoField('Will you pay wages in Maryland?', 'payWagesInMaryland', ['drives_conditional' => true]),
                     'md_first_date_paid_wages' => [
                         'type' => 'date',
                         'label' => 'First Date Wages Were Paid',
@@ -157,40 +160,18 @@ return [
                         'when' => ['==' => [['var' => 'md_pay_wages_in_maryland'], '1']],
                         'source_name' => 'numberPaidWages',
                     ],
-                    'md_sole_prop_employ_under_21' => [
-                        'type' => 'radio',
-                        'label' => '(Sole proprietor) Do you employ family members under 21?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    'md_sole_prop_employ_under_21' => nullableYesNoField('(Sole proprietor) Do you employ family members under 21?', 'solePropEmployUnder21', [
                         'when' => ['==' => [['var' => '$root.entity_type'], 'sole_prop']],
-                        'source_name' => 'solePropEmployUnder21',
-                    ],
-                    'md_partnership_employ_anyone' => [
-                        'type' => 'radio',
-                        'label' => '(Partnership) Do you employ anyone outside the partnership?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    ]),
+                    'md_partnership_employ_anyone' => nullableYesNoField('(Partnership) Do you employ anyone outside the partnership?', 'partnershipEmployAnyone', [
                         'when' => ['in' => [['var' => '$root.entity_type'], ['general_partnership', 'limited_partnership', 'llp']]],
-                        'source_name' => 'partnershipEmployAnyone',
-                    ],
-                    'md_llc_employ_other_members' => [
-                        'type' => 'radio',
-                        'label' => '(LLC) Does the LLC employ members other than owners?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    ]),
+                    'md_llc_employ_other_members' => nullableYesNoField('(LLC) Does the LLC employ members other than owners?', 'llcEmployOtherMembers', [
                         'when' => ['in' => [['var' => '$root.entity_type'], ['llc_single', 'llc_multi']]],
-                        'source_name' => 'llcEmployOtherMembers',
-                    ],
+                    ]),
 
                     // ───────── Acquisitions ─────────
-                    'md_acquired_business' => [
-                        'type' => 'radio',
-                        'label' => 'Did you acquire an existing business in Maryland?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'acquireBusiness',
-                    ],
+                    'md_acquired_business' => yesNoField('Did you acquire an existing business in Maryland?', 'acquireBusiness', ['drives_conditional' => true]),
                     'md_previous_employer_name' => [
                         'type' => 'text',
                         'label' => 'Previous Employer Name',
@@ -211,14 +192,9 @@ return [
                         'when' => ['==' => [['var' => 'md_acquired_business'], '1']],
                         'source_name' => 'acquiredDate',
                     ],
-                    'md_common_ownership_management' => [
-                        'type' => 'radio',
-                        'label' => 'Is there common ownership/management with the previous business?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    'md_common_ownership_management' => nullableYesNoField('Is there common ownership/management with the previous business?', 'commonOwnershipManagement', [
                         'when' => ['==' => [['var' => 'md_acquired_business'], '1']],
-                        'source_name' => 'commonOwnershipManagement',
-                    ],
+                    ]),
                     'md_percent_acquired' => [
                         'type' => 'percent',
                         'label' => 'Percent of Business Acquired',

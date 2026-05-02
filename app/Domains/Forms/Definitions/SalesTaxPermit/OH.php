@@ -12,6 +12,27 @@ return [
 
     'state_steps' => [
         'state_details' => [
+            'groups' => ['append' => [
+                ['title' => 'OH Identifiers', 'fields' => [
+                    'oh_charter_certification_number', 'oh_secondary_phone',
+                    'oh_business_fax_number', 'oh_date_started_taxable_sales_at_location',
+                ]],
+                ['title' => 'Liquor / Beer', 'fields' => [
+                    'oh_selling_beer_or_liquor', 'oh_liquor_permit_number',
+                    'oh_non_liquor_sales_before_permit',
+                ]],
+                ['title' => 'Previous Owner (Vendor License)', 'fields' => [
+                    'oh_previous_owner_name', 'oh_previous_owner_vendor_license_number',
+                ]],
+                ['title' => 'Banking', 'fields' => ['oh_routing_number', 'oh_checking_number']],
+                ['title' => 'Company Contact', 'fields' => [
+                    'oh_company_contact_first_name', 'oh_company_contact_middle_initial',
+                    'oh_company_contact_last_name', 'oh_company_contact_title',
+                    'oh_company_contact_email', 'oh_company_contact_phone',
+                    'oh_company_contact_fax', 'oh_company_contact_ssn',
+                    'oh_company_contact_address',
+                ]],
+            ]],
             'fields' => [
                 'append' => [
                     // ───────── OH-specific identifiers ─────────
@@ -46,14 +67,7 @@ return [
                     ],
 
                     // ───────── Liquor / beer ─────────
-                    'oh_selling_beer_or_liquor' => [
-                        'type' => 'radio',
-                        'label' => 'Will you sell beer or liquor?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'sellingBeerOrLiquor',
-                    ],
+                    'oh_selling_beer_or_liquor' => yesNoField('Will you sell beer or liquor?', 'sellingBeerOrLiquor', ['drives_conditional' => true]),
                     'oh_liquor_permit_number' => [
                         'type' => 'text',
                         'label' => 'Ohio Liquor Permit Number',
@@ -61,14 +75,9 @@ return [
                         'when' => ['==' => [['var' => 'oh_selling_beer_or_liquor'], '1']],
                         'source_name' => 'liquorPermitNumber',
                     ],
-                    'oh_non_liquor_sales_before_permit' => [
-                        'type' => 'radio',
-                        'label' => 'Will you have non-liquor sales before the permit is issued?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    'oh_non_liquor_sales_before_permit' => nullableYesNoField('Will you have non-liquor sales before the permit is issued?', 'nonLiquorSalesBeforeIssuedPermit', [
                         'when' => ['==' => [['var' => 'oh_selling_beer_or_liquor'], '1']],
-                        'source_name' => 'nonLiquorSalesBeforeIssuedPermit',
-                    ],
+                    ]),
 
                     // ───────── Previous owner (Vendor License) ─────────
                     'oh_previous_owner_name' => [

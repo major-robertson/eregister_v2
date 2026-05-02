@@ -12,6 +12,42 @@ return [
 
     'state_steps' => [
         'state_details' => [
+            'groups' => ['append' => [
+                ['title' => 'Illinois Identifiers', 'fields' => [
+                    'il_secretary_of_state_number', 'il_ssn_or_itin', 'il_individual_itin',
+                ]],
+                ['title' => 'Entity-Specific', 'fields' => [
+                    'il_unitary_filing_group', 'il_unitary_filing_group_fein',
+                    'il_business_disregarded', 'il_business_disregarded_fein',
+                    'il_publicly_traded', 'il_ticker_symbol', 'il_married_couple',
+                ]],
+                ['title' => 'Income & Withholding', 'fields' => [
+                    'il_liable_for_business_income',
+                    'il_supplier_not_charge_tax_merchandise',
+                    'il_supplier_not_charge_tax_aviation_fuel',
+                    'il_not_charge_tax_activities_begin_date',
+                    'il_employees_withholding', 'il_payroll_begin_date',
+                ]],
+                ['title' => 'Sales Activity & Industry', 'fields' => [
+                    'il_general_merchandise', 'il_chicago_soft_drink_tax', 'il_cigarettes',
+                    'il_tobacco_products', 'il_motor_fuel', 'il_aviation_fuel', 'il_sell_tires',
+                    'il_from_vending_machines', 'il_how_many_vending_machines',
+                    'il_rent_hotel_less_than_30_days', 'il_lease_vehicles_more_than_one_year',
+                    'il_rent_vehicles_less_than_one_year', 'il_utility_provider',
+                    'il_medical_cannabis_cultivator', 'il_medical_cannabis_dispensary',
+                    'il_medical_cannabis_dispensary_begin_date',
+                ]],
+                ['title' => 'Remote Seller / Nexus', 'fields' => [
+                    'il_sales_from_out_of_state', 'il_illinois_presence',
+                    'il_over_100k', 'il_separate_transactions_over_200',
+                ]],
+                ['title' => 'Liquor at Retail', 'fields' => [
+                    'il_liquor_at_retail',
+                    'il_liquor_place_restaurant', 'il_liquor_place_bar_or_tavern',
+                    'il_liquor_place_grocery_store', 'il_liquor_place_convenience_store',
+                    'il_liquor_place_liquor_store', 'il_liquor_place_other',
+                ]],
+            ]],
             'fields' => [
                 'append' => [
                     // ───────── Illinois identifiers ─────────
@@ -41,15 +77,10 @@ return [
                     ],
 
                     // ───────── Entity-specific ─────────
-                    'il_unitary_filing_group' => [
-                        'type' => 'radio',
-                        'label' => 'Are you part of a unitary filing group?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    'il_unitary_filing_group' => nullableYesNoField('Are you part of a unitary filing group?', 'unitaryFilingGroup', [
                         'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp']]],
                         'drives_conditional' => true,
-                        'source_name' => 'unitaryFilingGroup',
-                    ],
+                    ]),
                     'il_unitary_filing_group_fein' => [
                         'type' => 'text',
                         'label' => 'Unitary Filing Agent FEIN',
@@ -58,14 +89,7 @@ return [
                         'sensitive' => true,
                         'source_name' => 'unitaryFilingGroupFEIN',
                     ],
-                    'il_business_disregarded' => [
-                        'type' => 'radio',
-                        'label' => 'Is the business a disregarded entity?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'businessDisregarded',
-                    ],
+                    'il_business_disregarded' => nullableYesNoField('Is the business a disregarded entity?', 'businessDisregarded', ['drives_conditional' => true]),
                     'il_business_disregarded_fein' => [
                         'type' => 'text',
                         'label' => 'Tax-Reporting Entity FEIN (disregarded entity owner)',
@@ -74,15 +98,10 @@ return [
                         'sensitive' => true,
                         'source_name' => 'businessDisregardedFEIN',
                     ],
-                    'il_publicly_traded' => [
-                        'type' => 'radio',
-                        'label' => 'Is the entity publicly traded?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    'il_publicly_traded' => nullableYesNoField('Is the entity publicly traded?', 'publiclyTraded', [
                         'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp']]],
                         'drives_conditional' => true,
-                        'source_name' => 'publiclyTraded',
-                    ],
+                    ]),
                     'il_ticker_symbol' => [
                         'type' => 'text',
                         'label' => 'Stock Ticker Symbol',
@@ -90,39 +109,16 @@ return [
                         'when' => ['==' => [['var' => 'il_publicly_traded'], '1']],
                         'source_name' => 'tickerSymbol',
                     ],
-                    'il_married_couple' => [
-                        'type' => 'radio',
-                        'label' => 'Is this business owned by a married couple?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    'il_married_couple' => nullableYesNoField('Is this business owned by a married couple?', 'marriedCouple', [
                         'when' => ['==' => [['var' => '$root.entity_type'], 'sole_prop']],
-                        'source_name' => 'marriedCouple',
-                    ],
+                    ]),
 
                     // ───────── Income / withholding ─────────
-                    'il_liable_for_business_income' => [
-                        'type' => 'radio',
-                        'label' => 'Are you liable for IL business income tax?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'liableForBusinessIncome',
-                    ],
-                    'il_supplier_not_charge_tax_merchandise' => [
-                        'type' => 'radio',
-                        'label' => 'Do suppliers fail to charge IL tax on merchandise?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'supplierNotChargeTaxMerchandise',
-                    ],
-                    'il_supplier_not_charge_tax_aviation_fuel' => [
-                        'type' => 'radio',
-                        'label' => 'Do suppliers fail to charge IL tax on aviation fuel?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    'il_liable_for_business_income' => yesNoField('Are you liable for IL business income tax?', 'liableForBusinessIncome'),
+                    'il_supplier_not_charge_tax_merchandise' => yesNoField('Do suppliers fail to charge IL tax on merchandise?', 'supplierNotChargeTaxMerchandise', ['drives_conditional' => true]),
+                    'il_supplier_not_charge_tax_aviation_fuel' => nullableYesNoField('Do suppliers fail to charge IL tax on aviation fuel?', 'supplierNotChargeTaxAviationFuel', [
                         'when' => ['==' => [['var' => 'il_supplier_not_charge_tax_merchandise'], '1']],
-                        'source_name' => 'supplierNotChargeTaxAviationFuel',
-                    ],
+                    ]),
                     'il_not_charge_tax_activities_begin_date' => [
                         'type' => 'date',
                         'label' => 'Date Untaxed Purchase Activities Began',
@@ -130,14 +126,7 @@ return [
                         'when' => ['==' => [['var' => 'il_supplier_not_charge_tax_merchandise'], '1']],
                         'source_name' => 'notChargeTaxActivitiesBeginDate',
                     ],
-                    'il_employees_withholding' => [
-                        'type' => 'radio',
-                        'label' => 'Will you have IL employees subject to withholding?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'illinoisEmployeesWithholding',
-                    ],
+                    'il_employees_withholding' => yesNoField('Will you have IL employees subject to withholding?', 'illinoisEmployeesWithholding', ['drives_conditional' => true]),
                     'il_payroll_begin_date' => [
                         'type' => 'date',
                         'label' => 'IL Payroll Begin Date',
@@ -147,88 +136,26 @@ return [
                     ],
 
                     // ───────── Sales activity / industry ─────────
-                    'il_general_merchandise' => [
-                        'type' => 'radio',
-                        'label' => 'Sell general merchandise?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'generalMerchandise',
-                    ],
-                    'il_chicago_soft_drink_tax' => [
-                        'type' => 'radio',
-                        'label' => 'Subject to Chicago Soft Drink Tax?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'chicagoSoftDrinkTax',
-                    ],
-                    'il_cigarettes' => [
-                        'type' => 'radio', 'label' => 'Sell cigarettes?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'cigarettes',
-                    ],
-                    'il_tobacco_products' => [
-                        'type' => 'radio', 'label' => 'Sell other tobacco products?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'tobaccoProducts',
-                    ],
-                    'il_motor_fuel' => [
-                        'type' => 'radio', 'label' => 'Sell motor fuel?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'motorFuel',
-                    ],
-                    'il_aviation_fuel' => [
-                        'type' => 'radio', 'label' => 'Sell aviation fuel?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'aviationFuel',
-                    ],
-                    'il_sell_tires' => [
-                        'type' => 'radio', 'label' => 'Sell tires?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'sellTires',
-                    ],
-                    'il_from_vending_machines' => [
-                        'type' => 'radio', 'label' => 'Sell from vending machines?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'fromVendingMachines',
-                    ],
+                    'il_general_merchandise' => yesNoField('Sell general merchandise?', 'generalMerchandise'),
+                    'il_chicago_soft_drink_tax' => yesNoField('Subject to Chicago Soft Drink Tax?', 'chicagoSoftDrinkTax'),
+                    'il_cigarettes' => yesNoField('Sell cigarettes?', 'cigarettes'),
+                    'il_tobacco_products' => yesNoField('Sell other tobacco products?', 'tobaccoProducts'),
+                    'il_motor_fuel' => yesNoField('Sell motor fuel?', 'motorFuel'),
+                    'il_aviation_fuel' => yesNoField('Sell aviation fuel?', 'aviationFuel'),
+                    'il_sell_tires' => yesNoField('Sell tires?', 'sellTires'),
+                    'il_from_vending_machines' => yesNoField('Sell from vending machines?', 'fromVendingMachines', ['drives_conditional' => true]),
                     'il_how_many_vending_machines' => [
                         'type' => 'text', 'label' => 'How many vending machines?',
                         'rules' => ['nullable', 'integer', 'min:1'],
                         'when' => ['==' => [['var' => 'il_from_vending_machines'], '1']],
                         'source_name' => 'howManyVendingMachines',
                     ],
-                    'il_rent_hotel_less_than_30_days' => [
-                        'type' => 'radio', 'label' => 'Rent hotel rooms for under 30 days?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'rentHotelLessThan30Days',
-                    ],
-                    'il_lease_vehicles_more_than_one_year' => [
-                        'type' => 'radio', 'label' => 'Lease vehicles for more than one year?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'leaseVehiclesMoreThanOneYear',
-                    ],
-                    'il_rent_vehicles_less_than_one_year' => [
-                        'type' => 'radio', 'label' => 'Rent vehicles for less than one year?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'rentVehiclesLessThanOneYear',
-                    ],
-                    'il_utility_provider' => [
-                        'type' => 'radio', 'label' => 'Are you a utility provider?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'utilityProvider',
-                    ],
-                    'il_medical_cannabis_cultivator' => [
-                        'type' => 'radio', 'label' => 'Medical cannabis cultivator?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'medicalCannabisCultivator',
-                    ],
-                    'il_medical_cannabis_dispensary' => [
-                        'type' => 'radio', 'label' => 'Medical cannabis dispensary?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'medicalCannabisDispensary',
-                    ],
+                    'il_rent_hotel_less_than_30_days' => yesNoField('Rent hotel rooms for under 30 days?', 'rentHotelLessThan30Days'),
+                    'il_lease_vehicles_more_than_one_year' => yesNoField('Lease vehicles for more than one year?', 'leaseVehiclesMoreThanOneYear'),
+                    'il_rent_vehicles_less_than_one_year' => yesNoField('Rent vehicles for less than one year?', 'rentVehiclesLessThanOneYear'),
+                    'il_utility_provider' => yesNoField('Are you a utility provider?', 'utilityProvider'),
+                    'il_medical_cannabis_cultivator' => yesNoField('Medical cannabis cultivator?', 'medicalCannabisCultivator'),
+                    'il_medical_cannabis_dispensary' => yesNoField('Medical cannabis dispensary?', 'medicalCannabisDispensary', ['drives_conditional' => true]),
                     'il_medical_cannabis_dispensary_begin_date' => [
                         'type' => 'date', 'label' => 'Cannabis Dispensary Begin Date',
                         'rules' => ['nullable', 'date'],
@@ -237,36 +164,13 @@ return [
                     ],
 
                     // ───────── Remote seller / nexus ─────────
-                    'il_sales_from_out_of_state' => [
-                        'type' => 'radio', 'label' => 'Sales originate from out of state?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'salesFromOutOfState',
-                    ],
-                    'il_illinois_presence' => [
-                        'type' => 'radio', 'label' => 'Do you have physical presence in Illinois?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'illinoisPresence',
-                    ],
-                    'il_over_100k' => [
-                        'type' => 'radio', 'label' => 'Sales to IL exceed $100,000 per year?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'over100000',
-                    ],
-                    'il_separate_transactions_over_200' => [
-                        'type' => 'radio', 'label' => '200 or more separate IL transactions per year?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'seperateTransactionsOver200',
-                    ],
+                    'il_sales_from_out_of_state' => yesNoField('Sales originate from out of state?', 'salesFromOutOfState'),
+                    'il_illinois_presence' => yesNoField('Do you have physical presence in Illinois?', 'illinoisPresence'),
+                    'il_over_100k' => yesNoField('Sales to IL exceed $100,000 per year?', 'over100000'),
+                    'il_separate_transactions_over_200' => yesNoField('200 or more separate IL transactions per year?', 'seperateTransactionsOver200'),
 
                     // ───────── Liquor at retail (checkbox grid) ─────────
-                    'il_liquor_at_retail' => [
-                        'type' => 'radio',
-                        'label' => 'Sell liquor at retail?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'liquorAtRetail',
-                    ],
+                    'il_liquor_at_retail' => yesNoField('Sell liquor at retail?', 'liquorAtRetail', ['drives_conditional' => true]),
                     // Liquor place categories — each option becomes its own checkbox
                     'il_liquor_place_restaurant' => ['type' => 'checkbox', 'label' => 'Restaurant', 'when' => ['==' => [['var' => 'il_liquor_at_retail'], '1']], 'source_name' => 'liquorAtRetailPlace[]', 'source_value' => 'Restaurant'],
                     'il_liquor_place_bar_or_tavern' => ['type' => 'checkbox', 'label' => 'Bar or Tavern', 'when' => ['==' => [['var' => 'il_liquor_at_retail'], '1']], 'source_name' => 'liquorAtRetailPlace[]', 'source_value' => 'Bar/Tavern'],

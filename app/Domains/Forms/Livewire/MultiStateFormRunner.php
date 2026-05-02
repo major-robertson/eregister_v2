@@ -4,27 +4,48 @@ namespace App\Domains\Forms\Livewire;
 
 use App\Domains\Business\Models\Business;
 use App\Domains\Forms\Engine\FormRegistry;
-use App\Domains\Forms\Engine\RulesBuilder;
 use App\Domains\Forms\Engine\SensitiveDataProtector;
-use App\Domains\Forms\Engine\Validation\CrossFieldValidatorRegistry;
-use App\Domains\Forms\Engine\VisibleFieldResolver;
+use App\Domains\Forms\Livewire\Concerns\WithFormDataIO;
+use App\Domains\Forms\Livewire\Concerns\WithFormPrefill;
+use App\Domains\Forms\Livewire\Concerns\WithFormValidation;
+use App\Domains\Forms\Livewire\Concerns\WithPhaseProgress;
+use App\Domains\Forms\Livewire\Concerns\WithRepeaterModal;
+use App\Domains\Forms\Livewire\Concerns\WithStepNavigation;
 use App\Domains\Forms\Models\FormApplication;
 use App\Support\Workspaces\WorkspaceRegistry;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
+/**
+ * Conducts a multi-step, multi-state form (currently used by Sales Tax
+ * Permit and the LLC Formation flow). The bulk of the per-concern logic
+ * lives in the six `Concerns/With*` traits below; this class is the
+ * orchestrator that binds them together — it owns the seven core
+ * properties, the lifecycle hooks (boot, mount, render), and the public
+ * navigation actions (nextStep, previousStep, submit) that mix
+ * validation, persistence, and cursor mutation into a single user-facing
+ * step.
+ */
 class MultiStateFormRunner extends Component
 {
+    use WithFormDataIO;
+    use WithFormPrefill;
+    use WithFormValidation;
+    use WithPhaseProgress;
+    use WithRepeaterModal;
+    use WithStepNavigation;
+
     public Business $business;
 
     public FormApplication $application;
 
+    /** @var array<string, mixed> */
     public array $coreData = [];
 
+    /** @var array<string, mixed> */
     public array $stateData = [];
 
     public string $currentPhase = 'core';
@@ -33,14 +54,7 @@ class MultiStateFormRunner extends Component
 
     public int $currentStateIndex = 0;
 
-    public bool $showRepeaterModal = false;
-
-    public ?int $editingRepeaterIndex = null;
-
-    public string $editingRepeaterField = '';
-
-    public array $repeaterForm = [];
-
+    /** @var array{base: array<string, mixed>, states: array<string, array<string, mixed>>} */
     private array $definition = [];
 
     /**
@@ -165,324 +179,16 @@ class MultiStateFormRunner extends Component
         }
     }
 
-    /**
-     * Pre-fill core data from the business profile.
-     * Only non-sensitive fields are copied.
-     */
-    protected function prefillFromBusinessProfile(): void
-    {
-        $business = $this->business;
-
-        // Pre-fill basic business info (fallback to name if legal_name not set)
-        $legalName = $business->legal_name ?? $business->name;
-        if ($legalName) {
-            $this->coreData['legal_name'] = $legalName;
-        }
-        if ($business->dba_name) {
-            $this->coreData['dba_name'] = $business->dba_name;
-        }
-        if ($business->entity_type) {
-            $this->coreData['entity_type'] = $business->entity_type;
-        }
-        // EIN is sensitive but persisted (encrypted at rest) so returning
-        // users don't have to look it up again. SSN intentionally NOT
-        // prefilled — even encrypted, surfacing it without an explicit
-        // re-entry would be poor security UX.
-        if ($business->fein) {
-            $this->coreData['fein'] = $business->fein;
-        }
-        if ($business->business_address) {
-            $this->coreData['business_address'] = $business->business_address;
-        }
-        // Seed business_email from the signed-in user's email so the
-        // contact step has a sensible default. The user can edit it
-        // if the business uses a different contact address. Business
-        // model has no email column today, so the authed user is the
-        // canonical source.
-        $user = Auth::user();
-        if ($user && $user->email) {
-            $this->coreData['business_email'] = $user->email;
-        }
-        if ($business->mailing_address) {
-            $this->coreData['mailing_address'] = $business->mailing_address;
-            $this->coreData['mailing_address_same'] = '0';
-        } else {
-            // Default to "mailing address same as business address" so the
-            // conditional mailing_address field is hidden + not required
-            // unless the user explicitly toggles the switch on.
-            $this->coreData['mailing_address_same'] = '1';
-        }
-
-        // Pre-fill responsible people (non-sensitive fields only)
-        if (! empty($business->responsible_people)) {
-            $this->coreData['responsible_people'] = $this->prepareResponsiblePeopleForForm(
-                $business->responsible_people
-            );
-        }
-    }
-
-    /**
-     * Prepare responsible people from business profile for form use.
-     * Adds UUIDs for repeater tracking.
-     *
-     * @param  array<int, array>  $people
-     * @return array<int, array>
-     */
-    protected function prepareResponsiblePeopleForForm(array $people): array
-    {
-        return array_map(fn (array $person) => array_merge($person, [
-            '_id' => $person['_id'] ?? Str::uuid()->toString(),
-        ]), $people);
-    }
-
-    protected function getFirstStepKey(): ?string
-    {
-        $steps = $this->getCurrentSteps();
-
-        return array_key_first($steps) ?? null;
-    }
-
-    public function getCurrentSteps(): array
-    {
-        if ($this->currentPhase === 'core') {
-            return $this->definition['base']['core_steps'] ?? [];
-        }
-
-        if ($this->currentPhase === 'states') {
-            $stateCode = $this->currentStateCode();
-            $stateDef = $this->definition['states'][$stateCode] ?? $this->definition['base'];
-            $steps = $stateDef['state_steps'] ?? [];
-
-            // Skip state_responsible_people step - those fields are now in the core responsible_people repeater
-            unset($steps['state_responsible_people']);
-
-            return $steps;
-        }
-
-        // Review phase - return empty steps
-        return [];
-    }
-
-    public function getCurrentStepProperty(): ?array
-    {
-        if ($this->currentPhase === 'review') {
-            return null;
-        }
-
-        $steps = $this->getCurrentSteps();
-
-        return $steps[$this->currentStepKey] ?? null;
-    }
-
-    public function getVisibleFieldsProperty(): array
-    {
-        $step = $this->getCurrentStepProperty();
-        if (! $step) {
-            return [];
-        }
-
-        $resolver = app(VisibleFieldResolver::class);
-
-        return $resolver->resolve($step, $this->buildContext());
-    }
-
-    /**
-     * Check if a specific step has visible fields.
-     */
-    protected function stepHasVisibleFields(array $step): bool
-    {
-        $resolver = app(VisibleFieldResolver::class);
-        $visibleFields = $resolver->resolve($step, $this->buildContext());
-
-        return count($visibleFields) > 0;
-    }
-
-    /**
-     * Check if the current step has visible fields.
-     */
-    protected function currentStepHasVisibleFields(): bool
-    {
-        $step = $this->getCurrentStepProperty();
-        if (! $step) {
-            return false;
-        }
-
-        return $this->stepHasVisibleFields($step);
-    }
-
-    /**
-     * Skip forward through empty steps until we find one with fields or reach the end.
-     */
-    protected function skipEmptyStepsForward(): void
-    {
-        $maxIterations = 50; // Prevent infinite loops
-        $iterations = 0;
-
-        while ($iterations < $maxIterations) {
-            $iterations++;
-
-            // If we're in review phase, we're done
-            if ($this->currentPhase === 'review') {
-                return;
-            }
-
-            // If current step has visible fields, we're done
-            if ($this->currentStepHasVisibleFields()) {
-                return;
-            }
-
-            // Otherwise, advance to next step/phase
-            $stepKeys = array_keys($this->getCurrentSteps());
-            $currentIndex = array_search($this->currentStepKey, $stepKeys);
-
-            if ($currentIndex !== false && $currentIndex < count($stepKeys) - 1) {
-                // Move to next step in current phase
-                $this->currentStepKey = $stepKeys[$currentIndex + 1];
-            } else {
-                // Move to next phase or state
-                $this->advancePhaseOrStateInternal();
-            }
-        }
-    }
-
-    /**
-     * Skip backward through empty steps until we find one with fields or reach the beginning.
-     */
-    protected function skipEmptyStepsBackward(): void
-    {
-        $maxIterations = 50; // Prevent infinite loops
-        $iterations = 0;
-
-        while ($iterations < $maxIterations) {
-            $iterations++;
-
-            // If current step has visible fields, we're done
-            if ($this->currentStepHasVisibleFields()) {
-                return;
-            }
-
-            // Otherwise, go back to previous step/phase
-            $stepKeys = array_keys($this->getCurrentSteps());
-            $currentIndex = array_search($this->currentStepKey, $stepKeys);
-
-            if ($currentIndex !== false && $currentIndex > 0) {
-                // Move to previous step in current phase
-                $this->currentStepKey = $stepKeys[$currentIndex - 1];
-            } else {
-                // Move to previous phase or state
-                $this->goBackToPreviousPhaseOrStateInternal();
-
-                // If we couldn't go back any further (still at core phase, first step), stop
-                if ($this->currentPhase === 'core') {
-                    $coreSteps = array_keys($this->definition['base']['core_steps'] ?? []);
-                    if ($this->currentStepKey === ($coreSteps[0] ?? null)) {
-                        return;
-                    }
-                }
-            }
-        }
-    }
-
     public function currentStateCode(): ?string
     {
         return $this->application->selected_states[$this->currentStateIndex] ?? null;
     }
 
     /**
-     * Compute fractional fill (0..100) for each segment of the wizard's
-     * top progress bar plus a step counter for the active phase.
-     *
-     * Each phase fills proportionally as the user advances through its
-     * own steps so the bar reflects real progress (Core Info has multiple
-     * sub-steps; the State Details phase has multiple steps per selected
-     * state). A phase is 0% before it's reached and 100% after it's been
-     * fully completed.
-     *
-     * The current step contributes a half-step worth of fill so the bar
-     * always reflects "you're partway through this step" rather than
-     * sitting at the prior step's boundary until you click Next.
-     *
-     * @return array{
-     *     core: array{fill: float, current: int, total: int},
-     *     states: array{fill: float, current: int, total: int},
-     *     review: array{fill: float, current: int, total: int}
-     * }
-     */
-    public function getPhaseProgressProperty(): array
-    {
-        $coreSteps = $this->definition['base']['core_steps'] ?? [];
-        $coreKeys = array_keys($coreSteps);
-        $coreTotal = count($coreKeys);
-
-        $stateStepsPerState = [];
-        foreach ($this->application->selected_states as $stateCode) {
-            $stateDef = $this->definition['states'][$stateCode] ?? $this->definition['base'];
-            $stateSteps = $stateDef['state_steps'] ?? [];
-            unset($stateSteps['state_responsible_people']);
-            $stateStepsPerState[$stateCode] = array_keys($stateSteps);
-        }
-        $statesTotal = array_sum(array_map('count', $stateStepsPerState));
-
-        $coreCurrent = 0;
-        $statesCurrent = 0;
-        $coreFill = 0.0;
-        $statesFill = 0.0;
-        $reviewFill = 0.0;
-
-        if ($this->currentPhase === 'core') {
-            $idx = array_search($this->currentStepKey, $coreKeys, true);
-            $idx = $idx === false ? 0 : $idx;
-            $coreCurrent = $idx + 1;
-            $coreFill = $coreTotal > 0 ? (($idx + 0.5) / $coreTotal) * 100 : 0.0;
-        } elseif ($this->currentPhase === 'states') {
-            $coreFill = 100.0;
-            $coreCurrent = $coreTotal;
-
-            $completed = 0;
-            foreach ($this->application->selected_states as $i => $stateCode) {
-                $stepKeys = $stateStepsPerState[$stateCode] ?? [];
-                if ($i < $this->currentStateIndex) {
-                    $completed += count($stepKeys);
-                } elseif ($i === $this->currentStateIndex) {
-                    $idx = array_search($this->currentStepKey, $stepKeys, true);
-                    $idx = $idx === false ? 0 : $idx;
-                    $completed += $idx;
-                    $statesCurrent = $completed + 1;
-                    $statesFill = $statesTotal > 0
-                        ? (($completed + 0.5) / $statesTotal) * 100
-                        : 0.0;
-                }
-            }
-        } elseif ($this->currentPhase === 'review') {
-            $coreFill = 100.0;
-            $statesFill = 100.0;
-            $reviewFill = 100.0;
-            $coreCurrent = $coreTotal;
-            $statesCurrent = $statesTotal;
-        }
-
-        return [
-            'core' => [
-                'fill' => round($coreFill, 2),
-                'current' => $coreCurrent,
-                'total' => $coreTotal,
-            ],
-            'states' => [
-                'fill' => round($statesFill, 2),
-                'current' => $statesCurrent,
-                'total' => $statesTotal,
-            ],
-            'review' => [
-                'fill' => $reviewFill,
-                'current' => $this->currentPhase === 'review' ? 1 : 0,
-                'total' => 1,
-            ],
-        ];
-    }
-
-    /**
      * Get all state-specific person fields from selected states.
      * Used to display state-specific fields inline in the responsible_people repeater.
+     *
+     * @return array<string, array{name: string, fields: array<string, mixed>}>
      */
     public function getStatePersonFieldsProperty(): array
     {
@@ -503,6 +209,9 @@ class MultiStateFormRunner extends Component
         return $stateFields;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     protected function buildContext(): array
     {
         return [
@@ -513,107 +222,6 @@ class MultiStateFormRunner extends Component
             'stateIndex' => $this->currentStateIndex,
             'selectedStates' => $this->application->selected_states,
         ];
-    }
-
-    protected function saveCoreData(): void
-    {
-        $protector = app(SensitiveDataProtector::class);
-        $encrypted = $protector->encryptCoreData($this->coreData, $this->definition['base']);
-
-        $this->application->update([
-            'core_data' => $encrypted,
-            'current_phase' => $this->currentPhase,
-            'current_step_key' => $this->currentStepKey,
-            'current_state_index' => $this->currentStateIndex,
-        ]);
-
-        // Persist marked fields back to the business profile
-        $this->persistToBusinessProfile();
-    }
-
-    /**
-     * Persist fields marked with persist_to_business back to the business model.
-     * This allows form data to be reused in future applications.
-     */
-    protected function persistToBusinessProfile(): void
-    {
-        $businessData = [];
-
-        // Iterate through all core steps to find persistable fields
-        foreach ($this->definition['base']['core_steps'] ?? [] as $step) {
-            foreach ($step['fields'] ?? [] as $fieldKey => $field) {
-                if (! ($field['persist_to_business'] ?? false)) {
-                    continue;
-                }
-
-                // Skip if no data for this field
-                if (! array_key_exists($fieldKey, $this->coreData)) {
-                    continue;
-                }
-
-                $value = $this->coreData[$fieldKey];
-
-                // Handle repeater fields (like responsible_people) - only persist non-sensitive subfields
-                if (($field['type'] ?? '') === 'repeater' && is_array($value)) {
-                    $value = $this->extractPersistableRepeaterData($value, $field['schema'] ?? []);
-                }
-
-                $businessData[$fieldKey] = $value;
-            }
-        }
-
-        if (! empty($businessData)) {
-            $this->business->update($businessData);
-        }
-    }
-
-    /**
-     * Extract only persistable (non-sensitive) fields from repeater data.
-     *
-     * @param  array<int, array>  $items
-     * @param  array<string, array>  $schema
-     * @return array<int, array>
-     */
-    protected function extractPersistableRepeaterData(array $items, array $schema): array
-    {
-        return array_map(function (array $item) use ($schema): array {
-            $persistable = [];
-            foreach ($schema as $subKey => $subField) {
-                if (($subField['persist_to_business'] ?? false) && array_key_exists($subKey, $item)) {
-                    $persistable[$subKey] = $item[$subKey];
-                }
-            }
-            // Keep the _id for tracking
-            if (isset($item['_id'])) {
-                $persistable['_id'] = $item['_id'];
-            }
-
-            return $persistable;
-        }, $items);
-    }
-
-    protected function saveStateData(): void
-    {
-        $stateCode = $this->currentStateCode();
-        if (! $stateCode) {
-            return;
-        }
-
-        $protector = app(SensitiveDataProtector::class);
-        $stateDef = $this->definition['states'][$stateCode] ?? $this->definition['base'];
-        $encrypted = $protector->encryptStateData($this->stateData, $stateDef);
-
-        $stateRecord = $this->application->currentStateRecord();
-        $stateRecord?->update([
-            'data' => $encrypted,
-            'current_step_key' => $this->currentStepKey,
-        ]);
-
-        $this->application->update([
-            'current_phase' => $this->currentPhase,
-            'current_step_key' => $this->currentStepKey,
-            'current_state_index' => $this->currentStateIndex,
-        ]);
     }
 
     public function nextStep(): void
@@ -627,7 +235,7 @@ class MultiStateFormRunner extends Component
 
         try {
             $this->validateCurrentStep();
-        } catch (\Illuminate\Validation\ValidationException $ve) {
+        } catch (ValidationException $ve) {
             // Tell the form to scroll to the first invalid field; long
             // steps otherwise hide errors hundreds of pixels above where
             // the user clicked Next, making the click look like a no-op.
@@ -777,25 +385,6 @@ class MultiStateFormRunner extends Component
         }
     }
 
-    protected function loadStateDataForCurrentState(): void
-    {
-        $stateCode = $this->currentStateCode();
-        if (! $stateCode) {
-            $this->stateData = [];
-
-            return;
-        }
-
-        $stateRecord = $this->application->stateRecord($stateCode);
-        if ($stateRecord) {
-            $protector = app(SensitiveDataProtector::class);
-            $stateDef = $this->definition['states'][$stateCode] ?? $this->definition['base'];
-            $this->stateData = $protector->decryptStateData($stateRecord->data ?? [], $stateDef);
-        } else {
-            $this->stateData = [];
-        }
-    }
-
     protected function updateApplicationStep(): void
     {
         $this->application->update([
@@ -810,165 +399,6 @@ class MultiStateFormRunner extends Component
             'current_step_key' => $this->currentStepKey,
             'current_state_index' => $this->currentStateIndex,
         ]);
-    }
-
-    protected function validateCurrentStep(): void
-    {
-        $step = $this->getCurrentStepProperty();
-        if (! $step) {
-            return;
-        }
-
-        $builder = app(RulesBuilder::class);
-        $validation = $builder->buildForLivewire(
-            $step,
-            $this->coreData,
-            $this->stateData,
-            $this->currentStateCode(),
-            $this->currentPhase
-        );
-
-        $this->validate($validation['rules'], [], $validation['attributes']);
-
-        $data = $this->currentPhase === 'core' ? $this->coreData : $this->stateData;
-        $prefix = $this->currentPhase === 'core' ? 'coreData' : 'stateData';
-        $this->validateConditionalMins($step, $data, $prefix);
-
-        $registry = app(CrossFieldValidatorRegistry::class);
-        foreach ($step['cross_validations'] ?? [] as $crossValidation) {
-            $phase = $crossValidation['phase'] ?? 'core';
-            if ($phase === $this->currentPhase || $phase === 'core') {
-                $registry->validateWithPrefix(
-                    $crossValidation['rule'],
-                    $data,
-                    $crossValidation['field'],
-                    $crossValidation,
-                    $prefix
-                );
-            }
-        }
-    }
-
-    /**
-     * Validate conditional_min constraints on repeater fields.
-     *
-     * @throws ValidationException
-     */
-    protected function validateConditionalMins(array $step, array $data, string $prefix): void
-    {
-        foreach ($step['fields'] ?? [] as $fieldKey => $field) {
-            $conditionalMin = $field['conditional_min'] ?? null;
-            if (! $conditionalMin) {
-                continue;
-            }
-
-            $condField = $conditionalMin['field'];
-            $condValues = $conditionalMin['values'] ?? [];
-            $currentValue = data_get($data, $condField);
-
-            if ($currentValue === null || ! isset($condValues[$currentValue])) {
-                continue;
-            }
-
-            $requiredMin = $condValues[$currentValue];
-            $items = data_get($data, $fieldKey, []);
-            $count = is_array($items) ? count($items) : 0;
-
-            if ($count < $requiredMin) {
-                $entityLabel = ucfirst(str_replace('_', ' ', $currentValue));
-                $itemLabel = $field['item_label'] ?? $field['label'] ?? $fieldKey;
-                $pluralLabel = strtolower(Str::plural($itemLabel, $requiredMin));
-
-                throw ValidationException::withMessages([
-                    "{$prefix}.{$fieldKey}" => ["{$entityLabel}s require at least {$requiredMin} {$pluralLabel}."],
-                ]);
-            }
-        }
-    }
-
-    public function openRepeaterModal(string $fieldKey, ?int $index = null): void
-    {
-        $this->assertNotLocked();
-        $this->editingRepeaterField = $fieldKey;
-        $this->editingRepeaterIndex = $index;
-
-        if ($index !== null) {
-            $items = $this->currentPhase === 'core'
-                ? ($this->coreData[$fieldKey] ?? [])
-                : ($this->stateData[$fieldKey] ?? []);
-            $this->repeaterForm = $items[$index] ?? [];
-        } else {
-            $this->repeaterForm = ['_id' => Str::uuid()->toString()];
-        }
-
-        $this->showRepeaterModal = true;
-    }
-
-    public function closeRepeaterModal(): void
-    {
-        $this->showRepeaterModal = false;
-        $this->editingRepeaterIndex = null;
-        $this->editingRepeaterField = '';
-        $this->repeaterForm = [];
-        $this->resetValidation();
-    }
-
-    public function saveRepeaterItem(): void
-    {
-        $this->assertNotLocked();
-
-        $fieldKey = $this->editingRepeaterField;
-        $step = $this->getCurrentStepProperty();
-        $schema = $step['fields'][$fieldKey]['schema'] ?? [];
-
-        $rules = [];
-        $attributes = [];
-        foreach ($schema as $subKey => $subField) {
-            $subRules = $subField['rules'] ?? [];
-            if (! empty($subRules)) {
-                $rules["repeaterForm.{$subKey}"] = $subRules;
-                $attributes["repeaterForm.{$subKey}"] = $subField['label'] ?? $subKey;
-            }
-        }
-
-        $this->validate($rules, [], $attributes);
-
-        if ($this->editingRepeaterIndex !== null) {
-            if ($this->currentPhase === 'core') {
-                $this->coreData[$fieldKey][$this->editingRepeaterIndex] = $this->repeaterForm;
-            } else {
-                $this->stateData[$fieldKey][$this->editingRepeaterIndex] = $this->repeaterForm;
-            }
-        } else {
-            if ($this->currentPhase === 'core') {
-                $this->coreData[$fieldKey][] = $this->repeaterForm;
-            } else {
-                $this->stateData[$fieldKey][] = $this->repeaterForm;
-            }
-        }
-
-        $this->closeRepeaterModal();
-    }
-
-    public function removeRepeaterItem(string $fieldKey, string $id): void
-    {
-        $this->assertNotLocked();
-
-        if ($this->currentPhase === 'core') {
-            $this->coreData[$fieldKey] = array_values(
-                array_filter(
-                    $this->coreData[$fieldKey] ?? [],
-                    fn ($item) => ($item['_id'] ?? '') !== $id
-                )
-            );
-        } else {
-            $this->stateData[$fieldKey] = array_values(
-                array_filter(
-                    $this->stateData[$fieldKey] ?? [],
-                    fn ($item) => ($item['_id'] ?? '') !== $id
-                )
-            );
-        }
     }
 
     public function submit(): void
@@ -993,63 +423,6 @@ class MultiStateFormRunner extends Component
             $this->redirect(route('dashboard'));
         } else {
             $this->redirect(route('portal.checkout', $this->application));
-        }
-    }
-
-    protected function validateAllSteps(): void
-    {
-        $builder = app(RulesBuilder::class);
-
-        // Validate core steps
-        foreach ($this->definition['base']['core_steps'] ?? [] as $step) {
-            $validation = $builder->buildForArray(
-                $step,
-                $this->coreData,
-                [],
-                null
-            );
-
-            validator($this->coreData, $validation['rules'], [], $validation['attributes'])->validate();
-        }
-
-        // Validate each state
-        foreach ($this->application->selected_states as $index => $stateCode) {
-            $stateDef = $this->definition['states'][$stateCode] ?? $this->definition['base'];
-            $stateRecord = $this->application->stateRecord($stateCode);
-            $stateData = $stateRecord?->data ?? [];
-
-            foreach ($stateDef['state_steps'] ?? [] as $step) {
-                $validation = $builder->buildForArray(
-                    $step,
-                    $this->coreData,
-                    $stateData,
-                    $stateCode
-                );
-
-                validator($stateData, $validation['rules'], [], $validation['attributes'])->validate();
-            }
-        }
-    }
-
-    protected function runCrossFieldValidators(): void
-    {
-        $registry = app(CrossFieldValidatorRegistry::class);
-
-        // Run core cross-validators
-        foreach ($this->definition['base']['core_steps'] ?? [] as $step) {
-            foreach ($step['cross_validations'] ?? [] as $validation) {
-                if (($validation['phase'] ?? 'core') === 'core') {
-                    $registry->validateWithPrefix(
-                        $validation['rule'],
-                        $this->coreData,
-                        $validation['field'],
-                        $validation,
-                        'coreData'
-                    );
-                }
-            }
-
-            $this->validateConditionalMins($step, $this->coreData, 'coreData');
         }
     }
 

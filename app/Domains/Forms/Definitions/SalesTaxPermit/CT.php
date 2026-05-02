@@ -12,6 +12,48 @@ return [
 
     'state_steps' => [
         'state_details' => [
+            'groups' => ['append' => [
+                ['title' => 'CT Identifiers', 'fields' => [
+                    'ct_secretary_of_state_business_id', 'ct_disregarded_entity',
+                ]],
+                ['title' => 'Taxes & Services Requested', 'fields' => [
+                    'ct_taxes_requested_retailer', 'ct_taxes_requested_room_occupancy',
+                    'ct_taxes_requested_corp_business_tax', 'ct_taxes_requested_pass_through',
+                    'ct_taxes_requested_other', 'ct_description_business_activity',
+                ]],
+                ['title' => 'Banking', 'fields' => [
+                    'ct_bank_name', 'ct_type_of_account', 'ct_routing_number', 'ct_checking_number',
+                ]],
+                ['title' => 'Withholding', 'fields' => [
+                    'ct_pay_wages_to_residents', 'ct_out_of_state_withholding_ct_income_tax',
+                    'ct_payments_to_pensions_annuities', 'ct_pay_nonresident_athletes',
+                    'ct_household_employee_withholding', 'ct_agricultural_employee_withholding',
+                    'ct_file_agriculture_forms_annually', 'ct_tax_registration_number',
+                    'ct_income_tax_withholding_payroll_service',
+                    'ct_withholding_liability_start_date',
+                ]],
+                ['title' => 'Sales & Use', 'fields' => [
+                    'ct_selling_goods_in_ct', 'ct_rent_equipment_to_individuals',
+                    'ct_serving_meals_or_beverages', 'ct_providing_taxable_services',
+                    'ct_only_through_marketplace', 'ct_sales_tax_liability_start_date',
+                ]],
+                ['title' => 'Admissions / Dues', 'fields' => [
+                    'ct_amusement_entertainment', 'ct_social_athletic_dues',
+                    'ct_social_athletic_initiation', 'ct_when_business_is_active',
+                    'ct_month_jan', 'ct_month_feb', 'ct_month_mar', 'ct_month_apr',
+                    'ct_month_may', 'ct_month_jun', 'ct_month_jul', 'ct_month_aug',
+                    'ct_month_sep', 'ct_month_oct', 'ct_month_nov', 'ct_month_dec',
+                    'ct_admissions_dues_liability_start_date',
+                ]],
+                ['title' => 'Corporation Business Tax', 'fields' => [
+                    'ct_corp_taxed_as_corp_with_nexus', 'ct_federal_corp_income_tax_exemption',
+                    'ct_state_organized_under', 'ct_month_corporation_year_closes',
+                ]],
+                ['title' => 'Unrelated Business / Use Tax', 'fields' => [
+                    'ct_purchasing_taxable_without_paying_ct_tax',
+                    'ct_unrelated_business_income_tax_liability_start_date',
+                ]],
+            ]],
             'fields' => [
                 'append' => [
                     // ───────── CT identifiers ─────────
@@ -21,14 +63,9 @@ return [
                         'rules' => ['nullable', 'string', 'max:30'],
                         'source_name' => 'ctSecretaryOfStateBusinessId',
                     ],
-                    'ct_disregarded_entity' => [
-                        'type' => 'radio',
-                        'label' => 'Is this a disregarded entity (single-member LLC)?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    'ct_disregarded_entity' => nullableYesNoField('Is this a disregarded entity (single-member LLC)?', 'disregardedEntity', [
                         'when' => ['==' => [['var' => '$root.entity_type'], 'llc_single']],
-                        'source_name' => 'disregardedEntity',
-                    ],
+                    ]),
 
                     // ───────── Taxes/services requested ─────────
                     'ct_taxes_requested_retailer' => ['type' => 'checkbox', 'label' => 'Retailer of goods or services', 'source_name' => 'taxesServicesRequested[]', 'source_value' => '1'],
@@ -74,69 +111,20 @@ return [
                     ],
 
                     // ───────── Withholding ─────────
-                    'ct_pay_wages_to_residents' => [
-                        'type' => 'radio',
-                        'label' => 'Will you pay wages to CT resident employees?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'drives_conditional' => true,
-                        'source_name' => 'payWagesToResidentEmployees',
-                    ],
-                    'ct_out_of_state_withholding_ct_income_tax' => [
-                        'type' => 'radio',
-                        'label' => 'Withhold CT income tax from out-of-state employees?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'outOfStateWithholdingCtIncomeTax',
-                    ],
-                    'ct_payments_to_pensions_annuities' => [
-                        'type' => 'radio',
-                        'label' => 'Make payments to pensions, annuities, or retirement distributions?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'paymentsToPensionsAnnuitiesRetriementDistributions',
-                    ],
-                    'ct_pay_nonresident_athletes' => [
-                        'type' => 'radio',
-                        'label' => 'Pay nonresident athletes or entertainers?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'payNonresidentAthletesOrEntertainers',
-                    ],
-                    'ct_household_employee_withholding' => [
-                        'type' => 'radio',
-                        'label' => 'Household employee with CT income tax withholding?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'haveHouseholdEmployeeAndWithholdCtIncomeTax',
-                    ],
-                    'ct_agricultural_employee_withholding' => [
-                        'type' => 'radio',
-                        'label' => 'Agricultural employee with CT income tax withholding?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'haveAgriculturalEmployeeAndWithholdCtIncomeTax',
-                    ],
-                    'ct_file_agriculture_forms_annually' => [
-                        'type' => 'radio',
-                        'label' => 'File agriculture forms annually?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
-                        'source_name' => 'fileAgricultureFormsAnnually',
-                    ],
+                    'ct_pay_wages_to_residents' => yesNoField('Will you pay wages to CT resident employees?', 'payWagesToResidentEmployees', ['drives_conditional' => true]),
+                    'ct_out_of_state_withholding_ct_income_tax' => yesNoField('Withhold CT income tax from out-of-state employees?', 'outOfStateWithholdingCtIncomeTax'),
+                    'ct_payments_to_pensions_annuities' => yesNoField('Make payments to pensions, annuities, or retirement distributions?', 'paymentsToPensionsAnnuitiesRetriementDistributions'),
+                    'ct_pay_nonresident_athletes' => yesNoField('Pay nonresident athletes or entertainers?', 'payNonresidentAthletesOrEntertainers'),
+                    'ct_household_employee_withholding' => yesNoField('Household employee with CT income tax withholding?', 'haveHouseholdEmployeeAndWithholdCtIncomeTax'),
+                    'ct_agricultural_employee_withholding' => yesNoField('Agricultural employee with CT income tax withholding?', 'haveAgriculturalEmployeeAndWithholdCtIncomeTax'),
+                    'ct_file_agriculture_forms_annually' => nullableYesNoField('File agriculture forms annually?', 'fileAgricultureFormsAnnually'),
                     'ct_tax_registration_number' => [
                         'type' => 'text',
                         'label' => 'CT Tax Registration Number (if previously assigned)',
                         'rules' => ['nullable', 'string', 'max:30'],
                         'source_name' => 'ctTaxRegistrationNumber',
                     ],
-                    'ct_income_tax_withholding_payroll_service' => [
-                        'type' => 'radio',
-                        'label' => 'Use a payroll service for CT withholding?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
-                        'source_name' => 'incomeTaxWithholdingPayrollService',
-                    ],
+                    'ct_income_tax_withholding_payroll_service' => nullableYesNoField('Use a payroll service for CT withholding?', 'incomeTaxWithholdingPayrollService'),
                     'ct_withholding_liability_start_date' => [
                         'type' => 'date',
                         'label' => 'CT Income Tax Withholding Liability Start Date',
@@ -145,31 +133,11 @@ return [
                     ],
 
                     // ───────── Sales & Use ─────────
-                    'ct_selling_goods_in_ct' => [
-                        'type' => 'radio', 'label' => 'Selling goods in Connecticut?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'sellingGoodsInCt',
-                    ],
-                    'ct_rent_equipment_to_individuals' => [
-                        'type' => 'radio', 'label' => 'Rent equipment to individuals or businesses in CT?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'rentEquipmentToIndividualsOrBusinessesInCt',
-                    ],
-                    'ct_serving_meals_or_beverages' => [
-                        'type' => 'radio', 'label' => 'Serving meals or beverages in CT?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'servingMealsOrBeveragesInCt',
-                    ],
-                    'ct_providing_taxable_services' => [
-                        'type' => 'radio', 'label' => 'Providing taxable services in CT?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'providingTaxableServicesInCt',
-                    ],
-                    'ct_only_through_marketplace' => [
-                        'type' => 'radio', 'label' => 'Selling only through marketplace facilitators?',
-                        'options' => ['1' => 'Yes', '0' => 'No'], 'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'sellingOnlyThroughMarketPlaceFacilitators',
-                    ],
+                    'ct_selling_goods_in_ct' => yesNoField('Selling goods in Connecticut?', 'sellingGoodsInCt'),
+                    'ct_rent_equipment_to_individuals' => yesNoField('Rent equipment to individuals or businesses in CT?', 'rentEquipmentToIndividualsOrBusinessesInCt'),
+                    'ct_serving_meals_or_beverages' => yesNoField('Serving meals or beverages in CT?', 'servingMealsOrBeveragesInCt'),
+                    'ct_providing_taxable_services' => yesNoField('Providing taxable services in CT?', 'providingTaxableServicesInCt'),
+                    'ct_only_through_marketplace' => yesNoField('Selling only through marketplace facilitators?', 'sellingOnlyThroughMarketPlaceFacilitators'),
                     'ct_sales_tax_liability_start_date' => [
                         'type' => 'date',
                         'label' => 'Sales Tax Liability Start Date',
@@ -178,27 +146,9 @@ return [
                     ],
 
                     // ───────── Admissions / dues ─────────
-                    'ct_amusement_entertainment' => [
-                        'type' => 'radio',
-                        'label' => 'Operate an amusement, entertainment, or recreation venue in CT?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'operateAmusmentEntertainmentOrRecreationPlaceInCt',
-                    ],
-                    'ct_social_athletic_dues' => [
-                        'type' => 'radio',
-                        'label' => 'Social/athletic/sporting club with >$100 annual dues?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'socialAthleticOrSportingWithMoreThan100InDuesAnnually',
-                    ],
-                    'ct_social_athletic_initiation' => [
-                        'type' => 'radio',
-                        'label' => 'Social/athletic/sporting club with >$100 initiation fees?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'socialAthleticOrSportingWithMoreThan100InitiationFees',
-                    ],
+                    'ct_amusement_entertainment' => yesNoField('Operate an amusement, entertainment, or recreation venue in CT?', 'operateAmusmentEntertainmentOrRecreationPlaceInCt'),
+                    'ct_social_athletic_dues' => yesNoField('Social/athletic/sporting club with >$100 annual dues?', 'socialAthleticOrSportingWithMoreThan100InDuesAnnually'),
+                    'ct_social_athletic_initiation' => yesNoField('Social/athletic/sporting club with >$100 initiation fees?', 'socialAthleticOrSportingWithMoreThan100InitiationFees'),
                     'ct_when_business_is_active' => [
                         'type' => 'radio',
                         'label' => 'When is the business active?',
@@ -232,22 +182,12 @@ return [
                     ],
 
                     // ───────── Corporation Business Tax ─────────
-                    'ct_corp_taxed_as_corp_with_nexus' => [
-                        'type' => 'radio',
-                        'label' => 'Is the corporation/association taxed as a corporation with CT nexus?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    'ct_corp_taxed_as_corp_with_nexus' => nullableYesNoField('Is the corporation/association taxed as a corporation with CT nexus?', 'coporationOrAssociationTaxedAsCorpWithNexus', [
                         'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp']]],
-                        'source_name' => 'coporationOrAssociationTaxedAsCorpWithNexus',
-                    ],
-                    'ct_federal_corp_income_tax_exemption' => [
-                        'type' => 'radio',
-                        'label' => 'Federal corporate income tax exempt?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['nullable', 'in:0,1'],
+                    ]),
+                    'ct_federal_corp_income_tax_exemption' => nullableYesNoField('Federal corporate income tax exempt?', 'federalCorporateIncomeTaxExemption', [
                         'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp', 'nonprofit']]],
-                        'source_name' => 'federalCorporateIncomeTaxExemption',
-                    ],
+                    ]),
                     'ct_state_organized_under' => [
                         'type' => 'select',
                         'label' => 'State Organized Under',
@@ -273,13 +213,7 @@ return [
                     ],
 
                     // ───────── Unrelated business / use tax ─────────
-                    'ct_purchasing_taxable_without_paying_ct_tax' => [
-                        'type' => 'radio',
-                        'label' => 'Will you purchase taxable goods/services without paying CT sales tax?',
-                        'options' => ['1' => 'Yes', '0' => 'No'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'purchasingTaxableGoodsOrServiceswWithoutPayingCtSalesTax',
-                    ],
+                    'ct_purchasing_taxable_without_paying_ct_tax' => yesNoField('Will you purchase taxable goods/services without paying CT sales tax?', 'purchasingTaxableGoodsOrServiceswWithoutPayingCtSalesTax'),
                     'ct_unrelated_business_income_tax_liability_start_date' => [
                         'type' => 'date',
                         'label' => 'Unrelated Business Income Tax Liability Start Date',

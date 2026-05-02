@@ -161,79 +161,56 @@
                 </div>
             @endif
 
+            @php
+                // Field context shared by every field include below —
+                // both the grouped-fields partial and the no-groups
+                // fallback path use the same shape, so it lives in one
+                // place to keep them in lockstep.
+                $fieldContext = [
+                    'prefix' => $isCore ? 'coreData' : 'stateData',
+                    'data' => $isCore ? $this->coreData : $this->stateData,
+                    'stateCode' => $isCore ? null : $this->currentStateCode(),
+                    'statePersonFields' => $statePersonFields ?? [],
+                ];
+
+                // Strip mailing-address fields from $visibleFields before
+                // the grouped renderer runs; they have their own composite
+                // partial and are handled at the call site below.
+                $visibleFieldsForGroups = collect($visibleFields)
+                    ->reject(fn ($_, $key) => in_array($key, $mailingFieldKeys, true))
+                    ->all();
+            @endphp
+
             @if ($stepGroups)
+                @include('livewire.forms.partials.grouped-fields', [
+                    'groups' => $stepGroups,
+                    'visibleFields' => $visibleFieldsForGroups,
+                    'fieldPartial' => 'livewire.forms.partials.field',
+                    'fieldContext' => $fieldContext,
+                    'sectionWrapper' => 'card',
+                    'beforeFields' => 'livewire.forms.partials.loading-overlay',
+                ])
+
+                {{-- Mailing-address composite (kept at call site). Lives
+                     in its own card if any group references the mailing
+                     keys; otherwise the existing mailing-address partial
+                     handles its own card-or-not display logic. --}}
                 @php
-                    // Track which visible fields are claimed by some group
-                    // so we can render orphan fields (e.g. state-specific
-                    // appended fields like TX's tx_*) in a fallback card
-                    // at the end. Without this, fields that aren't listed
-                    // in any group definition are silently dropped from
-                    // the form — the user can't see or fill them, but
-                    // server-side validation still requires them.
-                    $allGroupedKeys = collect($stepGroups)
+                    $stepGroupReferencesMailing = collect($stepGroups)
                         ->flatMap(fn ($g) => $g['fields'] ?? [])
-                        ->unique()
-                        ->values()
-                        ->all();
+                        ->intersect($mailingFieldKeys)
+                        ->isNotEmpty() && $hasMailingAddressFields;
                 @endphp
-                {{-- Grouped fields: each group in its own card --}}
-                @foreach ($stepGroups as $group)
-                    @php
-                        $groupFieldKeys = $group['fields'] ?? [];
-                        $groupTitle = $group['title'] ?? null;
-
-                        $regularKeys = array_diff($groupFieldKeys, $mailingFieldKeys);
-                        $groupFields = collect($regularKeys)
-                            ->filter(fn ($key) => isset($visibleFields[$key]))
-                            ->mapWithKeys(fn ($key) => [$key => $visibleFields[$key]])
-                            ->all();
-
-                        $groupHasMailing = !empty(array_intersect($groupFieldKeys, $mailingFieldKeys)) && $hasMailingAddressFields;
-                    @endphp
-
-                    @if (!empty($groupFields) || $groupHasMailing)
-                        <x-ui.card class="relative">
-                            {{-- Loading overlay --}}
-                            <div
-                                wire:loading.flex
-                                wire:target="removeRepeaterItem"
-                                class="absolute inset-0 z-10 items-center justify-center bg-white/75 dark:bg-zinc-800/75"
-                            >
-                                <div class="flex items-center gap-2 text-text-secondary">
-                                    <svg class="h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <span>Updating...</span>
-                                </div>
-                            </div>
-
-                            @if ($groupTitle)
-                                <flux:heading size="lg" class="mb-4">{{ $groupTitle }}</flux:heading>
-                            @endif
-
-                            <div class="space-y-6">
-                                @foreach ($groupFields as $fieldKey => $field)
-                                    @include('livewire.forms.partials.field', [
-                                        'fieldKey' => $fieldKey,
-                                        'field' => $field,
-                                        'prefix' => $isCore ? 'coreData' : 'stateData',
-                                        'data' => $isCore ? $this->coreData : $this->stateData,
-                                        'drivesConditional' => $field['drives_conditional'] ?? false,
-                                        'stateCode' => $isCore ? null : $this->currentStateCode(),
-                                        'statePersonFields' => $statePersonFields ?? [],
-                                    ])
-                                @endforeach
-
-                                @if ($groupHasMailing)
-                                    @include('livewire.forms.partials.mailing-address', [
-                                        'mailingAddressField' => $mailingAddressField,
-                                    ])
-                                @endif
-                            </div>
-                        </x-ui.card>
-                    @endif
-                @endforeach
+                @if ($stepGroupReferencesMailing)
+                    <x-ui.card class="relative">
+                        @include('livewire.forms.partials.loading-overlay')
+                        <div class="space-y-6">
+                            @include('livewire.forms.partials.mailing-address', [
+                                'mailingAddressField' => $mailingAddressField,
+                            ])
+                        </div>
+                    </x-ui.card>
+                @endif
 
                 {{-- Fallback card for any visible fields not claimed by a
                      group. State-specific definitions (e.g. TX) often
@@ -243,9 +220,17 @@
                      so the user would see "Please fix N fields above"
                      with no obvious place to fix them. --}}
                 @php
-                    $orphanFields = collect($visibleFields)
+                    $allGroupedKeys = collect($stepGroups)
+                        ->flatMap(function ($g) {
+                            return collect($g['fields'] ?? [])
+                                ->flatMap(fn ($entry) => is_array($entry) ? $entry : [$entry]);
+                        })
+                        ->unique()
+                        ->values()
+                        ->all();
+
+                    $orphanFields = collect($visibleFieldsForGroups)
                         ->reject(fn ($field, $key) => in_array($key, $allGroupedKeys, true))
-                        ->reject(fn ($field, $key) => in_array($key, $mailingFieldKeys, true))
                         ->all();
                 @endphp
                 @if (! empty($orphanFields))
@@ -253,15 +238,11 @@
                         <flux:heading size="lg" class="mb-4">Additional Information</flux:heading>
                         <div class="space-y-6">
                             @foreach ($orphanFields as $fieldKey => $field)
-                                @include('livewire.forms.partials.field', [
+                                @include('livewire.forms.partials.field', array_merge($fieldContext, [
                                     'fieldKey' => $fieldKey,
                                     'field' => $field,
-                                    'prefix' => $isCore ? 'coreData' : 'stateData',
-                                    'data' => $isCore ? $this->coreData : $this->stateData,
                                     'drivesConditional' => $field['drives_conditional'] ?? false,
-                                    'stateCode' => $isCore ? null : $this->currentStateCode(),
-                                    'statePersonFields' => $statePersonFields ?? [],
-                                ])
+                                ]))
                             @endforeach
                         </div>
                     </x-ui.card>
@@ -269,41 +250,18 @@
             @else
                 {{-- No groups: single card (default behavior) --}}
                 <x-ui.card class="relative">
-                    {{-- Loading overlay --}}
-                    <div
-                        wire:loading.flex
-                        wire:target="removeRepeaterItem"
-                        class="absolute inset-0 z-10 items-center justify-center bg-white/75 dark:bg-zinc-800/75"
-                    >
-                        <div class="flex items-center gap-2 text-text-secondary">
-                            <svg class="h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span>Updating...</span>
-                        </div>
-                    </div>
-
-                    @php
-                        $mainFields = collect($visibleFields)->filter(function($field, $key) use ($mailingFieldKeys) {
-                            return !in_array($key, $mailingFieldKeys);
-                        })->all();
-                    @endphp
+                    @include('livewire.forms.partials.loading-overlay')
 
                     <div class="space-y-6">
-                        @foreach ($mainFields as $fieldKey => $field)
-                            @include('livewire.forms.partials.field', [
+                        @foreach ($visibleFieldsForGroups as $fieldKey => $field)
+                            @include('livewire.forms.partials.field', array_merge($fieldContext, [
                                 'fieldKey' => $fieldKey,
                                 'field' => $field,
-                                'prefix' => $isCore ? 'coreData' : 'stateData',
-                                'data' => $isCore ? $this->coreData : $this->stateData,
                                 'drivesConditional' => $field['drives_conditional'] ?? false,
-                                'stateCode' => $isCore ? null : $this->currentStateCode(),
-                                'statePersonFields' => $statePersonFields ?? [],
-                            ])
+                            ]))
                         @endforeach
 
-                        @if (empty($mainFields) && !$hasMailingAddressFields)
+                        @if (empty($visibleFieldsForGroups) && !$hasMailingAddressFields)
                             <p class="text-center text-text-secondary">No fields to display in this step.</p>
                         @endif
 

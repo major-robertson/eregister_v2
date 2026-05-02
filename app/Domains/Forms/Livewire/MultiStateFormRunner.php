@@ -625,7 +625,16 @@ class MultiStateFormRunner extends Component
             return;
         }
 
-        $this->validateCurrentStep();
+        try {
+            $this->validateCurrentStep();
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            // Tell the form to scroll to the first invalid field; long
+            // steps otherwise hide errors hundreds of pixels above where
+            // the user clicked Next, making the click look like a no-op.
+            $this->dispatch('validation-failed');
+
+            throw $ve;
+        }
 
         // Save current data
         if ($this->currentPhase === 'core') {

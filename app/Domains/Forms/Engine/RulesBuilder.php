@@ -195,21 +195,9 @@ class RulesBuilder
         string $prefix,
         string $stateName = ''
     ): void {
-        $fieldRules = $field['rules'] ?? [];
         $basePath = "{$prefix}.{$fieldKey}";
 
-        // Address is a nested object with line1, line2, city, state, zip.
-        // Zip is locked to 5 digits — the address partial enforces this
-        // client-side via mask="99999"; digits:5 is the server-side guard.
-        $addressFields = [
-            'line1' => ['label' => 'Street Address', 'rules' => ['required', 'string', 'max:100']],
-            'line2' => ['label' => 'Address Line 2', 'rules' => ['nullable', 'string', 'max:100']],
-            'city' => ['label' => 'City', 'rules' => ['required', 'string', 'max:50']],
-            'state' => ['label' => 'State', 'rules' => ['required', 'string', 'size:2']],
-            'zip' => ['label' => 'ZIP Code', 'rules' => ['required', 'digits:5']],
-        ];
-
-        foreach ($addressFields as $subKey => $subField) {
+        foreach ($this->addressSubfieldRules($field) as $subKey => $subField) {
             $rules["{$basePath}.{$subKey}"] = $subField['rules'];
             $attributes["{$basePath}.{$subKey}"] = $this->replaceStateName($subField['label'], $stateName);
         }
@@ -222,18 +210,38 @@ class RulesBuilder
         string $fieldKey,
         string $stateName = ''
     ): void {
-        $addressFields = [
-            'line1' => ['label' => 'Street Address', 'rules' => ['required', 'string', 'max:100']],
-            'line2' => ['label' => 'Address Line 2', 'rules' => ['nullable', 'string', 'max:100']],
-            'city' => ['label' => 'City', 'rules' => ['required', 'string', 'max:50']],
-            'state' => ['label' => 'State', 'rules' => ['required', 'string', 'size:2']],
-            'zip' => ['label' => 'ZIP Code', 'rules' => ['required', 'digits:5']],
-        ];
-
-        foreach ($addressFields as $subKey => $subField) {
+        foreach ($this->addressSubfieldRules($field) as $subKey => $subField) {
             $rules["{$fieldKey}.{$subKey}"] = $subField['rules'];
             $attributes["{$fieldKey}.{$subKey}"] = $this->replaceStateName($subField['label'], $stateName);
         }
+    }
+
+    /**
+     * Build address sub-field rules that respect the parent field's
+     * disposition. When the parent address has `nullable` in its rules,
+     * the inner line1/city/state/zip become nullable too — so an
+     * optional address (e.g. tx_landlord_address) can be left blank
+     * without tripping required-on-line1 etc. Format constraints
+     * (digits:5 zip, size:2 state, max:N) still apply when the user
+     * actually enters something, because Laravel skips other rules
+     * when the value is null AND `nullable` is present.
+     *
+     * @return array<string, array{label: string, rules: array<int, string>}>
+     */
+    private function addressSubfieldRules(array $field): array
+    {
+        $parentRules = $field['rules'] ?? [];
+        $parentIsNullable = in_array('nullable', $parentRules, true)
+            && ! in_array('required', $parentRules, true);
+        $requiredOrNullable = $parentIsNullable ? 'nullable' : 'required';
+
+        return [
+            'line1' => ['label' => 'Street Address', 'rules' => [$requiredOrNullable, 'string', 'max:100']],
+            'line2' => ['label' => 'Address Line 2', 'rules' => ['nullable', 'string', 'max:100']],
+            'city' => ['label' => 'City', 'rules' => [$requiredOrNullable, 'string', 'max:50']],
+            'state' => ['label' => 'State', 'rules' => [$requiredOrNullable, 'string', 'size:2']],
+            'zip' => ['label' => 'ZIP Code', 'rules' => [$requiredOrNullable, 'digits:5']],
+        ];
     }
 
     private function buildPersonExtrasRulesLivewire(

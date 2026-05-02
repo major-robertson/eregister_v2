@@ -136,7 +136,18 @@
             $mailingFieldKeys = ['mailing_address', 'mailing_address_same'];
         @endphp
 
-        <form wire:submit="nextStep" class="space-y-6">
+        <form
+            wire:submit="nextStep"
+            class="space-y-6"
+            x-data
+            x-on:validation-failed.window="
+                $nextTick(() => {
+                    const target = $el.querySelector('[data-flux-control][data-invalid], [data-flux-control].is-invalid, .text-red-500')
+                        ?? $el.querySelector('[name^=\'coreData.\']:invalid, [name^=\'stateData.\']:invalid');
+                    target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+            "
+        >
             @if ($currentStep)
                 <div class="mb-2">
                     <flux:heading size="lg">
@@ -151,6 +162,20 @@
             @endif
 
             @if ($stepGroups)
+                @php
+                    // Track which visible fields are claimed by some group
+                    // so we can render orphan fields (e.g. state-specific
+                    // appended fields like TX's tx_*) in a fallback card
+                    // at the end. Without this, fields that aren't listed
+                    // in any group definition are silently dropped from
+                    // the form — the user can't see or fill them, but
+                    // server-side validation still requires them.
+                    $allGroupedKeys = collect($stepGroups)
+                        ->flatMap(fn ($g) => $g['fields'] ?? [])
+                        ->unique()
+                        ->values()
+                        ->all();
+                @endphp
                 {{-- Grouped fields: each group in its own card --}}
                 @foreach ($stepGroups as $group)
                     @php
@@ -209,6 +234,38 @@
                         </x-ui.card>
                     @endif
                 @endforeach
+
+                {{-- Fallback card for any visible fields not claimed by a
+                     group. State-specific definitions (e.g. TX) often
+                     append fields beyond what base.php's groups list,
+                     and without this catch-all those fields would render
+                     nowhere. Server-side validation still requires them,
+                     so the user would see "Please fix N fields above"
+                     with no obvious place to fix them. --}}
+                @php
+                    $orphanFields = collect($visibleFields)
+                        ->reject(fn ($field, $key) => in_array($key, $allGroupedKeys, true))
+                        ->reject(fn ($field, $key) => in_array($key, $mailingFieldKeys, true))
+                        ->all();
+                @endphp
+                @if (! empty($orphanFields))
+                    <x-ui.card class="relative">
+                        <flux:heading size="lg" class="mb-4">Additional Information</flux:heading>
+                        <div class="space-y-6">
+                            @foreach ($orphanFields as $fieldKey => $field)
+                                @include('livewire.forms.partials.field', [
+                                    'fieldKey' => $fieldKey,
+                                    'field' => $field,
+                                    'prefix' => $isCore ? 'coreData' : 'stateData',
+                                    'data' => $isCore ? $this->coreData : $this->stateData,
+                                    'drivesConditional' => $field['drives_conditional'] ?? false,
+                                    'stateCode' => $isCore ? null : $this->currentStateCode(),
+                                    'statePersonFields' => $statePersonFields ?? [],
+                                ])
+                            @endforeach
+                        </div>
+                    </x-ui.card>
+                @endif
             @else
                 {{-- No groups: single card (default behavior) --}}
                 <x-ui.card class="relative">
@@ -257,6 +314,24 @@
                         @endif
                     </div>
                 </x-ui.card>
+            @endif
+
+            {{-- Validation error summary: rendered when the server bounces
+                 the step back with errors. Inline @error blocks live
+                 next to each field, but on long steps (e.g. TX state
+                 details has 40+ fields) those messages are scrolled
+                 offscreen — the user clicks Next and sees nothing
+                 change. The summary + scroll-to-error event ensures
+                 they can't miss it. --}}
+            @if ($errors->any())
+                <flux:callout variant="danger" icon="exclamation-triangle">
+                    <flux:callout.heading>
+                        Please fix {{ $errors->count() }} {{ Str::plural('field', $errors->count()) }} above
+                    </flux:callout.heading>
+                    <flux:callout.text>
+                        Some required fields are missing or invalid. Scroll up to review the highlighted entries.
+                    </flux:callout.text>
+                </flux:callout>
             @endif
 
             <div class="flex justify-between pt-4">

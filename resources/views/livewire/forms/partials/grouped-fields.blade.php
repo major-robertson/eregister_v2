@@ -30,9 +30,15 @@
      *                                   the very top of each group's body
      *                                   (e.g. loading overlay for step
      *                                   groups). Receives $fieldContext.
+     *   - $headingSize   (string|null)  flux:heading size token. Defaults
+     *                                   to 'lg' for cards (step-level) and
+     *                                   'sm' for separators (modal subhead);
+     *                                   override to 'base' for tighter card
+     *                                   contexts like the repeater modal.
      */
     $sectionWrapper = $sectionWrapper ?? 'card';
     $beforeFields = $beforeFields ?? null;
+    $headingSize = $headingSize ?? ($sectionWrapper === 'separator' ? 'sm' : 'lg');
 
     // Resolve which keys in each group are actually visible. Empty
     // groups (every field hidden) are dropped entirely so we don't
@@ -78,7 +84,7 @@
                 @include($beforeFields, $fieldContext)
             @endif
             @if ($resolved['title'])
-                <flux:heading size="lg" class="mb-4">{{ $resolved['title'] }}</flux:heading>
+                <flux:heading :size="$headingSize" class="mb-4">{{ $resolved['title'] }}</flux:heading>
             @endif
             <div class="space-y-6">
                 @foreach ($resolved['entries'] as $entry)
@@ -96,7 +102,7 @@
             <flux:separator />
         @endif
         @if ($resolved['title'])
-            <flux:heading size="sm" class="text-zinc-600 dark:text-zinc-400">
+            <flux:heading :size="$headingSize" class="text-zinc-600 dark:text-zinc-400">
                 {{ $resolved['title'] }}
             </flux:heading>
         @endif

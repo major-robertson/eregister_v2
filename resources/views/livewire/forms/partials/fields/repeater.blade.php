@@ -127,66 +127,122 @@
         </div>
     @endif
 
-    {{-- Repeater Modal --}}
-    <flux:modal wire:model="showRepeaterModal" class="max-w-lg">
-        <div class="space-y-4">
-            <flux:heading>{{ $this->editingRepeaterIndex !== null ? 'Edit' : 'Add' }} {{ $itemLabel }}</flux:heading>
+    {{-- Repeater Modal.
+         Wider than the default flux:modal so the inline-row pairs in
+         schema_groups (first/last name, phone/email, dob/ssn, etc.)
+         have breathing room. The internal layout is a flex column with
+         a scrollable body and a non-scrolling footer so the Save /
+         Cancel actions and the error-overview callout stay visible
+         even when the form is taller than the viewport. --}}
+    <flux:modal wire:model="showRepeaterModal" class="max-w-3xl">
+        @php
+            // Errors raised inside saveRepeaterItem() are namespaced
+            // 'repeaterForm.*'. Counting them separately keeps the
+            // modal's overview in sync with what the user can fix
+            // here, without bleeding in step-level errors that belong
+            // to the page behind the modal.
+            $repeaterErrorKeys = collect($errors->keys())
+                ->filter(fn ($k) => str_starts_with($k, 'repeaterForm.'))
+                ->values();
+            $repeaterErrorCount = $repeaterErrorKeys->count();
+        @endphp
 
-            <div class="space-y-4" @keydown.enter.prevent="$wire.saveRepeaterItem()">
+        <div class="flex max-h-[85vh] flex-col">
+            <div class="border-b border-zinc-200 pb-4 dark:border-zinc-700">
+                <flux:heading>{{ $this->editingRepeaterIndex !== null ? 'Edit' : 'Add' }} {{ $itemLabel }}</flux:heading>
+            </div>
+
+            <div
+                class="-mx-6 flex-1 space-y-4 overflow-y-auto px-6 py-4"
+                @keydown.enter.prevent="$wire.saveRepeaterItem()"
+            >
                 @if (! empty($field['schema_groups']))
                     @include('livewire.forms.partials.grouped-fields', [
                         'groups' => $field['schema_groups'],
                         'visibleFields' => $schema,
                         'fieldPartial' => 'livewire.forms.partials.fields.repeater-subfield',
                         'fieldContext' => [],
-                        'sectionWrapper' => 'separator',
+                        'sectionWrapper' => 'card',
+                        'headingSize' => 'base',
                     ])
                 @else
-                    {{-- Flat layout: render every schema entry in declaration order. --}}
-                    @foreach ($schema as $subKey => $subField)
-                        @include('livewire.forms.partials.fields.repeater-subfield', [
-                            'subKey' => $subKey,
-                            'subField' => $subField,
-                        ])
-                    @endforeach
+                    {{-- Flat layout: render every schema entry in
+                         declaration order, wrapped in a single card so
+                         the modal still gets the soft-surface treatment
+                         instead of bare fields against the modal body. --}}
+                    <x-ui.card>
+                        <div class="space-y-6">
+                            @foreach ($schema as $subKey => $subField)
+                                @include('livewire.forms.partials.fields.repeater-subfield', [
+                                    'subKey' => $subKey,
+                                    'subField' => $subField,
+                                ])
+                            @endforeach
+                        </div>
+                    </x-ui.card>
                 @endif
 
-                {{-- State-specific person fields --}}
+                {{-- State-specific person fields: one card per state so
+                     the visual rhythm matches the schema_groups cards
+                     above instead of dropping back to separator-and-
+                     heading bands. --}}
                 @if ($fieldKey === 'responsible_people' && !empty($statePersonFields ?? []))
                     @foreach ($statePersonFields as $stateCode => $stateInfo)
-                        <flux:separator />
-                        <flux:heading size="sm" class="text-zinc-600 dark:text-zinc-400">
-                            {{ $stateInfo['name'] }} Requirements
-                        </flux:heading>
+                        <x-ui.card>
+                            <flux:heading size="base" class="mb-4">
+                                {{ $stateInfo['name'] }} Requirements
+                            </flux:heading>
 
-                        @foreach ($stateInfo['fields'] as $stateFieldKey => $stateField)
-                            @php
-                                $stateFieldLabel = $stateField['label'] ?? ucwords(str_replace('_', ' ', $stateFieldKey));
-                                $stateFieldType = $stateField['type'] ?? 'text';
-                            @endphp
+                            <div class="space-y-6">
+                                @foreach ($stateInfo['fields'] as $stateFieldKey => $stateField)
+                                    @php
+                                        $stateFieldLabel = $stateField['label'] ?? ucwords(str_replace('_', ' ', $stateFieldKey));
+                                        $stateFieldType = $stateField['type'] ?? 'text';
+                                    @endphp
 
-                            <flux:field>
-                                <flux:label>{{ $stateFieldLabel }}</flux:label>
-                                @switch($stateFieldType)
-                                    @case('date')
-                                        <flux:input type="date" wire:model="repeaterForm.{{ $stateFieldKey }}" />
-                                        @break
-                                    @default
-                                        <flux:input
-                                            wire:model="repeaterForm.{{ $stateFieldKey }}"
-                                            placeholder="{{ $stateField['placeholder'] ?? '' }}"
-                                        />
-                                @endswitch
-                                <flux:error name="repeaterForm.{{ $stateFieldKey }}" />
-                                @if (!empty($stateField['help']))
-                                    <flux:text class="text-sm text-zinc-500">{{ $stateField['help'] }}</flux:text>
-                                @endif
-                            </flux:field>
-                        @endforeach
+                                    <flux:field>
+                                        <flux:label>{{ $stateFieldLabel }}</flux:label>
+                                        @switch($stateFieldType)
+                                            @case('date')
+                                                <flux:input type="date" wire:model="repeaterForm.{{ $stateFieldKey }}" />
+                                                @break
+                                            @default
+                                                <flux:input
+                                                    wire:model="repeaterForm.{{ $stateFieldKey }}"
+                                                    placeholder="{{ $stateField['placeholder'] ?? '' }}"
+                                                />
+                                        @endswitch
+                                        <flux:error name="repeaterForm.{{ $stateFieldKey }}" />
+                                        @if (!empty($stateField['help']))
+                                            <flux:text class="text-sm text-zinc-500">{{ $stateField['help'] }}</flux:text>
+                                        @endif
+                                    </flux:field>
+                                @endforeach
+                            </div>
+                        </x-ui.card>
                     @endforeach
                 @endif
+            </div>
 
-                <div class="flex justify-end gap-3 pt-4">
+            {{-- Sticky footer: error overview + actions. The flex
+                 layout above (max-h-[85vh] + flex-1 scroll body) keeps
+                 this region pinned to the bottom of the modal viewport
+                 without needing position: sticky. The error overview
+                 mirrors the main form's flux:callout so users get the
+                 same "fix N fields" feedback without scrolling up. --}}
+            <div class="space-y-3 border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                @if ($repeaterErrorCount > 0)
+                    <flux:callout variant="danger" icon="exclamation-triangle">
+                        <flux:callout.heading>
+                            Please fix {{ $repeaterErrorCount }} {{ Str::plural('field', $repeaterErrorCount) }}
+                        </flux:callout.heading>
+                        <flux:callout.text>
+                            Some required fields are missing or invalid. Each highlighted field above shows what to fix.
+                        </flux:callout.text>
+                    </flux:callout>
+                @endif
+
+                <div class="flex justify-end gap-3">
                     <flux:button type="button" wire:click="closeRepeaterModal" variant="ghost">
                         Cancel
                     </flux:button>

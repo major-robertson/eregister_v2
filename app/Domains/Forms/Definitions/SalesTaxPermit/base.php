@@ -277,12 +277,22 @@ return [
                     // first/last name pair sits side-by-side via the
                     // nested-array row syntax. State-specific fields
                     // (if any) still render as separate sections after.
+                    // Each card is a distinct surface in the modal
+                    // rather than a separator-and-heading band. Address
+                    // and Driver License each get their own card so the
+                    // composite address widget and the DL details aren't
+                    // crammed in with shorter Y/N fields. Inline-row
+                    // pairs keep field count per card balanced so no
+                    // single card dominates vertically.
                     'schema_groups' => [
-                        ['title' => 'Identity', 'fields' => [['first_name', 'last_name'], 'title']],
-                        ['title' => 'Contact', 'fields' => ['phone', 'email']],
-                        ['title' => 'Personal', 'fields' => ['dob', 'ssn']],
-                        ['title' => 'Driver License', 'fields' => ['driver_license_state', 'driver_license_number', 'driver_license_expiration']],
+                        ['title' => 'Basic Details', 'fields' => [['first_name', 'last_name'], 'title']],
+                        ['title' => 'Contact', 'fields' => [['email', 'phone']]],
                         ['title' => 'Home Address', 'fields' => ['home_address']],
+                        ['title' => 'Verification Details', 'fields' => [['dob', 'ssn']]],
+                        ['title' => 'Driver License', 'fields' => [
+                            ['driver_license_state', 'driver_license_number'],
+                            'driver_license_expiration',
+                        ]],
                         ['title' => 'Authorization', 'fields' => ['ownership_percent', 'is_authorized_signer']],
                     ],
                     'schema' => [

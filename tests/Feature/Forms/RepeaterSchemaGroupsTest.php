@@ -11,6 +11,10 @@ beforeEach(fn () => View::share('errors', new ViewErrorBag));
 
 describe('responsible_people schema_groups definition', function () {
     it('declares the expected six visual sections in order', function () {
+        // Each card is a distinct surface in the modal. Address and
+        // Driver License each get their own card so the composite
+        // address widget and the DL details aren't crammed in with
+        // shorter Y/N fields.
         $base = app(FormRegistry::class)->getBase('sales_tax_permit');
         $field = $base['core_steps']['responsible_people']['fields']['responsible_people'];
 
@@ -18,23 +22,23 @@ describe('responsible_people schema_groups definition', function () {
 
         $titles = array_map(fn ($g) => $g['title'], $field['schema_groups']);
         expect($titles)->toBe([
-            'Identity',
+            'Basic Details',
             'Contact',
-            'Personal',
-            'Driver License',
             'Home Address',
+            'Verification Details',
+            'Driver License',
             'Authorization',
         ]);
     });
 
-    it('places first_name and last_name in a side-by-side row inside Identity', function () {
+    it('places first_name and last_name in a side-by-side row inside Basic Details', function () {
         $base = app(FormRegistry::class)->getBase('sales_tax_permit');
-        $identity = $base['core_steps']['responsible_people']['fields']['responsible_people']['schema_groups'][0];
+        $basic = $base['core_steps']['responsible_people']['fields']['responsible_people']['schema_groups'][0];
 
         // The row syntax: an array nested inside `fields` means "render
         // these together in one grid row". Single strings are full-width.
-        expect($identity['fields'][0])->toBe(['first_name', 'last_name'])
-            ->and($identity['fields'][1])->toBe('title');
+        expect($basic['fields'][0])->toBe(['first_name', 'last_name'])
+            ->and($basic['fields'][1])->toBe('title');
     });
 });
 
@@ -80,11 +84,11 @@ describe('Repeater modal grouped rendering', function () {
         // internal classes) so the test isn't coupled to Flux versions.
         // (Pest's toContain accepts multiple needles, all required.)
         expect($html)->toContain(
-            'Identity',
+            'Basic Details',
             'Contact',
-            'Personal',
-            'Driver License',
             'Home Address',
+            'Verification Details',
+            'Driver License',
             'Authorization',
         );
 

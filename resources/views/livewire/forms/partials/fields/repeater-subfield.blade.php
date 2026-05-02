@@ -75,12 +75,17 @@
         @break
 
     @case('address')
+        {{-- Hide the address widget's outer label inside a repeater
+             modal: the parent schema_groups card already supplies a
+             title (e.g. "Home Address"), so showing the widget label
+             below it would render the same string twice immediately
+             above the "Street Address" sub-field. --}}
         @include('livewire.forms.partials.fields.address', [
             'fieldKey' => $subKey,
             'field' => $subField,
             'prefix' => 'repeaterForm',
             'label' => $subLabel,
-            'hideLabel' => false,
+            'hideLabel' => true,
         ])
         @break
 

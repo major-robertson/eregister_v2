@@ -53,7 +53,7 @@ if ($hasConditionalContent) {
 @break
 
 @case('radio')
-@include('livewire.forms.partials.fields.radio', compact('fieldKey', 'field', 'wireModel', 'needsLive', 'label'))
+@include('livewire.forms.partials.fields.radio', compact('fieldKey', 'field', 'wireModel', 'needsLive', 'label', 'badge', 'resolvedHelp'))
 @break
 
 @case('checkbox')

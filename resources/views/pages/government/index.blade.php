@@ -66,7 +66,7 @@
             </div>
             <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
                 <p class="text-2xl font-bold text-white">U.S.-based</p>
-                <p class="mt-1 text-xs text-slate-400">Team &amp; hosting options</p>
+                <p class="mt-1 text-xs text-slate-400">Team &amp; hosting</p>
             </div>
         </div>
     </div>

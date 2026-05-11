@@ -38,4 +38,6 @@ it('can render all public pages', function (string $uri) {
     'government-portals' => '/government/portals',
     'government-integrations' => '/government/integrations',
     'government-implementation' => '/government/implementation',
+    // Government - sales demos
+    'government-florida-eog-demo' => '/government/florida-eog-demo',
 ]);

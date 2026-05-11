@@ -28,4 +28,14 @@ it('can render all public pages', function (string $uri) {
     'notice-of-intent-to-lien' => '/liens/notice-of-intent-to-lien',
     'lien-release' => '/liens/lien-release',
     'payment-demand-letter' => '/liens/payment-demand-letter',
+    // Government
+    'government' => '/government',
+    'government-website-redesign' => '/government/website-redesign',
+    'government-accessibility' => '/government/accessibility',
+    'government-cms' => '/government/cms',
+    'government-hosting' => '/government/hosting',
+    'government-maintenance' => '/government/maintenance',
+    'government-portals' => '/government/portals',
+    'government-integrations' => '/government/integrations',
+    'government-implementation' => '/government/implementation',
 ]);

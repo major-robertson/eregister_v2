@@ -87,6 +87,9 @@ Route::prefix('government')->name('government.')->group(function () {
     Route::view('portals', 'pages.government.portals')->name('portals');
     Route::view('integrations', 'pages.government.integrations')->name('integrations');
     Route::view('implementation', 'pages.government.implementation')->name('implementation');
+
+    // Sales demos (noindex, shareable by direct URL only)
+    Route::view('florida-eog-demo', 'pages.government.florida-eog-demo')->name('florida-eog-demo');
 });
 
 // Email preferences (signed URL, no auth required)

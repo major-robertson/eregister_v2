@@ -38,6 +38,16 @@ class SitemapController extends Controller
             ['path' => '/liens/notice-of-intent-to-lien', 'changefreq' => 'monthly', 'priority' => '0.7'],
             ['path' => '/liens/lien-release',            'changefreq' => 'monthly', 'priority' => '0.7'],
             ['path' => '/liens/payment-demand-letter',   'changefreq' => 'monthly', 'priority' => '0.7'],
+
+            ['path' => '/government',                          'changefreq' => 'monthly', 'priority' => '0.8'],
+            ['path' => '/government/website-redesign',         'changefreq' => 'monthly', 'priority' => '0.7'],
+            ['path' => '/government/accessibility',            'changefreq' => 'monthly', 'priority' => '0.7'],
+            ['path' => '/government/cms',                      'changefreq' => 'monthly', 'priority' => '0.7'],
+            ['path' => '/government/hosting',                  'changefreq' => 'monthly', 'priority' => '0.7'],
+            ['path' => '/government/maintenance',              'changefreq' => 'monthly', 'priority' => '0.7'],
+            ['path' => '/government/portals',                  'changefreq' => 'monthly', 'priority' => '0.7'],
+            ['path' => '/government/integrations',             'changefreq' => 'monthly', 'priority' => '0.7'],
+            ['path' => '/government/implementation',           'changefreq' => 'monthly', 'priority' => '0.7'],
         ];
 
         return array_map(fn (array $page) => [

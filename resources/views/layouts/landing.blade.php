@@ -354,6 +354,7 @@
                         <li><a href="{{ route('contact') }}" class="text-sm text-zinc-400 transition hover:text-white">Contact</a></li>
                         <li><a href="{{ route('sales-tax-registration') }}" class="text-sm text-zinc-400 transition hover:text-white">Sales Tax</a></li>
                         <li><a href="{{ route('resale-certificates') }}" class="text-sm text-zinc-400 transition hover:text-white">Resale Certificates</a></li>
+                        <li><a href="{{ route('government.home') }}" class="text-sm text-zinc-400 transition hover:text-white">Government</a></li>
                     </ul>
                 </div>
 

@@ -76,6 +76,19 @@ Route::view('liens/notice-of-intent-to-lien', 'pages.liens.notice-of-intent-to-l
 Route::view('liens/lien-release', 'pages.liens.lien-release')->name('liens.lien-release');
 Route::view('liens/payment-demand-letter', 'pages.liens.payment-demand-letter')->name('liens.payment-demand-letter');
 
+// Government
+Route::prefix('government')->name('government.')->group(function () {
+    Route::view('/', 'pages.government.index')->name('home');
+    Route::view('website-redesign', 'pages.government.website-redesign')->name('website-redesign');
+    Route::view('accessibility', 'pages.government.accessibility')->name('accessibility');
+    Route::view('cms', 'pages.government.cms')->name('cms');
+    Route::view('hosting', 'pages.government.hosting')->name('hosting');
+    Route::view('maintenance', 'pages.government.maintenance')->name('maintenance');
+    Route::view('portals', 'pages.government.portals')->name('portals');
+    Route::view('integrations', 'pages.government.integrations')->name('integrations');
+    Route::view('implementation', 'pages.government.implementation')->name('implementation');
+});
+
 // Email preferences (signed URL, no auth required)
 Route::get('/email/preferences/{user}', [EmailUnsubscribeController::class, 'preferences'])
     ->middleware('throttle:30,1')

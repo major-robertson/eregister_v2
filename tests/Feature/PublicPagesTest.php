@@ -39,5 +39,6 @@ it('can render all public pages', function (string $uri) {
     'government-integrations' => '/government/integrations',
     'government-implementation' => '/government/implementation',
     // Government - sales demos
-    'government-florida-eog-demo' => '/government/florida-eog-demo',
+    'government-florida-eog-demo-1' => '/government/florida-eog-demo-1',
+    'government-florida-eog-demo-2' => '/government/florida-eog-demo-2',
 ]);

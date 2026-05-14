@@ -89,7 +89,9 @@ Route::prefix('government')->name('government.')->group(function () {
     Route::view('implementation', 'pages.government.implementation')->name('implementation');
 
     // Sales demos (noindex, shareable by direct URL only)
-    Route::view('florida-eog-demo', 'pages.government.florida-eog-demo')->name('florida-eog-demo');
+    // Two design options for EOG–RFQ–26-03; cross-link via banner.
+    Route::view('florida-eog-demo-1', 'pages.government.florida-eog-demo-1')->name('florida-eog-demo-1');
+    Route::view('florida-eog-demo-2', 'pages.government.florida-eog-demo-2')->name('florida-eog-demo-2');
 });
 
 // Email preferences (signed URL, no auth required)

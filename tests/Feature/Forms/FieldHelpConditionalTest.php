@@ -19,7 +19,7 @@ use Tests\Feature\Forms\Support\RunnerTestFactory;
 describe('help_when definition shape', function () {
     it('declares a sole-prop-only override on the EIN field', function () {
         $base = app(FormRegistry::class)->getBase('sales_tax_permit');
-        $field = $base['core_steps']['tax_identification']['fields']['fein'];
+        $field = $base['core_steps']['identity']['fields']['fein'];
 
         expect($field['help'] ?? null)
             ->toBe('Get an EIN at https://www.irs.gov/businesses/employer-identification-number')

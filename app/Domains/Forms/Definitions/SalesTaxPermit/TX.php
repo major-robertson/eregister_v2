@@ -1,234 +1,197 @@
 <?php
 
 /**
- * Texas — Sales Tax Permit overrides.
+ * Texas — Sales Tax Permit overrides (v3 clean rebuild).
  *
- * Ported from TaxResaleCertificate `resources/views/states/texas/application/`
- * (primary, organizationInformation, entityQuestions, contactInformation,
- * businessInformation) plus matching JS validators.
+ * Authoritative source: TaxResaleCertificate
+ * `resources/views/states/texas/application/` (organizationInformation,
+ * primary, businessInformation, entityQuestions, contactInformation).
  *
- * NAICS, FEIN, business contact, business address, formation state, and
- * the responsible_people repeater all live in base.php. Only TX-specific
- * questions are added here.
+ * Collapsed into core: merger (entity_involved_in_merger), internet/mail
+ * order + temporary events + home-based + ship/deliver + marketplace +
+ * taxable services + alcohol/tobacco/telecom/fireworks gates (applies_*),
+ * monthly taxable sales threshold prefill (matrix), bank + card processor
+ * + records/alternate contacts (core), landlord + distribution locations
+ * (locations[] rows), predecessor identity (core predecessor_*).
  */
 return [
     'extends' => 'base',
 
     'state_steps' => [
-        'state_details' => [
-            'groups' => ['append' => [
-                ['title' => 'Texas Identifiers', 'fields' => [
-                    'tx_taxpayer_number', 'tx_franchise_tax_id', 'tx_sos_file_number',
-                    'tx_involved_in_merger', 'tx_business_location_in_texas',
-                ]],
-                ['title' => 'Industry & Activity', 'fields' => [
-                    'tx_alcoholic_beverages', 'tx_alcoholic_beverages_permit',
-                    'tx_temporary_locations', 'tx_temporary_location_name', 'tx_period_in_attendance',
-                    'tx_mail_order', 'tx_sales_people_other_locations',
-                    'tx_taxable_services_at_customer_location', 'tx_health_spa',
-                    'tx_winery_outside_texas', 'tx_electronic_cigarettes',
-                    'tx_electronic_cigarettes_online', 'tx_prepaid_wireless',
-                    'tx_telecommunication_chapter_771', 'tx_sell_fireworks',
-                    'tx_diesel_50hp_equipment', 'tx_other_distribution_points',
-                    'tx_other_location_address',
-                ]],
-                ['title' => 'Nexus & Sales', 'fields' => [
-                    'tx_exceeds_8k_monthly', 'tx_taking_orders_taxable_items',
-                    'tx_receipts_from_personal_property', 'tx_franchisee_in_texas',
-                    'tx_electronic_marketplace', 'tx_ownership_in_similar_business',
-                    'tx_ownership_business_maintains_location', 'tx_ship_to_other_texas_cities',
-                ]],
-                ['title' => 'Banking & Payment', 'fields' => [
-                    'tx_bank_name', 'tx_personal_bank', 'tx_accept_credit_cards',
-                    'tx_payment_processor', 'tx_merchant_identification_number',
-                ]],
-                ['title' => 'Landlord', 'fields' => ['tx_landlord_owner_name', 'tx_landlord_address']],
-                ['title' => 'Contacts', 'fields' => [
-                    'tx_br_contact_name', 'tx_br_contact_phone', 'tx_br_contact_email',
-                    'tx_alternate_contact', 'tx_alternate_contact_name',
-                    'tx_alternate_contact_phone', 'tx_alternate_contact_email',
-                ]],
-            ]],
+        'tx_state_ids' => [
+            'title' => 'Texas Identifiers',
+            'description' => 'Comptroller and Secretary of State identifiers.',
             'fields' => [
-                'append' => [
-                    // ───────── Texas-specific identifiers ─────────
-                    'tx_taxpayer_number' => [
-                        'type' => 'text',
-                        'label' => 'Texas Taxpayer Number (if previously issued)',
-                        'rules' => ['nullable', 'digits:11'],
-                        'help' => '11-digit Texas Comptroller taxpayer number. Leave blank if you have not been issued one.',
-                        'source_name' => 'texasTaxpayerNumber',
-                    ],
-                    'tx_franchise_tax_id' => [
-                        'type' => 'text',
-                        'label' => 'Texas Franchise Tax ID (if any)',
-                        'rules' => ['nullable', 'string', 'max:20'],
-                        'help' => 'Leave blank if you do not have a franchise tax ID yet.',
-                    ],
-                    'tx_sos_file_number' => [
-                        'type' => 'text',
-                        'label' => 'TX Secretary of State File Number',
-                        'rules' => ['nullable', 'digits:10'],
-                        'help' => 'Required for corporations, LLCs, LPs, and LLPs. 10 digits.',
-                        'source_name' => 'texasFileNumber',
-                    ],
-                    'tx_involved_in_merger' => yesNoField('Has this entity been involved in a merger?', 'involvedInMerger'),
-                    'tx_business_location_in_texas' => [
-                        // Custom options (Texas / Another state) so this
-                        // one can't use the yesNoField helper.
-                        'type' => 'radio',
-                        'label' => 'Is the principal place of business located in Texas?',
-                        'options' => ['1' => 'Texas', '0' => 'Another state'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'businessLocation',
-                    ],
-
-                    // ───────── Industry / activity questions ─────────
-                    'tx_alcoholic_beverages' => yesNoField('Will you sell alcoholic beverages?', 'alcoholicBeverages', ['drives_conditional' => true]),
-                    'tx_alcoholic_beverages_permit' => [
-                        'type' => 'select',
-                        'label' => 'Which alcoholic beverages permit will you hold?',
-                        'options' => [
-                            'mixed_beverage' => 'Mixed Beverage',
-                            'beer_and_wine' => 'Beer and Wine',
-                        ],
-                        'rules' => ['nullable'],
-                        'when' => ['==' => [['var' => 'tx_alcoholic_beverages'], '1']],
-                        'source_name' => 'alcoholicBeveragesPermit',
-                    ],
-                    'tx_temporary_locations' => yesNoField('Will you sell at temporary locations (fairs, festivals, etc.)?', 'temporaryLocations', ['drives_conditional' => true]),
-                    'tx_temporary_location_name' => [
-                        'type' => 'text',
-                        'label' => 'Temporary Location and/or Event Name',
-                        'rules' => ['nullable', 'string', 'max:100'],
-                        'when' => ['==' => [['var' => 'tx_temporary_locations'], '1']],
-                        'source_name' => 'temporaryLocationName',
-                    ],
-                    'tx_period_in_attendance' => [
-                        'type' => 'text',
-                        'label' => 'Period of Attendance',
-                        'rules' => ['nullable', 'string', 'max:100'],
-                        'when' => ['==' => [['var' => 'tx_temporary_locations'], '1']],
-                        'source_name' => 'periodInAttendance',
-                    ],
-                    'tx_mail_order' => yesNoField('Do you sell via internet and/or mail order?', 'mailOrder'),
-                    'tx_sales_people_other_locations' => yesNoField('Do you have sales people operating in other locations?', 'salesPeople'),
-                    'tx_taxable_services_at_customer_location' => yesNoField("Do you provide taxable services at a customer's location?", 'atCustomersLocation'),
-                    'tx_health_spa' => yesNoField('Do you sell health spa memberships?', 'healthSpa'),
-                    'tx_winery_outside_texas' => yesNoField('Are you a winery located outside Texas shipping wine to Texas customers?', 'wineryOutsideTexas'),
-                    'tx_electronic_cigarettes' => yesNoField('Do you sell electronic cigarettes or vaping devices?', 'electronicCigarettes'),
-                    'tx_electronic_cigarettes_online' => yesNoField('Do you sell e-cigarettes online or by mail?', 'electronicCigarettesOnline'),
-                    'tx_prepaid_wireless' => yesNoField('Do you sell prepaid wireless telecommunications?', 'telecommunicationServices'),
-                    'tx_telecommunication_chapter_771' => yesNoField('Do you provide telecommunication services under Tax Code Chapter 771?', 'telecommunicationServicesUnderChapter711'),
-                    'tx_sell_fireworks' => yesNoField('Do you sell fireworks?', 'sellFireworks'),
-                    'tx_diesel_50hp_equipment' => yesNoField('Do you sell or operate diesel-powered equipment of 50 horsepower or greater?', 'dieselPoweredEquipment'),
-                    'tx_other_distribution_points' => yesNoField('Do you have other distribution centers, warehouses, or locations in Texas?', 'otherDistributionPoints', ['drives_conditional' => true]),
-                    'tx_other_location_address' => [
-                        'type' => 'address',
-                        'label' => 'Other Distribution Location Address',
-                        'rules' => ['nullable'],
-                        'when' => ['==' => [['var' => 'tx_other_distribution_points'], '1']],
-                    ],
-
-                    // ───────── Nexus / activity ─────────
-                    'tx_exceeds_8k_monthly' => yesNoField('Will your monthly taxable sales exceed $8,000?', 'exceed8k'),
-                    'tx_taking_orders_taxable_items' => yesNoField('Do representatives take orders for taxable items in Texas?', 'takingOrderTaxableItems'),
-                    'tx_receipts_from_personal_property' => yesNoField('Do you have receipts from tangible personal property in Texas?', 'receiptFromPersonalProperty'),
-                    'tx_franchisee_in_texas' => yesNoField('Are you a franchisee or licensee operating under a name in Texas?', 'franchiseeOperatingUnderName'),
-                    'tx_electronic_marketplace' => yesNoField('Do you operate an electronic or physical marketplace for third-party sellers?', 'electronicOrPhysicalMarketplace'),
-                    'tx_ownership_in_similar_business' => yesNoField('Do you have substantial ownership in a similar business?', 'ownershipInSimilarBusiness'),
-                    'tx_ownership_business_maintains_location' => yesNoField('Do you have ownership in a business that maintains a location in Texas to promote sales?', 'ownershipInBusinessMaintainsLocation'),
-                    'tx_ship_to_other_texas_cities' => yesNoField('Do you deliver or ship items to other cities or counties in Texas?', 'deliverOrShipItemToOtherCitiesInTexas'),
-
-                    // ───────── Banking & payment ─────────
-                    'tx_bank_name' => [
-                        'type' => 'text',
-                        'label' => 'Bank Name',
-                        'rules' => ['required', 'string', 'max:100'],
-                        'source_name' => 'bankName',
-                    ],
-                    'tx_personal_bank' => yesNoField('Is this also your personal bank?', 'personalBank'),
-                    'tx_accept_credit_cards' => yesNoField('Do you accept credit card payments?', 'creditCardPayments', ['drives_conditional' => true]),
-                    'tx_payment_processor' => [
-                        'type' => 'text',
-                        'label' => 'Online Payment Processor Name',
-                        'rules' => ['nullable', 'string', 'max:100'],
-                        'when' => ['==' => [['var' => 'tx_accept_credit_cards'], '1']],
-                        'source_name' => 'onlinePaymentProcessor',
-                    ],
-                    'tx_merchant_identification_number' => [
-                        'type' => 'text',
-                        'label' => 'Merchant Identification Number (MID)',
-                        'rules' => ['nullable', 'string', 'max:100'],
-                        'source_name' => 'merchantIdentificationNumber',
-                    ],
-
-                    // ───────── Landlord / location ─────────
-                    'tx_landlord_owner_name' => [
-                        'type' => 'text',
-                        'label' => 'Landlord / Property Owner Name',
-                        'rules' => ['nullable', 'string', 'max:100'],
-                        'source_name' => 'landlordOwnerName',
-                    ],
-                    'tx_landlord_address' => [
-                        'type' => 'address',
-                        'label' => 'Landlord / Property Owner Address',
-                        'rules' => ['nullable'],
-                    ],
-
-                    // ───────── Business contact / alternate contact ─────────
-                    'tx_br_contact_name' => [
-                        'type' => 'text',
-                        'label' => 'Business Records Contact Name',
-                        'rules' => ['required', 'string', 'max:100'],
-                        'source_name' => 'brContactName',
-                    ],
-                    'tx_br_contact_phone' => [
-                        'type' => 'text',
-                        'label' => 'Business Records Contact Phone',
-                        'rules' => ['required', 'string', 'max:20'],
-                        'placeholder' => '(123) 456-7890',
-                        'mask' => '(999) 999-9999',
-                        'source_name' => 'brContactPhoneNumber',
-                    ],
-                    'tx_br_contact_email' => [
-                        'type' => 'email',
-                        'label' => 'Business Records Contact Email',
-                        'rules' => ['required', 'email', 'max:255'],
-                        'placeholder' => 'name@example.com',
-                        'source_name' => 'brContactEmailAddress',
-                    ],
-                    'tx_alternate_contact' => yesNoField('Add an alternate contact?', 'brAlternateContact', ['drives_conditional' => true]),
-                    'tx_alternate_contact_name' => [
-                        'type' => 'text',
-                        'label' => 'Alternate Contact Name',
-                        'rules' => ['nullable', 'string', 'max:100'],
-                        'when' => ['==' => [['var' => 'tx_alternate_contact'], '1']],
-                        'source_name' => 'brContactNameAlternate',
-                    ],
-                    'tx_alternate_contact_phone' => [
-                        'type' => 'text',
-                        'label' => 'Alternate Contact Phone',
-                        'rules' => ['nullable', 'string', 'max:20'],
-                        'placeholder' => '(123) 456-7890',
-                        'mask' => '(999) 999-9999',
-                        'when' => ['==' => [['var' => 'tx_alternate_contact'], '1']],
-                        'source_name' => 'brContactPhoneNumberAlternate',
-                    ],
-                    'tx_alternate_contact_email' => [
-                        'type' => 'email',
-                        'label' => 'Alternate Contact Email',
-                        'rules' => ['nullable', 'email', 'max:255'],
-                        'placeholder' => 'name@example.com',
-                        'when' => ['==' => [['var' => 'tx_alternate_contact'], '1']],
-                        'source_name' => 'brContactEmailAddressAlternate',
-                    ],
+                'tx_taxpayer_number' => [
+                    'type' => 'text',
+                    'label' => 'Texas Taxpayer Number (if previously issued)',
+                    'rules' => ['nullable', 'digits:11'],
+                    'help' => '11-digit Texas Comptroller taxpayer number. Leave blank if you have not been issued one.',
+                    'source_name' => 'texasTaxpayerNumber',
+                ],
+                'tx_franchise_tax_id' => [
+                    'type' => 'text',
+                    'label' => 'Texas Franchise Tax ID (if any)',
+                    'rules' => ['nullable', 'string', 'max:20'],
+                ],
+                'tx_sos_file_number' => [
+                    'type' => 'text',
+                    'label' => 'TX Secretary of State File Number',
+                    'rules' => ['nullable', 'digits:10'],
+                    'help' => 'Required for corporations, LLCs, LPs, and LLPs. 10 digits.',
+                    'source_name' => 'texasFileNumber',
+                ],
+                'tx_business_location_in_texas' => [
+                    'type' => 'radio',
+                    'label' => 'Is the principal place of business located in Texas?',
+                    'options' => ['1' => 'Texas', '0' => 'Another state'],
+                    'rules' => ['required', 'in:0,1'],
+                    'source_name' => 'businessLocation',
                 ],
             ],
         ],
 
-        // No state-specific responsible_people fields: driver license
-        // state and number are now collected once in the base
-        // responsible_people repeater for every entity.
+        'tx_sales_activity' => [
+            'title' => 'Texas Sales Activity',
+            'description' => 'Sales operations and nexus questions specific to Texas.',
+            'fields' => [
+                'tx_exceeds_8k_monthly' => yesNoField('Will your monthly taxable sales exceed $8,000?', 'exceed8k', [
+                    'help' => 'Compare against the monthly taxable sales estimate you entered for Texas earlier.',
+                ]),
+                'tx_taking_orders_taxable_items' => yesNoField('Do representatives take orders for taxable items in Texas?', 'takingOrderTaxableItems'),
+                'tx_receipts_from_personal_property' => yesNoField('Do you have receipts from tangible personal property in Texas?', 'receiptFromPersonalProperty'),
+                'tx_sales_people_other_locations' => yesNoField('Do you have sales people operating in other locations?', 'salesPeople'),
+                'tx_directions' => [
+                    'type' => 'text',
+                    'label' => 'Directions to the home-based business location',
+                    'rules' => ['nullable', 'string', 'max:500'],
+                    'when' => ['contains' => [['var' => '$root.applies_home_or_residence_based.states'], 'TX']],
+                    'source_name' => 'directions',
+                ],
+            ],
+        ],
+
+        'tx_special_products_services' => [
+            'title' => 'Texas Products & Services',
+            'description' => 'Texas-specific follow-ups for regulated products and services.',
+            'fields' => [
+                'tx_alcoholic_beverages_permit' => [
+                    'type' => 'select',
+                    'label' => 'Which alcoholic beverages permit will you hold?',
+                    'options' => [
+                        'mixed_beverage' => 'Mixed Beverage',
+                        'beer_and_wine' => 'Beer and Wine',
+                    ],
+                    'rules' => ['nullable'],
+                    'when' => ['contains' => [['var' => '$root.applies_alcohol.states'], 'TX']],
+                    'source_name' => 'alcoholicBeveragesPermit',
+                ],
+                'tx_winery_outside_texas' => nullableYesNoField('Are you a winery located outside Texas shipping wine to Texas customers?', 'wineryOutsideTexas', [
+                    'when' => ['contains' => [['var' => '$root.applies_alcohol.states'], 'TX']],
+                ]),
+                'tx_electronic_cigarettes_online' => nullableYesNoField('Do you sell e-cigarettes online or by mail?', 'electronicCigarettesOnline', [
+                    'when' => ['contains' => [['var' => '$root.applies_tobacco_vape.states'], 'TX']],
+                ]),
+                'tx_telecommunication_chapter_771' => nullableYesNoField('Do you provide telecommunication services under Tax Code Chapter 771?', 'telecommunicationServicesUnderChapter711', [
+                    'when' => ['contains' => [['var' => '$root.applies_telecom_or_prepaid_wireless.states'], 'TX']],
+                ]),
+                'tx_diesel_50hp_equipment' => yesNoField('Do you sell or operate diesel-powered equipment of 50 horsepower or greater?', 'dieselPoweredEquipment'),
+                'tx_health_spa' => yesNoField('Do you sell health spa memberships?', 'healthSpa'),
+            ],
+        ],
+
+        'tx_business_relationships' => [
+            'title' => 'Texas Business Relationships',
+            'description' => 'Franchise and affiliated-business questions.',
+            'fields' => [
+                'tx_franchisee_in_texas' => yesNoField('Are you a franchisee or licensee operating under a name in Texas?', 'franchiseeOperatingUnderName'),
+                'tx_ownership_in_similar_business' => yesNoField('Do you have substantial ownership in a similar business?', 'ownershipInSimilarBusiness'),
+                'tx_ownership_business_maintains_location' => yesNoField('Do you have ownership in a business that maintains a location in Texas to promote sales?', 'ownershipInBusinessMaintainsLocation'),
+                'tx_personal_bank' => nullableYesNoField('Is your business bank also your personal bank?', 'personalBank', [
+                    'when' => ['==' => [['var' => '$root.has_business_bank_account'], '1']],
+                ]),
+            ],
+        ],
+
+        'tx_acquisition' => [
+            'title' => 'Texas Acquisition Details',
+            'description' => 'Shown because you purchased an existing business in Texas.',
+            'groups' => [
+                ['title' => 'Previous Owner', 'fields' => [
+                    'tx_previous_owner_trade_name', 'tx_previous_owner_purchase_price',
+                    'tx_previous_owner_taxpayer_number',
+                ]],
+                ['title' => 'What Was Purchased', 'fields' => [
+                    'tx_purchased_inventory', 'tx_purchased_real_estate', 'tx_purchased_corporate_stock',
+                    'tx_purchased_equipment', 'tx_purchased_other', 'tx_other_purchased_description',
+                ]],
+            ],
+            'fields' => [
+                'tx_previous_owner_trade_name' => [
+                    'type' => 'text',
+                    'label' => 'Previous Owner Trade Name',
+                    'rules' => ['nullable', 'string', 'max:120'],
+                    'when' => ['contains' => [['var' => '$root.applies_purchased_or_acquired_business.states'], 'TX']],
+                    'source_name' => 'previousOwnerTradeName',
+                ],
+                'tx_previous_owner_purchase_price' => [
+                    'type' => 'text',
+                    'label' => 'Purchase Price (USD)',
+                    'rules' => ['nullable', 'numeric', 'min:0'],
+                    'when' => ['contains' => [['var' => '$root.applies_purchased_or_acquired_business.states'], 'TX']],
+                    'source_name' => 'previousOwnerPurchasePrice',
+                ],
+                'tx_previous_owner_taxpayer_number' => [
+                    'type' => 'text',
+                    'label' => 'Previous Owner Texas Taxpayer Number',
+                    'rules' => ['nullable', 'digits:11'],
+                    'when' => ['contains' => [['var' => '$root.applies_purchased_or_acquired_business.states'], 'TX']],
+                    'source_name' => 'previousOwnerTexasTaxpayerNumber',
+                ],
+                'tx_purchased_inventory' => [
+                    'type' => 'checkbox',
+                    'label' => 'Inventory',
+                    'when' => ['contains' => [['var' => '$root.applies_purchased_or_acquired_business.states'], 'TX']],
+                    'source_name' => 'purchased[]',
+                    'source_value' => 'Inventory',
+                ],
+                'tx_purchased_real_estate' => [
+                    'type' => 'checkbox',
+                    'label' => 'Real Estate',
+                    'when' => ['contains' => [['var' => '$root.applies_purchased_or_acquired_business.states'], 'TX']],
+                    'source_name' => 'purchased[]',
+                    'source_value' => 'Real Estate',
+                ],
+                'tx_purchased_corporate_stock' => [
+                    'type' => 'checkbox',
+                    'label' => 'Corporate Stock',
+                    'when' => ['contains' => [['var' => '$root.applies_purchased_or_acquired_business.states'], 'TX']],
+                    'source_name' => 'purchased[]',
+                    'source_value' => 'Corporate Stock',
+                ],
+                'tx_purchased_equipment' => [
+                    'type' => 'checkbox',
+                    'label' => 'Equipment',
+                    'when' => ['contains' => [['var' => '$root.applies_purchased_or_acquired_business.states'], 'TX']],
+                    'source_name' => 'purchased[]',
+                    'source_value' => 'Equipment',
+                ],
+                'tx_purchased_other' => [
+                    'type' => 'checkbox',
+                    'label' => 'Other',
+                    'when' => ['contains' => [['var' => '$root.applies_purchased_or_acquired_business.states'], 'TX']],
+                    'drives_conditional' => true,
+                    'source_name' => 'purchased[]',
+                    'source_value' => 'Other',
+                ],
+                'tx_other_purchased_description' => [
+                    'type' => 'text',
+                    'label' => 'Other Purchased — Description',
+                    'rules' => ['nullable', 'string', 'max:200'],
+                    'when' => ['==' => [['var' => 'tx_purchased_other'], '1']],
+                    'source_name' => 'otherPurchased',
+                ],
+            ],
+        ],
     ],
 ];

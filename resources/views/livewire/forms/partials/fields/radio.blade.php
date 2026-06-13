@@ -1,18 +1,9 @@
 {{--
-    Compact button-radio group. Each option is a real button with a
-    min-width so Yes / No / etc. stay close to the question instead of
-    stretching to full container width like the segmented variant did.
-    On mobile we let the row span full width; from sm: up the buttons
-    auto-size around their content, keeping the eye on the question.
-
-    The `*:min-w-28` rule sets a comfortable minimum width on every
-    direct child (each radio button) so labels of varying length —
-    "Yes" / "No" / "All Year" / "Profit" — all render at a consistent
-    size and don't visually wobble between adjacent fields.
-
-    Flux's buttons variant wraps to a second row when the container
-    can't fit the options, so the partial handles 2-, 3-, and 4-option
-    fields uniformly without per-field tuning.
+    Question radios rendered with Flux's segmented variant — the
+    canonical Flux pattern for short option sets (Yes/No, Monthly/
+    Quarterly). Proper selected-state highlight and theming come from
+    Flux itself. (The custom radio-buttons partial remains available as
+    an alternative filled-button style.)
 --}}
 <flux:field wire:key="field-{{ $wireModel }}">
     <flux:label :badge="$badge['label'] ?? null" :badge-color="$badge['color'] ?? null">
@@ -23,11 +14,11 @@
     @endif
     <flux:radio.group
         wire:model.live="{{ $wireModel }}"
-        variant="buttons"
-        class="w-full sm:w-auto *:min-w-28"
+        variant="segmented"
+        class="w-full sm:w-fit"
     >
         @foreach ($field['options'] ?? [] as $value => $optionLabel)
-            <flux:radio value="{{ $value }}">{{ $optionLabel }}</flux:radio>
+            <flux:radio value="{{ $value }}" label="{{ $optionLabel }}" />
         @endforeach
     </flux:radio.group>
     @error($wireModel)

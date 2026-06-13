@@ -1,5 +1,14 @@
 @php
     $rawOptions = $field['options'] ?? [];
+
+    // `<<selected_states>>` token: resolve to the application's selected
+    // states at render time (used by e.g. temporary_events[].state_code).
+    if ($rawOptions === '<<selected_states>>') {
+        $rawOptions = collect($this->application->selected_states ?? [])
+            ->mapWithKeys(fn ($code) => [$code => config("states.{$code}", $code)])
+            ->all();
+    }
+
     $isGrouped = ! empty($rawOptions) && collect($rawOptions)->contains(fn ($v) => is_array($v));
 @endphp
 <flux:field wire:key="field-{{ $wireModel }}">

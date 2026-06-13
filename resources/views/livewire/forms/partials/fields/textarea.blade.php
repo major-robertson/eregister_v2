@@ -6,22 +6,18 @@
         @include('livewire.forms.partials.field-help', ['help' => $resolvedHelp])
     @endif
     @if ($needsLive)
-        <flux:input
+        <flux:textarea
             wire:model.live="{{ $wireModel }}"
-            type="{{ $inputType ?? 'text' }}"
+            rows="{{ $field['rows'] ?? 3 }}"
             placeholder="{{ $field['placeholder'] ?? '' }}"
             name="{{ $wireModel }}"
-            :mask="$field['mask'] ?? null"
-            :autocomplete="! empty($field['sensitive']) ? 'off' : null"
         />
     @else
-        <flux:input
+        <flux:textarea
             wire:model="{{ $wireModel }}"
-            type="{{ $inputType ?? 'text' }}"
+            rows="{{ $field['rows'] ?? 3 }}"
             placeholder="{{ $field['placeholder'] ?? '' }}"
             name="{{ $wireModel }}"
-            :mask="$field['mask'] ?? null"
-            :autocomplete="! empty($field['sensitive']) ? 'off' : null"
         />
     @endif
     @error($wireModel)

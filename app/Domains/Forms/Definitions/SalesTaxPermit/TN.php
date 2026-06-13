@@ -1,117 +1,109 @@
 <?php
 
 /**
- * Tennessee — Sales Tax Permit overrides.
+ * Tennessee — Sales Tax Permit overrides (v3 clean rebuild).
  *
- * Ported from TaxResaleCertificate `resources/views/states/tennessee/application/`
- * (primary, organizationInformation, entityQuestions, businessInformation,
- * contactInformation) plus matching JS validators.
+ * Authoritative source: TaxResaleCertificate
+ * `resources/views/states/tennessee/application/` (organizationInformation,
+ * primary, businessInformation, contactInformation, entityQuestions).
+ *
+ * Collapsed into core: DBA (core dba_name), authorized contact (core
+ * authorized_contact_*), manufacturer/wholesaler role (core supply-chain
+ * role checkboxes), alcohol manufacturer gate (applies_alcohol), physical
+ * presence (applies_physical_presence), annual sales (matrix).
+ *
+ * §3A.2 fix applied: the legacy RAP/survey conditional chain is restored —
+ * `exceed1200` shows when `exceed4800 == 1` (v2 had it inverted), and the
+ * RAP chain gates each question on the prior answer.
  */
 return [
     'extends' => 'base',
 
     'state_steps' => [
         'state_details' => [
-            'groups' => ['append' => [
+            'title' => 'Tennessee Sales Tax Permit Details',
+            'description' => 'Tennessee registration and Retail Accountability Program questions.',
+            'groups' => [
                 ['title' => 'Tennessee Identifiers', 'fields' => [
                     'tn_secretary_of_state_number', 'tn_taxpayer_number',
                 ]],
-                ['title' => 'Sales / Liability (RAP)', 'fields' => [
-                    'tn_more_than_200_monthly', 'tn_exceed_4800_annual',
-                    'tn_exceed_1200_taxable_services', 'tn_suppliers_do_not_collect_sales_tax',
-                    'tn_more_than_500000', 'tn_over_50_affiliate',
+                ['title' => 'Sales & Use Tax Survey', 'fields' => [
+                    'tn_more_than_200_monthly', 'tn_exceed_4800_annual', 'tn_exceed_1200_taxable_services',
+                    'tn_suppliers_do_not_collect_sales_tax', 'tn_direct_shipper_of_wine',
+                ]],
+                ['title' => 'Alcohol (TN detail)', 'fields' => ['tn_distillery_in_tennessee']],
+                ['title' => 'Retail Accountability Program', 'fields' => [
+                    'tn_wholesaler_distributor_manufacturer', 'tn_sell_beer_or_tobacco',
+                    'tn_food_candy_nonalcoholic', 'tn_more_than_500000', 'tn_over_50_affiliate',
                     'tn_only_perishable_grocery_items', 'tn_rap_filing_frequency',
                 ]],
-                ['title' => 'Manufacturer / Wholesaler / Alcohol', 'fields' => [
-                    'tn_manufacturer_alcoholic_beverages', 'tn_distillery_in_tennessee',
-                    'tn_manufacturer_or_wholesaler', 'tn_physical_presence',
-                    'tn_direct_shipper_of_wine', 'tn_wholesaler_distributor_manufacturer',
-                    'tn_sell_beer_or_tobacco', 'tn_food_candy_nonalcoholic',
-                ]],
-                ['title' => 'Authorized Contact', 'fields' => [
-                    'tn_authorized_contact_name', 'tn_authorized_contact_phone',
-                    'tn_authorized_contact_email',
-                ]],
-            ]],
+            ],
             'fields' => [
-                'append' => [
-                    // ───────── Tennessee-specific identifiers ─────────
-                    'tn_secretary_of_state_number' => [
-                        'type' => 'text',
-                        'label' => 'TN Secretary of State Control Number',
-                        'rules' => ['nullable', 'string', 'max:20'],
-                        'help' => 'Required for corporations and LLCs registered with the TN SOS.',
-                        'source_name' => 'secretaryOfStateNumber',
-                    ],
-                    'tn_taxpayer_number' => [
-                        'type' => 'text',
-                        'label' => 'Tennessee Taxpayer Number (if previously issued)',
-                        'rules' => ['nullable', 'digits:11'],
-                        'help' => 'Leave blank if you have not been issued one.',
-                        'source_name' => 'tennesseeTaxpayerNumber',
-                    ],
+                'tn_secretary_of_state_number' => [
+                    'type' => 'text',
+                    'label' => 'TN Secretary of State Control Number',
+                    'rules' => ['nullable', 'string', 'max:20'],
+                    'help' => 'Required for corporations and LLCs registered with the TN SOS.',
+                    'source_name' => 'secretaryOfStateNumber',
+                ],
+                'tn_taxpayer_number' => [
+                    'type' => 'text',
+                    'label' => 'Tennessee Taxpayer Number (if previously issued)',
+                    'rules' => ['nullable', 'digits:11'],
+                    'help' => 'Leave blank if you have not been issued one.',
+                    'source_name' => 'tennesseeTaxpayerNumber',
+                ],
 
-                    // ───────── Sales / liability questions (RAP) ─────────
-                    'tn_more_than_200_monthly' => yesNoField('Will your sales tax liability exceed $200 per month?', 'moreThan200SalesTaxMonthly'),
-                    'tn_exceed_4800_annual' => yesNoField('Will your annual gross sales exceed $4,800?', 'exceed4800', ['drives_conditional' => true]),
-                    'tn_exceed_1200_taxable_services' => nullableYesNoField('Will your taxable services exceed $1,200 annually?', 'exceed1200', [
-                        'when' => ['==' => [['var' => 'tn_exceed_4800_annual'], '0']],
-                    ]),
-                    'tn_suppliers_do_not_collect_sales_tax' => [
-                        // Inverted options (No=1, Yes=0) — keeps the data
-                        // model consistent with the "do not collect" framing.
-                        'type' => 'radio',
-                        'label' => 'Do your suppliers collect Tennessee sales tax?',
-                        'options' => ['1' => 'No', '0' => 'Yes'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'suppliersDoNotCollectTnSalesTax',
-                    ],
-                    'tn_more_than_500000' => yesNoField('Did you have more than $500,000 in TN sales in the last 12 months?', 'moreThan500000'),
-                    'tn_over_50_affiliate' => yesNoField('Are you affiliated (>50%) with a TN business?', 'over50'),
-                    'tn_only_perishable_grocery_items' => yesNoField('Do you sell only perishable grocery items?', 'onlyPerishableGroceryItems'),
-                    'tn_rap_filing_frequency' => [
-                        // Custom labels (Monthly / Quarterly) — not yes/no.
-                        'type' => 'radio',
-                        'label' => 'Filing Frequency',
-                        'options' => ['1' => 'Monthly', '0' => 'Quarterly'],
-                        'rules' => ['required', 'in:0,1'],
-                        'source_name' => 'RAPfiling',
-                    ],
+                'tn_more_than_200_monthly' => yesNoField('Do you expect to pay $200 or more in sales tax per month?', 'moreThan200SalesTaxMonthly'),
+                // §3A.2.5: legacy chain — exceed1200 shows when exceed4800 == 1.
+                'tn_exceed_4800_annual' => yesNoField('Will your gross sales exceed $4,800 per year?', 'exceed4800', ['drives_conditional' => true]),
+                'tn_exceed_1200_taxable_services' => nullableYesNoField('Will your taxable services exceed $1,200 per year?', 'exceed1200', [
+                    'when' => ['==' => [['var' => 'tn_exceed_4800_annual'], '1']],
+                ]),
+                'tn_suppliers_do_not_collect_sales_tax' => [
+                    // Inverted options preserved from legacy (No = 1, Yes = 0).
+                    'type' => 'radio',
+                    'label' => 'Do your suppliers collect Tennessee sales tax?',
+                    'options' => ['1' => 'No', '0' => 'Yes'],
+                    'rules' => ['required', 'in:0,1'],
+                    'source_name' => 'suppliersDoNotCollectTnSalesTax',
+                ],
+                'tn_direct_shipper_of_wine' => nullableYesNoField('Will you be licensed as a direct shipper of wine?', 'directShipperOfWine', [
+                    'when' => ['contains' => [['var' => '$root.applies_alcohol.states'], 'TN']],
+                ]),
+                'tn_distillery_in_tennessee' => nullableYesNoField('Are you a distillery located in Tennessee?', 'distillaryInTennessee', [
+                    'when' => ['contains' => [['var' => '$root.applies_alcohol.states'], 'TN']],
+                ]),
 
-                    // ───────── Manufacturer / wholesaler / alcohol ─────────
-                    'tn_manufacturer_alcoholic_beverages' => yesNoField('Are you a manufacturer of alcoholic beverages?', 'manufacturerAlcoholicBeverages'),
-                    'tn_distillery_in_tennessee' => yesNoField('Do you operate a distillery in Tennessee?', 'distillaryInTennessee'),
-                    'tn_manufacturer_or_wholesaler' => yesNoField('Are you a manufacturer or wholesaler?', 'manufacturerOrWholesaler', ['drives_conditional' => true]),
-                    'tn_physical_presence' => nullableYesNoField('Do you have physical presence in Tennessee?', 'physicalPresence', [
-                        'when' => ['==' => [['var' => 'tn_manufacturer_or_wholesaler'], '1']],
-                    ]),
-                    'tn_direct_shipper_of_wine' => yesNoField('Are you an ABC-licensed direct shipper of wine?', 'directShipperOfWine'),
-                    'tn_wholesaler_distributor_manufacturer' => yesNoField('Are you a wholesaler, distributor, or manufacturer?', 'wholesalerDistributorManfacturer'),
-                    'tn_sell_beer_or_tobacco' => yesNoField('Will you sell beer or tobacco to retailers?', 'sellBeerTobaccao'),
-                    'tn_food_candy_nonalcoholic' => yesNoField('Will you sell food, candy, or non-alcoholic beverages to retailers?', 'foodCandyNonAlcoholicBeverages'),
-
-                    // ───────── Authorized contact ─────────
-                    'tn_authorized_contact_name' => [
-                        'type' => 'text',
-                        'label' => 'Authorized Contact Name',
-                        'rules' => ['required', 'string', 'max:120'],
-                        'source_name' => 'authorizedContactName',
-                    ],
-                    'tn_authorized_contact_phone' => [
-                        'type' => 'text',
-                        'label' => 'Authorized Contact Phone',
-                        'rules' => ['required', 'string', 'max:20'],
-                        'placeholder' => '(123) 456-7890',
-                        'mask' => '(999) 999-9999',
-                        'source_name' => 'authorizedContactPhoneNumber',
-                    ],
-                    'tn_authorized_contact_email' => [
-                        'type' => 'email',
-                        'label' => 'Authorized Contact Email',
-                        'rules' => ['required', 'email', 'max:255'],
-                        'placeholder' => 'name@example.com',
-                        'source_name' => 'authorizedContactEmailAddress',
-                    ],
+                // Legacy RAP chain: each question gates the next.
+                'tn_wholesaler_distributor_manufacturer' => yesNoField('Are you a wholesaler, distributor, or manufacturer?', 'wholesalerDistributorManfacturer', ['drives_conditional' => true]),
+                'tn_sell_beer_or_tobacco' => nullableYesNoField('Will you sell beer or tobacco products to Tennessee retailers?', 'sellBeerTobaccao', [
+                    'when' => ['==' => [['var' => 'tn_wholesaler_distributor_manufacturer'], '1']],
+                    'drives_conditional' => true,
+                ]),
+                'tn_food_candy_nonalcoholic' => nullableYesNoField('Will you sell food, candy, or non-alcoholic beverages to Tennessee retailers that sell beer or tobacco?', 'foodCandyNonAlcoholicBeverages', [
+                    'when' => ['==' => [['var' => 'tn_sell_beer_or_tobacco'], '1']],
+                    'drives_conditional' => true,
+                ]),
+                'tn_more_than_500000' => nullableYesNoField('Do you anticipate selling more than $500,000 to Tennessee retailers?', 'moreThan500000', [
+                    'when' => ['==' => [['var' => 'tn_food_candy_nonalcoholic'], '1']],
+                    'drives_conditional' => true,
+                ]),
+                'tn_over_50_affiliate' => nullableYesNoField('Will sales be made solely to retailers that are affiliates (over 50% common ownership)?', 'over50', [
+                    'when' => ['==' => [['var' => 'tn_more_than_500000'], '1']],
+                    'drives_conditional' => true,
+                ]),
+                'tn_only_perishable_grocery_items' => nullableYesNoField('Will you only be selling perishable grocery items?', 'onlyPerishableGroceryItems', [
+                    'when' => ['==' => [['var' => 'tn_over_50_affiliate'], '1']],
+                    'drives_conditional' => true,
+                ]),
+                'tn_rap_filing_frequency' => [
+                    'type' => 'radio',
+                    'label' => 'You are required to file a RAP report. Will you file monthly or quarterly?',
+                    'options' => ['1' => 'Monthly', '0' => 'Quarterly'],
+                    'rules' => ['nullable', 'in:0,1'],
+                    'when' => ['==' => [['var' => 'tn_only_perishable_grocery_items'], '1']],
+                    'source_name' => 'RAPfiling',
                 ],
             ],
         ],
@@ -132,7 +124,7 @@ return [
                                 'label' => 'ID Type',
                                 'options' => [
                                     'ssn' => 'Social Security Number',
-                                    'itin' => 'Individual Tax Payer Number (ITIN)',
+                                    'itin' => 'Individual Taxpayer Identification Number (ITIN)',
                                 ],
                                 'rules' => ['required'],
                                 'source_name' => 'primaryContactIdType',

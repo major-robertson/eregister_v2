@@ -36,14 +36,14 @@ function renderTextPartial(array $field, string $wireModel = 'foo', bool $needsL
 describe('Input mask definitions', function () {
     it('marks individual_ssn with the SSN mask', function () {
         $base = app(FormRegistry::class)->getBase('sales_tax_permit');
-        $field = $base['core_steps']['tax_identification']['fields']['individual_ssn'];
+        $field = $base['core_steps']['identity']['fields']['individual_ssn'];
 
         expect($field['mask'] ?? null)->toBe('999-99-9999');
     });
 
     it('marks fein with the FEIN mask', function () {
         $base = app(FormRegistry::class)->getBase('sales_tax_permit');
-        $field = $base['core_steps']['tax_identification']['fields']['fein'];
+        $field = $base['core_steps']['identity']['fields']['fein'];
 
         expect($field['mask'] ?? null)->toBe('99-9999999');
     });
@@ -55,27 +55,24 @@ describe('Input mask definitions', function () {
         expect($schema['ssn']['mask'] ?? null)->toBe('999-99-9999');
     });
 
-    it('marks previous_owner_fein with the FEIN mask', function () {
+    it('marks the core predecessor_fein with the FEIN mask', function () {
         $base = app(FormRegistry::class)->getBase('sales_tax_permit');
-        $field = $base['state_steps']['state_details']['fields']['previous_owner_fein'];
+        $field = $base['core_steps']['acquisition_and_history']['fields']['predecessor_fein'];
 
         expect($field['mask'] ?? null)->toBe('99-9999999');
     });
 
     it('marks the NJ-specific FEIN fields with the FEIN mask', function () {
         $merged = app(FormRegistry::class)->get('sales_tax_permit', 'NJ');
-        $fields = $merged['state_steps']['state_details']['fields'];
+        $fields = collect($merged['state_steps'])->flatMap(fn ($s) => $s['fields'] ?? [])->all();
 
         expect($fields['nj_parent_corporation_fein']['mask'] ?? null)->toBe('99-9999999');
         expect($fields['nj_acquired_ein']['mask'] ?? null)->toBe('99-9999999');
     });
 
-    it('marks NAICS code fields with a 6-digit mask', function () {
+    it('marks NAICS code field with a 6-digit mask', function () {
         $base = app(FormRegistry::class)->getBase('sales_tax_permit');
         expect($base['core_steps']['activity']['fields']['naics_code']['mask'] ?? null)->toBe('999999');
-
-        $ga = app(FormRegistry::class)->get('sales_tax_permit', 'GA');
-        expect($ga['state_steps']['state_details']['fields']['ga_secondary_naics']['mask'] ?? null)->toBe('999999');
     });
 
     it('marks every phone field with a US phone mask', function () {
@@ -88,18 +85,15 @@ describe('Input mask definitions', function () {
         $personSchema = $base['core_steps']['responsible_people']['fields']['responsible_people']['schema'];
         expect($personSchema['phone']['mask'] ?? null)->toBe($phoneMask);
 
-        // Smoke-check across every state file that defines a phone-like field.
+        // Smoke-check the remaining state-only phone fields.
         $statePhoneFields = [
-            'TX' => ['tx_br_contact_phone', 'tx_alternate_contact_phone'],
-            'TN' => ['tn_authorized_contact_phone'],
-            'OH' => ['oh_secondary_phone', 'oh_business_fax_number', 'oh_company_contact_phone', 'oh_company_contact_fax'],
-            'OK' => ['ok_contact_phone_number'],
-            'CA' => ['ca_supplier_phone'],
-            'MD' => ['md_business_fax_number'],
+            'CA' => ['ca_supplier_phone', 'ca_personal_reference_phone'],
+            'OH' => ['oh_company_contact_phone', 'oh_company_contact_fax'],
+            'PA' => ['pa_phone_for_lottery'],
         ];
         foreach ($statePhoneFields as $stateCode => $keys) {
             $merged = app(FormRegistry::class)->get('sales_tax_permit', $stateCode);
-            $fields = $merged['state_steps']['state_details']['fields'];
+            $fields = collect($merged['state_steps'])->flatMap(fn ($s) => $s['fields'] ?? [])->all();
             foreach ($keys as $key) {
                 expect($fields[$key]['mask'] ?? null)
                     ->toBe($phoneMask, "{$stateCode}.{$key} should carry the phone mask");
@@ -116,25 +110,24 @@ describe('Input mask definitions', function () {
         $personSchema = $base['core_steps']['responsible_people']['fields']['responsible_people']['schema'];
         expect($personSchema['email']['placeholder'] ?? null)->not->toBeEmpty();
 
-        foreach (['TX', 'TN', 'OH', 'OK'] as $stateCode) {
+        foreach (['TX', 'TN', 'OH', 'OK', 'NY'] as $stateCode) {
             $merged = app(FormRegistry::class)->get('sales_tax_permit', $stateCode);
-            $emailKeys = collect($merged['state_steps']['state_details']['fields'])
-                ->filter(fn ($f) => ($f['type'] ?? null) === 'email')
-                ->keys();
+            $fields = collect($merged['state_steps'])->flatMap(fn ($s) => $s['fields'] ?? [])->all();
+            $emailKeys = collect($fields)->filter(fn ($f) => ($f['type'] ?? null) === 'email')->keys();
             foreach ($emailKeys as $key) {
-                expect($merged['state_steps']['state_details']['fields'][$key]['placeholder'] ?? null)
+                expect($fields[$key]['placeholder'] ?? null)
                     ->not->toBeEmpty("{$stateCode}.{$key} should carry an email placeholder");
             }
         }
     });
 
-    it('locks estimated_monthly_sales to whole-dollar integers via mask + integer rule', function () {
+    it('locks the monthly taxable sales matrix to whole-dollar integers via cell mask + integer rule', function () {
         $base = app(FormRegistry::class)->getBase('sales_tax_permit');
-        $field = $base['state_steps']['state_details']['fields']['estimated_monthly_sales'];
+        $field = $base['core_steps']['state_dates_and_estimates']['fields']['matrix_estimated_monthly_taxable_sales'];
 
-        expect($field['mask'] ?? null)->toBe('9999999999999')
-            ->and($field['rules'])->toContain('integer')
-            ->and($field['rules'])->not->toContain('numeric');
+        expect($field['cell_mask'] ?? null)->toBe('9999999999999')
+            ->and($field['cell_rules'])->toContain('integer')
+            ->and($field['cell_rules'])->not->toContain('numeric');
     });
 });
 

@@ -108,24 +108,31 @@
                 </div>
             @endif
 
-            {{-- Application core data summary --}}
+            {{-- Application core data summary (shape-aware: matrix /
+                 applies / locations / repeater values render readably;
+                 encrypted-at-rest sensitive values are masked). --}}
             @if (! empty($app?->core_data))
                 <div class="rounded-xl border border-border bg-white p-6">
-                    <flux:heading size="md">Application Data</flux:heading>
-                    <dl class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        @foreach ($app->core_data as $key => $value)
-                            @if (! is_array($value) && $value !== null && $value !== '')
-                                <div>
-                                    <dt class="text-xs uppercase tracking-wide text-text-secondary">
-                                        {{ \Illuminate\Support\Str::headline((string) $key) }}
-                                    </dt>
-                                    <dd class="mt-1 text-sm text-text-primary break-words">
-                                        {{ is_bool($value) ? ($value ? 'Yes' : 'No') : (string) $value }}
-                                    </dd>
-                                </div>
-                            @endif
-                        @endforeach
-                    </dl>
+                    <flux:heading size="md">Shared Application Data</flux:heading>
+                    <div class="mt-4">
+                        @include('livewire.forms.partials.answer-summary', [
+                            'data' => $app->core_data,
+                        ])
+                    </div>
+                </div>
+            @endif
+
+            {{-- State-specific answers for THIS state card --}}
+            @if (! empty($state->data) && collect($state->data)->except('responsible_people_extra')->filter()->isNotEmpty())
+                <div class="rounded-xl border border-border bg-white p-6">
+                    <flux:heading size="md">{{ config('states.'.$state->state_code, $state->state_code) }} Specific Data</flux:heading>
+                    <div class="mt-4">
+                        @include('livewire.forms.partials.answer-summary', [
+                            'data' => $state->data,
+                            'exclude' => ['responsible_people_extra'],
+                            'stripPrefix' => strtolower($state->state_code).'_',
+                        ])
+                    </div>
                 </div>
             @endif
 

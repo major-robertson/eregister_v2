@@ -137,7 +137,10 @@ class SensitiveDataProtector
         foreach ($steps as $step) {
             foreach ($step['fields'] ?? [] as $fieldKey => $field) {
                 if ($field['sensitive'] ?? false) {
-                    $fields[] = $fieldKey;
+                    // Matrix values are state-keyed maps; encrypt each cell.
+                    $fields[] = ($field['type'] ?? '') === 'matrix'
+                        ? "{$fieldKey}.*"
+                        : $fieldKey;
                 }
 
                 // Repeater schema

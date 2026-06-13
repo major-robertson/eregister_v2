@@ -77,6 +77,22 @@ trait WithStepNavigation
     }
 
     /**
+     * Keys of the steps that will actually render for this application,
+     * given current answers and selected states. Used by the progress
+     * counters so "(3/16)" never advertises steps the user will skip.
+     *
+     * @param  array<string, array<string, mixed>>  $steps
+     * @return list<string>
+     */
+    public function visibleStepKeys(array $steps): array
+    {
+        return array_keys(array_filter(
+            $steps,
+            fn (array $step) => $this->stepHasVisibleFields($step)
+        ));
+    }
+
+    /**
      * @param  array<string, mixed>  $step
      */
     protected function stepHasVisibleFields(array $step): bool

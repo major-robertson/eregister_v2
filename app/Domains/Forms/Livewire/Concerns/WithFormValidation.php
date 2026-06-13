@@ -34,10 +34,17 @@ trait WithFormValidation
             $this->coreData,
             $this->stateData,
             $this->currentStateCode(),
-            $this->currentPhase
+            $this->currentPhase,
+            $this->application->selected_states ?? []
         );
 
-        $this->validate($validation['rules'], [], $validation['attributes']);
+        // Livewire treats validate([]) as "fall back to the component's
+        // rules()" and throws MissingRulesException when that's empty
+        // too. Steps whose visible fields carry no rules (e.g. a card
+        // of optional checkboxes) simply have nothing to validate.
+        if (! empty($validation['rules'])) {
+            $this->validate($validation['rules'], [], $validation['attributes']);
+        }
 
         $data = $this->currentPhase === 'core' ? $this->coreData : $this->stateData;
         $prefix = $this->currentPhase === 'core' ? 'coreData' : 'stateData';
@@ -102,20 +109,23 @@ trait WithFormValidation
     {
         $builder = app(RulesBuilder::class);
 
+        $selectedStates = $this->application->selected_states ?? [];
+
         // Validate core steps
         foreach ($this->definition['base']['core_steps'] ?? [] as $step) {
             $validation = $builder->buildForArray(
                 $step,
                 $this->coreData,
                 [],
-                null
+                null,
+                $selectedStates
             );
 
             validator($this->coreData, $validation['rules'], [], $validation['attributes'])->validate();
         }
 
         // Validate each state
-        foreach ($this->application->selected_states as $stateCode) {
+        foreach ($selectedStates as $stateCode) {
             $stateDef = $this->definition['states'][$stateCode] ?? $this->definition['base'];
             $stateRecord = $this->application->stateRecord($stateCode);
             $stateData = $stateRecord?->data ?? [];
@@ -125,7 +135,8 @@ trait WithFormValidation
                     $step,
                     $this->coreData,
                     $stateData,
-                    $stateCode
+                    $stateCode,
+                    $selectedStates
                 );
 
                 validator($stateData, $validation['rules'], [], $validation['attributes'])->validate();

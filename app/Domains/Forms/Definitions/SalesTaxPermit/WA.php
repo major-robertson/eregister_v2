@@ -1,70 +1,56 @@
 <?php
 
 /**
- * Washington — Sales Tax Permit overrides.
+ * Washington — Sales Tax Permit overrides (v3 clean rebuild).
  *
- * Ported from TaxResaleCertificate `resources/views/states/standard/application/washington.blade.php`
- * + matching `public/js/states/standard/washington.js`.
+ * Authoritative source: TaxResaleCertificate
+ * `resources/views/states/standard/application/washington.blade.php` +
+ * UBI on the standard businessInformation blade.
  *
- * Standard organization/business/primary blades supply the base equivalents;
- * Washington adds an environmental / fire-safety / nexus questionnaire.
+ * Collapsed into core: annual gross income + employee count (matrix),
+ * residence location (applies_home_or_residence_based + locations[] row
+ * type), square footage (locations[] row), compressed gases + toxic
+ * materials gates (applies_hazardous_materials), banking (core bank_*).
  */
+$waHazmatGate = ['contains' => [['var' => '$root.applies_hazardous_materials.states'], 'WA']];
+
 return [
     'extends' => 'base',
 
     'state_steps' => [
         'state_details' => [
-            'groups' => ['append' => [
-                ['title' => 'WA Identifiers & Income', 'fields' => [
-                    'wa_unified_business_identifier', 'wa_estimated_annual_income',
-                    'wa_estimated_employees',
+            'title' => 'Washington Sales Tax Permit Details',
+            'description' => 'Washington facility and safety questionnaire.',
+            'groups' => [
+                ['title' => 'WA Identifiers', 'fields' => ['wa_unified_business_identifier']],
+                ['title' => 'Facilities & Safety', 'fields' => [
+                    'wa_exterior_modifications', 'wa_smoke_detection', 'wa_discharge_to_sewer',
+                    'wa_any_floor_drains', 'wa_alarm_monitoring_service',
                 ]],
-                ['title' => 'Location & Modifications', 'fields' => [
-                    'wa_business_address_in_residence', 'wa_square_footage_used',
-                    'wa_exterior_modifications',
+                ['title' => 'Hazardous Materials (WA detail)', 'fields' => [
+                    'wa_compressed_gases', 'wa_any_toxic_materials',
                 ]],
-                ['title' => 'Environmental & Fire Safety', 'fields' => [
-                    'wa_compressed_gases', 'wa_smoke_detection', 'wa_discharge_to_sewer',
-                    'wa_any_toxic_materials', 'wa_any_floor_drains', 'wa_alarm_monitoring_service',
-                ]],
-            ]],
+            ],
             'fields' => [
-                'append' => [
-                    'wa_unified_business_identifier' => [
-                        'type' => 'text',
-                        'label' => 'WA Unified Business Identifier (UBI)',
-                        'rules' => ['nullable', 'digits:9'],
-                        'help' => '9-digit UBI assigned by the Washington Department of Revenue.',
-                        'when' => ['!=' => [['var' => '$root.entity_type'], 'sole_prop']],
-                        'source_name' => 'unifiedBusinessIdentifier',
-                    ],
-                    'wa_estimated_annual_income' => [
-                        'type' => 'text',
-                        'label' => 'Estimated Annual Gross Income (USD)',
-                        'rules' => ['required', 'numeric', 'min:0'],
-                        'source_name' => 'washingtonEstimatedAnnualIncome',
-                    ],
-                    'wa_estimated_employees' => [
-                        'type' => 'text',
-                        'label' => 'Estimated Number of WA Employees',
-                        'rules' => ['required', 'integer', 'min:0'],
-                        'source_name' => 'washingtonEstimatedEmployees',
-                    ],
-                    'wa_business_address_in_residence' => yesNoField('Is the WA business location in a residence?', 'washingtonBusinessAddressInResidence'),
-                    'wa_square_footage_used' => [
-                        'type' => 'text',
-                        'label' => 'Square Footage Used for Business',
-                        'rules' => ['required', 'integer', 'min:0'],
-                        'source_name' => 'washingtonSquareFootageUsed',
-                    ],
-                    'wa_exterior_modifications' => yesNoField('Will you make exterior modifications (signs, etc.)?', 'washingtonExteriorModifications'),
-                    'wa_compressed_gases' => yesNoField('Will you store or use compressed gases?', 'washingtonCompressedGasses'),
-                    'wa_smoke_detection' => yesNoField('Does the location have smoke detection / sprinkler systems?', 'washingtonSmokeDetection'),
-                    'wa_discharge_to_sewer' => yesNoField('Will the business discharge to a sewer?', 'washingtonDischargeToSewerFromBusiness'),
-                    'wa_any_toxic_materials' => yesNoField('Will you store flammable, hazardous, or toxic materials?', 'washingtonAnyToxicMaterials'),
-                    'wa_any_floor_drains' => yesNoField('Are there floor drains in the business location?', 'washingtonAnyFloorDrains'),
-                    'wa_alarm_monitoring_service' => yesNoField('Do you use an emergency alarm monitoring service?', 'washingtonAlarmMonitoringService'),
+                'wa_unified_business_identifier' => [
+                    'type' => 'text',
+                    'label' => 'WA Unified Business Identifier (UBI)',
+                    'rules' => ['nullable', 'digits:9'],
+                    'help' => '9-digit UBI assigned by the Washington Department of Revenue.',
+                    'when' => ['!=' => [['var' => '$root.entity_type'], 'sole_prop']],
+                    'source_name' => 'unifiedBusinessIdentifier',
                 ],
+                'wa_exterior_modifications' => yesNoField('Will any exterior or interior modifications, including signs, be made to this business?', 'washingtonExteriorModifications'),
+                'wa_smoke_detection' => yesNoField('Does the location have an automatic smoke detection or fire sprinkler system?', 'washingtonSmokeDetection'),
+                'wa_discharge_to_sewer' => yesNoField('Will the business discharge to a sewer (other than domestic sanitary discharges)?', 'washingtonDischargeToSewerFromBusiness'),
+                'wa_any_floor_drains' => yesNoField('Are there floor drains other than in restroom/shower facilities?', 'washingtonAnyFloorDrains'),
+                'wa_alarm_monitoring_service' => yesNoField('Do you use an emergency alarm monitoring service?', 'washingtonAlarmMonitoringService'),
+                'wa_compressed_gases' => nullableYesNoField('Will you store or use compressed gases (oxygen, helium, acetylene, propane, nitrous oxide, etc.)?', 'washingtonCompressedGasses', [
+                    'when' => $waHazmatGate,
+                ]),
+                'wa_any_toxic_materials' => nullableYesNoField('Will you store flammable, hazardous, or toxic materials?', 'washingtonAnyToxicMaterials', [
+                    'when' => $waHazmatGate,
+                ]),
             ],
         ],
     ],

@@ -48,6 +48,10 @@ if ($hasConditionalContent) {
 'label', 'badge', 'resolvedHelp'), ['inputType' => 'email']))
 @break
 
+@case('textarea')
+@include('livewire.forms.partials.fields.textarea', compact('fieldKey', 'field', 'wireModel', 'needsLive', 'label', 'badge', 'resolvedHelp'))
+@break
+
 @case('select')
 @include('livewire.forms.partials.fields.select', compact('fieldKey', 'field', 'wireModel', 'needsLive', 'label', 'badge', 'resolvedHelp'))
 @break
@@ -88,6 +92,29 @@ if ($hasConditionalContent) {
 'field' => $field,
 'responsiblePeople' => $this->coreData['responsible_people'] ?? [],
 'stateCode' => $this->currentStateCode(),
+])
+@break
+
+@case('matrix')
+@include('livewire.forms.partials.fields.matrix', [
+'fieldKey' => $fieldKey,
+'field' => $field,
+'prefix' => $prefix,
+'data' => $data,
+'label' => $label,
+'resolvedHelp' => $resolvedHelp,
+])
+@break
+
+@case('anywhere_states')
+@include('livewire.forms.partials.fields.anywhere-states', [
+'fieldKey' => $fieldKey,
+'field' => $field,
+'prefix' => $prefix,
+'data' => $data,
+'label' => $label,
+'badge' => $badge,
+'resolvedHelp' => $resolvedHelp,
 ])
 @break
 

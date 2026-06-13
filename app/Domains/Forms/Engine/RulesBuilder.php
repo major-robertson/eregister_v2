@@ -11,6 +11,7 @@ class RulesBuilder
     /**
      * Build rules with Livewire prefixes (e.g., coreData.legal_name, stateData.field)
      *
+     * @param  array<int, string>  $selectedStates
      * @return array{rules: array, messages: array, attributes: array}
      */
     public function buildForLivewire(
@@ -18,10 +19,11 @@ class RulesBuilder
         array $coreData,
         array $stateData,
         ?string $stateCode,
-        string $phase
+        string $phase,
+        array $selectedStates = []
     ): array {
         $prefix = $phase === 'core' ? 'coreData' : 'stateData';
-        $context = $this->buildContext($coreData, $stateData, $stateCode);
+        $context = $this->buildContext($coreData, $stateData, $stateCode, $selectedStates);
         $stateName = $stateCode ? config("states.{$stateCode}", $stateCode) : '';
 
         $visibleFields = $this->resolver->resolve($step, $context);
@@ -39,6 +41,11 @@ class RulesBuilder
                 $this->buildAddressRulesLivewire($rules, $attributes, $field, $fieldKey, $prefix, $stateName);
             } elseif ($type === 'person_state_extra') {
                 $this->buildPersonExtrasRulesLivewire($rules, $attributes, $field, $coreData, $stateCode);
+            } elseif ($type === 'matrix') {
+                $this->buildMatrixRules($rules, $attributes, $field, $fieldKey, "{$prefix}.", $selectedStates);
+            } elseif ($type === 'anywhere_states') {
+                $data = $prefix === 'coreData' ? $coreData : $stateData;
+                $this->buildAnywhereStatesRules($rules, $attributes, $field, $fieldKey, "{$prefix}.", $data, $selectedStates);
             } else {
                 $fieldRules = $this->rewritePrefixTokens($field['rules'] ?? [], "{$prefix}.");
                 if (! empty($fieldRules)) {
@@ -84,15 +91,17 @@ class RulesBuilder
     /**
      * Build rules for array validation (unprefixed for Validator::make)
      *
+     * @param  array<int, string>  $selectedStates
      * @return array{rules: array, messages: array, attributes: array}
      */
     public function buildForArray(
         array $step,
         array $coreData,
         array $stateData,
-        ?string $stateCode
+        ?string $stateCode,
+        array $selectedStates = []
     ): array {
-        $context = $this->buildContext($coreData, $stateData, $stateCode);
+        $context = $this->buildContext($coreData, $stateData, $stateCode, $selectedStates);
         $stateName = $stateCode ? config("states.{$stateCode}", $stateCode) : '';
         $visibleFields = $this->resolver->resolve($step, $context);
 
@@ -109,6 +118,10 @@ class RulesBuilder
                 $this->buildAddressRulesArray($rules, $attributes, $field, $fieldKey, $stateName);
             } elseif ($type === 'person_state_extra') {
                 // Handled separately per state
+            } elseif ($type === 'matrix') {
+                $this->buildMatrixRules($rules, $attributes, $field, $fieldKey, '', $selectedStates);
+            } elseif ($type === 'anywhere_states') {
+                $this->buildAnywhereStatesRules($rules, $attributes, $field, $fieldKey, '', $coreData, $selectedStates);
             } else {
                 $fieldRules = $this->rewritePrefixTokens($field['rules'] ?? [], '');
                 if (! empty($fieldRules)) {
@@ -121,15 +134,81 @@ class RulesBuilder
         return ['rules' => $rules, 'messages' => $messages, 'attributes' => $attributes];
     }
 
-    private function buildContext(array $coreData, array $stateData, ?string $stateCode): array
+    /**
+     * @param  array<int, string>  $selectedStates
+     */
+    private function buildContext(array $coreData, array $stateData, ?string $stateCode, array $selectedStates = []): array
     {
         return [
             'coreData' => $coreData,
             'stateData' => $stateData,
             'stateCode' => $stateCode,
             'rowData' => [],
-            'selectedStates' => [],
+            'selectedStates' => $selectedStates,
         ];
+    }
+
+    /**
+     * Matrix fields validate one cell per applicable state using the
+     * field's `cell_rules`. The per-cell attribute substitutes that
+     * row's state name into `{state_name}` so validation messages read
+     * "Number of Florida employees", not the current wizard state.
+     *
+     * @param  array<int, string>  $selectedStates
+     */
+    private function buildMatrixRules(
+        array &$rules,
+        array &$attributes,
+        array $field,
+        string $fieldKey,
+        string $prefixDot,
+        array $selectedStates
+    ): void {
+        $cellRules = $field['cell_rules'] ?? [];
+        if (empty($cellRules)) {
+            return;
+        }
+
+        foreach (Applicability::statesFor($field, $selectedStates) as $rowState) {
+            $rowStateName = config("states.{$rowState}", $rowState);
+            $rules["{$prefixDot}{$fieldKey}.{$rowState}"] = $cellRules;
+            $attributes["{$prefixDot}{$fieldKey}.{$rowState}"] = $this->replaceStateName(
+                $field['label'] ?? $fieldKey,
+                $rowStateName
+            );
+        }
+    }
+
+    /**
+     * anywhere_states fields validate the yes/no plus, when "yes" with
+     * multiple applicable states, a non-empty checklist restricted to
+     * the applicable set. Single-applicable-state fields skip the
+     * checklist requirement — save-time normalization auto-fills it.
+     *
+     * @param  array<int, string>  $selectedStates
+     */
+    private function buildAnywhereStatesRules(
+        array &$rules,
+        array &$attributes,
+        array $field,
+        string $fieldKey,
+        string $prefixDot,
+        array $data,
+        array $selectedStates
+    ): void {
+        $applicable = Applicability::statesFor($field, $selectedStates);
+        $label = $field['label'] ?? $fieldKey;
+
+        $rules["{$prefixDot}{$fieldKey}.anywhere"] = ['required', 'in:0,1'];
+        $attributes["{$prefixDot}{$fieldKey}.anywhere"] = $label;
+
+        $anywhere = (string) data_get($data, "{$fieldKey}.anywhere", '');
+
+        if ($anywhere === '1' && count($applicable) > 1) {
+            $rules["{$prefixDot}{$fieldKey}.states"] = ['required', 'array', 'min:1'];
+            $rules["{$prefixDot}{$fieldKey}.states.*"] = ['in:'.implode(',', $applicable)];
+            $attributes["{$prefixDot}{$fieldKey}.states"] = "States for: {$label}";
+        }
     }
 
     private function buildRepeaterRulesLivewire(

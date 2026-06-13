@@ -26,16 +26,37 @@ trait WithPhaseProgress
      */
     public function getPhaseProgressProperty(): array
     {
+        // Count only steps that will actually render for this application
+        // (current answers + selected states). A static count both
+        // overstates the journey and makes the number jump when the
+        // runner auto-skips an inapplicable step.
         $coreSteps = $this->definition['base']['core_steps'] ?? [];
-        $coreKeys = array_keys($coreSteps);
+        $coreKeys = $this->visibleStepKeys($coreSteps);
+        if ($this->currentPhase === 'core' && ! in_array($this->currentStepKey, $coreKeys, true) && isset($coreSteps[$this->currentStepKey])) {
+            // The cursor can sit on a step whose fields just became
+            // conditionally hidden; keep it countable until skip logic runs.
+            $coreKeys = array_keys($coreSteps);
+        }
         $coreTotal = count($coreKeys);
 
         $stateStepsPerState = [];
-        foreach ($this->application->selected_states as $stateCode) {
+        foreach ($this->application->selected_states as $i => $stateCode) {
             $stateDef = $this->definition['states'][$stateCode] ?? $this->definition['base'];
             $stateSteps = $stateDef['state_steps'] ?? [];
             unset($stateSteps['state_responsible_people']);
-            $stateStepsPerState[$stateCode] = array_keys($stateSteps);
+
+            // Visibility can only be resolved against the loaded state's
+            // data, so filter the current state and use raw counts for
+            // the rest (their share of the fill bar is approximate anyway).
+            if ($this->currentPhase === 'states' && $i === $this->currentStateIndex) {
+                $keys = $this->visibleStepKeys($stateSteps);
+                if (! in_array($this->currentStepKey, $keys, true) && isset($stateSteps[$this->currentStepKey])) {
+                    $keys = array_keys($stateSteps);
+                }
+                $stateStepsPerState[$stateCode] = $keys;
+            } else {
+                $stateStepsPerState[$stateCode] = array_keys($stateSteps);
+            }
         }
         $statesTotal = array_sum(array_map('count', $stateStepsPerState));
 

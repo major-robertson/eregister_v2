@@ -37,25 +37,64 @@
                         // always have first_name + last_name in their schema; combine them.
                         // Use `title` as the badge when present (e.g. "Owner", "Member").
                         $hasFirstLast = isset($schema['first_name']) && isset($schema['last_name']);
+                        $rowBadgeLabel = null;
                         if ($hasFirstLast) {
                             $combined = trim(($item['first_name'] ?? '') . ' ' . ($item['last_name'] ?? ''));
                             $primaryLabel = $combined !== '' ? $combined : ($itemLabel . ' ' . ($index + 1));
-                            $badgeKey = isset($schema['title']) ? 'title' : null;
+                            $rowBadgeLabel = $item['title'] ?? null;
+                        } elseif (isset($schema['address'])) {
+                            // Address-bearing rows (locations, temporary events):
+                            // show the address line; flag the principal row.
+                            $rowAddress = is_array($item['address'] ?? null) ? $item['address'] : [];
+                            $addressLine = collect([$rowAddress['line1'] ?? null, $rowAddress['city'] ?? null, $rowAddress['state'] ?? null])
+                                ->filter()
+                                ->implode(', ');
+                            $primaryLabel = $item['event_name'] ?? ($addressLine !== '' ? $addressLine : ($itemLabel . ' ' . ($index + 1)));
+                            $rowBadgeLabel = !empty($item['is_principal']) ? 'Principal' : null;
                         } else {
                             // Non-person repeaters fall back to "first schema key" display.
                             $primaryLabel = $item[$schema ? array_key_first($schema) : ''] ?? ($itemLabel . ' ' . ($index + 1));
-                            $badgeKey = array_keys($schema)[1] ?? null;
+                            $secondKey = array_keys($schema)[1] ?? null;
+                            $rowBadgeLabel = $secondKey && !empty($item[$secondKey]) && !is_array($item[$secondKey])
+                                ? $item[$secondKey]
+                                : null;
+                        }
+                    @endphp
+                    @php
+                        // Flag rows missing unconditionally-required fields
+                        // (e.g. a person carried over from the business
+                        // profile arrives without SSN / DOB / license number,
+                        // and nothing else tells the user to finish the row).
+                        $missingRequired = [];
+                        foreach ($schema as $subKey => $subField) {
+                            if (! empty($subField['when'])) {
+                                continue;
+                            }
+                            if (! in_array('required', $subField['rules'] ?? [], true)) {
+                                continue;
+                            }
+                            $subValue = $item[$subKey] ?? null;
+                            $subIsEmpty = is_array($subValue)
+                                ? collect($subValue)->flatten()->filter(fn ($leaf) => trim((string) $leaf) !== '')->isEmpty()
+                                : trim((string) $subValue) === '';
+                            if ($subIsEmpty) {
+                                $missingRequired[] = $subField['label'] ?? ucwords(str_replace('_', ' ', $subKey));
+                            }
                         }
                     @endphp
                     <div class="flex items-center gap-2">
                         <span class="font-medium text-zinc-900 dark:text-zinc-100">
                             {{ $primaryLabel }}
                         </span>
-                        @if ($badgeKey && !empty($item[$badgeKey]))
-                            <flux:badge size="sm">{{ $item[$badgeKey] }}</flux:badge>
+                        @if ($rowBadgeLabel)
+                            <flux:badge size="sm">{{ $rowBadgeLabel }}</flux:badge>
                         @endif
                     </div>
-                    @if (!empty($item['ownership_percent']))
+                    @if ($missingRequired !== [])
+                        <div class="mt-1 text-sm text-amber-600 dark:text-amber-500">
+                            Missing: {{ collect($missingRequired)->take(3)->implode(', ') }}{{ count($missingRequired) > 3 ? ' +'.(count($missingRequired) - 3).' more' : '' }}
+                        </div>
+                    @elseif (!empty($item['ownership_percent']))
                         <div class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                             {{ $item['ownership_percent'] }}% ownership
                         </div>
@@ -63,14 +102,27 @@
                 </button>
 
                 <div class="ml-4 flex items-center gap-1">
-                    <flux:button
-                        wire:click="openRepeaterModal('{{ $fieldKey }}', {{ $index }})"
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        icon="pencil"
-                    />
-                    @if (count($items) > $effectiveMin)
+                    @if ($missingRequired !== [])
+                        <flux:button
+                            wire:click="openRepeaterModal('{{ $fieldKey }}', {{ $index }})"
+                            type="button"
+                            size="sm"
+                            variant="primary"
+                        >
+                            Add Missing Info
+                        </flux:button>
+                    @else
+                        <flux:button
+                            wire:click="openRepeaterModal('{{ $fieldKey }}', {{ $index }})"
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            icon="pencil"
+                        />
+                    @endif
+                    {{-- The principal location row is system-managed and
+                         cannot be removed (it mirrors the business address). --}}
+                    @if (count($items) > $effectiveMin && empty($item['is_principal']))
                         <flux:button
                             wire:click="removeRepeaterItem('{{ $fieldKey }}', '{{ $item['_id'] ?? '' }}')"
                             wire:loading.attr="disabled"
@@ -87,22 +139,33 @@
             </div>
         @endforeach
 
-        {{-- Empty required slots for positions not yet filled --}}
+        {{-- Empty required slots for positions not yet filled. The whole
+             card is clickable and spells out that filling it is the way
+             forward — a small "Add" button alone wasn't read as a task. --}}
         @for ($i = count($items); $i < $effectiveMin; $i++)
-            <div class="rounded-lg border-2 border-dashed border-zinc-300 px-5 py-6 dark:border-zinc-600">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold text-zinc-700 dark:text-zinc-300">{{ $itemLabel }} {{ $i + 1 }}</span>
-                        <flux:badge size="sm" color="red">Required</flux:badge>
+            <div
+                wire:click="openRepeaterModal('{{ $fieldKey }}')"
+                role="button"
+                tabindex="0"
+                class="cursor-pointer rounded-lg border-2 border-dashed border-zinc-300 px-5 py-6 transition-colors hover:border-primary hover:bg-zinc-50 dark:border-zinc-600 dark:hover:bg-zinc-800/50"
+            >
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-zinc-700 dark:text-zinc-300">{{ $itemLabel }} {{ $i + 1 }}</span>
+                            <flux:badge size="sm" color="red">Required</flux:badge>
+                        </div>
+                        <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                            Fill this in to continue — click anywhere on this card.
+                        </p>
                     </div>
                     <flux:button
                         wire:click="openRepeaterModal('{{ $fieldKey }}')"
                         type="button"
-                        size="sm"
                         variant="primary"
                         icon="plus"
                     >
-                        Add
+                        Add {{ $itemLabel }}
                     </flux:button>
                 </div>
             </div>
@@ -194,29 +257,18 @@
                             </flux:heading>
 
                             <div class="space-y-6">
+                                {{-- Full typed renderer (radio/select/percent/
+                                     checkbox/date), same as base schema fields —
+                                     NY's compliance radios and PA's county
+                                     select must not degrade to text inputs. --}}
                                 @foreach ($stateInfo['fields'] as $stateFieldKey => $stateField)
-                                    @php
-                                        $stateFieldLabel = $stateField['label'] ?? ucwords(str_replace('_', ' ', $stateFieldKey));
-                                        $stateFieldType = $stateField['type'] ?? 'text';
-                                    @endphp
-
-                                    <flux:field>
-                                        <flux:label>{{ $stateFieldLabel }}</flux:label>
-                                        @switch($stateFieldType)
-                                            @case('date')
-                                                <flux:input type="date" wire:model="repeaterForm.{{ $stateFieldKey }}" />
-                                                @break
-                                            @default
-                                                <flux:input
-                                                    wire:model="repeaterForm.{{ $stateFieldKey }}"
-                                                    placeholder="{{ $stateField['placeholder'] ?? '' }}"
-                                                />
-                                        @endswitch
-                                        <flux:error name="repeaterForm.{{ $stateFieldKey }}" />
-                                        @if (!empty($stateField['help']))
-                                            <flux:text class="text-sm text-zinc-500">{{ $stateField['help'] }}</flux:text>
-                                        @endif
-                                    </flux:field>
+                                    @include('livewire.forms.partials.fields.repeater-subfield', [
+                                        'subKey' => $stateFieldKey,
+                                        'subField' => $stateField,
+                                    ])
+                                    @if (!empty($stateField['help']))
+                                        <flux:text class="-mt-4 text-sm text-zinc-500">{{ $stateField['help'] }}</flux:text>
+                                    @endif
                                 @endforeach
                             </div>
                         </x-ui.card>

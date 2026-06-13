@@ -2,7 +2,9 @@
 
 namespace App\Domains\Forms\Livewire\Concerns;
 
+use App\Domains\Forms\Engine\Applicability;
 use App\Domains\Forms\Engine\SensitiveDataProtector;
+use Illuminate\Support\Str;
 
 /**
  * Save / load / persist plumbing for the runner.
@@ -21,6 +23,9 @@ trait WithFormDataIO
 {
     protected function saveCoreData(): void
     {
+        $this->coreData = $this->normalizeAnywhereStatesFields($this->coreData);
+        $this->coreData = $this->syncPrincipalLocation($this->coreData);
+
         $protector = app(SensitiveDataProtector::class);
         $encrypted = $protector->encryptCoreData($this->coreData, $this->definition['base']);
 
@@ -79,6 +84,113 @@ trait WithFormDataIO
     }
 
     /**
+     * Normalize every anywhere_states field to canonical shape before
+     * persisting:
+     *
+     *   - anywhere == '0' (or unanswered)        → states = []
+     *   - anywhere == '1' + 1 applicable state   → states = [thatState]
+     *   - always                                 → drop codes outside
+     *                                              applicable ∩ selected
+     *
+     * Keeps stored data canonical regardless of UI path (e.g. stale
+     * checkboxes left behind by toggling yes → no → yes).
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function normalizeAnywhereStatesFields(array $data): array
+    {
+        $selectedStates = $this->application->selected_states ?? [];
+
+        foreach ($this->definition['base']['core_steps'] ?? [] as $step) {
+            foreach ($step['fields'] ?? [] as $fieldKey => $field) {
+                if (($field['type'] ?? '') !== 'anywhere_states') {
+                    continue;
+                }
+
+                $value = $data[$fieldKey] ?? null;
+                if (! is_array($value)) {
+                    continue;
+                }
+
+                $applicable = Applicability::statesFor($field, $selectedStates);
+                $anywhere = (string) ($value['anywhere'] ?? '');
+                $states = array_values(array_intersect((array) ($value['states'] ?? []), $applicable));
+
+                if ($anywhere !== '1') {
+                    $states = [];
+                } elseif (count($applicable) === 1) {
+                    $states = $applicable;
+                }
+
+                $data[$fieldKey] = [
+                    'anywhere' => $anywhere === '' ? null : $anywhere,
+                    'states' => $states,
+                ];
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Keep the principal locations[] row mirrored to the Principal
+     * Business Address:
+     *
+     *   - No principal row yet + business address filled → auto-create
+     *     row #1 flagged is_principal with the business address.
+     *   - Principal row exists → overwrite its address with the current
+     *     business address (the modal renders it read-only, so the
+     *     business address is the single source of truth).
+     *
+     * This makes the locations_principal_unique_and_matches_business_
+     * address cross-validator unfailable through normal UI flows — it
+     * remains only as a guard against tampered payloads.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function syncPrincipalLocation(array $data): array
+    {
+        // Only applies when the definition actually has a locations repeater.
+        $hasLocationsField = collect($this->definition['base']['core_steps'] ?? [])
+            ->contains(fn ($step) => ($step['fields']['locations']['type'] ?? null) === 'repeater');
+
+        if (! $hasLocationsField) {
+            return $data;
+        }
+
+        $businessAddress = $data['business_address'] ?? null;
+        if (! is_array($businessAddress) || trim((string) ($businessAddress['line1'] ?? '')) === '') {
+            return $data;
+        }
+
+        $locations = is_array($data['locations'] ?? null) ? $data['locations'] : [];
+
+        $principalIndex = null;
+        foreach ($locations as $index => $row) {
+            if (! empty($row['is_principal'])) {
+                $principalIndex = $index;
+                break;
+            }
+        }
+
+        if ($principalIndex === null) {
+            array_unshift($locations, [
+                '_id' => Str::uuid()->toString(),
+                'is_principal' => true,
+                'address' => $businessAddress,
+            ]);
+        } else {
+            $locations[$principalIndex]['address'] = $businessAddress;
+        }
+
+        $data['locations'] = array_values($locations);
+
+        return $data;
+    }
+
+    /**
      * Persist fields marked with persist_to_business back to the business model.
      * This allows form data to be reused in future applications.
      */
@@ -102,7 +214,19 @@ trait WithFormDataIO
 
                 // Handle repeater fields (like responsible_people) - only persist non-sensitive subfields
                 if (($field['type'] ?? '') === 'repeater' && is_array($value)) {
-                    $value = $this->extractPersistableRepeaterData($value, $field['schema'] ?? []);
+                    $value = array_values(array_filter(
+                        $this->extractPersistableRepeaterData($value, $field['schema'] ?? []),
+                        fn (array $row) => ! $this->isEffectivelyEmpty(collect($row)->except('_id')->all())
+                    ));
+                }
+
+                // Never overwrite profile data with blanks. Empty composites
+                // (e.g. a mailing_address of all-empty strings left behind by
+                // an untouched toggle) would otherwise poison the profile and
+                // get prefilled into every future application as "random"
+                // junk data.
+                if ($this->isEffectivelyEmpty($value)) {
+                    continue;
                 }
 
                 $businessData[$fieldKey] = $value;
@@ -112,6 +236,30 @@ trait WithFormDataIO
         if (! empty($businessData)) {
             $this->business->update($businessData);
         }
+    }
+
+    /**
+     * True when a value carries no real content: null, blank strings, or
+     * arrays (nested to any depth) whose leaves are all blank. '0' and
+     * false-y but meaningful answers like "0" are NOT considered empty.
+     */
+    protected function isEffectivelyEmpty(mixed $value): bool
+    {
+        if (is_array($value)) {
+            foreach ($value as $leaf) {
+                if (! $this->isEffectivelyEmpty($leaf)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        if (is_bool($value)) {
+            return $value === false;
+        }
+
+        return $value === null || trim((string) $value) === '';
     }
 
     /**

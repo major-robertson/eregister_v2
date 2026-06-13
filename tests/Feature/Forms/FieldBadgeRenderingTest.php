@@ -21,7 +21,7 @@ use Tests\Feature\Forms\Support\RunnerTestFactory;
 describe('badge_when definition shape', function () {
     it('defines an Optional badge on FEIN that fires for sole proprietors', function () {
         $base = app(FormRegistry::class)->getBase('sales_tax_permit');
-        $field = $base['core_steps']['tax_identification']['fields']['fein'];
+        $field = $base['core_steps']['identity']['fields']['fein'];
 
         expect($field['badge_when'] ?? null)->toBeArray()->not->toBeEmpty();
 

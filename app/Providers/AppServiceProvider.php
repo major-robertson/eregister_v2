@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Domains\Business\Models\Business;
 use App\Domains\Forms\Engine\ConditionEvaluator;
 use App\Domains\Forms\Engine\Validation\CrossFieldValidatorRegistry;
+use App\Domains\Forms\Engine\Validation\Rules\LocationsPrincipalUniqueAndMatchesBusinessAddress;
 use App\Domains\Forms\Engine\Validation\Rules\OwnershipTotals100;
 use App\Domains\Forms\Models\FormApplication;
 use App\Domains\Lien\Models\LienFiling;
@@ -42,6 +43,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(CrossFieldValidatorRegistry::class, function () {
             $registry = new CrossFieldValidatorRegistry;
             $registry->register(new OwnershipTotals100);
+            $registry->register(new LocationsPrincipalUniqueAndMatchesBusinessAddress);
 
             return $registry;
         });

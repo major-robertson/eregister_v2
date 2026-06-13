@@ -43,7 +43,7 @@ trait WithFormPrefill
         if ($business->fein) {
             $this->coreData['fein'] = $business->fein;
         }
-        if ($business->business_address) {
+        if ($business->business_address && ! $this->isEffectivelyEmpty($business->business_address)) {
             $this->coreData['business_address'] = $business->business_address;
         }
         // Seed business_email from the signed-in user's email so the
@@ -55,7 +55,11 @@ trait WithFormPrefill
         if ($user && $user->email) {
             $this->coreData['business_email'] = $user->email;
         }
-        if ($business->mailing_address) {
+        // Only treat the profile's mailing address as real when it has
+        // actual content — older drafts persisted empty composites like
+        // {"zip": ""}, which must not pre-check the "different mailing
+        // address" toggle on a fresh application.
+        if ($business->mailing_address && ! $this->isEffectivelyEmpty($business->mailing_address)) {
             $this->coreData['mailing_address'] = $business->mailing_address;
             $this->coreData['mailing_address_same'] = '0';
         } else {
@@ -65,11 +69,16 @@ trait WithFormPrefill
             $this->coreData['mailing_address_same'] = '1';
         }
 
-        // Pre-fill responsible people (non-sensitive fields only)
-        if (! empty($business->responsible_people)) {
-            $this->coreData['responsible_people'] = $this->prepareResponsiblePeopleForForm(
-                $business->responsible_people
-            );
+        // Pre-fill responsible people (non-sensitive fields only). Rows
+        // without at least a name are husks left by older persists — skip
+        // them rather than surfacing a blank "person" in the repeater.
+        $people = array_values(array_filter(
+            $business->responsible_people ?? [],
+            fn (array $person) => trim((string) ($person['first_name'] ?? '')) !== ''
+                || trim((string) ($person['last_name'] ?? '')) !== ''
+        ));
+        if ($people !== []) {
+            $this->coreData['responsible_people'] = $this->prepareResponsiblePeopleForForm($people);
         }
     }
 

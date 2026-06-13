@@ -10,12 +10,11 @@ use Tests\Feature\Forms\Support\RunnerTestFactory;
  *     when they have one, because the engine persists it to the
  *     business profile).
  *   - Every other entity type must provide a valid EIN before
- *     advancing past the tax_identification step.
+ *     advancing past the identity step.
  *
- * EIN now lives in its own `tax_identification` step, after identity
- * and activity. The factory below seeds every prior-step field, then
- * lets each test override entity_type / fein to isolate the
- * tax_identification step's validation.
+ * EIN lives in the identity step's Tax Identification group. The
+ * factory below seeds every identity field, then lets each test
+ * override entity_type / fein to isolate the EIN validation.
  */
 function feinRunner(string $entityType, ?string $fein)
 {
@@ -30,7 +29,7 @@ function feinRunner(string $entityType, ?string $fein)
 }
 
 describe('FEIN conditional required behavior', function () {
-    it('renders the EIN field on the tax_identification step for sole proprietors', function () {
+    it('renders the EIN field on the identity step for sole proprietors', function () {
         $application = feinRunner('sole_prop', null);
 
         $component = Livewire::test(MultiStateFormRunner::class, ['application' => $application]);

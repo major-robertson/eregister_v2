@@ -15,14 +15,14 @@ use App\Models\User;
  * then `actingAs` the user with a `current_business_id` session entry.
  *
  * Sensible defaults give you a sales_tax_permit application on the
- * tax_identification step with one selected state (CA) and a coreData
- * blob containing every field needed to pass earlier-step validation.
- * Override per test with the fluent setters.
+ * identity step (which carries the tax-ID fields) with one selected
+ * state (CA) and a coreData blob containing every field needed to pass
+ * that step's validation. Override per test with the fluent setters.
  *
  * Usage:
  *   $application = RunnerTestFactory::make()
  *       ->coreData(['entity_type' => 'sole_prop', 'individual_ssn' => '123-45-6789'])
- *       ->onStep('tax_identification')
+ *       ->onStep('identity')
  *       ->forStates(['CA'])
  *       ->boot();
  */
@@ -32,7 +32,7 @@ final class RunnerTestFactory
 
     private string $phase = 'core';
 
-    private string $stepKey = 'tax_identification';
+    private string $stepKey = 'identity';
 
     private int $stateIndex = 0;
 
@@ -173,8 +173,8 @@ final class RunnerTestFactory
 
     /**
      * Sensible defaults that satisfy every required field through the
-     * tax_identification step so tests positioned on later steps don't
-     * fail validation on prior-step lookups.
+     * early core steps so tests positioned on later steps don't fail
+     * validation on prior-step lookups.
      *
      * @return array<string, mixed>
      */
@@ -204,7 +204,7 @@ final class RunnerTestFactory
         ];
 
         if ($entityType === 'sole_prop') {
-            // Sole props see SSN on tax_identification; seed it so tests
+            // Sole props see SSN on the identity step; seed it so tests
             // positioned past identity don't fail on missing PII.
             $defaults['individual_ssn'] = '123-45-6789';
         }

@@ -3,6 +3,10 @@
          progress within its phase, so multi-step phases (Core Info,
          State Details across N states) actually show movement as the
          user advances. --}}
+    {{-- Progress indicator. The State Details segment only renders when
+         at least one selected state actually has state-specific
+         questions — selections fully covered by shared answers run
+         Core → Review. --}}
     <div class="mb-8">
         <div class="mb-2 flex items-center justify-between text-sm">
             <span class="font-medium {{ $isCore ? 'text-primary' : 'text-text-secondary' }}">
@@ -11,13 +15,15 @@
                     ({{ $phaseProgress['core']['current'] }}/{{ $phaseProgress['core']['total'] }})
                 @endif
             </span>
-            <span class="font-medium {{ $isStates ? 'text-primary' : 'text-text-secondary' }}">
-                @if ($isStates)
-                    {{ $currentStateName }} ({{ $stateProgress['current'] }}/{{ $stateProgress['total'] }})
-                @else
-                    State Details
-                @endif
-            </span>
+            @if ($hasStateQuestions)
+                <span class="font-medium {{ $isStates ? 'text-primary' : 'text-text-secondary' }}">
+                    @if ($isStates)
+                        {{ $currentStateName }} ({{ $stateProgress['current'] }}/{{ $stateProgress['total'] }})
+                    @else
+                        State Details
+                    @endif
+                </span>
+            @endif
             <span class="font-medium {{ $isReview ? 'text-primary' : 'text-text-secondary' }}">Review</span>
         </div>
         <div class="flex gap-1">
@@ -27,12 +33,14 @@
                     style="width: {{ $phaseProgress['core']['fill'] }}%"
                 ></div>
             </div>
-            <div class="relative h-2 flex-1 overflow-hidden rounded bg-zinc-200">
-                <div
-                    class="absolute inset-y-0 left-0 rounded bg-primary transition-all duration-300"
-                    style="width: {{ $phaseProgress['states']['fill'] }}%"
-                ></div>
-            </div>
+            @if ($hasStateQuestions)
+                <div class="relative h-2 flex-1 overflow-hidden rounded bg-zinc-200">
+                    <div
+                        class="absolute inset-y-0 left-0 rounded bg-primary transition-all duration-300"
+                        style="width: {{ $phaseProgress['states']['fill'] }}%"
+                    ></div>
+                </div>
+            @endif
             <div class="relative h-2 flex-1 overflow-hidden rounded bg-zinc-200">
                 <div
                     class="absolute inset-y-0 left-0 rounded bg-primary transition-all duration-300"
@@ -50,21 +58,18 @@
                 Please review all your information before submitting.
             </p>
 
-            {{-- Core Data Summary --}}
+            {{-- Shared answers (asked once) --}}
             <x-ui.card>
                 <x-slot:header>
-                    <flux:heading size="lg">Business Information</flux:heading>
+                    <flux:heading size="lg">Shared Answers</flux:heading>
                 </x-slot:header>
-                <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    @foreach ($this->coreData as $key => $value)
-                        @if (!is_array($value))
-                            <div>
-                                <dt class="text-sm text-text-secondary">{{ ucwords(str_replace('_', ' ', $key)) }}</dt>
-                                <dd class="font-medium text-text-primary">{{ $value ?: '-' }}</dd>
-                            </div>
-                        @endif
-                    @endforeach
-                </dl>
+                <p class="mb-4 text-sm text-text-secondary">
+                    Answered once — applied to every state in your application.
+                </p>
+                @include('livewire.forms.partials.answer-summary', [
+                    'data' => $this->coreData,
+                    'exclude' => ['responsible_people'],
+                ])
 
                 @if (!empty($this->coreData['responsible_people']))
                     <div class="mt-6">
@@ -83,7 +88,7 @@
                 @endif
             </x-ui.card>
 
-            {{-- Per-State Summary --}}
+            {{-- Per-State Summary (state-only answers) --}}
             @foreach ($this->application->selected_states as $stateCode)
                 @php
                     $stateRecord = $this->application->stateRecord($stateCode);
@@ -100,16 +105,17 @@
                             @endif
                         </div>
                     </x-slot:header>
-                    <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        @foreach ($stateDataForReview as $key => $value)
-                            @if (!is_array($value))
-                                <div>
-                                    <dt class="text-sm text-text-secondary">{{ ucwords(str_replace('_', ' ', $key)) }}</dt>
-                                    <dd class="font-medium text-text-primary">{{ $value ?: '-' }}</dd>
-                                </div>
-                            @endif
-                        @endforeach
-                    </dl>
+                    @if (empty($stateDataForReview) || collect($stateDataForReview)->except('responsible_people_extra')->filter()->isEmpty())
+                        <p class="text-sm text-text-secondary">
+                            No state-specific questions — your shared answers cover everything {{ config("states.{$stateCode}") }} needs.
+                        </p>
+                    @else
+                        @include('livewire.forms.partials.answer-summary', [
+                            'data' => $stateDataForReview,
+                            'exclude' => ['responsible_people_extra'],
+                            'stripPrefix' => strtolower($stateCode).'_',
+                        ])
+                    @endif
                 </x-ui.card>
             @endforeach
 
@@ -182,8 +188,31 @@
             @endphp
 
             @if ($stepGroups)
+                {{-- The mailing-address composite renders as its own card
+                     directly after the group that references the mailing
+                     keys (usually "Address"), so later groups like
+                     "Additional Contacts" don't wedge between them. --}}
+                @php
+                    // Group fields may use the inline-row pair syntax
+                    // (['phone', 'email']); flatten before intersecting
+                    // or the array entries blow up the string comparison.
+                    $mailingGroupIndex = collect($stepGroups)->search(
+                        fn ($g) => collect($g['fields'] ?? [])
+                            ->flatMap(fn ($entry) => is_array($entry) ? $entry : [$entry])
+                            ->intersect($mailingFieldKeys)
+                            ->isNotEmpty()
+                    );
+                    $stepGroupReferencesMailing = $mailingGroupIndex !== false && $hasMailingAddressFields;
+                    $groupsThroughMailing = $stepGroupReferencesMailing
+                        ? array_slice($stepGroups, 0, $mailingGroupIndex + 1)
+                        : $stepGroups;
+                    $groupsAfterMailing = $stepGroupReferencesMailing
+                        ? array_slice($stepGroups, $mailingGroupIndex + 1)
+                        : [];
+                @endphp
+
                 @include('livewire.forms.partials.grouped-fields', [
-                    'groups' => $stepGroups,
+                    'groups' => $groupsThroughMailing,
                     'visibleFields' => $visibleFieldsForGroups,
                     'fieldPartial' => 'livewire.forms.partials.field',
                     'fieldContext' => $fieldContext,
@@ -191,16 +220,6 @@
                     'beforeFields' => 'livewire.forms.partials.loading-overlay',
                 ])
 
-                {{-- Mailing-address composite (kept at call site). Lives
-                     in its own card if any group references the mailing
-                     keys; otherwise the existing mailing-address partial
-                     handles its own card-or-not display logic. --}}
-                @php
-                    $stepGroupReferencesMailing = collect($stepGroups)
-                        ->flatMap(fn ($g) => $g['fields'] ?? [])
-                        ->intersect($mailingFieldKeys)
-                        ->isNotEmpty() && $hasMailingAddressFields;
-                @endphp
                 @if ($stepGroupReferencesMailing)
                     <x-ui.card class="relative">
                         @include('livewire.forms.partials.loading-overlay')
@@ -210,6 +229,17 @@
                             ])
                         </div>
                     </x-ui.card>
+                @endif
+
+                @if (! empty($groupsAfterMailing))
+                    @include('livewire.forms.partials.grouped-fields', [
+                        'groups' => $groupsAfterMailing,
+                        'visibleFields' => $visibleFieldsForGroups,
+                        'fieldPartial' => 'livewire.forms.partials.field',
+                        'fieldContext' => $fieldContext,
+                        'sectionWrapper' => 'card',
+                        'beforeFields' => 'livewire.forms.partials.loading-overlay',
+                    ])
                 @endif
 
                 {{-- Fallback card for any visible fields not claimed by a

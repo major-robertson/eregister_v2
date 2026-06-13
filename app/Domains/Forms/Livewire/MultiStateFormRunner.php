@@ -185,6 +185,69 @@ class MultiStateFormRunner extends Component
     }
 
     /**
+     * Jump back to a specific core step (e.g. the locked principal
+     * address in the locations modal links back to Contact & Address).
+     * Saves in-flight data without validating — same contract as
+     * previousStep().
+     */
+    public function jumpToCoreStep(string $stepKey): void
+    {
+        $this->assertNotLocked();
+
+        if (! array_key_exists($stepKey, $this->definition['base']['core_steps'] ?? [])) {
+            return;
+        }
+
+        $this->closeRepeaterModal();
+
+        if ($this->currentPhase === 'core') {
+            $this->saveCoreData();
+        } else {
+            $this->saveStateData();
+        }
+
+        $this->currentPhase = 'core';
+        $this->currentStepKey = $stepKey;
+        $this->updateApplicationPhase();
+    }
+
+    /**
+     * "Same for all states" shortcut on matrix fields: copy the first
+     * applicable row's value into every other applicable row.
+     */
+    public function applyMatrixValueToAllStates(string $fieldKey): void
+    {
+        $this->assertNotLocked();
+
+        $field = null;
+        foreach ($this->definition['base']['core_steps'] ?? [] as $step) {
+            if (isset($step['fields'][$fieldKey])) {
+                $field = $step['fields'][$fieldKey];
+                break;
+            }
+        }
+
+        if (! $field || ($field['type'] ?? '') !== 'matrix') {
+            return;
+        }
+
+        $states = \App\Domains\Forms\Engine\Applicability::statesFor(
+            $field,
+            $this->application->selected_states ?? []
+        );
+
+        $first = $states[0] ?? null;
+        if ($first === null) {
+            return;
+        }
+
+        $value = $this->coreData[$fieldKey][$first] ?? null;
+        foreach ($states as $stateCode) {
+            $this->coreData[$fieldKey][$stateCode] = $value;
+        }
+    }
+
+    /**
      * Get all state-specific person fields from selected states.
      * Used to display state-specific fields inline in the responsible_people repeater.
      *
@@ -338,8 +401,16 @@ class MultiStateFormRunner extends Component
             $steps = $this->getCurrentSteps();
             $this->currentStepKey = array_key_first($steps);
         } elseif ($this->currentPhase === 'states') {
-            // Mark current state as complete
-            $this->application->currentStateRecord()?->markComplete();
+            // Mark current state as complete. Resolve through the
+            // component's own cursor — the model's current_state_index
+            // is only persisted after the skip loop finishes, so during
+            // skip-through of empty states it lags behind and would mark
+            // the first state repeatedly while leaving the rest
+            // incomplete (blocking the review screen's payment button).
+            $currentCode = $this->currentStateCode();
+            if ($currentCode) {
+                $this->application->stateRecord($currentCode)?->markComplete();
+            }
 
             if ($this->currentStateIndex < count($this->application->selected_states) - 1) {
                 // Move to next state
@@ -433,6 +504,54 @@ class MultiStateFormRunner extends Component
         }
     }
 
+    /**
+     * Whether any selected state still has its own state-step questions.
+     * With the clean answer shape, many selections (e.g. AL + CO + ID)
+     * are fully covered by the shared core answers — the wizard then
+     * runs Core → Review with no states phase to show.
+     */
+    public function selectedStatesHaveQuestions(): bool
+    {
+        return collect($this->application->selected_states ?? [])
+            ->contains(function (string $stateCode) {
+                $stateDef = $this->definition['states'][$stateCode] ?? $this->definition['base'];
+
+                return collect($stateDef['state_steps'] ?? [])
+                    ->except('state_responsible_people')
+                    ->contains(fn ($step) => ! empty($step['fields']));
+            });
+    }
+
+    /**
+     * Position within the current state's substeps for the progress bar,
+     * e.g. "California (2/3)". Mirrors how the Core segment counts steps.
+     * Only substeps that will actually render are counted, so the number
+     * doesn't jump when inapplicable substeps (e.g. fuel) are skipped.
+     *
+     * @return array{current: int, total: int}
+     */
+    protected function stateSubstepProgress(): array
+    {
+        if ($this->currentPhase !== 'states') {
+            return ['current' => 0, 'total' => 0];
+        }
+
+        $steps = $this->getCurrentSteps();
+        $stepKeys = $this->visibleStepKeys($steps);
+        if (! in_array($this->currentStepKey, $stepKeys, true) && isset($steps[$this->currentStepKey])) {
+            // Cursor sits on a substep whose fields just became hidden —
+            // fall back to the unfiltered list until skip logic moves on.
+            $stepKeys = array_keys($steps);
+        }
+
+        $index = array_search($this->currentStepKey, $stepKeys, true);
+
+        return [
+            'current' => $index === false ? 1 : $index + 1,
+            'total' => max(count($stepKeys), 1),
+        ];
+    }
+
     public function render(): View
     {
         $currentStep = $this->getCurrentStepProperty();
@@ -455,11 +574,9 @@ class MultiStateFormRunner extends Component
             'isReview' => $this->currentPhase === 'review',
             'canGoNext' => $this->currentPhase !== 'review',
             'currentStateName' => config('states.'.$this->currentStateCode()),
-            'stateProgress' => [
-                'current' => $this->currentStateIndex + 1,
-                'total' => count($this->application->selected_states),
-            ],
+            'stateProgress' => $this->stateSubstepProgress(),
             'phaseProgress' => $this->getPhaseProgressProperty(),
+            'hasStateQuestions' => $this->selectedStatesHaveQuestions(),
             'allStatesComplete' => $this->application->allStatesComplete(),
             'states' => config('states'),
             'statePersonFields' => $this->getStatePersonFieldsProperty(),

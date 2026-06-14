@@ -20,12 +20,10 @@ return [
     'state_steps' => [
         'ca_state_ids' => [
             'title' => 'California Identifiers & Prior Accounts',
-            'description' => 'CDTFA identifiers and any prior California accounts.',
+            'description' => 'Identifiers and any prior accounts with the CDTFA (California Department of Tax and Fee Administration).',
             'groups' => [
                 ['title' => 'California Identifiers', 'fields' => [
-                    'ca_seller_permit_number', 'ca_corporate_number', 'ca_llc_number',
-                    'ca_secretary_of_state_number', 'ca_state_employer_id',
-                    'ca_non_california_entity_number',
+                    'ca_corporate_number', 'ca_llc_number', 'ca_secretary_of_state_number',
                 ]],
                 ['title' => 'Prior Organization / CDTFA Accounts', 'fields' => [
                     'ca_changing_organization', 'ca_prior_organization_name', 'ca_prior_organization_number',
@@ -33,48 +31,34 @@ return [
                 ]],
             ],
             'fields' => [
-                'ca_seller_permit_number' => [
-                    'type' => 'text',
-                    'label' => 'Existing CA Seller Permit # (if any)',
-                    'rules' => ['nullable', 'string', 'max:20'],
-                    'help' => 'Leave blank if you do not have an existing permit.',
-                ],
                 'ca_corporate_number' => [
                     'type' => 'text',
-                    'label' => 'CA Corporate Number',
+                    'label' => 'CA Corporate Number (optional)',
                     'rules' => ['nullable', 'string', 'max:20'],
+                    'help' => 'Optional — your CA Secretary of State corporate number, if you have one.',
                     'when' => ['in' => [['var' => '$root.entity_type'], ['corporation', 's_corp', 'nonprofit']]],
                     'source_name' => 'corporateNumber',
                 ],
                 'ca_llc_number' => [
                     'type' => 'text',
-                    'label' => 'CA LLC Number',
+                    'label' => 'CA LLC Number (optional)',
                     'rules' => ['nullable', 'string', 'max:20'],
+                    'help' => 'Optional — your CA Secretary of State LLC number, if you have one.',
                     'when' => ['in' => [['var' => '$root.entity_type'], ['llc_single', 'llc_multi', 'llp', 'limited_partnership']]],
                     'source_name' => 'llcNumber',
                 ],
                 'ca_secretary_of_state_number' => [
                     'type' => 'text',
-                    'label' => 'CA Secretary of State File Number',
+                    'label' => 'CA Secretary of State File Number (optional)',
                     'rules' => ['nullable', 'string', 'max:20'],
+                    'help' => 'Optional — leave blank if you do not have one.',
                     'source_name' => 'californiaSecretaryOfStateNumber',
                 ],
-                'ca_state_employer_id' => [
-                    'type' => 'text',
-                    'label' => 'CA State Employer ID Number (SEIN)',
-                    'rules' => ['nullable', 'regex:/^\d{2}-?\d{7}$/'],
-                    'help' => 'Optional. EDD-issued employer account number.',
-                    'source_name' => 'SEIN',
-                ],
-                'ca_non_california_entity_number' => [
-                    'type' => 'text',
-                    'label' => 'Non-California Issued Entity Number (optional)',
-                    'rules' => ['nullable', 'string', 'max:30'],
-                    'when' => ['!=' => [['var' => '$root.formation_state'], 'CA']],
-                    'source_name' => 'nonCaliforniaEntityNumber',
-                ],
 
-                'ca_changing_organization' => yesNoField('Are you changing from a prior organization (entity change on an existing CDTFA account)?', 'changingOrganization', ['drives_conditional' => true]),
+                'ca_changing_organization' => yesNoField('Are you changing from a prior organization (entity change on an existing CDTFA account)?', 'changingOrganization', [
+                    'drives_conditional' => true,
+                    'help' => 'CDTFA is the California Department of Tax and Fee Administration, which administers California sales and use tax.',
+                ]),
                 'ca_prior_organization_name' => [
                     'type' => 'text',
                     'label' => 'Name on Prior Account',

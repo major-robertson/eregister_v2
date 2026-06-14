@@ -244,16 +244,13 @@ return [
         ],
 
         'ny_tax_preparer_and_admin' => [
-            'title' => 'New York Tax Preparer & Tax IDs',
-            'description' => 'Tax preparer details and other NY tax accounts.',
+            'title' => 'New York Tax Preparer',
+            'description' => 'Tax preparer details NY collects with the registration.',
             'groups' => [
                 ['title' => 'Tax Preparer', 'fields' => [
                     'ny_have_tax_preparer', 'ny_tax_preparers_name', 'ny_tax_preparers_ein',
                     'ny_tax_preparers_nytprin', 'ny_tax_preparers_ptin',
                     ['ny_tax_preparers_phone', 'ny_tax_preparers_email'], 'ny_tax_preparers_address',
-                ]],
-                ['title' => 'Other NY Tax IDs', 'fields' => [
-                    'ny_other_tax_id_numbers_type', 'ny_other_tax_id_numbers_value',
                 ]],
             ],
             'fields' => [
@@ -308,27 +305,6 @@ return [
                     'label' => "Tax Preparer's Address",
                     'rules' => ['nullable'],
                     'when' => ['==' => [['var' => 'ny_have_tax_preparer'], '1']],
-                ],
-
-                'ny_other_tax_id_numbers_type' => [
-                    'type' => 'select',
-                    'label' => 'Other NY Tax ID Type (if any)',
-                    'options' => [
-                        'sales_tax' => 'Sales Tax',
-                        'corporation_tax' => 'Corporation Tax',
-                        'withholding_tax' => 'Withholding Tax',
-                        'highway_use_tax' => 'Highway Use Tax',
-                        'other' => 'Other',
-                    ],
-                    'rules' => ['nullable'],
-                    'source_name' => 'otherTaxIDNumbersType',
-                ],
-                'ny_other_tax_id_numbers_value' => [
-                    'type' => 'text',
-                    'label' => 'Other NY Tax ID Number',
-                    'rules' => ['nullable', 'string', 'max:30'],
-                    'sensitive' => true,
-                    'source_name' => 'otherTaxIDNumbersNumber',
                 ],
             ],
         ],

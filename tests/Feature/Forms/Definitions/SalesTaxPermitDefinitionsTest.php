@@ -102,7 +102,6 @@ describe('SalesTaxPermit definitions (v3)', function () {
             'employees_and_payroll',
             'acquisition_and_history',
             'bank',
-            'payment_processor',
             'entity_extras',
         ]);
     });

@@ -856,13 +856,29 @@ return [
 
         /*
         |------------------------------------------------------------------
-        | 11. Bank account (legacy: standard NV/IN/AZ/WA agreements +
-        |     CA/CT/NY/OH/OK/TX/WI blocks)
+        | 11. Banking & payments (bank account — legacy standard
+        |     NV/IN/AZ/WA + CA/CT/NY/OH/OK/TX/WI blocks — plus card
+        |     acceptance / processor details for CA/NY/OK/TX. Card states
+        |     are a subset of bank states, so the two never appear apart;
+        |     they share one step with a card per topic. Each field keeps
+        |     its own applicable_states gating, and the grouped renderer
+        |     drops a card entirely when none of its fields are visible.)
         |------------------------------------------------------------------
         */
         'bank' => [
-            'title' => 'Business Bank Account',
-            'description' => 'Some states collect business banking details with the registration.',
+            'title' => 'Banking & Payments',
+            'description' => 'Banking and card-payment details some states collect with the registration.',
+            'groups' => [
+                ['title' => 'Bank Account', 'fields' => [
+                    'has_business_bank_account', 'bank_name', 'bank_account_type',
+                    'bank_routing_number', 'bank_account_number', 'bank_is_foreign',
+                    'bank_branch_location',
+                ]],
+                ['title' => 'Card Payments', 'fields' => [
+                    'applies_accepts_cards', 'payment_processor_name',
+                    'payment_processor_merchant_id', 'payment_processor_taxpayer_id_on_file',
+                ]],
+            ],
             'fields' => [
                 'has_business_bank_account' => yesNoField('Does the business have a bank account?', '', [
                     'drives_conditional' => true,
@@ -910,18 +926,7 @@ return [
                     'when' => ['==' => [['var' => 'has_business_bank_account'], '1']],
                     'applicable_states' => ['CA'],
                 ],
-            ],
-        ],
 
-        /*
-        |------------------------------------------------------------------
-        | 12. Payment processing (CA/NY/OK/TX)
-        |------------------------------------------------------------------
-        */
-        'payment_processor' => [
-            'title' => 'Card Payments',
-            'description' => 'Card acceptance and payment processor details.',
-            'fields' => [
                 'applies_accepts_cards' => [
                     'type' => 'anywhere_states',
                     'label' => 'Will the business accept credit or debit card payments?',
@@ -954,7 +959,7 @@ return [
 
         /*
         |------------------------------------------------------------------
-        | 13. Entity extras (legacy standard flow asks these for EVERY
+        | 12. Entity extras (legacy standard flow asks these for EVERY
         |     state — corp shareholder block, LLC tax matters, unitary,
         |     disregarded, supply-chain role + corporate details, which
         |     was formerly its own step)

@@ -15,26 +15,33 @@
  * sales (matrix_annual_sales — exported as the legacy range bands),
  * multi-location count (derived from locations[]).
  */
+// Per-person NY questions, split into two on-screen groups: the role /
+// authority questions (what this person does in the business) and the
+// background-disclosure questions (legal / compliance history). The group
+// label rides along on each field so the modal renders a subheading.
+$nyRoleGroup = 'Role & Authority';
+$nyBackgroundGroup = 'Background Disclosures';
+
 $nyPersonComplianceQuestions = [
-    'ny_actively_operating' => ['Will this person be actively involved in operating this business on a daily basis?', 'primaryContactActivelyOperatingBusiness'],
-    'ny_deciding_financial_obligations' => ['Will this person be involved in deciding which financial obligations are paid?', 'primaryContactDecidingFinancialObligations'],
-    'ny_personnel_activity' => ['Will this person be involved in personnel activity (such as hiring or firing)?', 'primaryContactPersonnelActivity'],
-    'ny_responsible_person' => ['Is this person a Responsible Person?', 'primaryContactResponsiblePerson'],
-    'ny_check_signing_authority' => ['Will this person have check signing authority?', 'primaryContactCheckSigningAuthority'],
-    'ny_prepare_tax_returns' => ['Will this person prepare tax returns?', 'primaryContactPrepareTaxReturns'],
-    'ny_business_decisions' => ['Will this person have authority over business decisions?', 'primaryContactBusinessDecisions'],
-    'ny_tax_manager' => ['Is this person a tax manager or general manager?', 'primaryContactTaxManager'],
-    'ny_open_liens' => ['Does this person have any open, unsatisfied judgments, injunctions, or liens in effect today?', 'primaryContactOpenLiens'],
-    'ny_felony_pending' => ['Does this person have any felony, misdemeanor, and/or administrative charges currently pending?', 'primaryContactFelonyPending'],
-    'ny_liens_past_five_years' => ['In the last five years, have any judgments, injunctions, or liens been issued against this person?', 'primaryContactLiens'],
-    'ny_permit_terminated' => ['In the last five years, has this person had any permit, license, concession, franchise, or lease terminated for cause or revoked?', 'primaryContactPermitTerminated'],
-    'ny_investigated' => ['In the last five years, has this person been investigated by any governmental or quasi-governmental agency?', 'primaryContactInvestigated'],
-    'ny_misdemeanor' => ['In the last five years, has this person been convicted of a misdemeanor or found in violation of any administrative, statutory, or regulatory provisions?', 'primaryContactMisdemeanor'],
-    'ny_sanction_imposed' => ['In the last five years, has this person had any sanction imposed from a judicial or administrative disciplinary proceeding?', 'primaryContactSanctionImposed'],
-    'ny_failed_to_file' => ['In the last five years, has this person failed to file any applicable federal, state, or New York City tax return by its due date?', 'primaryContactFailedToFile'],
-    'ny_failed_to_pay_taxes' => ['In the last five years, has this person failed to pay any applicable taxes or assessed government charges by the due date?', 'primaryContactFailedToPayTaxes'],
-    'ny_bankruptcy' => ['In the past seven years, has any bankruptcy been initiated by or against this person?', 'primaryContactBankruptcy'],
-    'ny_felony_business_conduct' => ['In the last ten years, has this person been convicted of a felony or any crime related to truthfulness and/or business conduct?', 'primaryContactFelonyBusinessConduct'],
+    'ny_actively_operating' => ['Will this person be actively involved in operating this business on a daily basis?', 'primaryContactActivelyOperatingBusiness', $nyRoleGroup],
+    'ny_deciding_financial_obligations' => ['Will this person be involved in deciding which financial obligations are paid?', 'primaryContactDecidingFinancialObligations', $nyRoleGroup],
+    'ny_personnel_activity' => ['Will this person be involved in personnel activity (such as hiring or firing)?', 'primaryContactPersonnelActivity', $nyRoleGroup],
+    'ny_responsible_person' => ['Is this person a Responsible Person?', 'primaryContactResponsiblePerson', $nyRoleGroup],
+    'ny_check_signing_authority' => ['Will this person have check signing authority?', 'primaryContactCheckSigningAuthority', $nyRoleGroup],
+    'ny_prepare_tax_returns' => ['Will this person prepare tax returns?', 'primaryContactPrepareTaxReturns', $nyRoleGroup],
+    'ny_business_decisions' => ['Will this person have authority over business decisions?', 'primaryContactBusinessDecisions', $nyRoleGroup],
+    'ny_tax_manager' => ['Is this person a tax manager or general manager?', 'primaryContactTaxManager', $nyRoleGroup],
+    'ny_open_liens' => ['Does this person have any open, unsatisfied judgments, injunctions, or liens in effect today?', 'primaryContactOpenLiens', $nyBackgroundGroup],
+    'ny_felony_pending' => ['Does this person have any felony, misdemeanor, and/or administrative charges currently pending?', 'primaryContactFelonyPending', $nyBackgroundGroup],
+    'ny_liens_past_five_years' => ['In the last five years, have any judgments, injunctions, or liens been issued against this person?', 'primaryContactLiens', $nyBackgroundGroup],
+    'ny_permit_terminated' => ['In the last five years, has this person had any permit, license, concession, franchise, or lease terminated for cause or revoked?', 'primaryContactPermitTerminated', $nyBackgroundGroup],
+    'ny_investigated' => ['In the last five years, has this person been investigated by any governmental or quasi-governmental agency?', 'primaryContactInvestigated', $nyBackgroundGroup],
+    'ny_misdemeanor' => ['In the last five years, has this person been convicted of a misdemeanor or found in violation of any administrative, statutory, or regulatory provisions?', 'primaryContactMisdemeanor', $nyBackgroundGroup],
+    'ny_sanction_imposed' => ['In the last five years, has this person had any sanction imposed from a judicial or administrative disciplinary proceeding?', 'primaryContactSanctionImposed', $nyBackgroundGroup],
+    'ny_failed_to_file' => ['In the last five years, has this person failed to file any applicable federal, state, or New York City tax return by its due date?', 'primaryContactFailedToFile', $nyBackgroundGroup],
+    'ny_failed_to_pay_taxes' => ['In the last five years, has this person failed to pay any applicable taxes or assessed government charges by the due date?', 'primaryContactFailedToPayTaxes', $nyBackgroundGroup],
+    'ny_bankruptcy' => ['In the past seven years, has any bankruptcy been initiated by or against this person?', 'primaryContactBankruptcy', $nyBackgroundGroup],
+    'ny_felony_business_conduct' => ['In the last ten years, has this person been convicted of a felony or any crime related to truthfulness and/or business conduct?', 'primaryContactFelonyBusinessConduct', $nyBackgroundGroup],
 ];
 
 return [
@@ -360,6 +367,7 @@ return [
                                 'options' => ['1' => 'Yes', '0' => 'No'],
                                 'rules' => ['required', 'in:0,1'],
                                 'source_name' => $def[1],
+                                'group' => $def[2],
                             ])->all(),
                         ),
                     ],

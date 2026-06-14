@@ -40,7 +40,7 @@
                         $rowBadgeLabel = null;
                         if ($hasFirstLast) {
                             $combined = trim(($item['first_name'] ?? '') . ' ' . ($item['last_name'] ?? ''));
-                            $primaryLabel = $combined !== '' ? $combined : ($itemLabel . ' ' . ($index + 1));
+                            $primaryLabel = $combined !== '' ? $combined : 'Name needed';
                             $rowBadgeLabel = $item['title'] ?? null;
                         } elseif (isset($schema['address'])) {
                             // Address-bearing rows (locations, temporary events):
@@ -260,8 +260,22 @@
                                 {{-- Full typed renderer (radio/select/percent/
                                      checkbox/date), same as base schema fields —
                                      NY's compliance radios and PA's county
-                                     select must not degrade to text inputs. --}}
+                                     select must not degrade to text inputs.
+                                     Fields may carry a `group` label; when it
+                                     changes we drop a subheading so long lists
+                                     (e.g. NY's role vs. background questions)
+                                     read as labeled sections. --}}
+                                @php $renderedGroup = null; @endphp
                                 @foreach ($stateInfo['fields'] as $stateFieldKey => $stateField)
+                                    @if (($stateField['group'] ?? null) !== $renderedGroup && !empty($stateField['group']))
+                                        @php $renderedGroup = $stateField['group']; @endphp
+                                        <div class="-mx-6 mt-4 border-y border-zinc-200 bg-zinc-100 px-6 py-3 dark:border-zinc-700 dark:bg-zinc-800">
+                                            <div class="flex items-center gap-2.5">
+                                                <span class="h-4 w-1 rounded-full bg-primary"></span>
+                                                <span class="text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">{{ $renderedGroup }}</span>
+                                            </div>
+                                        </div>
+                                    @endif
                                     @include('livewire.forms.partials.fields.repeater-subfield', [
                                         'subKey' => $stateFieldKey,
                                         'subField' => $stateField,

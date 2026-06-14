@@ -97,21 +97,4 @@
             @endif
         @endif
     </section>
-
-    {{-- Coming soon: monthly filings --}}
-    <section>
-        <div class="rounded-xl border border-border bg-emerald-50/40 px-6 py-5">
-            <div class="flex items-start gap-4">
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
-                    <flux:icon name="calendar-days" class="size-5 text-emerald-600" />
-                </div>
-                <div>
-                    <div class="font-medium text-text-primary">Coming soon: monthly filing support</div>
-                    <p class="mt-1 text-sm text-text-secondary">
-                        File and remit your monthly sales tax returns directly from this dashboard.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
 </div>

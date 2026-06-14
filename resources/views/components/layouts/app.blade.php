@@ -18,6 +18,17 @@
                 <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                     {{ __('Dashboard') }}
                 </flux:sidebar.item>
+
+                @foreach (collect(app(\App\Support\Workspaces\WorkspaceRegistry::class)->all())->filter(fn ($workspace) => $workspace->enabled) as $workspace)
+                    <flux:sidebar.item
+                        :icon="$workspace->icon"
+                        :href="route($workspace->dashboardRoute)"
+                        :current="$workspace->isCurrent()"
+                        wire:navigate
+                    >
+                        {{ $workspace->name }}
+                    </flux:sidebar.item>
+                @endforeach
             </flux:sidebar.nav>
 
             <flux:spacer />

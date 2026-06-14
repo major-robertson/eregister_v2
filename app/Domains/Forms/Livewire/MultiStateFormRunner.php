@@ -147,6 +147,21 @@ class MultiStateFormRunner extends Component
             $this->prefillFromBusinessProfile();
         }
 
+        // Drop name-less responsible-person rows. The add/edit modal
+        // requires a first and last name to save, so any persisted row
+        // without one is a carry-over husk (e.g. a title-only entry
+        // copied from the business profile) that would otherwise show as
+        // a confusing "Responsible Person N" placeholder.
+        if (! empty($this->coreData['responsible_people'])) {
+            $this->coreData['responsible_people'] = array_values(array_filter(
+                $this->coreData['responsible_people'],
+                fn ($person) => is_array($person) && (
+                    trim((string) ($person['first_name'] ?? '')) !== ''
+                    || trim((string) ($person['last_name'] ?? '')) !== ''
+                )
+            ));
+        }
+
         // Load current phase and state
         $this->currentPhase = $this->application->current_phase ?? 'core';
         $this->currentStateIndex = $this->application->current_state_index ?? 0;

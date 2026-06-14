@@ -105,4 +105,25 @@ describe('business profile carryover hygiene', function () {
         expect($people)->toHaveCount(1)
             ->and($people[0]['first_name'])->toBe('Sam');
     });
+
+    it('drops name-less responsible-person husks already saved in core_data on load', function () {
+        // Older drafts (created before the carryover fix) can hold a
+        // title-only husk in their saved core_data; it must not resurface
+        // as a confusing "Responsible Person N" placeholder row.
+        $application = RunnerTestFactory::make()
+            ->onStep('responsible_people')
+            ->coreData([
+                'responsible_people' => [
+                    ['_id' => 'husk', 'title' => 'member', 'first_name' => '', 'last_name' => ''],
+                    ['_id' => 'real', 'first_name' => 'Sam', 'last_name' => 'Solo', 'ownership_percent' => '100'],
+                ],
+            ])
+            ->boot();
+
+        $people = Livewire::test(MultiStateFormRunner::class, ['application' => $application])
+            ->get('coreData.responsible_people');
+
+        expect($people)->toHaveCount(1)
+            ->and($people[0]['first_name'])->toBe('Sam');
+    });
 });

@@ -28,6 +28,24 @@ class FormApplicationPolicy
     }
 
     /**
+     * Determine if the user can start checkout for the application.
+     * The application must be unlocked (not already paid/submitted), owned
+     * by the user's business, and have every selected state completed.
+     */
+    public function checkout(User $user, FormApplication $application): bool
+    {
+        if ($application->isLocked()) {
+            return false;
+        }
+
+        if (! $user->belongsToBusiness($application->business)) {
+            return false;
+        }
+
+        return $application->allStatesComplete();
+    }
+
+    /**
      * Determine if the user can delete the application
      */
     public function delete(User $user, FormApplication $application): bool

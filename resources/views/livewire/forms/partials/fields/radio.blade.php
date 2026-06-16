@@ -1,19 +1,26 @@
+{{--
+    Question radios rendered with Flux's segmented variant — the
+    canonical Flux pattern for short option sets (Yes/No, Monthly/
+    Quarterly). Proper selected-state highlight and theming come from
+    Flux itself. (The custom radio-buttons partial remains available as
+    an alternative filled-button style.)
+--}}
 <flux:field wire:key="field-{{ $wireModel }}">
-    <flux:label>{{ $label }}</flux:label>
-    <div class="mt-2 space-y-2">
+    <flux:label :badge="$badge['label'] ?? null" :badge-color="$badge['color'] ?? null">
+        {{ $label }}
+    </flux:label>
+    @if (! empty($resolvedHelp))
+        @include('livewire.forms.partials.field-help', ['help' => $resolvedHelp])
+    @endif
+    <flux:radio.group
+        wire:model.live="{{ $wireModel }}"
+        variant="segmented"
+        class="w-full sm:w-fit"
+    >
         @foreach ($field['options'] ?? [] as $value => $optionLabel)
-            <label class="flex items-center gap-2">
-                <input
-                    type="radio"
-                    wire:model.live="{{ $wireModel }}"
-                    value="{{ $value }}"
-                    name="{{ $wireModel }}"
-                    class="h-4 w-4 border-neutral-300 text-blue-600 focus:ring-blue-500"
-                >
-                <span class="text-sm">{{ $optionLabel }}</span>
-            </label>
+            <flux:radio value="{{ $value }}" label="{{ $optionLabel }}" />
         @endforeach
-    </div>
+    </flux:radio.group>
     @error($wireModel)
         <flux:text class="text-sm text-red-500">{{ $message }}</flux:text>
     @enderror

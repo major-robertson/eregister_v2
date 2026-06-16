@@ -4,25 +4,48 @@ namespace App\Domains\Forms\Livewire;
 
 use App\Domains\Business\Models\Business;
 use App\Domains\Forms\Engine\FormRegistry;
-use App\Domains\Forms\Engine\RulesBuilder;
 use App\Domains\Forms\Engine\SensitiveDataProtector;
-use App\Domains\Forms\Engine\Validation\CrossFieldValidatorRegistry;
-use App\Domains\Forms\Engine\VisibleFieldResolver;
+use App\Domains\Forms\Livewire\Concerns\WithFormDataIO;
+use App\Domains\Forms\Livewire\Concerns\WithFormPrefill;
+use App\Domains\Forms\Livewire\Concerns\WithFormValidation;
+use App\Domains\Forms\Livewire\Concerns\WithPhaseProgress;
+use App\Domains\Forms\Livewire\Concerns\WithRepeaterModal;
+use App\Domains\Forms\Livewire\Concerns\WithStepNavigation;
 use App\Domains\Forms\Models\FormApplication;
+use App\Support\Workspaces\WorkspaceRegistry;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
+/**
+ * Conducts a multi-step, multi-state form (currently used by Sales Tax
+ * Permit and the LLC Formation flow). The bulk of the per-concern logic
+ * lives in the six `Concerns/With*` traits below; this class is the
+ * orchestrator that binds them together — it owns the seven core
+ * properties, the lifecycle hooks (boot, mount, render), and the public
+ * navigation actions (nextStep, previousStep, submit) that mix
+ * validation, persistence, and cursor mutation into a single user-facing
+ * step.
+ */
 class MultiStateFormRunner extends Component
 {
+    use WithFormDataIO;
+    use WithFormPrefill;
+    use WithFormValidation;
+    use WithPhaseProgress;
+    use WithRepeaterModal;
+    use WithStepNavigation;
+
     public Business $business;
 
     public FormApplication $application;
 
+    /** @var array<string, mixed> */
     public array $coreData = [];
 
+    /** @var array<string, mixed> */
     public array $stateData = [];
 
     public string $currentPhase = 'core';
@@ -31,14 +54,7 @@ class MultiStateFormRunner extends Component
 
     public int $currentStateIndex = 0;
 
-    public bool $showRepeaterModal = false;
-
-    public ?int $editingRepeaterIndex = null;
-
-    public string $editingRepeaterField = '';
-
-    public array $repeaterForm = [];
-
+    /** @var array{base: array<string, mixed>, states: array<string, array<string, mixed>>} */
     private array $definition = [];
 
     /**
@@ -71,9 +87,31 @@ class MultiStateFormRunner extends Component
             return;
         }
 
-        Gate::authorize('update', $application);
+        // Use the 'view' ability (business membership) rather than 'update'
+        // so a locked/paid application doesn't 403 here before the lock
+        // redirect below can run. Editing is still gated: locked apps are
+        // redirected away immediately.
+        Gate::authorize('view', $application);
+
+        // Workspace alignment is enforced by the application.access
+        // middleware (EnsureHasAccess), which fires before this mount
+        // and 404s when the request URL belongs to a workspace that
+        // doesn't claim the application's form_type. Livewire::test()
+        // bypasses the middleware by design, so no in-mount guard here.
 
         if ($application->isLocked()) {
+            // Paid/submitted applications are read-only. Send them to the
+            // workspace's confirmation/receipt page when available, else the
+            // dashboard.
+            $workspace = app(WorkspaceRegistry::class)->findByFormType($application->form_type);
+            $confirmationUrl = $workspace?->confirmationRouteFor($application);
+
+            if ($confirmationUrl) {
+                $this->redirect($confirmationUrl);
+
+                return;
+            }
+
             session()->flash('error', 'This application has been submitted and cannot be edited.');
 
             $this->redirect(route('dashboard'));
@@ -90,18 +128,23 @@ class MultiStateFormRunner extends Component
 
     protected function loadDefinition(): void
     {
-        if ($this->application->definition_snapshot) {
-            $this->definition = $this->application->definition_snapshot;
-        } else {
-            $registry = app(FormRegistry::class);
-            $this->definition = [
-                'base' => $registry->getBase($this->application->form_type),
-                'states' => [],
-            ];
+        // Always load fresh from FormRegistry rather than reading
+        // $application->definition_snapshot. The snapshot is stored in a
+        // MySQL JSON column, which normalizes object keys (sort by length,
+        // then lexicographically) and destroys the step ordering authored in
+        // base.php. The snapshot is still written at application creation
+        // for historical/audit purposes — we just don't use it to drive the
+        // form runtime. If you ever need to switch back to snapshot-driven
+        // behavior, migrate definition_snapshot from JSON to LONGTEXT first
+        // so insertion order is preserved.
+        $registry = app(FormRegistry::class);
+        $this->definition = [
+            'base' => $registry->getBase($this->application->form_type),
+            'states' => [],
+        ];
 
-            foreach ($this->application->selected_states as $stateCode) {
-                $this->definition['states'][$stateCode] = $registry->get($this->application->form_type, $stateCode);
-            }
+        foreach ($this->application->selected_states as $stateCode) {
+            $this->definition['states'][$stateCode] = $registry->get($this->application->form_type, $stateCode);
         }
     }
 
@@ -120,6 +163,21 @@ class MultiStateFormRunner extends Component
             $this->prefillFromBusinessProfile();
         }
 
+        // Drop name-less responsible-person rows. The add/edit modal
+        // requires a first and last name to save, so any persisted row
+        // without one is a carry-over husk (e.g. a title-only entry
+        // copied from the business profile) that would otherwise show as
+        // a confusing "Responsible Person N" placeholder.
+        if (! empty($this->coreData['responsible_people'])) {
+            $this->coreData['responsible_people'] = array_values(array_filter(
+                $this->coreData['responsible_people'],
+                fn ($person) => is_array($person) && (
+                    trim((string) ($person['first_name'] ?? '')) !== ''
+                    || trim((string) ($person['last_name'] ?? '')) !== ''
+                )
+            ));
+        }
+
         // Load current phase and state
         $this->currentPhase = $this->application->current_phase ?? 'core';
         $this->currentStateIndex = $this->application->current_state_index ?? 0;
@@ -134,209 +192,21 @@ class MultiStateFormRunner extends Component
             }
         }
 
-        // Set current step key
+        // Set current step key. If the stored key no longer exists in the
+        // current step set (e.g. step was renamed/split in a definition update
+        // and the application is still on the old key), fall back to the first
+        // step in the current phase rather than letting skipEmptyStepsForward
+        // bail out into the next phase entirely.
         $this->currentStepKey = $this->application->current_step_key ?? $this->getFirstStepKey();
+        $availableStepKeys = array_keys($this->getCurrentSteps());
+        if ($this->currentStepKey !== null && ! in_array($this->currentStepKey, $availableStepKeys, true)) {
+            $this->currentStepKey = $this->getFirstStepKey();
+        }
 
         // Skip forward past any empty steps on initial load
         if ($this->currentPhase !== 'review') {
             $this->skipEmptyStepsForward();
             $this->updateApplicationPhase();
-        }
-    }
-
-    /**
-     * Pre-fill core data from the business profile.
-     * Only non-sensitive fields are copied.
-     */
-    protected function prefillFromBusinessProfile(): void
-    {
-        $business = $this->business;
-
-        // Pre-fill basic business info (fallback to name if legal_name not set)
-        $legalName = $business->legal_name ?? $business->name;
-        if ($legalName) {
-            $this->coreData['legal_name'] = $legalName;
-        }
-        if ($business->dba_name) {
-            $this->coreData['dba_name'] = $business->dba_name;
-        }
-        if ($business->entity_type) {
-            $this->coreData['entity_type'] = $business->entity_type;
-        }
-        if ($business->business_address) {
-            $this->coreData['business_address'] = $business->business_address;
-        }
-        if ($business->mailing_address) {
-            $this->coreData['mailing_address'] = $business->mailing_address;
-        }
-
-        // Pre-fill responsible people (non-sensitive fields only)
-        if (! empty($business->responsible_people)) {
-            $this->coreData['responsible_people'] = $this->prepareResponsiblePeopleForForm(
-                $business->responsible_people
-            );
-        }
-    }
-
-    /**
-     * Prepare responsible people from business profile for form use.
-     * Adds UUIDs for repeater tracking.
-     *
-     * @param  array<int, array>  $people
-     * @return array<int, array>
-     */
-    protected function prepareResponsiblePeopleForForm(array $people): array
-    {
-        return array_map(fn (array $person) => array_merge($person, [
-            '_id' => $person['_id'] ?? Str::uuid()->toString(),
-        ]), $people);
-    }
-
-    protected function getFirstStepKey(): ?string
-    {
-        $steps = $this->getCurrentSteps();
-
-        return array_key_first($steps) ?? null;
-    }
-
-    public function getCurrentSteps(): array
-    {
-        if ($this->currentPhase === 'core') {
-            return $this->definition['base']['core_steps'] ?? [];
-        }
-
-        if ($this->currentPhase === 'states') {
-            $stateCode = $this->currentStateCode();
-            $stateDef = $this->definition['states'][$stateCode] ?? $this->definition['base'];
-            $steps = $stateDef['state_steps'] ?? [];
-
-            // Skip state_responsible_people step - those fields are now in the core responsible_people repeater
-            unset($steps['state_responsible_people']);
-
-            return $steps;
-        }
-
-        // Review phase - return empty steps
-        return [];
-    }
-
-    public function getCurrentStepProperty(): ?array
-    {
-        if ($this->currentPhase === 'review') {
-            return null;
-        }
-
-        $steps = $this->getCurrentSteps();
-
-        return $steps[$this->currentStepKey] ?? null;
-    }
-
-    public function getVisibleFieldsProperty(): array
-    {
-        $step = $this->getCurrentStepProperty();
-        if (! $step) {
-            return [];
-        }
-
-        $resolver = app(VisibleFieldResolver::class);
-
-        return $resolver->resolve($step, $this->buildContext());
-    }
-
-    /**
-     * Check if a specific step has visible fields.
-     */
-    protected function stepHasVisibleFields(array $step): bool
-    {
-        $resolver = app(VisibleFieldResolver::class);
-        $visibleFields = $resolver->resolve($step, $this->buildContext());
-
-        return count($visibleFields) > 0;
-    }
-
-    /**
-     * Check if the current step has visible fields.
-     */
-    protected function currentStepHasVisibleFields(): bool
-    {
-        $step = $this->getCurrentStepProperty();
-        if (! $step) {
-            return false;
-        }
-
-        return $this->stepHasVisibleFields($step);
-    }
-
-    /**
-     * Skip forward through empty steps until we find one with fields or reach the end.
-     */
-    protected function skipEmptyStepsForward(): void
-    {
-        $maxIterations = 50; // Prevent infinite loops
-        $iterations = 0;
-
-        while ($iterations < $maxIterations) {
-            $iterations++;
-
-            // If we're in review phase, we're done
-            if ($this->currentPhase === 'review') {
-                return;
-            }
-
-            // If current step has visible fields, we're done
-            if ($this->currentStepHasVisibleFields()) {
-                return;
-            }
-
-            // Otherwise, advance to next step/phase
-            $stepKeys = array_keys($this->getCurrentSteps());
-            $currentIndex = array_search($this->currentStepKey, $stepKeys);
-
-            if ($currentIndex !== false && $currentIndex < count($stepKeys) - 1) {
-                // Move to next step in current phase
-                $this->currentStepKey = $stepKeys[$currentIndex + 1];
-            } else {
-                // Move to next phase or state
-                $this->advancePhaseOrStateInternal();
-            }
-        }
-    }
-
-    /**
-     * Skip backward through empty steps until we find one with fields or reach the beginning.
-     */
-    protected function skipEmptyStepsBackward(): void
-    {
-        $maxIterations = 50; // Prevent infinite loops
-        $iterations = 0;
-
-        while ($iterations < $maxIterations) {
-            $iterations++;
-
-            // If current step has visible fields, we're done
-            if ($this->currentStepHasVisibleFields()) {
-                return;
-            }
-
-            // Otherwise, go back to previous step/phase
-            $stepKeys = array_keys($this->getCurrentSteps());
-            $currentIndex = array_search($this->currentStepKey, $stepKeys);
-
-            if ($currentIndex !== false && $currentIndex > 0) {
-                // Move to previous step in current phase
-                $this->currentStepKey = $stepKeys[$currentIndex - 1];
-            } else {
-                // Move to previous phase or state
-                $this->goBackToPreviousPhaseOrStateInternal();
-
-                // If we couldn't go back any further (still at core phase, first step), stop
-                if ($this->currentPhase === 'core') {
-                    $coreSteps = array_keys($this->definition['base']['core_steps'] ?? []);
-                    if ($this->currentStepKey === ($coreSteps[0] ?? null)) {
-                        return;
-                    }
-                }
-            }
         }
     }
 
@@ -346,8 +216,73 @@ class MultiStateFormRunner extends Component
     }
 
     /**
+     * Jump back to a specific core step (e.g. the locked principal
+     * address in the locations modal links back to Contact & Address).
+     * Saves in-flight data without validating — same contract as
+     * previousStep().
+     */
+    public function jumpToCoreStep(string $stepKey): void
+    {
+        $this->assertNotLocked();
+
+        if (! array_key_exists($stepKey, $this->definition['base']['core_steps'] ?? [])) {
+            return;
+        }
+
+        $this->closeRepeaterModal();
+
+        if ($this->currentPhase === 'core') {
+            $this->saveCoreData();
+        } else {
+            $this->saveStateData();
+        }
+
+        $this->currentPhase = 'core';
+        $this->currentStepKey = $stepKey;
+        $this->updateApplicationPhase();
+    }
+
+    /**
+     * "Same for all states" shortcut on matrix fields: copy the first
+     * applicable row's value into every other applicable row.
+     */
+    public function applyMatrixValueToAllStates(string $fieldKey): void
+    {
+        $this->assertNotLocked();
+
+        $field = null;
+        foreach ($this->definition['base']['core_steps'] ?? [] as $step) {
+            if (isset($step['fields'][$fieldKey])) {
+                $field = $step['fields'][$fieldKey];
+                break;
+            }
+        }
+
+        if (! $field || ($field['type'] ?? '') !== 'matrix') {
+            return;
+        }
+
+        $states = \App\Domains\Forms\Engine\Applicability::statesFor(
+            $field,
+            $this->application->selected_states ?? []
+        );
+
+        $first = $states[0] ?? null;
+        if ($first === null) {
+            return;
+        }
+
+        $value = $this->coreData[$fieldKey][$first] ?? null;
+        foreach ($states as $stateCode) {
+            $this->coreData[$fieldKey][$stateCode] = $value;
+        }
+    }
+
+    /**
      * Get all state-specific person fields from selected states.
      * Used to display state-specific fields inline in the responsible_people repeater.
+     *
+     * @return array<string, array{name: string, fields: array<string, mixed>}>
      */
     public function getStatePersonFieldsProperty(): array
     {
@@ -368,6 +303,9 @@ class MultiStateFormRunner extends Component
         return $stateFields;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     protected function buildContext(): array
     {
         return [
@@ -380,107 +318,6 @@ class MultiStateFormRunner extends Component
         ];
     }
 
-    protected function saveCoreData(): void
-    {
-        $protector = app(SensitiveDataProtector::class);
-        $encrypted = $protector->encryptCoreData($this->coreData, $this->definition['base']);
-
-        $this->application->update([
-            'core_data' => $encrypted,
-            'current_phase' => $this->currentPhase,
-            'current_step_key' => $this->currentStepKey,
-            'current_state_index' => $this->currentStateIndex,
-        ]);
-
-        // Persist marked fields back to the business profile
-        $this->persistToBusinessProfile();
-    }
-
-    /**
-     * Persist fields marked with persist_to_business back to the business model.
-     * This allows form data to be reused in future applications.
-     */
-    protected function persistToBusinessProfile(): void
-    {
-        $businessData = [];
-
-        // Iterate through all core steps to find persistable fields
-        foreach ($this->definition['base']['core_steps'] ?? [] as $step) {
-            foreach ($step['fields'] ?? [] as $fieldKey => $field) {
-                if (! ($field['persist_to_business'] ?? false)) {
-                    continue;
-                }
-
-                // Skip if no data for this field
-                if (! array_key_exists($fieldKey, $this->coreData)) {
-                    continue;
-                }
-
-                $value = $this->coreData[$fieldKey];
-
-                // Handle repeater fields (like responsible_people) - only persist non-sensitive subfields
-                if (($field['type'] ?? '') === 'repeater' && is_array($value)) {
-                    $value = $this->extractPersistableRepeaterData($value, $field['schema'] ?? []);
-                }
-
-                $businessData[$fieldKey] = $value;
-            }
-        }
-
-        if (! empty($businessData)) {
-            $this->business->update($businessData);
-        }
-    }
-
-    /**
-     * Extract only persistable (non-sensitive) fields from repeater data.
-     *
-     * @param  array<int, array>  $items
-     * @param  array<string, array>  $schema
-     * @return array<int, array>
-     */
-    protected function extractPersistableRepeaterData(array $items, array $schema): array
-    {
-        return array_map(function (array $item) use ($schema): array {
-            $persistable = [];
-            foreach ($schema as $subKey => $subField) {
-                if (($subField['persist_to_business'] ?? false) && array_key_exists($subKey, $item)) {
-                    $persistable[$subKey] = $item[$subKey];
-                }
-            }
-            // Keep the _id for tracking
-            if (isset($item['_id'])) {
-                $persistable['_id'] = $item['_id'];
-            }
-
-            return $persistable;
-        }, $items);
-    }
-
-    protected function saveStateData(): void
-    {
-        $stateCode = $this->currentStateCode();
-        if (! $stateCode) {
-            return;
-        }
-
-        $protector = app(SensitiveDataProtector::class);
-        $stateDef = $this->definition['states'][$stateCode] ?? $this->definition['base'];
-        $encrypted = $protector->encryptStateData($this->stateData, $stateDef);
-
-        $stateRecord = $this->application->currentStateRecord();
-        $stateRecord?->update([
-            'data' => $encrypted,
-            'current_step_key' => $this->currentStepKey,
-        ]);
-
-        $this->application->update([
-            'current_phase' => $this->currentPhase,
-            'current_step_key' => $this->currentStepKey,
-            'current_state_index' => $this->currentStateIndex,
-        ]);
-    }
-
     public function nextStep(): void
     {
         $this->assertNotLocked();
@@ -490,7 +327,16 @@ class MultiStateFormRunner extends Component
             return;
         }
 
-        $this->validateCurrentStep();
+        try {
+            $this->validateCurrentStep();
+        } catch (ValidationException $ve) {
+            // Tell the form to scroll to the first invalid field; long
+            // steps otherwise hide errors hundreds of pixels above where
+            // the user clicked Next, making the click look like a no-op.
+            $this->dispatch('validation-failed');
+
+            throw $ve;
+        }
 
         // Save current data
         if ($this->currentPhase === 'core') {
@@ -586,8 +432,16 @@ class MultiStateFormRunner extends Component
             $steps = $this->getCurrentSteps();
             $this->currentStepKey = array_key_first($steps);
         } elseif ($this->currentPhase === 'states') {
-            // Mark current state as complete
-            $this->application->currentStateRecord()?->markComplete();
+            // Mark current state as complete. Resolve through the
+            // component's own cursor — the model's current_state_index
+            // is only persisted after the skip loop finishes, so during
+            // skip-through of empty states it lags behind and would mark
+            // the first state repeatedly while leaving the rest
+            // incomplete (blocking the review screen's payment button).
+            $currentCode = $this->currentStateCode();
+            if ($currentCode) {
+                $this->application->stateRecord($currentCode)?->markComplete();
+            }
 
             if ($this->currentStateIndex < count($this->application->selected_states) - 1) {
                 // Move to next state
@@ -633,25 +487,6 @@ class MultiStateFormRunner extends Component
         }
     }
 
-    protected function loadStateDataForCurrentState(): void
-    {
-        $stateCode = $this->currentStateCode();
-        if (! $stateCode) {
-            $this->stateData = [];
-
-            return;
-        }
-
-        $stateRecord = $this->application->stateRecord($stateCode);
-        if ($stateRecord) {
-            $protector = app(SensitiveDataProtector::class);
-            $stateDef = $this->definition['states'][$stateCode] ?? $this->definition['base'];
-            $this->stateData = $protector->decryptStateData($stateRecord->data ?? [], $stateDef);
-        } else {
-            $this->stateData = [];
-        }
-    }
-
     protected function updateApplicationStep(): void
     {
         $this->application->update([
@@ -666,110 +501,6 @@ class MultiStateFormRunner extends Component
             'current_step_key' => $this->currentStepKey,
             'current_state_index' => $this->currentStateIndex,
         ]);
-    }
-
-    protected function validateCurrentStep(): void
-    {
-        $step = $this->getCurrentStepProperty();
-        if (! $step) {
-            return;
-        }
-
-        $builder = app(RulesBuilder::class);
-        $validation = $builder->buildForLivewire(
-            $step,
-            $this->coreData,
-            $this->stateData,
-            $this->currentStateCode(),
-            $this->currentPhase
-        );
-
-        $this->validate($validation['rules'], [], $validation['attributes']);
-    }
-
-    public function openRepeaterModal(string $fieldKey, ?int $index = null): void
-    {
-        $this->assertNotLocked();
-        $this->editingRepeaterField = $fieldKey;
-        $this->editingRepeaterIndex = $index;
-
-        if ($index !== null) {
-            $items = $this->currentPhase === 'core'
-                ? ($this->coreData[$fieldKey] ?? [])
-                : ($this->stateData[$fieldKey] ?? []);
-            $this->repeaterForm = $items[$index] ?? [];
-        } else {
-            $this->repeaterForm = ['_id' => Str::uuid()->toString()];
-        }
-
-        $this->showRepeaterModal = true;
-    }
-
-    public function closeRepeaterModal(): void
-    {
-        $this->showRepeaterModal = false;
-        $this->editingRepeaterIndex = null;
-        $this->editingRepeaterField = '';
-        $this->repeaterForm = [];
-        $this->resetValidation();
-    }
-
-    public function saveRepeaterItem(): void
-    {
-        $this->assertNotLocked();
-
-        $fieldKey = $this->editingRepeaterField;
-        $step = $this->getCurrentStepProperty();
-        $schema = $step['fields'][$fieldKey]['schema'] ?? [];
-
-        $rules = [];
-        $attributes = [];
-        foreach ($schema as $subKey => $subField) {
-            $subRules = $subField['rules'] ?? [];
-            if (! empty($subRules)) {
-                $rules["repeaterForm.{$subKey}"] = $subRules;
-                $attributes["repeaterForm.{$subKey}"] = $subField['label'] ?? $subKey;
-            }
-        }
-
-        $this->validate($rules, [], $attributes);
-
-        if ($this->editingRepeaterIndex !== null) {
-            if ($this->currentPhase === 'core') {
-                $this->coreData[$fieldKey][$this->editingRepeaterIndex] = $this->repeaterForm;
-            } else {
-                $this->stateData[$fieldKey][$this->editingRepeaterIndex] = $this->repeaterForm;
-            }
-        } else {
-            if ($this->currentPhase === 'core') {
-                $this->coreData[$fieldKey][] = $this->repeaterForm;
-            } else {
-                $this->stateData[$fieldKey][] = $this->repeaterForm;
-            }
-        }
-
-        $this->closeRepeaterModal();
-    }
-
-    public function removeRepeaterItem(string $fieldKey, string $id): void
-    {
-        $this->assertNotLocked();
-
-        if ($this->currentPhase === 'core') {
-            $this->coreData[$fieldKey] = array_values(
-                array_filter(
-                    $this->coreData[$fieldKey] ?? [],
-                    fn ($item) => ($item['_id'] ?? '') !== $id
-                )
-            );
-        } else {
-            $this->stateData[$fieldKey] = array_values(
-                array_filter(
-                    $this->stateData[$fieldKey] ?? [],
-                    fn ($item) => ($item['_id'] ?? '') !== $id
-                )
-            );
-        }
     }
 
     public function submit(): void
@@ -793,62 +524,17 @@ class MultiStateFormRunner extends Component
 
             $this->redirect(route('dashboard'));
         } else {
-            $this->redirect(route('portal.checkout', $this->application));
-        }
-    }
+            // Prefer the owning workspace's dedicated checkout route (e.g.
+            // Sales Tax's PaymentIntent flow); fall back to the generic
+            // Cashier checkout for workspaces that don't define one.
+            $workspace = app(WorkspaceRegistry::class)->findByFormType($this->application->form_type);
+            $checkoutRoute = $workspace?->checkoutRouteName;
 
-    protected function validateAllSteps(): void
-    {
-        $builder = app(RulesBuilder::class);
-
-        // Validate core steps
-        foreach ($this->definition['base']['core_steps'] ?? [] as $step) {
-            $validation = $builder->buildForArray(
-                $step,
-                $this->coreData,
-                [],
-                null
+            $this->redirect(
+                $checkoutRoute
+                    ? route($checkoutRoute, $this->application)
+                    : route('portal.checkout', $this->application)
             );
-
-            validator($this->coreData, $validation['rules'], [], $validation['attributes'])->validate();
-        }
-
-        // Validate each state
-        foreach ($this->application->selected_states as $index => $stateCode) {
-            $stateDef = $this->definition['states'][$stateCode] ?? $this->definition['base'];
-            $stateRecord = $this->application->stateRecord($stateCode);
-            $stateData = $stateRecord?->data ?? [];
-
-            foreach ($stateDef['state_steps'] ?? [] as $step) {
-                $validation = $builder->buildForArray(
-                    $step,
-                    $this->coreData,
-                    $stateData,
-                    $stateCode
-                );
-
-                validator($stateData, $validation['rules'], [], $validation['attributes'])->validate();
-            }
-        }
-    }
-
-    protected function runCrossFieldValidators(): void
-    {
-        $registry = app(CrossFieldValidatorRegistry::class);
-
-        // Run core cross-validators
-        foreach ($this->definition['base']['core_steps'] ?? [] as $step) {
-            foreach ($step['cross_validations'] ?? [] as $validation) {
-                if (($validation['phase'] ?? 'core') === 'core') {
-                    $registry->validateWithPrefix(
-                        $validation['rule'],
-                        $this->coreData,
-                        $validation['field'],
-                        $validation,
-                        'coreData'
-                    );
-                }
-            }
         }
     }
 
@@ -859,10 +545,66 @@ class MultiStateFormRunner extends Component
         }
     }
 
+    /**
+     * Whether any selected state still has its own state-step questions.
+     * With the clean answer shape, many selections (e.g. AL + CO + ID)
+     * are fully covered by the shared core answers — the wizard then
+     * runs Core → Review with no states phase to show.
+     */
+    public function selectedStatesHaveQuestions(): bool
+    {
+        return collect($this->application->selected_states ?? [])
+            ->contains(function (string $stateCode) {
+                $stateDef = $this->definition['states'][$stateCode] ?? $this->definition['base'];
+
+                return collect($stateDef['state_steps'] ?? [])
+                    ->except('state_responsible_people')
+                    ->contains(fn ($step) => ! empty($step['fields']));
+            });
+    }
+
+    /**
+     * Position within the current state's substeps for the progress bar,
+     * e.g. "California (2/3)". Mirrors how the Core segment counts steps.
+     * Only substeps that will actually render are counted, so the number
+     * doesn't jump when inapplicable substeps (e.g. fuel) are skipped.
+     *
+     * @return array{current: int, total: int}
+     */
+    protected function stateSubstepProgress(): array
+    {
+        if ($this->currentPhase !== 'states') {
+            return ['current' => 0, 'total' => 0];
+        }
+
+        $steps = $this->getCurrentSteps();
+        $stepKeys = $this->visibleStepKeys($steps);
+        if (! in_array($this->currentStepKey, $stepKeys, true) && isset($steps[$this->currentStepKey])) {
+            // Cursor sits on a substep whose fields just became hidden —
+            // fall back to the unfiltered list until skip logic moves on.
+            $stepKeys = array_keys($steps);
+        }
+
+        $index = array_search($this->currentStepKey, $stepKeys, true);
+
+        return [
+            'current' => $index === false ? 1 : $index + 1,
+            'total' => max(count($stepKeys), 1),
+        ];
+    }
+
     public function render(): View
     {
         $currentStep = $this->getCurrentStepProperty();
         $stepKeys = array_keys($this->getCurrentSteps());
+
+        $workspace = app(WorkspaceRegistry::class)->findByFormType($this->application->form_type);
+
+        $layout = $workspace ? 'layouts.workspace' : 'layouts.app';
+        $layoutData = ['title' => 'Application'];
+        if ($workspace) {
+            $layoutData['key'] = $workspace->key;
+        }
 
         return view('livewire.forms.multi-state-form-runner', [
             'currentStep' => $currentStep,
@@ -873,13 +615,16 @@ class MultiStateFormRunner extends Component
             'isReview' => $this->currentPhase === 'review',
             'canGoNext' => $this->currentPhase !== 'review',
             'currentStateName' => config('states.'.$this->currentStateCode()),
-            'stateProgress' => [
-                'current' => $this->currentStateIndex + 1,
-                'total' => count($this->application->selected_states),
-            ],
+            'stateProgress' => $this->stateSubstepProgress(),
+            'phaseProgress' => $this->getPhaseProgressProperty(),
+            'hasStateQuestions' => $this->selectedStatesHaveQuestions(),
             'allStatesComplete' => $this->application->allStatesComplete(),
             'states' => config('states'),
             'statePersonFields' => $this->getStatePersonFieldsProperty(),
-        ])->layout('layouts.app', ['title' => 'Application']);
+            // URL to return to when the user clicks Previous on the very first
+            // step of the wizard. Falls back to the dashboard if the workspace
+            // doesn't expose a start route (shouldn't happen in practice).
+            'startUrl' => $workspace?->startRouteFor($this->application->form_type) ?? route('dashboard'),
+        ])->layout($layout, $layoutData);
     }
 }

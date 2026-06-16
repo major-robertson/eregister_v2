@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Domains\Lien\Services\LienStripeWebhookHandler;
+use App\Domains\SalesTax\Services\TaxStripeWebhookHandler;
 use App\Models\StripeWebhookEvent;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -93,9 +94,9 @@ class StripeWebhookController
 
         $handler = match ($domain) {
             'lien' => app(LienStripeWebhookHandler::class),
+            'tax' => app(TaxStripeWebhookHandler::class),
             // Future domains:
             // 'llc' => app(LlcStripeWebhookHandler::class),
-            // 'tax' => app(TaxStripeWebhookHandler::class),
             // 'saas' => app(SaasStripeWebhookHandler::class),
             default => null,
         };

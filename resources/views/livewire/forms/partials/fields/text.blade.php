@@ -1,11 +1,18 @@
 <flux:field wire:key="field-{{ $wireModel }}">
-    <flux:label>{{ $label }}</flux:label>
+    <flux:label :badge="$badge['label'] ?? null" :badge-color="$badge['color'] ?? null">
+        {{ $label }}
+    </flux:label>
+    @if (! empty($resolvedHelp))
+        @include('livewire.forms.partials.field-help', ['help' => $resolvedHelp])
+    @endif
     @if ($needsLive)
         <flux:input
             wire:model.live="{{ $wireModel }}"
             type="{{ $inputType ?? 'text' }}"
             placeholder="{{ $field['placeholder'] ?? '' }}"
             name="{{ $wireModel }}"
+            :mask="$field['mask'] ?? null"
+            :autocomplete="! empty($field['sensitive']) ? 'off' : null"
         />
     @else
         <flux:input
@@ -13,12 +20,11 @@
             type="{{ $inputType ?? 'text' }}"
             placeholder="{{ $field['placeholder'] ?? '' }}"
             name="{{ $wireModel }}"
+            :mask="$field['mask'] ?? null"
+            :autocomplete="! empty($field['sensitive']) ? 'off' : null"
         />
     @endif
     @error($wireModel)
         <flux:text class="text-sm text-red-500">{{ $message }}</flux:text>
     @enderror
-    @if (!empty($field['help']))
-        <flux:text class="text-sm text-neutral-500">{{ $field['help'] }}</flux:text>
-    @endif
 </flux:field>

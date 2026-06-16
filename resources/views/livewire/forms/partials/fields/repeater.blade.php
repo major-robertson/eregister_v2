@@ -3,20 +3,21 @@
     $min = $field['min'] ?? 0;
     $itemLabel = $field['item_label'] ?? 'Item';
     $schema = $field['schema'] ?? [];
+
+    $effectiveMin = $min;
+    if (!empty($field['conditional_min'])) {
+        $condField = $field['conditional_min']['field'];
+        $condValues = $field['conditional_min']['values'] ?? [];
+        $currentValue = $data[$condField] ?? null;
+        if ($currentValue !== null && isset($condValues[$currentValue])) {
+            $effectiveMin = max($min, $condValues[$currentValue]);
+        }
+    }
 @endphp
 
 <div class="space-y-4">
-    <div class="flex items-center justify-between">
+    <div>
         <flux:label class="text-base font-medium">{{ $label }}</flux:label>
-        <flux:button
-            wire:click="openRepeaterModal('{{ $fieldKey }}')"
-            type="button"
-            size="sm"
-            variant="primary"
-            icon="plus"
-        >
-            Add {{ $itemLabel }}
-        </flux:button>
     </div>
 
     @error("{$prefix}.{$fieldKey}")
@@ -24,25 +25,76 @@
     @enderror
 
     <div class="space-y-3">
-        @forelse ($items as $index => $item)
+        @foreach ($items as $index => $item)
             <div wire:key="repeater-{{ $item['_id'] ?? $index }}" class="flex items-start justify-between rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
                 <button
                     type="button"
                     wire:click="openRepeaterModal('{{ $fieldKey }}', {{ $index }})"
                     class="flex-1 text-left"
                 >
+                    @php
+                        // Repeaters that hold person records (responsible_people, members)
+                        // always have first_name + last_name in their schema; combine them.
+                        // Use `title` as the badge when present (e.g. "Owner", "Member").
+                        $hasFirstLast = isset($schema['first_name']) && isset($schema['last_name']);
+                        $rowBadgeLabel = null;
+                        if ($hasFirstLast) {
+                            $combined = trim(($item['first_name'] ?? '') . ' ' . ($item['last_name'] ?? ''));
+                            $primaryLabel = $combined !== '' ? $combined : 'Name needed';
+                            $rowBadgeLabel = $item['title'] ?? null;
+                        } elseif (isset($schema['address'])) {
+                            // Address-bearing rows (locations, temporary events):
+                            // show the address line; flag the principal row.
+                            $rowAddress = is_array($item['address'] ?? null) ? $item['address'] : [];
+                            $addressLine = collect([$rowAddress['line1'] ?? null, $rowAddress['city'] ?? null, $rowAddress['state'] ?? null])
+                                ->filter()
+                                ->implode(', ');
+                            $primaryLabel = $item['event_name'] ?? ($addressLine !== '' ? $addressLine : ($itemLabel . ' ' . ($index + 1)));
+                            $rowBadgeLabel = !empty($item['is_principal']) ? 'Principal' : null;
+                        } else {
+                            // Non-person repeaters fall back to "first schema key" display.
+                            $primaryLabel = $item[$schema ? array_key_first($schema) : ''] ?? ($itemLabel . ' ' . ($index + 1));
+                            $secondKey = array_keys($schema)[1] ?? null;
+                            $rowBadgeLabel = $secondKey && !empty($item[$secondKey]) && !is_array($item[$secondKey])
+                                ? $item[$secondKey]
+                                : null;
+                        }
+                    @endphp
+                    @php
+                        // Flag rows missing unconditionally-required fields
+                        // (e.g. a person carried over from the business
+                        // profile arrives without SSN / DOB / license number,
+                        // and nothing else tells the user to finish the row).
+                        $missingRequired = [];
+                        foreach ($schema as $subKey => $subField) {
+                            if (! empty($subField['when'])) {
+                                continue;
+                            }
+                            if (! in_array('required', $subField['rules'] ?? [], true)) {
+                                continue;
+                            }
+                            $subValue = $item[$subKey] ?? null;
+                            $subIsEmpty = is_array($subValue)
+                                ? collect($subValue)->flatten()->filter(fn ($leaf) => trim((string) $leaf) !== '')->isEmpty()
+                                : trim((string) $subValue) === '';
+                            if ($subIsEmpty) {
+                                $missingRequired[] = $subField['label'] ?? ucwords(str_replace('_', ' ', $subKey));
+                            }
+                        }
+                    @endphp
                     <div class="flex items-center gap-2">
                         <span class="font-medium text-zinc-900 dark:text-zinc-100">
-                            {{ $item[$schema ? array_key_first($schema) : ''] ?? $itemLabel . ' ' . ($index + 1) }}
+                            {{ $primaryLabel }}
                         </span>
-                        @php
-                            $secondKey = array_keys($schema)[1] ?? null;
-                        @endphp
-                        @if ($secondKey && !empty($item[$secondKey]))
-                            <flux:badge size="sm">{{ $item[$secondKey] }}</flux:badge>
+                        @if ($rowBadgeLabel)
+                            <flux:badge size="sm">{{ $rowBadgeLabel }}</flux:badge>
                         @endif
                     </div>
-                    @if (!empty($item['ownership_percent']))
+                    @if ($missingRequired !== [])
+                        <div class="mt-1 text-sm text-amber-600 dark:text-amber-500">
+                            Missing: {{ collect($missingRequired)->take(3)->implode(', ') }}{{ count($missingRequired) > 3 ? ' +'.(count($missingRequired) - 3).' more' : '' }}
+                        </div>
+                    @elseif (!empty($item['ownership_percent']))
                         <div class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                             {{ $item['ownership_percent'] }}% ownership
                         </div>
@@ -50,14 +102,27 @@
                 </button>
 
                 <div class="ml-4 flex items-center gap-1">
-                    <flux:button
-                        wire:click="openRepeaterModal('{{ $fieldKey }}', {{ $index }})"
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        icon="pencil"
-                    />
-                    @if (count($items) > $min)
+                    @if ($missingRequired !== [])
+                        <flux:button
+                            wire:click="openRepeaterModal('{{ $fieldKey }}', {{ $index }})"
+                            type="button"
+                            size="sm"
+                            variant="primary"
+                        >
+                            Add Missing Info
+                        </flux:button>
+                    @else
+                        <flux:button
+                            wire:click="openRepeaterModal('{{ $fieldKey }}', {{ $index }})"
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            icon="pencil"
+                        />
+                    @endif
+                    {{-- The principal location row is system-managed and
+                         cannot be removed (it mirrors the business address). --}}
+                    @if (count($items) > $effectiveMin && empty($item['is_principal']))
                         <flux:button
                             wire:click="removeRepeaterItem('{{ $fieldKey }}', '{{ $item['_id'] ?? '' }}')"
                             wire:loading.attr="disabled"
@@ -72,130 +137,178 @@
                     @endif
                 </div>
             </div>
-        @empty
-            <div class="rounded-lg border-2 border-dashed border-zinc-300 px-5 py-6 dark:border-zinc-600">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold text-zinc-700 dark:text-zinc-300">{{ $itemLabel }}</span>
-                        @if ($min > 0)
+        @endforeach
+
+        {{-- Empty required slots for positions not yet filled. The whole
+             card is clickable and spells out that filling it is the way
+             forward — a small "Add" button alone wasn't read as a task. --}}
+        @for ($i = count($items); $i < $effectiveMin; $i++)
+            <div
+                wire:click="openRepeaterModal('{{ $fieldKey }}')"
+                role="button"
+                tabindex="0"
+                class="cursor-pointer rounded-lg border-2 border-dashed border-zinc-300 px-5 py-6 transition-colors hover:border-primary hover:bg-zinc-50 dark:border-zinc-600 dark:hover:bg-zinc-800/50"
+            >
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-zinc-700 dark:text-zinc-300">{{ $itemLabel }} {{ $i + 1 }}</span>
                             <flux:badge size="sm" color="red">Required</flux:badge>
-                        @endif
+                        </div>
+                        <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                            Fill this in to continue — click anywhere on this card.
+                        </p>
                     </div>
                     <flux:button
                         wire:click="openRepeaterModal('{{ $fieldKey }}')"
                         type="button"
-                        size="sm"
                         variant="primary"
                         icon="plus"
                     >
-                        Add
+                        Add {{ $itemLabel }}
                     </flux:button>
                 </div>
             </div>
-        @endforelse
+        @endfor
     </div>
 
-    {{-- Repeater Modal --}}
-    <flux:modal wire:model="showRepeaterModal" class="max-w-lg">
-        <div class="space-y-4">
-            <flux:heading>{{ $this->editingRepeaterIndex !== null ? 'Edit' : 'Add' }} {{ $itemLabel }}</flux:heading>
+    {{-- Optional add row --}}
+    @if (count($items) >= $effectiveMin)
+        <div class="rounded-lg border border-dashed border-zinc-200 px-5 py-4 dark:border-zinc-700">
+            <div class="flex items-center justify-between">
+                <span class="text-sm text-zinc-400 dark:text-zinc-500">Add another {{ strtolower($itemLabel) }} (optional)</span>
+                <flux:button
+                    wire:click="openRepeaterModal('{{ $fieldKey }}')"
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    icon="plus"
+                >
+                    Add
+                </flux:button>
+            </div>
+        </div>
+    @endif
 
-            <div class="space-y-4" @keydown.enter.prevent="$wire.saveRepeaterItem()">
-                @foreach ($schema as $subKey => $subField)
-                    @php
-                        $subLabel = $subField['label'] ?? ucwords(str_replace('_', ' ', $subKey));
-                        $subType = $subField['type'] ?? 'text';
-                    @endphp
+    {{-- Repeater Modal.
+         Wider than the default flux:modal so the inline-row pairs in
+         schema_groups (first/last name, phone/email, dob/ssn, etc.)
+         have breathing room. The internal layout is a flex column with
+         a scrollable body and a non-scrolling footer so the Save /
+         Cancel actions and the error-overview callout stay visible
+         even when the form is taller than the viewport. --}}
+    <flux:modal wire:model="showRepeaterModal" class="max-w-3xl">
+        @php
+            // Errors raised inside saveRepeaterItem() are namespaced
+            // 'repeaterForm.*'. Counting them separately keeps the
+            // modal's overview in sync with what the user can fix
+            // here, without bleeding in step-level errors that belong
+            // to the page behind the modal.
+            $repeaterErrorKeys = collect($errors->keys())
+                ->filter(fn ($k) => str_starts_with($k, 'repeaterForm.'))
+                ->values();
+            $repeaterErrorCount = $repeaterErrorKeys->count();
+        @endphp
 
-                    @switch($subType)
-                        @case('percent')
-                            <flux:field>
-                                <flux:label>{{ $subLabel }}</flux:label>
-                                <div class="relative">
-                                    <flux:input
-                                        type="number"
-                                        wire:model="repeaterForm.{{ $subKey }}"
-                                        min="0"
-                                        max="100"
-                                        step="0.01"
-                                    />
-                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400">%</span>
-                                </div>
-                                <flux:error name="repeaterForm.{{ $subKey }}" />
-                            </flux:field>
-                            @break
+        <div class="flex max-h-[85vh] flex-col">
+            <div class="border-b border-zinc-200 pb-4 dark:border-zinc-700">
+                <flux:heading>{{ $this->editingRepeaterIndex !== null ? 'Edit' : 'Add' }} {{ $itemLabel }}</flux:heading>
+            </div>
 
-                        @case('checkbox')
-                            <flux:field>
-                                <label class="flex items-center gap-2">
-                                    <flux:checkbox wire:model="repeaterForm.{{ $subKey }}" />
-                                    <span>{{ $subLabel }}</span>
-                                </label>
-                                <flux:error name="repeaterForm.{{ $subKey }}" />
-                            </flux:field>
-                            @break
-
-                        @case('email')
-                            <flux:field>
-                                <flux:label>{{ $subLabel }}</flux:label>
-                                <flux:input type="email" wire:model="repeaterForm.{{ $subKey }}" />
-                                <flux:error name="repeaterForm.{{ $subKey }}" />
-                            </flux:field>
-                            @break
-
-                        @case('date')
-                            <flux:field>
-                                <flux:label>{{ $subLabel }}</flux:label>
-                                <flux:input type="date" wire:model="repeaterForm.{{ $subKey }}" />
-                                <flux:error name="repeaterForm.{{ $subKey }}" />
-                            </flux:field>
-                            @break
-
-                        @default
-                            <flux:field>
-                                <flux:label>{{ $subLabel }}</flux:label>
-                                <flux:input wire:model="repeaterForm.{{ $subKey }}" placeholder="{{ $subField['placeholder'] ?? '' }}" />
-                                <flux:error name="repeaterForm.{{ $subKey }}" />
-                            </flux:field>
-                    @endswitch
-                @endforeach
-
-                {{-- State-specific person fields --}}
-                @if ($fieldKey === 'responsible_people' && !empty($statePersonFields ?? []))
-                    @foreach ($statePersonFields as $stateCode => $stateInfo)
-                        <flux:separator />
-                        <flux:heading size="sm" class="text-zinc-600 dark:text-zinc-400">
-                            {{ $stateInfo['name'] }} Requirements
-                        </flux:heading>
-
-                        @foreach ($stateInfo['fields'] as $stateFieldKey => $stateField)
-                            @php
-                                $stateFieldLabel = $stateField['label'] ?? ucwords(str_replace('_', ' ', $stateFieldKey));
-                                $stateFieldType = $stateField['type'] ?? 'text';
-                            @endphp
-
-                            <flux:field>
-                                <flux:label>{{ $stateFieldLabel }}</flux:label>
-                                @switch($stateFieldType)
-                                    @case('date')
-                                        <flux:input type="date" wire:model="repeaterForm.{{ $stateFieldKey }}" />
-                                        @break
-                                    @default
-                                        <flux:input
-                                            wire:model="repeaterForm.{{ $stateFieldKey }}"
-                                            placeholder="{{ $stateField['placeholder'] ?? '' }}"
-                                        />
-                                @endswitch
-                                <flux:error name="repeaterForm.{{ $stateFieldKey }}" />
-                                @if (!empty($stateField['help']))
-                                    <flux:text class="text-sm text-zinc-500">{{ $stateField['help'] }}</flux:text>
-                                @endif
-                            </flux:field>
-                        @endforeach
-                    @endforeach
+            <div
+                class="-mx-6 flex-1 space-y-4 overflow-y-auto px-6 py-4"
+                @keydown.enter.prevent="$wire.saveRepeaterItem()"
+            >
+                @if (! empty($field['schema_groups']))
+                    @include('livewire.forms.partials.grouped-fields', [
+                        'groups' => $field['schema_groups'],
+                        'visibleFields' => $schema,
+                        'fieldPartial' => 'livewire.forms.partials.fields.repeater-subfield',
+                        'fieldContext' => [],
+                        'sectionWrapper' => 'card',
+                        'headingSize' => 'base',
+                    ])
+                @else
+                    {{-- Flat layout: render every schema entry in
+                         declaration order, wrapped in a single card so
+                         the modal still gets the soft-surface treatment
+                         instead of bare fields against the modal body. --}}
+                    <x-ui.card>
+                        <div class="space-y-6">
+                            @foreach ($schema as $subKey => $subField)
+                                @include('livewire.forms.partials.fields.repeater-subfield', [
+                                    'subKey' => $subKey,
+                                    'subField' => $subField,
+                                ])
+                            @endforeach
+                        </div>
+                    </x-ui.card>
                 @endif
 
-                <div class="flex justify-end gap-3 pt-4">
+                {{-- State-specific person fields: one card per state so
+                     the visual rhythm matches the schema_groups cards
+                     above instead of dropping back to separator-and-
+                     heading bands. --}}
+                @if ($fieldKey === 'responsible_people' && !empty($statePersonFields ?? []))
+                    @foreach ($statePersonFields as $stateCode => $stateInfo)
+                        <x-ui.card>
+                            <flux:heading size="base" class="mb-4">
+                                {{ $stateInfo['name'] }} Requirements
+                            </flux:heading>
+
+                            <div class="space-y-6">
+                                {{-- Full typed renderer (radio/select/percent/
+                                     checkbox/date), same as base schema fields —
+                                     NY's compliance radios and PA's county
+                                     select must not degrade to text inputs.
+                                     Fields may carry a `group` label; when it
+                                     changes we drop a subheading so long lists
+                                     (e.g. NY's role vs. background questions)
+                                     read as labeled sections. --}}
+                                @php $renderedGroup = null; @endphp
+                                @foreach ($stateInfo['fields'] as $stateFieldKey => $stateField)
+                                    @if (($stateField['group'] ?? null) !== $renderedGroup && !empty($stateField['group']))
+                                        @php $renderedGroup = $stateField['group']; @endphp
+                                        <div class="-mx-6 mt-4 border-y border-zinc-200 bg-zinc-100 px-6 py-3 dark:border-zinc-700 dark:bg-zinc-800">
+                                            <div class="flex items-center gap-2.5">
+                                                <span class="h-4 w-1 rounded-full bg-primary"></span>
+                                                <span class="text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">{{ $renderedGroup }}</span>
+                                            </div>
+                                        </div>
+                                    @endif
+                                    @include('livewire.forms.partials.fields.repeater-subfield', [
+                                        'subKey' => $stateFieldKey,
+                                        'subField' => $stateField,
+                                    ])
+                                    @if (!empty($stateField['help']))
+                                        <flux:text class="-mt-4 text-sm text-zinc-500">{{ $stateField['help'] }}</flux:text>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </x-ui.card>
+                    @endforeach
+                @endif
+            </div>
+
+            {{-- Sticky footer: error overview + actions. The flex
+                 layout above (max-h-[85vh] + flex-1 scroll body) keeps
+                 this region pinned to the bottom of the modal viewport
+                 without needing position: sticky. The error overview
+                 mirrors the main form's flux:callout so users get the
+                 same "fix N fields" feedback without scrolling up. --}}
+            <div class="space-y-3 border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                @if ($repeaterErrorCount > 0)
+                    <flux:callout variant="danger" icon="exclamation-triangle">
+                        <flux:callout.heading>
+                            Please fix {{ $repeaterErrorCount }} {{ Str::plural('field', $repeaterErrorCount) }}
+                        </flux:callout.heading>
+                        <flux:callout.text>
+                            Some required fields are missing or invalid. Each highlighted field above shows what to fix.
+                        </flux:callout.text>
+                    </flux:callout>
+                @endif
+
+                <div class="flex justify-end gap-3">
                     <flux:button type="button" wire:click="closeRepeaterModal" variant="ghost">
                         Cancel
                     </flux:button>

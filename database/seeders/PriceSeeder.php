@@ -102,5 +102,27 @@ class PriceSeeder extends Seeder
                 ]
             );
         }
+
+        // Sales & Use Tax permit registration: $199 per selected state,
+        // one-time. Charged via an inline-amount PaymentIntent (amount =
+        // amount_cents x state count), so the Stripe Price IDs below are
+        // catalog/reporting references only and may stay null until a
+        // Stripe Product/Price is created. amount_cents is the source of
+        // truth for the charge.
+        Price::updateOrCreate(
+            [
+                'product_family' => 'tax',
+                'product_key' => 'sales_tax_permit',
+                'variant_key' => 'per_state',
+                'billing_type' => 'one_time',
+            ],
+            [
+                'amount_cents' => 19900,
+                'currency' => 'usd',
+                'stripe_price_id_test' => 'price_1TifN7CWSBPRiUNwGCF62ASm',
+                'stripe_price_id_live' => 'price_1TifNgCWSBPRiUNwhaoGfvXl',
+                'active' => true,
+            ]
+        );
     }
 }

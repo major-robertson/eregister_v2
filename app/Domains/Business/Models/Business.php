@@ -29,6 +29,7 @@ class Business extends Model implements HasMedia
         'legal_name',
         'dba_name',
         'entity_type',
+        'fein',
         'business_address',
         'mailing_address',
         'phone',
@@ -46,6 +47,9 @@ class Business extends Model implements HasMedia
             'business_address' => 'array',
             'mailing_address' => 'array',
             'responsible_people' => 'array',
+            // Sensitive PII — encrypted at rest. Plaintext only inside the
+            // Eloquent model accessor so prefill into form state works.
+            'fein' => 'encrypted',
             'onboarding_completed_at' => 'datetime',
             'lien_onboarding_completed_at' => 'datetime',
             'trial_ends_at' => 'datetime',

@@ -13,7 +13,10 @@ class FormRegistry
      */
     private array $cache = [];
 
-    public function __construct(private DefinitionMerger $merger) {}
+    public function __construct(
+        private DefinitionMerger $merger,
+        private DrivesConditionalDetector $driversDetector,
+    ) {}
 
     /**
      * Get base definition for a form type.
@@ -35,7 +38,12 @@ class FormRegistry
             throw new \InvalidArgumentException("Form definition not found: {$definitionDir}/base.php");
         }
 
-        return $this->cache[$cacheKey] = require $path;
+        // Run the auto-detector on the base too. The runtime drives
+        // most navigation through the merged definition, but
+        // getBase() is also used directly by tests and by the field
+        // dispatcher in some flows — so the flag must be present
+        // regardless of which path loaded it.
+        return $this->cache[$cacheKey] = $this->driversDetector->detect(require $path);
     }
 
     /**
@@ -62,7 +70,9 @@ class FormRegistry
 
         $override = require $statePath;
 
-        return $this->cache[$cacheKey] = $this->merger->merge($base, $override);
+        $merged = $this->merger->merge($base, $override);
+
+        return $this->cache[$cacheKey] = $this->driversDetector->detect($merged);
     }
 
     /**

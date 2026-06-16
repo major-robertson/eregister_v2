@@ -8,6 +8,9 @@ use App\Domains\Admin\Livewire\RolesBoard;
 use App\Domains\Admin\Livewire\StatsBoard;
 use App\Domains\Admin\Livewire\UserOverview;
 use App\Domains\Admin\Livewire\UsersList;
+use App\Domains\Forms\Admin\Livewire\SalesTaxApplicationStateDetail;
+use App\Domains\Forms\Admin\Livewire\SalesTaxBoard;
+use App\Domains\Forms\Admin\Livewire\SalesTaxBoardAll;
 use App\Domains\Lien\Admin\Livewire\LienBoard;
 use App\Domains\Lien\Admin\Livewire\LienBoardAll;
 use App\Domains\Lien\Admin\Livewire\LienFilingDetail;
@@ -37,6 +40,19 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
             Route::get('/board/all', LienBoardAll::class)->name('board-all');
             Route::get('/lien-rules-overview', LienRulesOverview::class)->name('lien-rules-overview');
             Route::get('/{lienFiling:public_id}', LienFilingDetail::class)->name('show')->withTrashed();
+        });
+
+    // Sales Tax admin routes - require tax.view permission. The /states/
+    // nesting on the detail page leaves room for future /applications/,
+    // /reports/, /settings/ namespaces under the same workspace.
+    Route::prefix('sales-tax')
+        ->name('admin.sales-tax.')
+        ->middleware(['permission:tax.view'])
+        ->group(function () {
+            Route::get('/board', SalesTaxBoard::class)->name('board');
+            Route::get('/board/all', SalesTaxBoardAll::class)->name('board-all');
+            Route::get('/states/{formApplicationState}', SalesTaxApplicationStateDetail::class)
+                ->name('states.show');
         });
 
     // Users management - admin role only

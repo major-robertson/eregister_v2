@@ -3,11 +3,14 @@
 namespace App\Domains\Forms\Models;
 
 use App\Domains\Business\Models\Business;
+use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class FormApplication extends Model
 {
@@ -60,7 +63,25 @@ class FormApplication extends Model
 
     public function states(): HasMany
     {
-        return $this->hasMany(FormApplicationState::class);
+        // Explicit foreign key so child models like SalesTaxRegistration
+        // and LlcFormation don't trigger Eloquent to infer
+        // `sales_tax_registration_id` / `llc_formation_id` from the calling
+        // class name.
+        return $this->hasMany(FormApplicationState::class, 'form_application_id');
+    }
+
+    /**
+     * Latest payment for this application (e.g. the sales-tax registration
+     * checkout payment). Polymorphic via the shared `payments` table.
+     */
+    public function payment(): MorphOne
+    {
+        return $this->morphOne(Payment::class, 'purchasable')->latestOfMany();
+    }
+
+    public function payments(): MorphMany
+    {
+        return $this->morphMany(Payment::class, 'purchasable');
     }
 
     public function stateRecord(string $stateCode): ?FormApplicationState
@@ -118,5 +139,67 @@ class FormApplication extends Model
     public function allStatesComplete(): bool
     {
         return $this->completedStateCount() === $this->stateCount();
+    }
+
+    /**
+     * User-facing label for the application's state. Composes the existing
+     * `status` string and `paid_at` timestamp; does not introduce any new
+     * fields or enums.
+     */
+    public function getDisplayStatusAttribute(): string
+    {
+        if ($this->status === 'submitted') {
+            return 'Submitted';
+        }
+
+        if ($this->paid_at !== null) {
+            return 'Paid';
+        }
+
+        if ($this->status === 'draft') {
+            return 'Draft';
+        }
+
+        return ucfirst((string) $this->status);
+    }
+
+    /**
+     * Whether the application can still be edited by the customer. Reuses
+     * the existing `isLocked()` semantics (locked_at OR submitted) so this
+     * accessor never drifts from the form runner's lock rules.
+     */
+    public function getIsEditableAttribute(): bool
+    {
+        return $this->status === 'draft' && ! $this->isLocked();
+    }
+
+    /**
+     * CTA label shown next to a registration on workspace dashboards.
+     */
+    public function getDashboardActionLabelAttribute(): string
+    {
+        return $this->is_editable ? 'Continue' : 'View';
+    }
+
+    /**
+     * Workspace-aware URL to the application's detail/wizard page.
+     * Returns null when no workspace claims this form_type, in which
+     * case Blade should hide the action button rather than 500 on a
+     * missing route.
+     */
+    public function getDashboardActionUrlAttribute(): ?string
+    {
+        $workspace = app(\App\Support\Workspaces\WorkspaceRegistry::class)
+            ->findByFormType($this->form_type);
+
+        // A locked (paid/submitted) application can't re-enter the editable
+        // wizard, so "View" points at the read-only confirmation/receipt
+        // page when the workspace provides one; otherwise fall back to the
+        // form-runner detail route.
+        if ($this->isLocked() && $workspace?->confirmationRouteName) {
+            return $workspace->confirmationRouteFor($this);
+        }
+
+        return $workspace?->applicationRouteFor($this);
     }
 }

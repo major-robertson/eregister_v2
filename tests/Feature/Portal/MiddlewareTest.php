@@ -122,7 +122,7 @@ describe('EnsureHasAccess Middleware', function () {
 
         $this->actingAs($user)
             ->withSession(['current_business_id' => $business->id])
-            ->get("/portal/forms/applications/{$application->id}")
+            ->get("/portal/sales-tax/registrations/{$application->id}")
             ->assertOk();
     });
 
@@ -155,7 +155,7 @@ describe('EnsureHasAccess Middleware', function () {
 
         $this->actingAs($user)
             ->withSession(['current_business_id' => $business->id])
-            ->get("/portal/forms/applications/{$application->id}")
+            ->get("/portal/sales-tax/registrations/{$application->id}")
             ->assertOk();
     });
 
@@ -187,7 +187,7 @@ describe('EnsureHasAccess Middleware', function () {
 
         $this->actingAs($user)
             ->withSession(['current_business_id' => $business->id])
-            ->get("/portal/forms/applications/{$application->id}")
+            ->get("/portal/formations/applications/{$application->id}")
             ->assertRedirect(route('portal.checkout', $application));
     });
 
@@ -219,7 +219,7 @@ describe('EnsureHasAccess Middleware', function () {
         // Trying to access business2's application while session is set to business1
         $this->actingAs($user)
             ->withSession(['current_business_id' => $business1->id])
-            ->get("/portal/forms/applications/{$application->id}")
+            ->get("/portal/sales-tax/registrations/{$application->id}")
             ->assertForbidden();
     });
 });

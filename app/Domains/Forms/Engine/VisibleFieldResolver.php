@@ -16,8 +16,16 @@ class VisibleFieldResolver
     public function resolve(array $step, array $context): array
     {
         $visibleFields = [];
+        $selectedStates = $context['selectedStates'] ?? [];
 
         foreach ($step['fields'] ?? [] as $fieldKey => $field) {
+            // §1.5 applicability: fields declaring applicable_states are
+            // skipped entirely (render + validation) when no selected
+            // state needs them.
+            if (! Applicability::isApplicable($field, $selectedStates)) {
+                continue;
+            }
+
             if ($this->isFieldVisible($field, $context)) {
                 $visibleFields[$fieldKey] = $field;
             }

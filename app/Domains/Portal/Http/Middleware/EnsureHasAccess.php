@@ -5,6 +5,7 @@ namespace App\Domains\Portal\Http\Middleware;
 use App\Domains\Business\Models\Business;
 use App\Domains\Forms\FormTypeConfig;
 use App\Domains\Forms\Models\FormApplication;
+use App\Support\Workspaces\WorkspaceRegistry;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -33,6 +34,21 @@ class EnsureHasAccess
 
         // Verify user is member of business
         Gate::authorize('view', $business);
+
+        // Workspace alignment guard: 404 when an application is loaded
+        // through a workspace URL that doesn't claim its form_type.
+        // Runs BEFORE the access check so a misrouted URL fails fast
+        // instead of redirecting to checkout via the wrong workspace.
+        $workspace = app(WorkspaceRegistry::class)
+            ->findByFormType($application->form_type);
+        $currentRouteName = $request->route()?->getName();
+
+        abort_unless(
+            $workspace
+                && $workspace->applicationRouteName !== null
+                && $workspace->applicationRouteName === $currentRouteName,
+            404
+        );
 
         // Check access based on billing type
         if (! $this->hasAccess($business, $application)) {

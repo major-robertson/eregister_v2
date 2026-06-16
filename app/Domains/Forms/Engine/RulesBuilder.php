@@ -11,6 +11,7 @@ class RulesBuilder
     /**
      * Build rules with Livewire prefixes (e.g., coreData.legal_name, stateData.field)
      *
+     * @param  array<int, string>  $selectedStates
      * @return array{rules: array, messages: array, attributes: array}
      */
     public function buildForLivewire(
@@ -18,10 +19,11 @@ class RulesBuilder
         array $coreData,
         array $stateData,
         ?string $stateCode,
-        string $phase
+        string $phase,
+        array $selectedStates = []
     ): array {
         $prefix = $phase === 'core' ? 'coreData' : 'stateData';
-        $context = $this->buildContext($coreData, $stateData, $stateCode);
+        $context = $this->buildContext($coreData, $stateData, $stateCode, $selectedStates);
         $stateName = $stateCode ? config("states.{$stateCode}", $stateCode) : '';
 
         $visibleFields = $this->resolver->resolve($step, $context);
@@ -39,8 +41,13 @@ class RulesBuilder
                 $this->buildAddressRulesLivewire($rules, $attributes, $field, $fieldKey, $prefix, $stateName);
             } elseif ($type === 'person_state_extra') {
                 $this->buildPersonExtrasRulesLivewire($rules, $attributes, $field, $coreData, $stateCode);
+            } elseif ($type === 'matrix') {
+                $this->buildMatrixRules($rules, $attributes, $field, $fieldKey, "{$prefix}.", $selectedStates);
+            } elseif ($type === 'anywhere_states') {
+                $data = $prefix === 'coreData' ? $coreData : $stateData;
+                $this->buildAnywhereStatesRules($rules, $attributes, $field, $fieldKey, "{$prefix}.", $data, $selectedStates);
             } else {
-                $fieldRules = $field['rules'] ?? [];
+                $fieldRules = $this->rewritePrefixTokens($field['rules'] ?? [], "{$prefix}.");
                 if (! empty($fieldRules)) {
                     $rules["{$prefix}.{$fieldKey}"] = $fieldRules;
                     $attributes["{$prefix}.{$fieldKey}"] = $this->replaceStateName($field['label'] ?? $fieldKey, $stateName);
@@ -60,17 +67,41 @@ class RulesBuilder
     }
 
     /**
+     * Rewrite the `{prefix}` token used in cross-field validators
+     * (e.g. `required_unless:{prefix}entity_type,sole_prop`) so the same
+     * field definition can target the correct path in both the prefixed
+     * Livewire context (`coreData.entity_type`) and the unprefixed
+     * final-submit context (`entity_type`).
+     *
+     * Pass `''` for unprefixed contexts and `"{$prefix}."` for Livewire
+     * contexts. Non-string rule entries (e.g. Rule objects, closures)
+     * pass through untouched.
+     *
+     * @param  array<int, mixed>  $rules
+     * @return array<int, mixed>
+     */
+    private function rewritePrefixTokens(array $rules, string $replacement): array
+    {
+        return array_map(
+            fn ($rule) => is_string($rule) ? str_replace('{prefix}', $replacement, $rule) : $rule,
+            $rules
+        );
+    }
+
+    /**
      * Build rules for array validation (unprefixed for Validator::make)
      *
+     * @param  array<int, string>  $selectedStates
      * @return array{rules: array, messages: array, attributes: array}
      */
     public function buildForArray(
         array $step,
         array $coreData,
         array $stateData,
-        ?string $stateCode
+        ?string $stateCode,
+        array $selectedStates = []
     ): array {
-        $context = $this->buildContext($coreData, $stateData, $stateCode);
+        $context = $this->buildContext($coreData, $stateData, $stateCode, $selectedStates);
         $stateName = $stateCode ? config("states.{$stateCode}", $stateCode) : '';
         $visibleFields = $this->resolver->resolve($step, $context);
 
@@ -87,8 +118,12 @@ class RulesBuilder
                 $this->buildAddressRulesArray($rules, $attributes, $field, $fieldKey, $stateName);
             } elseif ($type === 'person_state_extra') {
                 // Handled separately per state
+            } elseif ($type === 'matrix') {
+                $this->buildMatrixRules($rules, $attributes, $field, $fieldKey, '', $selectedStates);
+            } elseif ($type === 'anywhere_states') {
+                $this->buildAnywhereStatesRules($rules, $attributes, $field, $fieldKey, '', $coreData, $selectedStates);
             } else {
-                $fieldRules = $field['rules'] ?? [];
+                $fieldRules = $this->rewritePrefixTokens($field['rules'] ?? [], '');
                 if (! empty($fieldRules)) {
                     $rules[$fieldKey] = $fieldRules;
                     $attributes[$fieldKey] = $this->replaceStateName($field['label'] ?? $fieldKey, $stateName);
@@ -99,15 +134,81 @@ class RulesBuilder
         return ['rules' => $rules, 'messages' => $messages, 'attributes' => $attributes];
     }
 
-    private function buildContext(array $coreData, array $stateData, ?string $stateCode): array
+    /**
+     * @param  array<int, string>  $selectedStates
+     */
+    private function buildContext(array $coreData, array $stateData, ?string $stateCode, array $selectedStates = []): array
     {
         return [
             'coreData' => $coreData,
             'stateData' => $stateData,
             'stateCode' => $stateCode,
             'rowData' => [],
-            'selectedStates' => [],
+            'selectedStates' => $selectedStates,
         ];
+    }
+
+    /**
+     * Matrix fields validate one cell per applicable state using the
+     * field's `cell_rules`. The per-cell attribute substitutes that
+     * row's state name into `{state_name}` so validation messages read
+     * "Number of Florida employees", not the current wizard state.
+     *
+     * @param  array<int, string>  $selectedStates
+     */
+    private function buildMatrixRules(
+        array &$rules,
+        array &$attributes,
+        array $field,
+        string $fieldKey,
+        string $prefixDot,
+        array $selectedStates
+    ): void {
+        $cellRules = $field['cell_rules'] ?? [];
+        if (empty($cellRules)) {
+            return;
+        }
+
+        foreach (Applicability::statesFor($field, $selectedStates) as $rowState) {
+            $rowStateName = config("states.{$rowState}", $rowState);
+            $rules["{$prefixDot}{$fieldKey}.{$rowState}"] = $cellRules;
+            $attributes["{$prefixDot}{$fieldKey}.{$rowState}"] = $this->replaceStateName(
+                $field['label'] ?? $fieldKey,
+                $rowStateName
+            );
+        }
+    }
+
+    /**
+     * anywhere_states fields validate the yes/no plus, when "yes" with
+     * multiple applicable states, a non-empty checklist restricted to
+     * the applicable set. Single-applicable-state fields skip the
+     * checklist requirement — save-time normalization auto-fills it.
+     *
+     * @param  array<int, string>  $selectedStates
+     */
+    private function buildAnywhereStatesRules(
+        array &$rules,
+        array &$attributes,
+        array $field,
+        string $fieldKey,
+        string $prefixDot,
+        array $data,
+        array $selectedStates
+    ): void {
+        $applicable = Applicability::statesFor($field, $selectedStates);
+        $label = $field['label'] ?? $fieldKey;
+
+        $rules["{$prefixDot}{$fieldKey}.anywhere"] = ['required', 'in:0,1'];
+        $attributes["{$prefixDot}{$fieldKey}.anywhere"] = $label;
+
+        $anywhere = (string) data_get($data, "{$fieldKey}.anywhere", '');
+
+        if ($anywhere === '1' && count($applicable) > 1) {
+            $rules["{$prefixDot}{$fieldKey}.states"] = ['required', 'array', 'min:1'];
+            $rules["{$prefixDot}{$fieldKey}.states.*"] = ['in:'.implode(',', $applicable)];
+            $attributes["{$prefixDot}{$fieldKey}.states"] = "States for: {$label}";
+        }
     }
 
     private function buildRepeaterRulesLivewire(
@@ -173,19 +274,9 @@ class RulesBuilder
         string $prefix,
         string $stateName = ''
     ): void {
-        $fieldRules = $field['rules'] ?? [];
         $basePath = "{$prefix}.{$fieldKey}";
 
-        // Address is a nested object with line1, line2, city, state, zip
-        $addressFields = [
-            'line1' => ['label' => 'Street Address', 'rules' => ['required', 'string', 'max:100']],
-            'line2' => ['label' => 'Address Line 2', 'rules' => ['nullable', 'string', 'max:100']],
-            'city' => ['label' => 'City', 'rules' => ['required', 'string', 'max:50']],
-            'state' => ['label' => 'State', 'rules' => ['required', 'string', 'size:2']],
-            'zip' => ['label' => 'ZIP Code', 'rules' => ['required', 'string', 'max:10']],
-        ];
-
-        foreach ($addressFields as $subKey => $subField) {
+        foreach ($this->addressSubfieldRules($field) as $subKey => $subField) {
             $rules["{$basePath}.{$subKey}"] = $subField['rules'];
             $attributes["{$basePath}.{$subKey}"] = $this->replaceStateName($subField['label'], $stateName);
         }
@@ -198,18 +289,38 @@ class RulesBuilder
         string $fieldKey,
         string $stateName = ''
     ): void {
-        $addressFields = [
-            'line1' => ['label' => 'Street Address', 'rules' => ['required', 'string', 'max:100']],
-            'line2' => ['label' => 'Address Line 2', 'rules' => ['nullable', 'string', 'max:100']],
-            'city' => ['label' => 'City', 'rules' => ['required', 'string', 'max:50']],
-            'state' => ['label' => 'State', 'rules' => ['required', 'string', 'size:2']],
-            'zip' => ['label' => 'ZIP Code', 'rules' => ['required', 'string', 'max:10']],
-        ];
-
-        foreach ($addressFields as $subKey => $subField) {
+        foreach ($this->addressSubfieldRules($field) as $subKey => $subField) {
             $rules["{$fieldKey}.{$subKey}"] = $subField['rules'];
             $attributes["{$fieldKey}.{$subKey}"] = $this->replaceStateName($subField['label'], $stateName);
         }
+    }
+
+    /**
+     * Build address sub-field rules that respect the parent field's
+     * disposition. When the parent address has `nullable` in its rules,
+     * the inner line1/city/state/zip become nullable too — so an
+     * optional address (e.g. tx_landlord_address) can be left blank
+     * without tripping required-on-line1 etc. Format constraints
+     * (digits:5 zip, size:2 state, max:N) still apply when the user
+     * actually enters something, because Laravel skips other rules
+     * when the value is null AND `nullable` is present.
+     *
+     * @return array<string, array{label: string, rules: array<int, string>}>
+     */
+    private function addressSubfieldRules(array $field): array
+    {
+        $parentRules = $field['rules'] ?? [];
+        $parentIsNullable = in_array('nullable', $parentRules, true)
+            && ! in_array('required', $parentRules, true);
+        $requiredOrNullable = $parentIsNullable ? 'nullable' : 'required';
+
+        return [
+            'line1' => ['label' => 'Street Address', 'rules' => [$requiredOrNullable, 'string', 'max:100']],
+            'line2' => ['label' => 'Address Line 2', 'rules' => ['nullable', 'string', 'max:100']],
+            'city' => ['label' => 'City', 'rules' => [$requiredOrNullable, 'string', 'max:50']],
+            'state' => ['label' => 'State', 'rules' => [$requiredOrNullable, 'string', 'size:2']],
+            'zip' => ['label' => 'ZIP Code', 'rules' => [$requiredOrNullable, 'digits:5']],
+        ];
     }
 
     private function buildPersonExtrasRulesLivewire(
@@ -227,12 +338,15 @@ class RulesBuilder
                 continue;
             }
 
+            $personLabel = trim(($person['first_name'] ?? '').' '.($person['last_name'] ?? ''));
+            $personLabel = $personLabel !== '' ? $personLabel : 'Person';
+
             foreach ($field['schema'] ?? [] as $subKey => $subField) {
                 $subRules = $subField['rules'] ?? [];
                 if (! empty($subRules)) {
                     $path = "stateData.responsible_people_extra.{$personId}.{$subKey}";
                     $rules[$path] = $subRules;
-                    $attributes[$path] = ($person['full_name'] ?? 'Person').' - '.($subField['label'] ?? $subKey);
+                    $attributes[$path] = $personLabel.' - '.($subField['label'] ?? $subKey);
                 }
             }
         }

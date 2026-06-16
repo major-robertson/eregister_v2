@@ -2,6 +2,7 @@
 
 use App\Domains\Admin\Livewire\StatsBoard;
 use App\Domains\Business\Models\Business;
+use App\Domains\Forms\Models\FormApplication;
 use App\Domains\Lien\Models\LienFiling;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
@@ -143,6 +144,69 @@ describe('displaying lien filing stats', function () {
 
         Livewire::test(StatsBoard::class)
             ->assertSee('Lien Filings Paid');
+    });
+});
+
+describe('displaying sales tax stats', function () {
+    it('displays the sales tax registrations paid section', function () {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $this->actingAs($admin);
+
+        Livewire::test(StatsBoard::class)
+            ->assertSee('Sales Tax Registrations Paid');
+    });
+
+    it('counts paid sales tax registrations and excludes other form types', function () {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $business = Business::factory()->create();
+
+        FormApplication::create([
+            'business_id' => $business->id,
+            'form_type' => 'sales_tax_permit',
+            'definition_version' => 1,
+            'selected_states' => ['CA'],
+            'status' => 'submitted',
+            'current_phase' => 'review',
+            'core_data' => [],
+            'created_by_user_id' => $admin->id,
+            'paid_at' => now(),
+        ]);
+
+        // An unpaid sales tax application and a paid LLC application must
+        // not be counted.
+        FormApplication::create([
+            'business_id' => $business->id,
+            'form_type' => 'sales_tax_permit',
+            'definition_version' => 1,
+            'selected_states' => ['TX'],
+            'status' => 'draft',
+            'current_phase' => 'core',
+            'core_data' => [],
+            'created_by_user_id' => $admin->id,
+        ]);
+
+        FormApplication::create([
+            'business_id' => $business->id,
+            'form_type' => 'llc',
+            'definition_version' => 1,
+            'selected_states' => ['DE'],
+            'status' => 'submitted',
+            'current_phase' => 'review',
+            'core_data' => [],
+            'created_by_user_id' => $admin->id,
+            'paid_at' => now(),
+        ]);
+
+        $this->actingAs($admin);
+
+        $stats = Livewire::test(StatsBoard::class)->viewData('salesTaxStats');
+
+        expect($stats['this_month'])->toBe(1)
+            ->and($stats['today'])->toBe(1);
     });
 });
 

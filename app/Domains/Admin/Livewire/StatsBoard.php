@@ -3,6 +3,7 @@
 namespace App\Domains\Admin\Livewire;
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Forms\Models\SalesTaxRegistration;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Models\LienFiling;
 use App\Enums\PaymentStatus;
@@ -25,6 +26,7 @@ class StatsBoard extends Component
             'paymentStats' => $this->getPaymentStats(),
             'subscriptionStats' => $this->getSubscriptionStats(),
             'lienFilingStats' => $this->getLienFilingStats(),
+            'salesTaxStats' => $this->getSalesTaxStats(),
             'recentSignups' => $this->getRecentSignups(),
             'recentPayments' => $this->getRecentPayments(),
             'recentSubscriptions' => $this->getRecentSubscriptions(),
@@ -140,6 +142,25 @@ class StatsBoard extends Component
             'this_week' => LienFiling::whereIn('status', $paidStatuses)
                 ->whereBetween('paid_at', $this->getEstDateRange('this_week'))->count(),
             'this_month' => LienFiling::whereIn('status', $paidStatuses)
+                ->whereBetween('paid_at', $this->getEstDateRange('this_month'))->count(),
+        ];
+    }
+
+    /**
+     * Get paid sales tax registration counts for different time periods (EST).
+     *
+     * @return array{today: int, yesterday: int, this_week: int, this_month: int}
+     */
+    protected function getSalesTaxStats(): array
+    {
+        return [
+            'today' => SalesTaxRegistration::whereNotNull('paid_at')
+                ->whereBetween('paid_at', $this->getEstDateRange('today'))->count(),
+            'yesterday' => SalesTaxRegistration::whereNotNull('paid_at')
+                ->whereBetween('paid_at', $this->getEstDateRange('yesterday'))->count(),
+            'this_week' => SalesTaxRegistration::whereNotNull('paid_at')
+                ->whereBetween('paid_at', $this->getEstDateRange('this_week'))->count(),
+            'this_month' => SalesTaxRegistration::whereNotNull('paid_at')
                 ->whereBetween('paid_at', $this->getEstDateRange('this_month'))->count(),
         ];
     }

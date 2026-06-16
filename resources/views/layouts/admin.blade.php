@@ -42,6 +42,10 @@
                     :current="request()->routeIs('admin.marketing')" wire:navigate>
                     {{ __('Marketing') }}
                 </flux:sidebar.item>
+                <flux:sidebar.item icon="receipt-percent" :href="route('admin.sales-tax-stats')"
+                    :current="request()->routeIs('admin.sales-tax-stats')" wire:navigate>
+                    {{ __('Sales Tax Stats') }}
+                </flux:sidebar.item>
                 <flux:sidebar.item icon="user-group" :href="route('admin.users.index')"
                     :current="request()->routeIs('admin.users.*')" wire:navigate>
                     {{ __('Users') }}

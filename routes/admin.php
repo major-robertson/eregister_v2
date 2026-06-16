@@ -5,6 +5,7 @@ use App\Domains\Admin\Livewire\BusinessOverview;
 use App\Domains\Admin\Livewire\LienStats;
 use App\Domains\Admin\Livewire\MarketingStats;
 use App\Domains\Admin\Livewire\RolesBoard;
+use App\Domains\Admin\Livewire\SalesTaxStats;
 use App\Domains\Admin\Livewire\StatsBoard;
 use App\Domains\Admin\Livewire\UserOverview;
 use App\Domains\Admin\Livewire\UsersList;
@@ -91,5 +92,10 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     // Lien stats - admin role only
     Route::get('/lien-stats', LienStats::class)
         ->name('admin.lien-stats')
+        ->middleware('role:admin');
+
+    // Sales tax stats - admin role only
+    Route::get('/sales-tax-stats', SalesTaxStats::class)
+        ->name('admin.sales-tax-stats')
         ->middleware('role:admin');
 });

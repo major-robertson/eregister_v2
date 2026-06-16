@@ -87,7 +87,11 @@ class MultiStateFormRunner extends Component
             return;
         }
 
-        Gate::authorize('update', $application);
+        // Use the 'view' ability (business membership) rather than 'update'
+        // so a locked/paid application doesn't 403 here before the lock
+        // redirect below can run. Editing is still gated: locked apps are
+        // redirected away immediately.
+        Gate::authorize('view', $application);
 
         // Workspace alignment is enforced by the application.access
         // middleware (EnsureHasAccess), which fires before this mount
@@ -96,6 +100,18 @@ class MultiStateFormRunner extends Component
         // bypasses the middleware by design, so no in-mount guard here.
 
         if ($application->isLocked()) {
+            // Paid/submitted applications are read-only. Send them to the
+            // workspace's confirmation/receipt page when available, else the
+            // dashboard.
+            $workspace = app(WorkspaceRegistry::class)->findByFormType($application->form_type);
+            $confirmationUrl = $workspace?->confirmationRouteFor($application);
+
+            if ($confirmationUrl) {
+                $this->redirect($confirmationUrl);
+
+                return;
+            }
+
             session()->flash('error', 'This application has been submitted and cannot be edited.');
 
             $this->redirect(route('dashboard'));
@@ -508,7 +524,17 @@ class MultiStateFormRunner extends Component
 
             $this->redirect(route('dashboard'));
         } else {
-            $this->redirect(route('portal.checkout', $this->application));
+            // Prefer the owning workspace's dedicated checkout route (e.g.
+            // Sales Tax's PaymentIntent flow); fall back to the generic
+            // Cashier checkout for workspaces that don't define one.
+            $workspace = app(WorkspaceRegistry::class)->findByFormType($this->application->form_type);
+            $checkoutRoute = $workspace?->checkoutRouteName;
+
+            $this->redirect(
+                $checkoutRoute
+                    ? route($checkoutRoute, $this->application)
+                    : route('portal.checkout', $this->application)
+            );
         }
     }
 

@@ -102,6 +102,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Sales Tax domain components
         Livewire::component('sales-tax.dashboard', \App\Domains\SalesTax\Livewire\Dashboard::class);
+        Livewire::component('sales-tax.registration-checkout', \App\Domains\SalesTax\Livewire\RegistrationCheckout::class);
 
         // Forms admin components (sales tax kanban + detail)
         Livewire::component('forms.admin.sales-tax-board', \App\Domains\Forms\Admin\Livewire\SalesTaxBoard::class);

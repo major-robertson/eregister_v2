@@ -29,6 +29,8 @@ final readonly class Workspace
         public string $dataResolver,
         public array $nav,
         public string $navHeading,
+        public ?string $checkoutRouteName = null,
+        public ?string $confirmationRouteName = null,
     ) {}
 
     /**
@@ -54,6 +56,8 @@ final readonly class Workspace
             dataResolver: $entry['data_resolver'],
             nav: $entry['nav'] ?? [],
             navHeading: $entry['nav_heading'] ?? $entry['name'],
+            checkoutRouteName: $entry['checkout_route_name'] ?? null,
+            confirmationRouteName: $entry['confirmation_route_name'] ?? null,
         );
     }
 
@@ -134,5 +138,20 @@ final readonly class Workspace
         }
 
         return route($this->applicationRouteName, ['application' => $app, ...$extraParams]);
+    }
+
+    /**
+     * Build the post-payment confirmation/receipt URL for the given
+     * application (a read-only "view" for paid/locked applications).
+     * Returns null when the workspace doesn't claim the form type or has
+     * no confirmation route configured.
+     */
+    public function confirmationRouteFor(FormApplication $app): ?string
+    {
+        if (! $this->claimsFormType($app->form_type) || ! $this->confirmationRouteName) {
+            return null;
+        }
+
+        return route($this->confirmationRouteName, ['application' => $app]);
     }
 }

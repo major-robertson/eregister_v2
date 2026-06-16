@@ -3,11 +3,14 @@
 namespace App\Domains\Forms\Models;
 
 use App\Domains\Business\Models\Business;
+use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class FormApplication extends Model
 {
@@ -65,6 +68,20 @@ class FormApplication extends Model
         // `sales_tax_registration_id` / `llc_formation_id` from the calling
         // class name.
         return $this->hasMany(FormApplicationState::class, 'form_application_id');
+    }
+
+    /**
+     * Latest payment for this application (e.g. the sales-tax registration
+     * checkout payment). Polymorphic via the shared `payments` table.
+     */
+    public function payment(): MorphOne
+    {
+        return $this->morphOne(Payment::class, 'purchasable')->latestOfMany();
+    }
+
+    public function payments(): MorphMany
+    {
+        return $this->morphMany(Payment::class, 'purchasable');
     }
 
     public function stateRecord(string $stateCode): ?FormApplicationState
@@ -174,6 +191,14 @@ class FormApplication extends Model
     {
         $workspace = app(\App\Support\Workspaces\WorkspaceRegistry::class)
             ->findByFormType($this->form_type);
+
+        // A locked (paid/submitted) application can't re-enter the editable
+        // wizard, so "View" points at the read-only confirmation/receipt
+        // page when the workspace provides one; otherwise fall back to the
+        // form-runner detail route.
+        if ($this->isLocked() && $workspace?->confirmationRouteName) {
+            return $workspace->confirmationRouteFor($this);
+        }
 
         return $workspace?->applicationRouteFor($this);
     }

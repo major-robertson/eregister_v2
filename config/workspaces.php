@@ -90,6 +90,8 @@ return [
         'start_route_name' => 'sales-tax.registrations.start',
         'application_route_name' => 'sales-tax.registrations.show',
         'start_route_param' => null, // form_type baked in via Route::defaults()
+        'checkout_route_name' => 'sales-tax.registrations.checkout',
+        'confirmation_route_name' => 'sales-tax.registrations.payment-confirmation',
         'data_resolver' => SalesTaxWorkspaceData::class,
         'nav' => [
             [

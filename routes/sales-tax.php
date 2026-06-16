@@ -2,7 +2,9 @@
 
 use App\Domains\Forms\Livewire\MultiStateFormRunner;
 use App\Domains\Forms\Livewire\StateSelector;
+use App\Domains\SalesTax\Http\Controllers\RegistrationPaymentController;
 use App\Domains\SalesTax\Livewire\Dashboard;
+use App\Domains\SalesTax\Livewire\RegistrationCheckout;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -37,4 +39,17 @@ Route::middleware(['auth', 'business.current', 'business.complete'])
         Route::get('/registrations/{application}', MultiStateFormRunner::class)
             ->middleware('application.access')
             ->name('sales-tax.registrations.show');
+
+        // Registration checkout ($199 x selected states). PaymentIntent +
+        // embedded Payment Element; payment auto-submits + locks the app.
+        Route::get('/registrations/{application}/checkout', RegistrationCheckout::class)
+            ->name('sales-tax.registrations.checkout');
+
+        Route::get('/registrations/{application}/payment-confirmation', [RegistrationPaymentController::class, 'confirmation'])
+            ->name('sales-tax.registrations.payment-confirmation');
     });
+
+// API route for payment status polling (processing page).
+Route::middleware(['auth:sanctum'])
+    ->get('/api/sales-tax/registrations/{application}/payment-status', [RegistrationPaymentController::class, 'status'])
+    ->name('sales-tax.api.registrations.payment-status');

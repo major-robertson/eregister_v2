@@ -5,7 +5,7 @@
     </div>
 
     <!-- Summary Cards -->
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
         <!-- Signups Card -->
         <div class="rounded-lg border border-border bg-white p-6">
             <div class="flex items-center gap-3 mb-4">
@@ -114,6 +114,34 @@
                 <div>
                     <flux:text class="text-sm text-gray-500">This Month</flux:text>
                     <flux:text class="text-2xl font-semibold">{{ $lienFilingStats['this_month'] }}</flux:text>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sales Tax Registrations Card -->
+        <div class="rounded-lg border border-border bg-white p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="flex size-10 items-center justify-center rounded-lg bg-teal-100">
+                    <flux:icon name="receipt-percent" class="size-5 text-teal-600" />
+                </div>
+                <flux:heading size="sm">Sales Tax Registrations Paid</flux:heading>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <flux:text class="text-sm text-gray-500">Today</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $salesTaxStats['today'] }}</flux:text>
+                </div>
+                <div>
+                    <flux:text class="text-sm text-gray-500">Yesterday</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $salesTaxStats['yesterday'] }}</flux:text>
+                </div>
+                <div>
+                    <flux:text class="text-sm text-gray-500">This Week</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $salesTaxStats['this_week'] }}</flux:text>
+                </div>
+                <div>
+                    <flux:text class="text-sm text-gray-500">This Month</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $salesTaxStats['this_month'] }}</flux:text>
                 </div>
             </div>
         </div>

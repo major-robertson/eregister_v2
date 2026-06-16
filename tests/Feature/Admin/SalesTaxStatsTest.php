@@ -179,3 +179,68 @@ describe('recent registrations', function () {
             ->assertDontSee('LLC Only Co');
     });
 });
+
+describe('wizard progress', function () {
+    it('reports partial step progress for a draft registration', function () {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $business = Business::factory()->create(['name' => 'Draft Co']);
+
+        // current_step_key 'activity' is the 3rd core step (index 2), so two
+        // steps are considered done regardless of the total step count.
+        FormApplication::create([
+            'business_id' => $business->id,
+            'form_type' => 'sales_tax_permit',
+            'definition_version' => 1,
+            'selected_states' => ['NY'],
+            'status' => 'draft',
+            'current_phase' => 'core',
+            'current_step_key' => 'activity',
+            'current_state_index' => 0,
+            'core_data' => [],
+            'created_by_user_id' => $admin->id,
+        ]);
+
+        $this->actingAs($admin);
+
+        $registrations = Livewire::test(SalesTaxStats::class)
+            ->assertSee('Core')
+            ->viewData('recentRegistrations');
+
+        $progress = $registrations->first()['progress'];
+
+        expect($progress['done'])->toBe(2)
+            ->and($progress['done'])->toBeLessThan($progress['total']);
+    });
+
+    it('reports full step progress for a submitted registration', function () {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $business = Business::factory()->create(['name' => 'Done Co']);
+
+        FormApplication::create([
+            'business_id' => $business->id,
+            'form_type' => 'sales_tax_permit',
+            'definition_version' => 1,
+            'selected_states' => ['NY'],
+            'status' => 'submitted',
+            'current_phase' => 'review',
+            'core_data' => [],
+            'created_by_user_id' => $admin->id,
+            'paid_at' => now(),
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($admin);
+
+        $registrations = Livewire::test(SalesTaxStats::class)
+            ->viewData('recentRegistrations');
+
+        $progress = $registrations->first()['progress'];
+
+        expect($progress['done'])->toBe($progress['total'])
+            ->and($progress['total'])->toBeGreaterThan(0);
+    });
+});

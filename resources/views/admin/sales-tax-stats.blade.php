@@ -106,6 +106,7 @@
                         <th class="px-4 py-3 font-medium text-gray-700">States</th>
                         <th class="px-4 py-3 font-medium text-gray-700">Amount</th>
                         <th class="px-4 py-3 font-medium text-gray-700">Status</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">Progress</th>
                         <th class="px-4 py-3 font-medium text-gray-700">Date (EST)</th>
                     </tr>
                 </thead>
@@ -128,13 +129,29 @@
                                     {{ $registration['status'] }}
                                 </flux:badge>
                             </td>
+                            <td class="px-4 py-3">
+                                @php
+                                    $done = $registration['progress']['done'];
+                                    $total = $registration['progress']['total'];
+                                    $percent = $total > 0 ? round($done / $total * 100) : 0;
+                                @endphp
+                                <div class="flex items-center gap-1">
+                                    <flux:text class="text-sm font-medium">{{ $done }}/{{ $total }} steps</flux:text>
+                                    @if ($registration['phase'])
+                                        <flux:badge size="sm" color="zinc">{{ ucfirst($registration['phase']) }}</flux:badge>
+                                    @endif
+                                </div>
+                                <div class="mt-1 h-1.5 w-32 overflow-hidden rounded-full bg-gray-200">
+                                    <div class="h-full rounded-full bg-blue-500" style="width: {{ $percent }}%"></div>
+                                </div>
+                            </td>
                             <td class="px-4 py-3 text-gray-600">
                                 {{ ($registration['paid_at'] ?? $registration['created_at'])?->setTimezone('America/New_York')->format('M j, Y g:i A') }}
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-4 py-8 text-center text-gray-400">
+                            <td colspan="8" class="px-4 py-8 text-center text-gray-400">
                                 No registrations yet.
                             </td>
                         </tr>

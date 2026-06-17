@@ -74,12 +74,12 @@ class LienFilingEvent extends Model
     public function statusIcon(): string
     {
         if ($this->event_type !== 'status_changed') {
-            return 'info';
+            return 'information-circle';
         }
 
         $toStatus = FilingStatus::tryFrom($this->payload_json['to'] ?? '');
 
-        return $toStatus?->icon() ?? 'info';
+        return $toStatus?->icon() ?? 'information-circle';
     }
 
     private function statusChangeDescription(): string

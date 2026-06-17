@@ -159,7 +159,7 @@ describe('EnsureHasAccess Middleware', function () {
             ->assertOk();
     });
 
-    it('redirects to checkout when subscription application has no active subscription', function () {
+    it('allows access to subscription draft even without an active subscription', function () {
         $user = User::factory()->create();
         $business = Business::create([
             'name' => 'Test Business',
@@ -188,7 +188,7 @@ describe('EnsureHasAccess Middleware', function () {
         $this->actingAs($user)
             ->withSession(['current_business_id' => $business->id])
             ->get("/portal/formations/applications/{$application->id}")
-            ->assertRedirect(route('portal.checkout', $application));
+            ->assertOk();
     });
 
     it('denies access when application belongs to different business', function () {

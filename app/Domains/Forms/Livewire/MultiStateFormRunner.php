@@ -513,7 +513,7 @@ class MultiStateFormRunner extends Component
         // Run cross-field validators
         $this->runCrossFieldValidators();
 
-        if ($this->application->isPaid()) {
+        if ($this->hasSatisfiedBilling()) {
             $this->application->update([
                 'status' => 'submitted',
                 'submitted_at' => now(),
@@ -543,6 +543,31 @@ class MultiStateFormRunner extends Component
         if ($this->application->isLocked()) {
             throw new \RuntimeException('Application is locked and cannot be modified.');
         }
+    }
+
+    /**
+     * Whether payment has already been collected for this application.
+     * One-time forms are satisfied by `paid_at`. Subscription forms (e.g.
+     * LLC Formation) are satisfied when the business already holds an
+     * active subscription, so a returning subscriber isn't bounced back
+     * to checkout. When neither is true, `submit()` routes the user to
+     * checkout — i.e. payment happens at the END of the wizard.
+     */
+    protected function hasSatisfiedBilling(): bool
+    {
+        if ($this->application->isPaid()) {
+            return true;
+        }
+
+        $config = \App\Domains\Forms\FormTypeConfig::get($this->application->form_type);
+
+        if (($config['billing_type'] ?? null) === 'subscription') {
+            $subscriptionName = $config['subscription_name'] ?? null;
+
+            return $subscriptionName !== null && $this->business->subscribed($subscriptionName);
+        }
+
+        return false;
     }
 
     /**

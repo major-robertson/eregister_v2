@@ -7,12 +7,19 @@
 @endsection
 
 @section('content')
+@php
+    $heroKeyword = \App\Support\PageIntent::keyword([
+        'sales-tax-registration' => 'Registration',
+        'sales-tax-permit' => 'Permit',
+        'sales-tax-id' => 'ID',
+    ], 'sales-tax-registration');
+@endphp
 {{-- Hero Section --}}
 <section class="relative bg-white pb-20 pt-16 lg:pb-28 lg:pt-24">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-3xl text-center">
             <h1 class="text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl xl:text-6xl">
-                Sales & Use Tax <span class="text-blue-600">Registration</span>
+                Sales & Use Tax <span class="text-blue-600">{{ $heroKeyword }}</span>
             </h1>
             <p class="mt-6 text-xl leading-relaxed text-zinc-600">
                 Stay compliant across every state. We handle sales tax permits, nexus analysis, and multi-state registration—so you can focus on growing your business instead of navigating state tax requirements.

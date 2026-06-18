@@ -18,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('web')->group(base_path('routes/formations.php'));
             Route::middleware('web')->group(base_path('routes/admin.php'));
 
+            // MDCPS demo sandbox (isolated, front-end-only proof-of-concept)
+            Route::middleware('web')->group(base_path('routes/mdcps_demo.php'));
+
             // API routes (no session, no CSRF)
             Route::prefix('api')->group(base_path('routes/api.php'));
         },

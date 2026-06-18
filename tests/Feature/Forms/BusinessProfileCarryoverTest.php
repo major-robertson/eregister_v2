@@ -77,6 +77,39 @@ describe('business profile carryover hygiene', function () {
             ->and($component->get('coreData.mailing_address'))->toBeNull();
     });
 
+    it('prefills the LLC principal address from the onboarding business address', function () {
+        $application = RunnerTestFactory::make()
+            ->formType('llc')
+            ->forStates(['DE'])
+            ->boot();
+
+        $application->business->update(['business_address' => [
+            'line1' => '100 Market St', 'city' => 'Dover', 'state' => 'DE', 'zip' => '19901',
+        ]]);
+        $application->update(['core_data' => null]);
+
+        $component = Livewire::test(MultiStateFormRunner::class, ['application' => $application->fresh()]);
+
+        expect($component->get('coreData.principal_address.line1'))->toBe('100 Market St')
+            ->and($component->get('coreData.principal_address.city'))->toBe('Dover')
+            ->and($component->get('coreData.principal_address.state'))->toBe('DE')
+            ->and($component->get('coreData.principal_address.zip'))->toBe('19901');
+    });
+
+    it('prefills the LLC name from the business name captured at account setup', function () {
+        $application = RunnerTestFactory::make()
+            ->formType('llc')
+            ->forStates(['DE'])
+            ->withLegalName('Account Setup Ventures LLC')
+            ->boot();
+
+        $application->update(['core_data' => null]);
+
+        $component = Livewire::test(MultiStateFormRunner::class, ['application' => $application->fresh()]);
+
+        expect($component->get('coreData.llc_name'))->toBe('Account Setup Ventures LLC');
+    });
+
     it('still prefills a real mailing address from the profile', function () {
         $application = RunnerTestFactory::make()->boot();
         $application->business->update(['mailing_address' => [

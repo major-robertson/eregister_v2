@@ -28,7 +28,12 @@ trait WithFormPrefill
         // Pre-fill basic business info (fallback to name if legal_name not set)
         $legalName = $business->legal_name ?? $business->name;
         if ($legalName) {
+            // Sales Tax keys the entity name as `legal_name`; LLC Formation
+            // keys the same name as `llc_name`. Seed both from the business
+            // name captured during account setup so each form's name field
+            // pre-populates regardless of which key it uses.
             $this->coreData['legal_name'] = $legalName;
+            $this->coreData['llc_name'] = $legalName;
         }
         if ($business->dba_name) {
             $this->coreData['dba_name'] = $business->dba_name;
@@ -44,7 +49,13 @@ trait WithFormPrefill
             $this->coreData['fein'] = $business->fein;
         }
         if ($business->business_address && ! $this->isEffectivelyEmpty($business->business_address)) {
+            // Sales Tax keys this as `business_address`; LLC Formation keys
+            // the same physical address as `principal_address`. Seed both so
+            // each form's address step pre-populates from the onboarding
+            // address regardless of which key it uses. Unused keys are
+            // harmlessly ignored by the other form's definition.
             $this->coreData['business_address'] = $business->business_address;
+            $this->coreData['principal_address'] = $business->business_address;
         }
         // Seed business_email from the signed-in user's email so the
         // contact step has a sensible default. The user can edit it

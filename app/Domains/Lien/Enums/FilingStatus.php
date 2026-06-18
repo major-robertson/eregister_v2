@@ -76,7 +76,7 @@ enum FilingStatus: string
             self::Paid => 'check',
             self::AwaitingClient => 'user',
             self::AwaitingEsign => 'pencil-square',
-            self::AwaitingNotary => 'stamp',
+            self::AwaitingNotary => 'clipboard-document-check',
             self::NeedsReview => 'eye',
             self::ReadyToFile => 'paper-airplane',
             self::WaitingOnNextStep => 'queue-list',

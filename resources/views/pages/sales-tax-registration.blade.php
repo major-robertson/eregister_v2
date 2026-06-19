@@ -3,206 +3,401 @@
 @section('title', 'Sales & Use Tax Registration | Register for Sales Tax in Any State')
 
 @section('meta')
-<meta name="description" content="Register for sales and use tax permits in all 50 states. Our sales tax registration service handles state tax permits, nexus analysis, and compliance so you can focus on your business.">
+<meta name="description" content="Register for sales and use tax in any state. We prepare and file your registration with the state so you get your permit fast — no government runaround.">
+
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=space-grotesk:500,600,700" rel="stylesheet" />
+
+<style>
+    .sales-tax-page {
+        /* Brand accent → drives Flux variant="primary" buttons + accent text on this page only */
+        --color-accent: #0E9F6E;
+        --color-accent-content: #0B7A55;
+        --color-accent-foreground: #ffffff;
+
+        --ink: #0C1A2B;
+        --paper: #FBFAF7;
+        --stamp: #D6452B;
+
+        background: var(--paper);
+    }
+    .sales-tax-page .font-display { font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; }
+
+    /* Signature: official permit stamp */
+    .sales-tax-page .stamp {
+        color: var(--stamp);
+        border: 3px solid var(--stamp);
+        letter-spacing: .12em;
+        border-radius: .5rem;
+        box-shadow: 0 0 0 1px rgba(214,69,43,.15);
+        mix-blend-mode: multiply;
+    }
+
+    @keyframes salesTaxRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes salesTaxSettle { from { opacity: 0; transform: rotate(-2deg) scale(1.15); } to { opacity: 1; transform: rotate(-9deg) scale(1); } }
+    .sales-tax-page .rise { animation: salesTaxRise .6s cubic-bezier(.2,.7,.2,1) both; }
+    .sales-tax-page .rise-2 { animation: salesTaxRise .6s cubic-bezier(.2,.7,.2,1) .08s both; }
+    .sales-tax-page .rise-3 { animation: salesTaxRise .6s cubic-bezier(.2,.7,.2,1) .16s both; }
+    .sales-tax-page .stamp-in { animation: salesTaxSettle .7s cubic-bezier(.2,.8,.2,1) .35s both; }
+
+    @media (prefers-reduced-motion: reduce) {
+        .sales-tax-page .rise,
+        .sales-tax-page .rise-2,
+        .sales-tax-page .rise-3,
+        .sales-tax-page .stamp-in { animation: none; }
+    }
+</style>
 @endsection
 
 @section('content')
-{{-- Hero Section --}}
-<section class="relative bg-white pb-20 pt-16 lg:pb-28 lg:pt-24">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="mx-auto max-w-3xl text-center">
-            <h1 class="text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl xl:text-6xl">
-                Sales & Use Tax <span class="text-blue-600">Registration</span>
-            </h1>
-            <p class="mt-6 text-xl leading-relaxed text-zinc-600">
-                Stay compliant across every state. We handle sales tax permits, nexus analysis, and multi-state registration—so you can focus on growing your business instead of navigating state tax requirements.
+@php
+    // Google Ads ad-group keyword variants via ?intent= (whitelisted, default = registration).
+    // Hero headline form (Title Case, used as the green accent in the H1).
+    $heroKeyword = \App\Support\PageIntent::keyword([
+        'sales-tax-registration' => 'Sales Tax',
+        'sales-tax-permit' => 'Sales Tax Permit',
+        'sales-tax-id' => 'Sales Tax ID',
+    ], 'sales-tax-registration');
+
+    // Mid-sentence noun form (lower case, used in body copy / step headings).
+    $documentNoun = \App\Support\PageIntent::keyword([
+        'sales-tax-registration' => 'sales tax registration',
+        'sales-tax-permit' => 'sales tax permit',
+        'sales-tax-id' => 'sales tax ID',
+    ], 'sales-tax-registration');
+
+    // Document suffix (Title Case) used on the permit card heading: "Sales & Use Tax {suffix}".
+    $documentSuffix = \App\Support\PageIntent::keyword([
+        'sales-tax-registration' => 'Registration',
+        'sales-tax-permit' => 'Permit',
+        'sales-tax-id' => 'ID',
+    ], 'sales-tax-registration');
+
+    // Single source of truth for the CTA target — signup flow drives the sales-tax onboarding redirect.
+    $startUrl = route('register');
+    $price = '$199'; // flat fee placeholder — confirm real price
+@endphp
+
+<div class="sales-tax-page text-slate-700">
+
+    {{-- ───────────────────────── HERO ───────────────────────── --}}
+    <section class="relative overflow-hidden" style="background: var(--ink);">
+        {{-- subtle grid backdrop --}}
+        <div class="pointer-events-none absolute inset-0 opacity-[0.06]"
+             style="background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);background-size:48px 48px;"></div>
+        <div class="pointer-events-none absolute -right-40 -top-40 h-[36rem] w-[36rem] rounded-full"
+             style="background: radial-gradient(closest-side, rgba(14,159,110,.22), transparent);"></div>
+
+        <div class="relative mx-auto grid max-w-6xl items-center gap-16 px-6 pb-24 pt-20 sm:pt-24 lg:grid-cols-[1.05fr_.95fr] lg:pb-28 lg:pt-28">
+
+            {{-- copy --}}
+            <div>
+                <div class="rise mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/80 ring-1 ring-white/15">
+                    <flux:icon name="shield-check" variant="micro" class="size-3.5" style="color: var(--color-accent)" />
+                    Prepared &amp; filed by compliance specialists
+                </div>
+
+                <h1 class="rise font-display text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
+                    Register for<br>
+                    <span data-hero-keyword style="color: var(--color-accent)">{{ $heroKeyword }}</span>
+                </h1>
+
+                <p class="rise-2 mt-6 max-w-md text-lg leading-relaxed text-white/70">
+                    Answer a few questions about your business. We prepare your state
+                    registration, file it for you, and send back your permit and account
+                    number.
+                </p>
+
+                <div class="rise-3 mt-9">
+                    <flux:button href="{{ $startUrl }}" variant="primary"
+                                 icon:trailing="arrow-right"
+                                 class="w-full !h-14 !text-base font-semibold shadow-lg shadow-emerald-900/30">
+                        Start my registration
+                    </flux:button>
+                </div>
+
+                {{-- trust row --}}
+                <div class="rise-3 mt-12 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm text-white/60">
+                    <span class="flex items-center gap-2">
+                        <flux:icon name="check-circle" variant="mini" class="size-4" style="color: var(--color-accent)" />
+                        All applicable states
+                    </span>
+                    <span class="flex items-center gap-2">
+                        <flux:icon name="check-circle" variant="mini" class="size-4" style="color: var(--color-accent)" />
+                        Multi-state in one go
+                    </span>
+                    <span class="flex items-center gap-2">
+                        <flux:icon name="check-circle" variant="mini" class="size-4" style="color: var(--color-accent)" />
+                        Document review included
+                    </span>
+                </div>
+            </div>
+
+            {{-- signature: the outcome they're buying — an issued permit --}}
+            <div class="rise-2 relative mx-auto w-full max-w-sm">
+                <div class="relative rounded-2xl bg-[var(--paper)] p-7 shadow-2xl ring-1 ring-black/5">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+                        <div class="font-display text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                            Department of Revenue
+                        </div>
+                        <flux:icon name="building-office-2" variant="mini" class="size-5 text-slate-300" />
+                    </div>
+
+                    <h3 class="font-display mt-5 text-lg font-bold leading-tight text-[var(--ink)]">
+                        Sales &amp; Use Tax {{ $documentSuffix }}
+                    </h3>
+
+                    <dl class="mt-5 space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <dt class="text-slate-400">Business</dt>
+                            <dd class="font-medium text-slate-700">Acme Contracting LLC</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-slate-400">Permit no.</dt>
+                            <dd class="font-mono font-medium text-slate-700">ST-0042-117835</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-slate-400">Effective</dt>
+                            <dd class="font-medium text-slate-700">Today</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-slate-400">Status</dt>
+                            <dd class="font-semibold" style="color: var(--color-accent)">Active</dd>
+                        </div>
+                    </dl>
+
+                    {{-- the stamp --}}
+                    <div class="stamp stamp-in absolute -right-4 bottom-6 rotate-[-9deg] px-4 py-2 font-display text-lg font-bold uppercase">
+                        Registered
+                    </div>
+                </div>
+
+                {{-- floating reassurance chip --}}
+                <div class="absolute -left-5 -top-5 hidden items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-medium text-slate-600 shadow-lg ring-1 ring-black/5 sm:flex">
+                    <flux:icon name="bolt" variant="mini" class="size-4" style="color: var(--stamp)" />
+                    Filed for you
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- ───────────────────────── TRUST BAR ───────────────────────── --}}
+    <section class="border-b border-slate-200 bg-white">
+        <div class="mx-auto grid max-w-6xl grid-cols-3 divide-x divide-slate-100 px-6 py-8 text-center">
+            @foreach ([
+                ['number' => 'All', 'label' => 'Applicable states'],
+                ['number' => '10 min', 'label' => 'Average to apply'],
+                ['number' => '100%', 'label' => 'Filings reviewed'],
+            ] as $stat)
+                <div class="px-3">
+                    <div class="font-display text-2xl font-bold text-[var(--ink)] sm:text-3xl">{{ $stat['number'] }}</div>
+                    <div class="mt-1 text-xs font-medium uppercase tracking-wide text-slate-400">{{ $stat['label'] }}</div>
+                </div>
+            @endforeach
+        </div>
+    </section>
+
+    {{-- ───────────────────────── HOW IT WORKS ───────────────────────── --}}
+    <section id="how" class="mx-auto max-w-6xl px-6 py-24">
+        <div class="max-w-2xl">
+            <div class="font-display text-sm font-semibold uppercase tracking-[0.16em]" style="color: var(--color-accent)">How it works</div>
+            <h2 class="font-display mt-3 text-3xl font-bold tracking-tight text-[var(--ink)] sm:text-4xl">
+                Three steps to a valid {{ $documentNoun }}
+            </h2>
+            <p class="mt-4 text-lg text-slate-500">
+                You do the easy part. We do the part that trips everyone up.
+            </p>
+        </div>
+
+        <div class="mt-14 grid gap-8 md:grid-cols-3">
+            @foreach ([
+                ['n' => '01', 'icon' => 'pencil-square', 'title' => 'Tell us about your business', 'body' => 'A short guided form. Entity type, where you sell, what you sell. No tax jargon, no blank state PDFs.'],
+                ['n' => '02', 'icon' => 'document-check', 'title' => 'We prepare &amp; file', 'body' => 'A specialist reviews your details, completes the state registration correctly, and submits it on your behalf.'],
+                ['n' => '03', 'icon' => 'check-badge', 'title' => 'Get your ' . $documentNoun, 'body' => 'You receive your permit and account number. Everything you need to collect and remit sales tax legally.'],
+            ] as $step)
+                <div class="group relative rounded-2xl border border-slate-200 bg-white p-7 transition hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200/60">
+                    <div class="font-display text-5xl font-bold text-slate-100 transition group-hover:text-emerald-100">{{ $step['n'] }}</div>
+                    <div class="-mt-6 mb-5 inline-flex size-11 items-center justify-center rounded-xl bg-[var(--ink)]">
+                        <flux:icon name="{{ $step['icon'] }}" variant="mini" class="size-5 text-white" />
+                    </div>
+                    <h3 class="font-display text-lg font-bold text-[var(--ink)]">{!! $step['title'] !!}</h3>
+                    <p class="mt-2 text-sm leading-relaxed text-slate-500">{{ $step['body'] }}</p>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="mt-12">
+            <flux:button href="{{ $startUrl }}" variant="primary" icon:trailing="arrow-right"
+                         class="!h-12 !px-7 font-semibold">
+                Start my registration
+            </flux:button>
+        </div>
+    </section>
+
+    {{-- ───────────────────────── WHY eREGISTER ───────────────────────── --}}
+    <section id="why" class="bg-white">
+        <div class="mx-auto max-w-6xl px-6 py-24">
+            <div class="grid gap-16 lg:grid-cols-[.9fr_1.1fr] lg:items-center">
+                <div>
+                    <div class="font-display text-sm font-semibold uppercase tracking-[0.16em]" style="color: var(--color-accent)">Why eRegister</div>
+                    <h2 class="font-display mt-3 text-3xl font-bold tracking-tight text-[var(--ink)] sm:text-4xl">
+                        Skip the state portals.<br>Skip the guesswork.
+                    </h2>
+                    <p class="mt-5 text-lg leading-relaxed text-slate-500">
+                        Every state does sales tax registration differently. Different forms,
+                        different logins, different traps. Get one wrong and you're looking at
+                        delays or penalties. We've done it thousands of times, so you don't have to learn it once.
+                    </p>
+                    <div class="mt-8 rounded-xl border-l-4 bg-slate-50 p-5" style="border-color: var(--stamp)">
+                        <div class="flex items-start gap-3">
+                            <flux:icon name="clock" variant="mini" class="mt-0.5 size-5 shrink-0" style="color: var(--stamp)" />
+                            <p class="text-sm text-slate-600">
+                                <span class="font-semibold text-[var(--ink)]">Already selling?</span>
+                                Registering late can mean back taxes and penalties. The sooner you file, the less it costs.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid gap-5 sm:grid-cols-2">
+                    @foreach ([
+                        ['icon' => 'map', 'title' => 'Any state, one process', 'body' => 'Register in a single state or many at once. Same simple flow either way.'],
+                        ['icon' => 'shield-check', 'title' => 'Reviewed before filing', 'body' => 'A specialist checks your details against state rules so it lands right the first time.'],
+                        ['icon' => 'banknotes', 'title' => 'Flat, upfront fee', 'body' => 'Know the cost before you start. No metered charges, no surprise add-ons.'],
+                        ['icon' => 'bolt', 'title' => 'Done for you', 'body' => 'No portals, no PINs to chase, no waiting on hold with a state agency.'],
+                    ] as $f)
+                        <div class="rounded-2xl border border-slate-200 p-6">
+                            <flux:icon name="{{ $f['icon'] }}" variant="outline" class="size-6" style="color: var(--color-accent)" />
+                            <h3 class="font-display mt-4 text-base font-bold text-[var(--ink)]">{{ $f['title'] }}</h3>
+                            <p class="mt-1.5 text-sm leading-relaxed text-slate-500">{{ $f['body'] }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- ───────────────────────── PRICING ───────────────────────── --}}
+    <section id="pricing" class="bg-white">
+        <div class="mx-auto max-w-3xl px-6 py-24">
+            <div class="text-center">
+                <div class="font-display text-sm font-semibold uppercase tracking-[0.16em]" style="color: var(--color-accent)">Pricing</div>
+                <h2 class="font-display mt-3 text-3xl font-bold tracking-tight text-[var(--ink)] sm:text-4xl">
+                    Simple, flat-rate pricing
+                </h2>
+                <p class="mt-3 text-slate-500">One price per state. No metered charges, no surprise add-ons.</p>
+            </div>
+
+            <div class="mx-auto mt-12 max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-[var(--paper)] shadow-xl shadow-slate-200/60">
+                <div class="border-b border-slate-200 px-8 py-10 text-center">
+                    <div class="font-display text-sm font-semibold uppercase tracking-wide text-slate-400">Per state</div>
+                    <div class="mt-3 flex items-baseline justify-center gap-1">
+                        <span class="font-display text-5xl font-bold text-[var(--ink)]">{{ $price }}</span>
+                        <span class="text-base font-medium text-slate-500">/ state</span>
+                    </div>
+                    <p class="mt-3 text-sm text-slate-500">Prepared &amp; filed by a compliance specialist.</p>
+                </div>
+                <div class="px-8 py-8">
+                    <ul class="space-y-3 text-sm text-slate-600">
+                        @foreach ([
+                            'Guided application — no state portals',
+                            'Document review before filing',
+                            'Filed with the state on your behalf',
+                            'Your permit and account number returned to you',
+                        ] as $included)
+                            <li class="flex items-start gap-3">
+                                <flux:icon name="check-circle" variant="mini" class="mt-0.5 size-5 shrink-0" style="color: var(--color-accent)" />
+                                <span>{{ $included }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                    <div class="mt-8">
+                        <flux:button href="{{ $startUrl }}" variant="primary" icon:trailing="arrow-right"
+                                     class="w-full !h-12 font-semibold">
+                            Start my registration
+                        </flux:button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {{-- ───────────────────────── FAQ ───────────────────────── --}}
+    <section id="faq" class="mx-auto max-w-3xl px-6 py-24">
+        <div class="text-center">
+            <h2 class="font-display text-3xl font-bold tracking-tight text-[var(--ink)] sm:text-4xl">Common questions</h2>
+            <p class="mt-3 text-slate-500">Everything you need to know before you start.</p>
+        </div>
+
+        <div class="mt-12">
+            <flux:accordion>
+                <flux:accordion.item>
+                    <flux:accordion.heading>What is sales &amp; use tax registration?</flux:accordion.heading>
+                    <flux:accordion.content>
+                        It's how a state authorizes your business to collect and remit sales tax.
+                        Once registered, you receive a permit and account number. Required before
+                        you legally collect tax from customers in that state.
+                    </flux:accordion.content>
+                </flux:accordion.item>
+
+                <flux:accordion.item>
+                    <flux:accordion.heading>Do I actually need to register?</flux:accordion.heading>
+                    <flux:accordion.content>
+                        If you sell taxable goods or services, or you've crossed a state's economic
+                        nexus threshold, you generally must register before collecting tax. Not sure?
+                        Start the form and we'll help you figure out where you have an obligation.
+                    </flux:accordion.content>
+                </flux:accordion.item>
+
+                <flux:accordion.item>
+                    <flux:accordion.heading>How long does it take?</flux:accordion.heading>
+                    <flux:accordion.content>
+                        The application takes about ten minutes. Filing and state processing times
+                        vary. Many states issue an account number quickly, while others take a few
+                        business days. We keep you posted at each step.
+                    </flux:accordion.content>
+                </flux:accordion.item>
+
+                <flux:accordion.item>
+                    <flux:accordion.heading>Can you register me in multiple states?</flux:accordion.heading>
+                    <flux:accordion.content>
+                        Yes. Select every state you need during the application and we'll prepare and
+                        file each registration. The flat fee applies per state.
+                    </flux:accordion.content>
+                </flux:accordion.item>
+
+                <flux:accordion.item>
+                    <flux:accordion.heading>What do I receive when it's done?</flux:accordion.heading>
+                    <flux:accordion.content>
+                        Your sales &amp; use tax permit and account number for each state, plus a copy
+                        of your filing for your records — everything you need to start collecting and
+                        remitting correctly.
+                    </flux:accordion.content>
+                </flux:accordion.item>
+            </flux:accordion>
+        </div>
+    </section>
+
+    {{-- ───────────────────────── FINAL CTA ───────────────────────── --}}
+    <section class="relative overflow-hidden" style="background: var(--ink);">
+        <div class="pointer-events-none absolute -left-32 bottom-0 h-96 w-96 rounded-full"
+             style="background: radial-gradient(closest-side, rgba(14,159,110,.25), transparent);"></div>
+        <div class="relative mx-auto max-w-3xl px-6 py-20 text-center">
+            <h2 class="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                Ready to get registered?
+            </h2>
+            <p class="mx-auto mt-4 max-w-md text-lg text-white/70">
+                Answer a few questions and we'll take it from there. Your permit is closer than you think.
             </p>
             <div class="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                <a href="{{ route('register') }}" class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-8 py-4 text-base font-semibold text-white transition hover:bg-blue-700">
-                    Get Started
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                    </svg>
-                </a>
+                <flux:button href="{{ $startUrl }}" variant="primary" icon:trailing="arrow-right"
+                             class="!h-14 !px-8 !text-base font-semibold shadow-lg shadow-emerald-900/30">
+                    Start my registration
+                </flux:button>
+                <span class="text-sm text-white/55">Create your account · We'll take it from there</span>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-{{-- What Is Sales Tax Registration --}}
-<section class="bg-zinc-50 py-24">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="mx-auto max-w-3xl text-center">
-            <p class="text-sm font-semibold uppercase tracking-widest text-blue-600">Overview</p>
-            <h2 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-                What Is Sales Tax Registration?
-            </h2>
-            <p class="mt-4 text-lg text-zinc-600">
-                Sales tax registration is the process of obtaining a sales tax permit (also called a seller's permit or resale permit in some states) from each state where your business has nexus—a legal obligation to collect and remit sales tax. Once registered, you receive a permit number that authorizes you to collect sales tax from customers and file periodic returns. Use tax applies when you purchase goods without paying sales tax but later use them in a taxable manner—registration often covers both sales and use tax obligations. Navigating registration across multiple states can be complex; our service streamlines the process and ensures you meet each state's requirements.
-            </p>
-        </div>
-
-        {{-- Who Needs to Register --}}
-        <div class="mt-20">
-            <h2 class="text-center text-2xl font-bold text-zinc-900 sm:text-3xl">Who Needs to Register?</h2>
-            <div class="mt-12 grid gap-6 md:grid-cols-2">
-                <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-                    <h3 class="font-bold text-zinc-900">Economic Nexus</h3>
-                    <p class="mt-2 text-zinc-600">If your business sells goods or services into a state and exceeds that state's economic threshold (often $100,000 in sales or 200 transactions), you likely have economic nexus and must register for sales tax there—even with no physical presence.</p>
-                </div>
-                <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-                    <h3 class="font-bold text-zinc-900">Physical Nexus</h3>
-                    <p class="mt-2 text-zinc-600">If your business has a physical presence in a state—office, warehouse, employees, inventory, or agents—you typically have physical nexus and must register and collect sales tax in that state regardless of sales volume.</p>
-                </div>
-            </div>
-        </div>
-
-        {{-- What's Included --}}
-        <div class="mt-20">
-            <h2 class="text-center text-2xl font-bold text-zinc-900 sm:text-3xl">What's Included</h2>
-            <div class="mt-12 grid gap-6 md:grid-cols-3">
-                <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                    </div>
-                    <h3 class="mt-4 font-bold text-zinc-900">Nexus Analysis</h3>
-                    <p class="mt-2 text-zinc-600">We analyze your business activities to determine where you have sales tax nexus and identify which states require registration.</p>
-                </div>
-                <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                    </div>
-                    <h3 class="mt-4 font-bold text-zinc-900">State Registration</h3>
-                    <p class="mt-2 text-zinc-600">We prepare and submit your sales tax registration applications to each required state, tracking status until permits are issued.</p>
-                </div>
-                <div class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
-                    </div>
-                    <h3 class="mt-4 font-bold text-zinc-900">Compliance Support</h3>
-                    <p class="mt-2 text-zinc-600">Guidance on filing frequencies, due dates, and ongoing compliance so you stay current with each state's sales tax rules.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-{{-- How It Works --}}
-<section class="bg-white py-24">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="mx-auto max-w-3xl text-center">
-            <p class="text-sm font-bold uppercase tracking-widest text-blue-600">Simple Process</p>
-            <h2 class="mt-3 text-3xl font-extrabold text-zinc-900 sm:text-4xl">
-                How It Works
-            </h2>
-        </div>
-        <div class="mt-16 grid gap-8 md:grid-cols-3">
-            <div class="relative rounded-2xl bg-zinc-50 p-8 shadow-sm">
-                <div class="absolute -top-5 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-lg font-bold text-white">1</div>
-                <div class="pt-4">
-                    <h3 class="text-xl font-bold text-zinc-900">Share Your Business Details</h3>
-                    <p class="mt-3 text-zinc-600">Provide your business information, sales channels, and where you sell. We use this to perform a nexus analysis and identify which states require registration.</p>
-                </div>
-            </div>
-            <div class="relative rounded-2xl bg-zinc-50 p-8 shadow-sm">
-                <div class="absolute -top-5 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-lg font-bold text-white">2</div>
-                <div class="pt-4">
-                    <h3 class="text-xl font-bold text-zinc-900">We Handle the Applications</h3>
-                    <p class="mt-3 text-zinc-600">We prepare and submit your sales tax registration applications to each required state. You'll receive updates as permits are processed and issued.</p>
-                </div>
-            </div>
-            <div class="relative rounded-2xl bg-zinc-50 p-8 shadow-sm">
-                <div class="absolute -top-5 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-lg font-bold text-white">3</div>
-                <div class="pt-4">
-                    <h3 class="text-xl font-bold text-zinc-900">Receive Your Permits</h3>
-                    <p class="mt-3 text-zinc-600">Once approved, you'll receive your sales tax permit numbers. We provide compliance guidance so you can collect, report, and remit sales tax correctly.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-{{-- FAQ --}}
-<section id="faq" class="bg-zinc-50 py-24">
-    <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-        <div class="text-center">
-            <h2 class="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">Frequently Asked Questions</h2>
-        </div>
-        <div class="mt-12 space-y-4">
-            <details class="group rounded-2xl border border-zinc-200 bg-white shadow-sm">
-                <summary class="flex cursor-pointer items-center justify-between px-6 py-5 text-left font-semibold text-zinc-900 [&::-webkit-details-marker]:hidden">
-                    What is sales tax nexus?
-                    <svg class="h-5 w-5 shrink-0 text-zinc-400 transition-transform group-open:rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                </summary>
-                <div class="px-6 pb-5 text-zinc-600">Nexus is the connection between your business and a state that creates a tax obligation. Physical nexus comes from having employees, offices, warehouses, or inventory in a state. Economic nexus comes from exceeding sales or transaction thresholds—often $100,000 in sales or 200 transactions per year—even with no physical presence. Once you have nexus in a state, you must register for sales tax and collect it from customers in that state.</div>
-            </details>
-            <details class="group rounded-2xl border border-zinc-200 bg-white shadow-sm">
-                <summary class="flex cursor-pointer items-center justify-between px-6 py-5 text-left font-semibold text-zinc-900 [&::-webkit-details-marker]:hidden">
-                    What are economic nexus thresholds by state?
-                    <svg class="h-5 w-5 shrink-0 text-zinc-400 transition-transform group-open:rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                </summary>
-                <div class="px-6 pb-5 text-zinc-600">Thresholds vary by state. Most states use $100,000 in sales or 200 transactions (South Dakota v. Wayfair standard), but some differ—for example, California uses $500,000, Texas uses $500,000, and a few states use different formulas. Nexus rules also change over time. Our nexus analysis keeps current with each state's thresholds and helps you determine where registration is required.</div>
-            </details>
-            <details class="group rounded-2xl border border-zinc-200 bg-white shadow-sm">
-                <summary class="flex cursor-pointer items-center justify-between px-6 py-5 text-left font-semibold text-zinc-900 [&::-webkit-details-marker]:hidden">
-                    Do I need to register in every state where I sell?
-                    <svg class="h-5 w-5 shrink-0 text-zinc-400 transition-transform group-open:rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                </summary>
-                <div class="px-6 pb-5 text-zinc-600">No—only in states where you have nexus. If you sell occasionally into a state and stay below economic thresholds with no physical presence, you may not need to register there yet. Once you exceed a state's threshold or establish physical presence, registration becomes required. We help you identify exactly which states apply to your situation.</div>
-            </details>
-            <details class="group rounded-2xl border border-zinc-200 bg-white shadow-sm">
-                <summary class="flex cursor-pointer items-center justify-between px-6 py-5 text-left font-semibold text-zinc-900 [&::-webkit-details-marker]:hidden">
-                    How long does sales tax registration take?
-                    <svg class="h-5 w-5 shrink-0 text-zinc-400 transition-transform group-open:rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                </summary>
-                <div class="px-6 pb-5 text-zinc-600">Processing times vary by state. Some states issue permits within a few days; others can take 2–4 weeks or longer. Online registration is usually faster than paper applications. We submit applications promptly and track status so you know when to expect your permits.</div>
-            </details>
-            <details class="group rounded-2xl border border-zinc-200 bg-white shadow-sm">
-                <summary class="flex cursor-pointer items-center justify-between px-6 py-5 text-left font-semibold text-zinc-900 [&::-webkit-details-marker]:hidden">
-                    Can you help with multi-state sales tax compliance?
-                    <svg class="h-5 w-5 shrink-0 text-zinc-400 transition-transform group-open:rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                </summary>
-                <div class="px-6 pb-5 text-zinc-600">Yes. We specialize in multi-state sales tax registration. Whether you need permits in a handful of states or across all 50, we handle the applications and help you stay compliant. Each state has different rules, deadlines, and filing frequencies—we guide you through them so you can focus on your business.</div>
-            </details>
-        </div>
-    </div>
-</section>
-
-{{-- CTA --}}
-<section class="bg-white py-24">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 px-6 py-20 sm:px-12 sm:py-28">
-            <div class="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl"></div>
-            <div class="absolute -bottom-20 -left-20 h-80 w-80 rounded-full bg-blue-500/20 blur-3xl"></div>
-            <div class="relative mx-auto max-w-2xl text-center">
-                <h2 class="text-3xl font-bold tracking-tight text-white sm:text-4xl">Ready to Get Started?</h2>
-                <p class="mt-6 text-lg text-zinc-300">Register for sales tax in any state. Nexus analysis, state permits, and compliance support—all handled for you.</p>
-                <div class="mt-10">
-                    <a href="{{ route('register') }}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-blue-500 hover:shadow-xl">
-                        Get Started Now
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                        </svg>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+</div>
 @endsection

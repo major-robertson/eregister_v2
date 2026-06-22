@@ -57,6 +57,7 @@
         'sales-tax-registration' => 'Sales Tax',
         'sales-tax-permit' => 'Sales Tax Permit',
         'sales-tax-id' => 'Sales Tax ID',
+        'sellers-permit' => "Seller's Permit",
     ], 'sales-tax-registration');
 
     // Mid-sentence noun form (lower case, used in body copy / step headings).
@@ -64,13 +65,15 @@
         'sales-tax-registration' => 'sales tax registration',
         'sales-tax-permit' => 'sales tax permit',
         'sales-tax-id' => 'sales tax ID',
+        'sellers-permit' => "seller's permit",
     ], 'sales-tax-registration');
 
-    // Document suffix (Title Case) used on the permit card heading: "Sales & Use Tax {suffix}".
-    $documentSuffix = \App\Support\PageIntent::keyword([
-        'sales-tax-registration' => 'Registration',
-        'sales-tax-permit' => 'Permit',
-        'sales-tax-id' => 'ID',
+    // Full heading shown on the permit card visual.
+    $cardHeading = \App\Support\PageIntent::keyword([
+        'sales-tax-registration' => 'Sales & Use Tax Registration',
+        'sales-tax-permit' => 'Sales & Use Tax Permit',
+        'sales-tax-id' => 'Sales & Use Tax ID',
+        'sellers-permit' => "Seller's Permit",
     ], 'sales-tax-registration');
 
     // Single source of truth for the CTA target — signup flow drives the sales-tax onboarding redirect.
@@ -144,7 +147,7 @@
                     </div>
 
                     <h3 class="font-display mt-5 text-lg font-bold leading-tight text-[var(--ink)]">
-                        Sales &amp; Use Tax {{ $documentSuffix }}
+                        {{ $cardHeading }}
                     </h3>
 
                     <dl class="mt-5 space-y-3 text-sm">

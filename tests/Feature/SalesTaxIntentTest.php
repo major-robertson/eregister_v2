@@ -8,6 +8,7 @@ it('swaps the hero keyword for a whitelisted intent', function (string $intent, 
     'registration' => ['sales-tax-registration', 'Sales Tax'],
     'permit' => ['sales-tax-permit', 'Sales Tax Permit'],
     'id' => ['sales-tax-id', 'Sales Tax ID'],
+    'sellers-permit' => ['sellers-permit', 'Seller&#039;s Permit'],
 ]);
 
 it('defaults to the registration keyword when no intent is provided', function () {

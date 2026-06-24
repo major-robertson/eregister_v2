@@ -8,6 +8,10 @@ return [
         'llc_info' => [
             'title' => 'LLC Information',
             'description' => 'Basic information about your LLC.',
+            'groups' => [
+                ['title' => 'Business Identity', 'fields' => ['llc_name', 'purpose']],
+                ['title' => 'Formation Details', 'fields' => [['formation_date', 'management_type']]],
+            ],
             'fields' => [
                 'llc_name' => [
                     'type' => 'text',
@@ -60,6 +64,11 @@ return [
                     'label' => 'Members',
                     'min' => 1,
                     'item_label' => 'Member',
+                    'schema_groups' => [
+                        ['title' => 'Member Details', 'fields' => [['first_name', 'last_name'], 'email']],
+                        ['title' => 'Address', 'fields' => ['address']],
+                        ['title' => 'Ownership & Role', 'fields' => ['ownership_percent', 'is_manager']],
+                    ],
                     'schema' => [
                         'first_name' => [
                             'type' => 'text',

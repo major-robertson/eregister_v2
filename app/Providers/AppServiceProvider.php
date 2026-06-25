@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Livewire;
@@ -62,6 +63,31 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configurePolicies();
         $this->configureLivewire();
+        $this->configureTunnelScheme();
+    }
+
+    /**
+     * When the app is served locally through an HTTPS dev tunnel (Expose /
+     * Herd Share), the tunnel terminates TLS upstream and forwards to Herd over
+     * plain HTTP with an `X-Forwarded-Proto: https` header. Force the https
+     * scheme so generated asset/URL links use https and aren't blocked as
+     * mixed content on the public tunnel page.
+     *
+     * Local only, and we deliberately do NOT trust proxy IP/host headers:
+     * reading the forwarded-proto header here changes only URL generation, so
+     * it adds none of the rate-limit-bypass / host-header-poisoning surface
+     * that `trustProxies('*')` would introduce on the live Forge site.
+     */
+    protected function configureTunnelScheme(): void
+    {
+        if ($this->app->runningInConsole()) {
+            return;
+        }
+
+        if ($this->app->environment('local')
+            && request()->header('x-forwarded-proto') === 'https') {
+            URL::forceScheme('https');
+        }
     }
 
     protected function configureMorphMap(): void

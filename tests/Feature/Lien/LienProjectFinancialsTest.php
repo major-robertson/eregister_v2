@@ -86,7 +86,7 @@ it('returns null for formatted balance when no financial data', function () {
 
 describe('ClaimantType enum', function () {
     it('has correct labels', function () {
-        expect(ClaimantType::Gc->label())->toBe('General Contractor');
+        expect(ClaimantType::Gc->label())->toBe('General Contractor / Direct Contractor');
         expect(ClaimantType::Subcontractor->label())->toBe('Subcontractor');
         expect(ClaimantType::SubSubContractor->label())->toBe('Sub-Subcontractor');
         expect(ClaimantType::SupplierToOwner->label())->toBe('Supplier to Owner');

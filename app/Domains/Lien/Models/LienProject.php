@@ -29,6 +29,8 @@ class LienProject extends Model
         'name',
         'job_number',
         'claimant_type',
+        'provided_type',
+        'hired_by',
         'jobsite_address1',
         'jobsite_address2',
         'jobsite_city',

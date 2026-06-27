@@ -32,7 +32,8 @@ it('can create a project using wizard', function () {
     Livewire::test(\App\Domains\Lien\Livewire\ProjectForm::class)
         ->assertSet('step', 1)
         ->set('name', 'Test Project')
-        ->set('claimant_type', 'subcontractor')
+        ->set('provided_type', 'labor')
+        ->set('hired_by', 'direct_contractor')
         ->call('nextStep')
         ->assertSet('step', 2)
         ->set('jobsite_state', 'CA')
@@ -49,6 +50,10 @@ it('can create a project using wizard', function () {
         'name' => 'Test Project',
         'jobsite_state' => 'CA',
         'property_class' => 'commercial',
+        // claimant_type derived from the two role facts.
+        'provided_type' => 'labor',
+        'hired_by' => 'direct_contractor',
+        'claimant_type' => 'subcontractor',
     ]);
 });
 
@@ -86,10 +91,73 @@ it('can edit a project using wizard', function () {
     ]);
 });
 
+it('derives gc (direct contractor) when hired by the owner, requiring no GC party', function () {
+    Livewire::test(\App\Domains\Lien\Livewire\ProjectForm::class)
+        ->set('name', 'Owner Direct Project')
+        ->set('provided_type', 'labor')
+        ->set('hired_by', 'owner')
+        ->call('nextStep')
+        ->set('jobsite_state', 'CA')
+        ->set('property_class', 'commercial')
+        ->call('nextStep')
+        ->call('save')
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('lien_projects', [
+        'name' => 'Owner Direct Project',
+        'provided_type' => 'labor',
+        'hired_by' => 'owner',
+        'claimant_type' => 'gc',
+    ]);
+});
+
+it('derives supplier_to_owner for materials-only supplied to the owner', function () {
+    Livewire::test(\App\Domains\Lien\Livewire\ProjectForm::class)
+        ->set('name', 'Supplier Project')
+        ->set('provided_type', 'materials_only')
+        ->set('hired_by', 'owner')
+        ->call('nextStep')
+        ->set('jobsite_state', 'CA')
+        ->set('property_class', 'commercial')
+        ->call('nextStep')
+        ->call('save')
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('lien_projects', [
+        'name' => 'Supplier Project',
+        'claimant_type' => 'supplier_to_owner',
+    ]);
+});
+
+it('round-trips the role facts when editing', function () {
+    $project = LienProject::factory()->forBusiness($this->business)->create([
+        'provided_type' => 'both',
+        'hired_by' => 'subcontractor',
+        'claimant_type' => 'sub_sub_contractor',
+    ]);
+
+    Livewire::test(\App\Domains\Lien\Livewire\ProjectForm::class, ['project' => $project])
+        ->assertSet('provided_type', 'both')
+        ->assertSet('hired_by', 'subcontractor');
+});
+
+it('reverse-derives role facts for a legacy project with null columns', function () {
+    $project = LienProject::factory()->forBusiness($this->business)->create([
+        'provided_type' => null,
+        'hired_by' => null,
+        'claimant_type' => 'subcontractor',
+    ]);
+
+    Livewire::test(\App\Domains\Lien\Livewire\ProjectForm::class, ['project' => $project])
+        ->assertSet('hired_by', 'direct_contractor')
+        ->assertSet('provided_type', 'both');
+});
+
 it('calculates deadlines when project is saved', function () {
     Livewire::test(\App\Domains\Lien\Livewire\ProjectForm::class)
         ->set('name', 'Deadline Test Project')
-        ->set('claimant_type', 'subcontractor')
+        ->set('provided_type', 'labor')
+        ->set('hired_by', 'direct_contractor')
         ->call('nextStep')
         ->set('jobsite_state', 'CA')
         ->set('property_class', 'commercial')

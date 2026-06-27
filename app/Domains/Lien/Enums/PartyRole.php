@@ -18,7 +18,7 @@ enum PartyRole: string
             self::Claimant => 'Claimant (You)',
             self::Customer => 'Customer / Hiring Party',
             self::Owner => 'Property Owner',
-            self::Gc => 'General Contractor',
+            self::Gc => 'General Contractor / Direct Contractor',
             self::Subcontractor => 'Subcontractor',
             self::Lender => 'Construction Lender',
             self::Other => 'Other',

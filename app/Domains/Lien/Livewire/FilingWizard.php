@@ -328,7 +328,7 @@ class FilingWizard extends Component
         $claimantType = $this->project->claimant_type;
 
         if ($claimantType?->requiresGcParty() && ! $this->project->gcParty()) {
-            $messages['gc_required'] = 'Add the General Contractor you contracted under to continue.';
+            $messages['gc_required'] = 'Add the General Contractor or direct contractor you contracted under to continue.';
         }
 
         if ($claimantType?->requiresSubcontractorParty() && ! $this->project->subcontractorParty()) {

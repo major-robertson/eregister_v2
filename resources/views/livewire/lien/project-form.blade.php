@@ -61,16 +61,27 @@
         </flux:field>
 
         <flux:field>
-            <flux:label>Your Role on This Project *</flux:label>
-            <flux:select wire:model="claimant_type">
-                <option value="">Select your role...</option>
-                @foreach($claimantTypes as $type)
-                <option value="{{ $type->value }}">{{ $type->label() }}</option>
-                @endforeach
+            <flux:label>What did you provide on this project? *</flux:label>
+            <flux:select wire:model="provided_type">
+                <option value="">Select...</option>
+                <option value="labor">Labor or construction work</option>
+                <option value="materials_only">Materials, equipment, or supplies only</option>
+                <option value="both">Both labor and materials</option>
+            </flux:select>
+            <flux:error name="provided_type" />
+        </flux:field>
+
+        <flux:field>
+            <flux:label>Who hired you? *</flux:label>
+            <flux:select wire:model="hired_by">
+                <option value="">Select...</option>
+                <option value="owner">Property owner</option>
+                <option value="direct_contractor">General contractor / direct contractor</option>
+                <option value="subcontractor">Subcontractor</option>
             </flux:select>
             <flux:description>This determines which parties you'll need to provide and affects your lien rights.
             </flux:description>
-            <flux:error name="claimant_type" />
+            <flux:error name="hired_by" />
         </flux:field>
     </div>
 

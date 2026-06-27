@@ -34,7 +34,10 @@ class ProjectForm extends Component
 
     public ?string $job_number = null;
 
-    public string $claimant_type = '';
+    // Role-capture facts. claimant_type is derived from these on every save.
+    public string $provided_type = '';
+
+    public string $hired_by = '';
 
     public string $property_context = 'unknown';
 
@@ -115,7 +118,15 @@ class ProjectForm extends Component
         // Step 1
         $this->name = $this->project->name;
         $this->job_number = $this->project->job_number;
-        $this->claimant_type = $this->project->claimant_type?->value ?? '';
+        // Prefer the persisted form facts; reverse-derive from claimant_type for
+        // legacy rows saved before these columns existed.
+        $claimantType = $this->project->claimant_type;
+        $this->provided_type = $this->project->provided_type
+            ?? $claimantType?->providedTypeGuess()
+            ?? '';
+        $this->hired_by = $this->project->hired_by
+            ?? $claimantType?->hiredBy()
+            ?? '';
         $this->property_context = $this->project->property_context ?? 'unknown';
 
         // Step 2
@@ -194,7 +205,8 @@ class ProjectForm extends Component
             1 => [
                 'name' => ['required', 'string', 'max:255'],
                 'job_number' => ['nullable', 'string', 'max:100'],
-                'claimant_type' => ['required', Rule::enum(ClaimantType::class)],
+                'provided_type' => ['required', 'in:labor,materials_only,both'],
+                'hired_by' => ['required', 'in:owner,direct_contractor,subcontractor'],
             ],
             2 => [
                 'jobsite_address1' => ['nullable', 'string', 'max:255'],
@@ -239,17 +251,27 @@ class ProjectForm extends Component
     }
 
     /**
+     * Derive the canonical claimant type from the two role-capture facts.
+     * Single source of derivation for the whole component (no drift). Only
+     * call when both facts are set (post-validation or guarded).
+     */
+    private function derivedClaimantType(): ClaimantType
+    {
+        return ClaimantType::derive($this->provided_type, $this->hired_by);
+    }
+
+    /**
      * Determine the primary date field for the project's state mechanics lien rule.
      */
     public function primaryDateField(): string
     {
-        if (empty($this->jobsite_state) || empty($this->claimant_type)) {
+        if (empty($this->jobsite_state) || empty($this->provided_type) || empty($this->hired_by)) {
             return DeadlineTrigger::LastFurnish->value;
         }
 
         $trigger = LienDeadlineRule::primaryTriggerForMechanicsLien(
             strtoupper($this->jobsite_state),
-            ClaimantType::tryFrom($this->claimant_type),
+            $this->derivedClaimantType(),
             $this->property_class,
         );
 
@@ -352,7 +374,10 @@ class ProjectForm extends Component
         $data = [
             'name' => $this->name,
             'job_number' => $this->job_number,
-            'claimant_type' => $this->claimant_type,
+            'provided_type' => $this->provided_type,
+            'hired_by' => $this->hired_by,
+            // Canonical value — always re-derived so it never drifts from the facts.
+            'claimant_type' => $this->derivedClaimantType()->value,
             'property_context' => $this->property_context,
             'property_class' => $this->property_class,
             'jobsite_address1' => $this->jobsite_address1,
@@ -403,7 +428,6 @@ class ProjectForm extends Component
     public function render(): View
     {
         return view('livewire.lien.project-form', [
-            'claimantTypes' => ClaimantType::cases(),
             'states' => $this->getUsStates(),
             'stepTitles' => $this->getStepTitles(),
             'nocStatuses' => NocStatus::cases(),

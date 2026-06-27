@@ -284,7 +284,7 @@
                 @if($needsGc && ! $gcParty)
                     <div class="flex items-center justify-between py-6 px-5 border-2 border-dashed border-zinc-400 dark:border-zinc-500 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
                         <div class="flex items-center gap-2">
-                            <span class="font-semibold text-zinc-700 dark:text-zinc-300">General Contractor</span>
+                            <span class="font-semibold text-zinc-700 dark:text-zinc-300">{{ \App\Domains\Lien\Enums\PartyRole::Gc->label() }}</span>
                             <flux:badge size="sm" color="red">Required</flux:badge>
                         </div>
                         <flux:button wire:click="openPartyModal(null, 'gc')" size="sm" variant="primary" icon="plus">

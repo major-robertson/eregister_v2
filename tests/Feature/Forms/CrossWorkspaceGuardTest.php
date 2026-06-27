@@ -57,15 +57,14 @@ it('returns 404 when a sales-tax application is loaded via the formations show U
 });
 
 it('loads the LLC application via the formations show URL', function () {
-    // LLC uses subscription billing; without a subscription the app
-    // redirects to checkout via the application.access middleware, which
-    // is a separate code path from the workspace guard. Mark it as
-    // having an active subscription would require Stripe wiring; the
-    // simpler proof here is that the URL doesn't 404 (it redirects).
+    // LLC uses subscription billing but collects payment at the END of
+    // the wizard (on submit), so the draft form runner is reachable
+    // without a subscription — proving the workspace guard lets it
+    // through to the runner rather than 404ing.
     $llcApp = makeApplication('llc', ['DE'], $this->business, $this->user);
 
     $this->get("/portal/formations/applications/{$llcApp->id}")
-        ->assertRedirect(route('portal.checkout', $llcApp));
+        ->assertOk();
 });
 
 it('loads the sales-tax application via the sales-tax show URL', function () {

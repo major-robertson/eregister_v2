@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Domains\Formations\Services\LlcStripeWebhookHandler;
 use App\Domains\Lien\Services\LienStripeWebhookHandler;
 use App\Domains\SalesTax\Services\TaxStripeWebhookHandler;
 use App\Models\StripeWebhookEvent;
@@ -80,8 +81,7 @@ class StripeWebhookController
             return response('No object', 200);
         }
 
-        $metadata = $object->metadata ?? new \stdClass;
-        $domain = is_object($metadata) ? ($metadata->app_domain ?? null) : null;
+        $domain = $this->resolveDomain($event, $object);
 
         if (! $domain) {
             Log::info('Stripe webhook: No app_domain in metadata', [
@@ -95,8 +95,8 @@ class StripeWebhookController
         $handler = match ($domain) {
             'lien' => app(LienStripeWebhookHandler::class),
             'tax' => app(TaxStripeWebhookHandler::class),
+            'llc' => app(LlcStripeWebhookHandler::class),
             // Future domains:
-            // 'llc' => app(LlcStripeWebhookHandler::class),
             // 'saas' => app(SaasStripeWebhookHandler::class),
             default => null,
         };
@@ -112,5 +112,46 @@ class StripeWebhookController
 
         // Pass full event - handler decides what event types it supports
         return $handler->handle($event);
+    }
+
+    /**
+     * Resolve the app_domain for an event. Most objects (checkout sessions,
+     * payment intents, subscriptions) carry it in top-level metadata. Invoice
+     * objects do not — they expose the subscription's metadata under
+     * `subscription_details.metadata`, with a final fallback to the local
+     * subscription's type. Returns null when no domain can be determined.
+     */
+    private function resolveDomain(\Stripe\Event $event, object $object): ?string
+    {
+        $metadata = $object->metadata ?? null;
+        if (is_object($metadata) && ! empty($metadata->app_domain)) {
+            return $metadata->app_domain;
+        }
+
+        if (! str_starts_with((string) ($event->type ?? ''), 'invoice.')) {
+            return null;
+        }
+
+        // Invoice renewal events carry the subscription metadata we set via
+        // `subscription_data.metadata` at checkout.
+        $subMeta = $object->subscription_details->metadata ?? null;
+        if (is_object($subMeta) && ! empty($subMeta->app_domain)) {
+            return $subMeta->app_domain;
+        }
+
+        // Robustness fallback: map the local subscription's type to a domain.
+        $subscriptionId = $object->subscription
+            ?? ($object->subscription_details->subscription ?? null)
+            ?? ($object->parent->subscription_details->subscription ?? null);
+
+        if ($subscriptionId) {
+            $type = \Laravel\Cashier\Subscription::where('stripe_id', $subscriptionId)->value('type');
+
+            if ($type === 'llc') {
+                return 'llc';
+            }
+        }
+
+        return null;
     }
 }

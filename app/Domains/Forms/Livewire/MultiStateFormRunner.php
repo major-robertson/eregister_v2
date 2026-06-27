@@ -513,7 +513,7 @@ class MultiStateFormRunner extends Component
         // Run cross-field validators
         $this->runCrossFieldValidators();
 
-        if ($this->application->isPaid()) {
+        if ($this->hasSatisfiedBilling()) {
             $this->application->update([
                 'status' => 'submitted',
                 'submitted_at' => now(),
@@ -543,6 +543,40 @@ class MultiStateFormRunner extends Component
         if ($this->application->isLocked()) {
             throw new \RuntimeException('Application is locked and cannot be modified.');
         }
+    }
+
+    /**
+     * Whether payment has already been collected for this application.
+     * One-time forms are satisfied by `paid_at`. Forms that attach a per-
+     * application one-time fee (e.g. LLC Formation's state filing fee) are
+     * ALSO satisfied only by `paid_at` — each application runs checkout and
+     * pays its own state fee, even if the business already holds the
+     * membership subscription. Pure subscription forms are satisfied once the
+     * business holds an active subscription, so a returning subscriber isn't
+     * bounced back to checkout. When none is true, `submit()` routes the user
+     * to checkout — i.e. payment happens at the END of the wizard.
+     */
+    protected function hasSatisfiedBilling(): bool
+    {
+        if ($this->application->isPaid()) {
+            return true;
+        }
+
+        $config = \App\Domains\Forms\FormTypeConfig::get($this->application->form_type);
+
+        // Per-application billing: the one-time fee must be collected for every
+        // application, so `paid_at` (above) is the only satisfier.
+        if (($config['one_time_state_fee'] ?? false) === true) {
+            return false;
+        }
+
+        if (($config['billing_type'] ?? null) === 'subscription') {
+            $subscriptionName = $config['subscription_name'] ?? null;
+
+            return $subscriptionName !== null && $this->business->subscribed($subscriptionName);
+        }
+
+        return false;
     }
 
     /**

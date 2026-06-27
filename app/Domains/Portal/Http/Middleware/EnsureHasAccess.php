@@ -58,13 +58,21 @@ class EnsureHasAccess
         return $next($request);
     }
 
+    /**
+     * Whether the draft form runner is accessible. All billing types now
+     * collect payment at the END of the wizard (on submit), so the draft
+     * is always reachable — `MultiStateFormRunner::submit()` redirects
+     * unpaid/unsubscribed applications to checkout. Locked (paid/submitted)
+     * applications are redirected to the read-only confirmation page by the
+     * runner's own mount guard, not here. The `default => false` arm keeps
+     * unknown/misconfigured billing types failing closed.
+     */
     protected function hasAccess(Business $business, FormApplication $application): bool
     {
         $config = FormTypeConfig::get($application->form_type);
 
         return match ($config['billing_type']) {
-            'subscription' => $business->subscribed($config['subscription_name']),
-            'one_time_per_state', 'one_time' => true,
+            'subscription', 'one_time_per_state', 'one_time' => true,
             default => false,
         };
     }

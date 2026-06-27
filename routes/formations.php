@@ -1,6 +1,8 @@
 <?php
 
+use App\Domains\Formations\Http\Controllers\FormationPaymentController;
 use App\Domains\Formations\Livewire\Dashboard;
+use App\Domains\Formations\Livewire\FormationCheckout;
 use App\Domains\Forms\Livewire\MultiStateFormRunner;
 use App\Domains\Forms\Livewire\StateSelector;
 use Illuminate\Support\Facades\Route;
@@ -42,4 +44,18 @@ Route::middleware(['auth', 'business.current', 'business.complete'])
         Route::get('/applications/{application}', MultiStateFormRunner::class)
             ->middleware('application.access')
             ->name('formations.show');
+
+        // Checkout = $299/yr membership + one-time state filing fee, charged
+        // via a hosted subscription-mode Checkout Session; payment auto-submits
+        // + locks the application.
+        Route::get('/applications/{application}/checkout', FormationCheckout::class)
+            ->name('formations.checkout');
+
+        Route::get('/applications/{application}/payment-confirmation', [FormationPaymentController::class, 'confirmation'])
+            ->name('formations.payment-confirmation');
     });
+
+// API route for payment status polling (processing page).
+Route::middleware(['auth:sanctum'])
+    ->get('/api/formations/applications/{application}/payment-status', [FormationPaymentController::class, 'status'])
+    ->name('formations.api.payment-status');

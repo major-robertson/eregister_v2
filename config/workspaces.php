@@ -122,6 +122,8 @@ return [
         'start_route_name' => 'formations.start',
         'application_route_name' => 'formations.show',
         'start_route_param' => 'formType', // {formType} URL segment, hydrates StateSelector::mount(string $formType)
+        'checkout_route_name' => 'formations.checkout',
+        'confirmation_route_name' => 'formations.payment-confirmation',
         'data_resolver' => FormationsWorkspaceData::class,
         'nav' => [
             [

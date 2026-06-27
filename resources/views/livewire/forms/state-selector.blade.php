@@ -142,7 +142,11 @@
 
     <div class="flex justify-center">
         <flux:button wire:click="proceed" variant="primary" x-bind:disabled="selected.length === 0">
-            Continue (<span x-text="selected.length"></span> state<span x-show="selected.length !== 1">s</span>)
+            @if ($stateMode === 'single')
+                Continue
+            @else
+                Continue (<span x-text="selected.length"></span> state<span x-show="selected.length !== 1">s</span>)
+            @endif
         </flux:button>
     </div>
 </div>

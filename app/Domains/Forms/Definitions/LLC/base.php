@@ -8,6 +8,10 @@ return [
         'llc_info' => [
             'title' => 'LLC Information',
             'description' => 'Basic information about your LLC.',
+            'groups' => [
+                ['title' => 'Business Identity', 'fields' => ['llc_name', 'purpose']],
+                ['title' => 'Formation Details', 'fields' => [['formation_date', 'management_type']]],
+            ],
             'fields' => [
                 'llc_name' => [
                     'type' => 'text',
@@ -60,6 +64,11 @@ return [
                     'label' => 'Members',
                     'min' => 1,
                     'item_label' => 'Member',
+                    'schema_groups' => [
+                        ['title' => 'Member Details', 'fields' => [['first_name', 'last_name'], 'email']],
+                        ['title' => 'Address', 'fields' => ['address']],
+                        ['title' => 'Ownership & Role', 'fields' => ['ownership_percent', 'is_manager']],
+                    ],
                     'schema' => [
                         'first_name' => [
                             'type' => 'text',
@@ -104,43 +113,6 @@ return [
                     'rule' => 'ownership_totals_100',
                     'field' => 'members',
                     'phase' => 'core',
-                ],
-            ],
-        ],
-        'registered_agent' => [
-            'title' => 'Registered Agent',
-            'description' => 'A registered agent is required to receive legal documents on behalf of your LLC.',
-            'fields' => [
-                'agent_type' => [
-                    'type' => 'select',
-                    'label' => 'Registered Agent',
-                    'options' => [
-                        'self' => 'I will be my own registered agent',
-                        'member' => 'Use a member as registered agent',
-                        'service' => 'Use a registered agent service',
-                    ],
-                    'rules' => ['required'],
-                    'drives_conditional' => true,
-                ],
-                'agent_member_index' => [
-                    'type' => 'select',
-                    'label' => 'Select Member',
-                    'options' => [], // Populated dynamically based on members
-                    'rules' => ['required'],
-                    'when' => ['==' => [['var' => 'agent_type'], 'member']],
-                ],
-                'agent_name' => [
-                    'type' => 'text',
-                    'label' => 'Agent Name or Company',
-                    'rules' => ['required', 'string', 'max:120'],
-                    'when' => ['==' => [['var' => 'agent_type'], 'service']],
-                ],
-                'agent_address' => [
-                    'type' => 'address',
-                    'label' => 'Agent Address',
-                    'rules' => ['required'],
-                    'help' => 'Must be a physical address in the state of formation (no P.O. boxes).',
-                    'when' => ['in' => [['var' => 'agent_type'], ['self', 'service']]],
                 ],
             ],
         ],

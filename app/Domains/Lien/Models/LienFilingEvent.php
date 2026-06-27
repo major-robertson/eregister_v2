@@ -64,6 +64,9 @@ class LienFilingEvent extends Model
             'note_added' => 'Note added',
             'document_uploaded' => 'Document uploaded',
             'recipient_added' => 'Recipient added',
+            'application_project_updated' => 'Project details updated',
+            'application_filing_updated' => 'Filing details updated',
+            'application_parties_updated' => 'Parties updated',
             default => ucfirst(str_replace('_', ' ', $this->event_type)),
         };
     }

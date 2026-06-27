@@ -5,10 +5,15 @@ namespace App\Domains\Lien\Admin\Livewire;
 use App\Domains\Lien\Admin\Actions\AddFilingComment;
 use App\Domains\Lien\Admin\Actions\ChangeFilingStatus;
 use App\Domains\Lien\Admin\Actions\RefundPayment;
+use App\Domains\Lien\Admin\Actions\SyncResult;
+use App\Domains\Lien\Admin\Actions\UpdateLienFilingDetails;
+use App\Domains\Lien\Admin\Actions\UpdateLienParties;
+use App\Domains\Lien\Admin\Actions\UpdateLienProjectDetails;
 use App\Domains\Lien\Admin\Actions\UpdateRecordingDetails;
 use App\Domains\Lien\Admin\Enums\KanbanColumn;
 use App\Domains\Lien\Enums\DeadlineStatus;
 use App\Domains\Lien\Enums\FilingStatus;
+use App\Domains\Lien\Enums\PartyRole;
 use App\Domains\Lien\Enums\RecordingMethod;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienStateRule;
@@ -18,6 +23,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
+use Stripe\Exception\ApiErrorException;
 
 class LienFilingDetail extends Component
 {
@@ -49,6 +55,44 @@ class LienFilingDetail extends Component
 
     public string $recordingSubmittedAt = '';
 
+    /**
+     * Application-edit form state. Each section binds to one of these arrays
+     * (e.g. wire:model="projectForm.name"); money fields hold dollar strings and
+     * are converted to cents before being handed to the Action.
+     *
+     * @var array<string, mixed>
+     */
+    public array $projectForm = [];
+
+    /** @var array<string, mixed> */
+    public array $filingForm = [];
+
+    /** @var array<string, mixed> */
+    public array $partyForm = [];
+
+    public ?int $editingPartyId = null;
+
+    public ?int $removingPartyId = null;
+
+    public bool $showProjectModal = false;
+
+    public bool $showFilingModal = false;
+
+    public bool $showPartyModal = false;
+
+    public bool $showRemovePartyModal = false;
+
+    /**
+     * Event types rendered in the activity timeline. Edit events were added so
+     * admin corrections show up with their field-level diffs.
+     *
+     * @var list<string>
+     */
+    private const ACTIVITY_EVENT_TYPES = [
+        'status_changed', 'note_added', 'payment_refunded', 'recording_details_updated',
+        'application_project_updated', 'application_filing_updated', 'application_parties_updated',
+    ];
+
     public function mount(string|LienFiling $lienFiling): void
     {
         if (is_string($lienFiling)) {
@@ -58,18 +102,30 @@ class LienFilingDetail extends Component
                 ->firstOrFail();
         }
 
-        $this->lienFiling = $lienFiling->load([
+        $this->lienFiling = $lienFiling;
+        $this->loadFilingRelations();
+
+        $this->hydrateRecordingFields();
+        $this->loadProjectForm();
+        $this->loadFilingForm();
+    }
+
+    /**
+     * (Re)load the relations the detail view renders. Called on mount and after
+     * every edit so the page reflects the freshly persisted state.
+     */
+    private function loadFilingRelations(): void
+    {
+        $this->lienFiling->load([
             'createdBy',
             'project.business',
             'project.parties',
             'project.deadlines.rule',
             'project.deadlines.documentType',
             'documentType',
-            'events' => fn ($q) => $q->whereIn('event_type', ['status_changed', 'note_added', 'payment_refunded', 'recording_details_updated'])->latest()->limit(50),
+            'events' => fn ($q) => $q->whereIn('event_type', self::ACTIVITY_EVENT_TYPES)->latest()->limit(50),
             'events.creator',
         ]);
-
-        $this->hydrateRecordingFields();
     }
 
     /**
@@ -290,7 +346,7 @@ class LienFilingDetail extends Component
     public function getActivityLog(): Collection
     {
         return $this->lienFiling->events()
-            ->whereIn('event_type', ['status_changed', 'note_added', 'payment_refunded', 'recording_details_updated'])
+            ->whereIn('event_type', self::ACTIVITY_EVENT_TYPES)
             ->with('creator')
             ->latest()
             ->limit(50)
@@ -437,7 +493,7 @@ class LienFilingDetail extends Component
             $this->showRefundModal = false;
 
             session()->flash('success', "Payment of {$payment->formattedAmount()} has been refunded.");
-        } catch (\Stripe\Exception\ApiErrorException $e) {
+        } catch (ApiErrorException $e) {
             $this->showRefundModal = false;
 
             session()->flash('error', 'Stripe error: '.$e->getMessage());
@@ -504,5 +560,315 @@ class LienFilingDetail extends Component
         session()->flash('success', $this->lienFiling->needs_review
             ? 'Filing flagged for manager review.'
             : 'Review flag removed.');
+    }
+
+    // ------------------------------------------------------------------
+    // Application editing (project / filing / parties)
+    // Edits update the live records, write a field-level audit event, and
+    // re-sync every eligible fulfillment snapshot via SyncFilingSnapshot.
+    // ------------------------------------------------------------------
+
+    public function editProjectDetails(): void
+    {
+        $this->authorize('update', $this->lienFiling);
+        $this->loadProjectForm();
+        $this->resetErrorBag();
+        $this->showProjectModal = true;
+    }
+
+    public function updateProjectDetails(): void
+    {
+        $this->authorize('update', $this->lienFiling);
+        $this->validate($this->projectRules());
+
+        $input = $this->projectForm;
+        $input['base_contract_amount_cents'] = $this->dollarsToCents($this->projectForm['base_contract_amount'] ?? null);
+        $input['change_orders_cents'] = $this->dollarsToCents($this->projectForm['change_orders'] ?? null);
+        $input['credits_deductions_cents'] = $this->dollarsToCents($this->projectForm['credits_deductions'] ?? null);
+        $input['payments_received_cents'] = $this->dollarsToCents($this->projectForm['payments_received'] ?? null);
+        $input['uncompleted_work_cents'] = $this->dollarsToCents($this->projectForm['uncompleted_work'] ?? null);
+
+        $result = app(UpdateLienProjectDetails::class)->execute($this->lienFiling, $input);
+
+        $this->afterEdit();
+        $this->showProjectModal = false;
+        $this->flashSyncResult($result, 'Project details updated.');
+    }
+
+    public function editFilingDetails(): void
+    {
+        $this->authorize('update', $this->lienFiling);
+        $this->loadFilingForm();
+        $this->resetErrorBag();
+        $this->showFilingModal = true;
+    }
+
+    public function updateFilingDetails(): void
+    {
+        $this->authorize('update', $this->lienFiling);
+        $this->validate($this->filingRules());
+
+        $input = $this->filingForm;
+        $input['amount_claimed_cents'] = $this->dollarsToCents($this->filingForm['amount_claimed'] ?? null);
+
+        $result = app(UpdateLienFilingDetails::class)->execute($this->lienFiling, $input);
+
+        $this->afterEdit();
+        $this->showFilingModal = false;
+        $this->flashSyncResult($result, 'Filing details updated.');
+    }
+
+    public function addParty(): void
+    {
+        $this->authorize('update', $this->lienFiling);
+        $this->editingPartyId = null;
+        $this->partyForm = $this->blankPartyForm();
+        $this->resetErrorBag();
+        $this->showPartyModal = true;
+    }
+
+    public function editParty(int $partyId): void
+    {
+        $this->authorize('update', $this->lienFiling);
+
+        $party = $this->lienFiling->project?->parties->firstWhere('id', $partyId);
+        abort_if($party === null, 404);
+
+        $this->editingPartyId = $party->id;
+        $this->partyForm = [
+            'role' => $party->role?->value,
+            'name' => $party->name,
+            'company_name' => $party->company_name,
+            'address1' => $party->address1,
+            'address2' => $party->address2,
+            'city' => $party->city,
+            'state' => $party->state,
+            'zip' => $party->zip,
+            'email' => $party->email,
+            'phone' => $party->phone,
+        ];
+        $this->resetErrorBag();
+        $this->showPartyModal = true;
+    }
+
+    public function saveParty(): void
+    {
+        $this->authorize('update', $this->lienFiling);
+        $this->validate($this->partyRules());
+
+        $wasEdit = $this->editingPartyId !== null;
+
+        $result = app(UpdateLienParties::class)
+            ->saveParty($this->lienFiling, $this->editingPartyId, $this->partyForm);
+
+        $this->afterEdit();
+        $this->showPartyModal = false;
+        $this->flashSyncResult($result, $wasEdit ? 'Party updated.' : 'Party added.');
+    }
+
+    public function confirmRemoveParty(int $partyId): void
+    {
+        $this->authorize('update', $this->lienFiling);
+        $this->removingPartyId = $partyId;
+        $this->showRemovePartyModal = true;
+    }
+
+    public function removeParty(): void
+    {
+        $this->authorize('update', $this->lienFiling);
+        abort_if($this->removingPartyId === null, 400);
+
+        $result = app(UpdateLienParties::class)
+            ->removeParty($this->lienFiling, $this->removingPartyId);
+
+        $this->removingPartyId = null;
+        $this->showRemovePartyModal = false;
+        $this->afterEdit();
+        $this->flashSyncResult($result, 'Party removed.');
+    }
+
+    /**
+     * Reload relations + re-hydrate the edit forms after a successful edit.
+     */
+    private function afterEdit(): void
+    {
+        $this->lienFiling->refresh();
+        $this->loadFilingRelations();
+        $this->hydrateRecordingFields();
+        $this->loadProjectForm();
+        $this->loadFilingForm();
+    }
+
+    private function loadProjectForm(): void
+    {
+        $p = $this->lienFiling->project;
+
+        if ($p === null) {
+            $this->projectForm = [];
+
+            return;
+        }
+
+        $this->projectForm = [
+            'name' => $p->name,
+            'job_number' => $p->job_number,
+            'provided_type' => $p->provided_type,
+            'hired_by' => $p->hired_by,
+            'property_context' => $p->property_context,
+            'property_class' => $p->property_class,
+            'jobsite_address1' => $p->jobsite_address1,
+            'jobsite_address2' => $p->jobsite_address2,
+            'jobsite_city' => $p->jobsite_city,
+            'jobsite_state' => $p->jobsite_state,
+            'jobsite_zip' => $p->jobsite_zip,
+            'jobsite_county' => $p->jobsite_county,
+            'legal_description' => $p->legal_description,
+            'apn' => $p->apn,
+            'first_furnish_date' => $p->first_furnish_date?->format('Y-m-d'),
+            'last_furnish_date' => $p->last_furnish_date?->format('Y-m-d'),
+            'completion_date' => $p->completion_date?->format('Y-m-d'),
+            'noc_status' => $p->noc_status?->value,
+            'noc_recorded_at' => $p->noc_recorded_at?->format('Y-m-d'),
+            'base_contract_amount' => $this->centsToDollars($p->base_contract_amount_cents),
+            'change_orders' => $this->centsToDollars($p->change_orders_cents),
+            'credits_deductions' => $this->centsToDollars($p->credits_deductions_cents),
+            'payments_received' => $this->centsToDollars($p->payments_received_cents),
+            'uncompleted_work' => $this->centsToDollars($p->uncompleted_work_cents),
+            'owner_is_tenant' => (bool) $p->owner_is_tenant,
+            'has_written_contract' => (bool) $p->has_written_contract,
+        ];
+    }
+
+    private function loadFilingForm(): void
+    {
+        $f = $this->lienFiling;
+
+        $this->filingForm = [
+            'amount_claimed' => $this->centsToDollars($f->amount_claimed_cents),
+            'description_of_work' => $f->description_of_work,
+            'jurisdiction_state' => $f->jurisdiction_state,
+            'jurisdiction_county' => $f->jurisdiction_county,
+            'service_level' => $f->service_level?->value,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function blankPartyForm(): array
+    {
+        return [
+            'role' => PartyRole::Owner->value,
+            'name' => '',
+            'company_name' => '',
+            'address1' => '',
+            'address2' => '',
+            'city' => '',
+            'state' => '',
+            'zip' => '',
+            'email' => '',
+            'phone' => '',
+        ];
+    }
+
+    /**
+     * @return array<string, list<mixed>>
+     */
+    private function projectRules(): array
+    {
+        return [
+            'projectForm.name' => ['required', 'string', 'max:255'],
+            'projectForm.job_number' => ['nullable', 'string', 'max:100'],
+            'projectForm.provided_type' => ['required', 'in:labor,materials_only,both'],
+            'projectForm.hired_by' => ['required', 'in:owner,direct_contractor,subcontractor'],
+            'projectForm.property_context' => ['nullable', 'in:unknown,tenant_improvement,owner_occupied'],
+            'projectForm.property_class' => ['nullable', 'in:residential,commercial,government'],
+            'projectForm.jobsite_address1' => ['nullable', 'string', 'max:255'],
+            'projectForm.jobsite_address2' => ['nullable', 'string', 'max:255'],
+            'projectForm.jobsite_city' => ['nullable', 'string', 'max:255'],
+            'projectForm.jobsite_state' => ['required', 'string', 'size:2'],
+            'projectForm.jobsite_zip' => ['nullable', 'string', 'max:10'],
+            'projectForm.jobsite_county' => ['nullable', 'string', 'max:255'],
+            'projectForm.legal_description' => ['nullable', 'string', 'max:2000'],
+            'projectForm.apn' => ['nullable', 'string', 'max:255'],
+            'projectForm.first_furnish_date' => ['nullable', 'date', 'before_or_equal:today'],
+            'projectForm.last_furnish_date' => ['nullable', 'date', 'before_or_equal:today', 'after_or_equal:projectForm.first_furnish_date'],
+            'projectForm.completion_date' => ['nullable', 'date', 'before_or_equal:today'],
+            'projectForm.noc_status' => ['nullable', 'in:yes,no,unknown'],
+            'projectForm.noc_recorded_at' => ['nullable', 'date'],
+            'projectForm.base_contract_amount' => ['nullable', 'numeric', 'min:0'],
+            'projectForm.change_orders' => ['nullable', 'numeric'],
+            'projectForm.credits_deductions' => ['nullable', 'numeric'],
+            'projectForm.payments_received' => ['nullable', 'numeric'],
+            'projectForm.uncompleted_work' => ['nullable', 'numeric'],
+            'projectForm.owner_is_tenant' => ['boolean'],
+            'projectForm.has_written_contract' => ['boolean'],
+        ];
+    }
+
+    /**
+     * @return array<string, list<mixed>>
+     */
+    private function filingRules(): array
+    {
+        return [
+            'filingForm.amount_claimed' => ['nullable', 'numeric', 'min:0'],
+            'filingForm.description_of_work' => ['nullable', 'string', 'max:5000'],
+            'filingForm.jurisdiction_state' => ['nullable', 'string', 'size:2'],
+            'filingForm.jurisdiction_county' => ['nullable', 'string', 'max:255'],
+            'filingForm.service_level' => ['required', 'in:self_serve,full_service'],
+        ];
+    }
+
+    /**
+     * @return array<string, list<mixed>>
+     */
+    private function partyRules(): array
+    {
+        return [
+            'partyForm.role' => ['required', Rule::enum(PartyRole::class)],
+            'partyForm.name' => ['required', 'string', 'max:255'],
+            'partyForm.company_name' => ['nullable', 'string', 'max:255'],
+            'partyForm.address1' => ['nullable', 'string', 'max:255'],
+            'partyForm.address2' => ['nullable', 'string', 'max:255'],
+            'partyForm.city' => ['nullable', 'string', 'max:255'],
+            'partyForm.state' => ['nullable', 'string', 'size:2'],
+            'partyForm.zip' => ['nullable', 'string', 'max:10'],
+            'partyForm.email' => ['nullable', 'email', 'max:255'],
+            'partyForm.phone' => ['nullable', 'string', 'max:50'],
+        ];
+    }
+
+    private function flashSyncResult(SyncResult $result, string $message): void
+    {
+        if ($result->skipReasonFor($this->lienFiling->id) === 'finalized') {
+            $siblings = $result->siblingSyncedCount($this->lienFiling->id);
+            $message .= ' This filing is finalized, so its fulfillment snapshot was not changed'
+                .($siblings > 0 ? "; {$siblings} other filing(s) were updated." : '.');
+        }
+
+        session()->flash('success', $message);
+
+        if ($result->staleSentRecipientWarnings !== []) {
+            session()->flash('warning', implode(' ', $result->staleSentRecipientWarnings));
+        }
+    }
+
+    private function dollarsToCents(mixed $value): ?int
+    {
+        if ($value === null || trim((string) $value) === '') {
+            return null;
+        }
+
+        return (int) round((float) $value * 100);
+    }
+
+    private function centsToDollars(?int $cents): ?string
+    {
+        if ($cents === null) {
+            return null;
+        }
+
+        return number_format($cents / 100, 2, '.', '');
     }
 }

@@ -33,6 +33,12 @@
     </flux:callout>
     @endif
 
+    @if (session('warning'))
+    <flux:callout variant="warning" icon="exclamation-triangle">
+        {{ session('warning') }}
+    </flux:callout>
+    @endif
+
     @if ($isDeleted)
     <flux:callout variant="danger" icon="trash">
         <flux:callout.heading>Filing deleted</flux:callout.heading>
@@ -366,7 +372,12 @@
             <!-- Project Information Card -->
             @if ($filing->project)
             <div class="rounded-lg border border-border bg-white p-6">
-                <flux:heading size="lg" class="mb-4">Project Information</flux:heading>
+                <div class="mb-4 flex items-center justify-between">
+                    <flux:heading size="lg">Project Information</flux:heading>
+                    @if ($canUpdate)
+                    <flux:button size="sm" variant="ghost" icon="pencil-square" wire:click="editProjectDetails">Edit</flux:button>
+                    @endif
+                </div>
 
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
@@ -497,18 +508,21 @@
 
             <!-- Filing Application Card -->
             <div class="rounded-lg border border-border bg-white p-6">
-                <flux:heading size="lg" class="mb-4">Filing Application</flux:heading>
+                <div class="mb-4 flex items-center justify-between">
+                    <flux:heading size="lg">Filing Application</flux:heading>
+                    @if ($canUpdate)
+                    <flux:button size="sm" variant="ghost" icon="pencil-square" wire:click="editFilingDetails">Edit</flux:button>
+                    @endif
+                </div>
 
-                @if ($filing->description_of_work)
                 <div class="mb-4">
                     <flux:text class="text-sm text-gray-500">Description of Work</flux:text>
-                    <flux:text class="font-medium">{{ $filing->description_of_work }}</flux:text>
+                    <flux:text class="font-medium">{{ $filing->description_of_work ?: 'Not specified' }}</flux:text>
                 </div>
-                @endif
 
                 @if (!empty($filing->parties_snapshot_json))
                 <div class="mt-4">
-                    <flux:text class="mb-3 text-sm font-medium text-gray-700">Parties</flux:text>
+                    <flux:text class="mb-3 text-sm font-medium text-gray-700">Parties (as submitted)</flux:text>
                     <div class="space-y-3">
                         @foreach ($filing->parties_snapshot_json as $party)
                         <div class="rounded-lg border border-gray-200 p-3">
@@ -556,6 +570,49 @@
                 <flux:text class="text-gray-500">No parties snapshot available.</flux:text>
                 @endif
             </div>
+
+            <!-- Parties (live / editable) -->
+            @if ($filing->project)
+            <div class="rounded-lg border border-border bg-white p-6">
+                <div class="mb-4 flex items-center justify-between">
+                    <flux:heading size="lg">Parties</flux:heading>
+                    @if ($canUpdate)
+                    <flux:button size="sm" variant="ghost" icon="plus" wire:click="addParty">Add Party</flux:button>
+                    @endif
+                </div>
+
+                @forelse ($filing->project->parties as $party)
+                <div wire:key="party-{{ $party->id }}" class="mb-3 rounded-lg border border-gray-200 p-3 last:mb-0">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <flux:badge size="sm" color="zinc">{{ $party->role?->label() ?? 'Party' }}</flux:badge>
+                            <flux:text class="mt-1 font-medium">{{ $party->displayName() ?: 'Unnamed' }}</flux:text>
+                            @if ($party->company_name && $party->name)
+                            <flux:text class="text-sm text-gray-500">{{ $party->name }}</flux:text>
+                            @endif
+                            @if ($party->addressLine())
+                            <flux:text class="mt-1 text-sm text-gray-500">{{ $party->addressLine() }}</flux:text>
+                            @endif
+                            @if ($party->email || $party->phone)
+                            <div class="mt-1 flex gap-4 text-sm text-gray-500">
+                                @if ($party->email)<span>{{ $party->email }}</span>@endif
+                                @if ($party->phone)<span>{{ $party->phone }}</span>@endif
+                            </div>
+                            @endif
+                        </div>
+                        @if ($canUpdate)
+                        <div class="flex shrink-0 gap-1">
+                            <flux:button size="xs" variant="ghost" icon="pencil-square" wire:click="editParty({{ $party->id }})" />
+                            <flux:button size="xs" variant="ghost" icon="trash" wire:click="confirmRemoveParty({{ $party->id }})" />
+                        </div>
+                        @endif
+                    </div>
+                </div>
+                @empty
+                <flux:text class="text-gray-500">No parties yet.</flux:text>
+                @endforelse
+            </div>
+            @endif
         </div>
 
         <!-- Sidebar -->
@@ -907,6 +964,53 @@
                                 </flux:text>
                             </div>
                         </div>
+                        @elseif ($event->event_type === 'application_project_updated')
+                        <div class="flex items-start gap-2">
+                            <flux:icon name="pencil-square" class="mt-0.5 size-4 shrink-0 text-indigo-500" />
+                            <div class="min-w-0">
+                                <flux:text class="text-sm font-medium text-indigo-700">Project details updated</flux:text>
+                                @include('lien.admin.partials.application-change-list', ['changes' => $event->payload_json['changes'] ?? []])
+                                <flux:text class="text-xs text-gray-400">
+                                    {{ $event->created_at->eastern()->format('M j, g:i A') }}
+                                    @if ($event->creator) &middot; {{ $event->creator->name }} @endif
+                                </flux:text>
+                            </div>
+                        </div>
+                        @elseif ($event->event_type === 'application_filing_updated')
+                        <div class="flex items-start gap-2">
+                            <flux:icon name="pencil-square" class="mt-0.5 size-4 shrink-0 text-indigo-500" />
+                            <div class="min-w-0">
+                                <flux:text class="text-sm font-medium text-indigo-700">Filing details updated</flux:text>
+                                @include('lien.admin.partials.application-change-list', ['changes' => $event->payload_json['changes'] ?? []])
+                                <flux:text class="text-xs text-gray-400">
+                                    {{ $event->created_at->eastern()->format('M j, g:i A') }}
+                                    @if ($event->creator) &middot; {{ $event->creator->name }} @endif
+                                </flux:text>
+                            </div>
+                        </div>
+                        @elseif ($event->event_type === 'application_parties_updated')
+                        @php
+                        $partyMeta = $event->payload_json['party'] ?? [];
+                        $partyVerb = match ($partyMeta['action'] ?? 'updated') {
+                            'added' => 'Party added',
+                            'removed' => 'Party removed',
+                            default => 'Party updated',
+                        };
+                        @endphp
+                        <div class="flex items-start gap-2">
+                            <flux:icon name="users" class="mt-0.5 size-4 shrink-0 text-indigo-500" />
+                            <div class="min-w-0">
+                                <flux:text class="text-sm font-medium text-indigo-700">{{ $partyVerb }}</flux:text>
+                                @if (! empty($partyMeta['label']))
+                                <flux:text class="text-xs text-gray-600">{{ $partyMeta['label'] }}</flux:text>
+                                @endif
+                                @include('lien.admin.partials.application-change-list', ['changes' => $event->payload_json['changes'] ?? []])
+                                <flux:text class="text-xs text-gray-400">
+                                    {{ $event->created_at->eastern()->format('M j, g:i A') }}
+                                    @if ($event->creator) &middot; {{ $event->creator->name }} @endif
+                                </flux:text>
+                            </div>
+                        </div>
                         @endif
                     </div>
                     @endforeach
@@ -1159,4 +1263,330 @@
             </div>
         </div>
     </div>
+
+    {{-- ============================ Edit modals ============================ --}}
+    @if ($canUpdate)
+
+    {{-- Edit Project Details --}}
+    <flux:modal wire:model="showProjectModal" class="max-w-2xl">
+        <form wire:submit="updateProjectDetails" class="space-y-6">
+            <div>
+                <flux:heading size="lg">Edit Project Details</flux:heading>
+                <flux:subheading>Corrections re-sync the fulfillment snapshot and recalculate deadlines.</flux:subheading>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:field>
+                    <flux:label>Project Name</flux:label>
+                    <flux:input wire:model="projectForm.name" />
+                    <flux:error name="projectForm.name" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Job Number</flux:label>
+                    <flux:input wire:model="projectForm.job_number" />
+                    <flux:error name="projectForm.job_number" />
+                </flux:field>
+
+                <flux:field>
+                    <flux:label>What you provided</flux:label>
+                    <flux:select wire:model="projectForm.provided_type">
+                        <flux:select.option value="labor">Labor</flux:select.option>
+                        <flux:select.option value="materials_only">Materials only</flux:select.option>
+                        <flux:select.option value="both">Both</flux:select.option>
+                    </flux:select>
+                    <flux:error name="projectForm.provided_type" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Who hired you</flux:label>
+                    <flux:select wire:model="projectForm.hired_by">
+                        <flux:select.option value="owner">Owner</flux:select.option>
+                        <flux:select.option value="direct_contractor">Direct contractor</flux:select.option>
+                        <flux:select.option value="subcontractor">Subcontractor</flux:select.option>
+                    </flux:select>
+                    <flux:error name="projectForm.hired_by" />
+                </flux:field>
+
+                <flux:field>
+                    <flux:label>Property Class</flux:label>
+                    <flux:select wire:model="projectForm.property_class">
+                        <flux:select.option value="">Not set</flux:select.option>
+                        <flux:select.option value="residential">Residential</flux:select.option>
+                        <flux:select.option value="commercial">Commercial</flux:select.option>
+                        <flux:select.option value="government">Government</flux:select.option>
+                    </flux:select>
+                    <flux:error name="projectForm.property_class" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Property Context</flux:label>
+                    <flux:select wire:model="projectForm.property_context">
+                        <flux:select.option value="">Not set</flux:select.option>
+                        <flux:select.option value="unknown">Unknown</flux:select.option>
+                        <flux:select.option value="tenant_improvement">Tenant improvement</flux:select.option>
+                        <flux:select.option value="owner_occupied">Owner occupied</flux:select.option>
+                    </flux:select>
+                    <flux:error name="projectForm.property_context" />
+                </flux:field>
+            </div>
+
+            <flux:separator text="Jobsite" />
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:field class="sm:col-span-2">
+                    <flux:label>Address</flux:label>
+                    <flux:input wire:model="projectForm.jobsite_address1" />
+                    <flux:error name="projectForm.jobsite_address1" />
+                </flux:field>
+                <flux:field class="sm:col-span-2">
+                    <flux:label>Address 2</flux:label>
+                    <flux:input wire:model="projectForm.jobsite_address2" />
+                    <flux:error name="projectForm.jobsite_address2" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>City</flux:label>
+                    <flux:input wire:model="projectForm.jobsite_city" />
+                    <flux:error name="projectForm.jobsite_city" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>State</flux:label>
+                    <flux:input wire:model="projectForm.jobsite_state" maxlength="2" />
+                    <flux:error name="projectForm.jobsite_state" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>ZIP</flux:label>
+                    <flux:input wire:model="projectForm.jobsite_zip" />
+                    <flux:error name="projectForm.jobsite_zip" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>County</flux:label>
+                    <flux:input wire:model="projectForm.jobsite_county" />
+                    <flux:error name="projectForm.jobsite_county" />
+                </flux:field>
+                <flux:field class="sm:col-span-2">
+                    <flux:label>Legal Description</flux:label>
+                    <flux:textarea wire:model="projectForm.legal_description" rows="2" />
+                    <flux:error name="projectForm.legal_description" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>APN</flux:label>
+                    <flux:input wire:model="projectForm.apn" />
+                    <flux:error name="projectForm.apn" />
+                </flux:field>
+            </div>
+
+            <flux:separator text="Dates & NOC" />
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:field>
+                    <flux:label>First Furnish Date</flux:label>
+                    <flux:input type="date" wire:model="projectForm.first_furnish_date" />
+                    <flux:error name="projectForm.first_furnish_date" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Last Furnish Date</flux:label>
+                    <flux:input type="date" wire:model="projectForm.last_furnish_date" />
+                    <flux:error name="projectForm.last_furnish_date" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Completion Date</flux:label>
+                    <flux:input type="date" wire:model="projectForm.completion_date" />
+                    <flux:error name="projectForm.completion_date" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>NOC Status</flux:label>
+                    <flux:select wire:model="projectForm.noc_status">
+                        <flux:select.option value="">Not set</flux:select.option>
+                        <flux:select.option value="unknown">Not sure</flux:select.option>
+                        <flux:select.option value="no">No</flux:select.option>
+                        <flux:select.option value="yes">Yes</flux:select.option>
+                    </flux:select>
+                    <flux:error name="projectForm.noc_status" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>NOC Recorded</flux:label>
+                    <flux:input type="date" wire:model="projectForm.noc_recorded_at" />
+                    <flux:error name="projectForm.noc_recorded_at" />
+                </flux:field>
+            </div>
+
+            <flux:separator text="Amounts (USD)" />
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:field>
+                    <flux:label>Base Contract</flux:label>
+                    <flux:input type="number" step="0.01" wire:model="projectForm.base_contract_amount" />
+                    <flux:error name="projectForm.base_contract_amount" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Change Orders</flux:label>
+                    <flux:input type="number" step="0.01" wire:model="projectForm.change_orders" />
+                    <flux:error name="projectForm.change_orders" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Credits / Deductions</flux:label>
+                    <flux:input type="number" step="0.01" wire:model="projectForm.credits_deductions" />
+                    <flux:error name="projectForm.credits_deductions" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Payments Received</flux:label>
+                    <flux:input type="number" step="0.01" wire:model="projectForm.payments_received" />
+                    <flux:error name="projectForm.payments_received" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Uncompleted Work</flux:label>
+                    <flux:input type="number" step="0.01" wire:model="projectForm.uncompleted_work" />
+                    <flux:error name="projectForm.uncompleted_work" />
+                </flux:field>
+            </div>
+
+            <div class="flex items-center gap-6">
+                <flux:switch wire:model="projectForm.owner_is_tenant" label="Owner is tenant" />
+                <flux:switch wire:model="projectForm.has_written_contract" label="Written contract" />
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <flux:modal.close>
+                    <flux:button variant="filled" type="button">Cancel</flux:button>
+                </flux:modal.close>
+                <flux:button type="submit" variant="primary">Save Project Details</flux:button>
+            </div>
+        </form>
+    </flux:modal>
+
+    {{-- Edit Filing Details --}}
+    <flux:modal wire:model="showFilingModal" class="max-w-lg">
+        <form wire:submit="updateFilingDetails" class="space-y-5">
+            <div>
+                <flux:heading size="lg">Edit Filing Details</flux:heading>
+                <flux:subheading>Corrections re-sync the fulfillment snapshot.</flux:subheading>
+            </div>
+
+            <flux:field>
+                <flux:label>Claim Amount (USD)</flux:label>
+                <flux:input type="number" step="0.01" wire:model="filingForm.amount_claimed" />
+                <flux:error name="filingForm.amount_claimed" />
+            </flux:field>
+            <flux:field>
+                <flux:label>Description of Work</flux:label>
+                <flux:textarea wire:model="filingForm.description_of_work" rows="3" />
+                <flux:error name="filingForm.description_of_work" />
+            </flux:field>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:field>
+                    <flux:label>Jurisdiction State</flux:label>
+                    <flux:input wire:model="filingForm.jurisdiction_state" maxlength="2" />
+                    <flux:error name="filingForm.jurisdiction_state" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Jurisdiction County</flux:label>
+                    <flux:input wire:model="filingForm.jurisdiction_county" />
+                    <flux:error name="filingForm.jurisdiction_county" />
+                </flux:field>
+            </div>
+            <flux:field>
+                <flux:label>Service Level</flux:label>
+                <flux:select wire:model="filingForm.service_level">
+                    @foreach (\App\Domains\Lien\Enums\ServiceLevel::cases() as $level)
+                    <flux:select.option value="{{ $level->value }}">{{ $level->label() }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                <flux:error name="filingForm.service_level" />
+            </flux:field>
+
+            <div class="flex justify-end gap-2">
+                <flux:modal.close>
+                    <flux:button variant="filled" type="button">Cancel</flux:button>
+                </flux:modal.close>
+                <flux:button type="submit" variant="primary">Save Filing Details</flux:button>
+            </div>
+        </form>
+    </flux:modal>
+
+    {{-- Add / Edit Party --}}
+    <flux:modal wire:model="showPartyModal" class="max-w-lg">
+        <form wire:submit="saveParty" class="space-y-5">
+            <flux:heading size="lg">{{ $editingPartyId ? 'Edit Party' : 'Add Party' }}</flux:heading>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:field class="sm:col-span-2">
+                    <flux:label>Role</flux:label>
+                    <flux:select wire:model="partyForm.role">
+                        @foreach (\App\Domains\Lien\Enums\PartyRole::cases() as $role)
+                        <flux:select.option value="{{ $role->value }}">{{ $role->label() }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                    <flux:error name="partyForm.role" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Name</flux:label>
+                    <flux:input wire:model="partyForm.name" />
+                    <flux:error name="partyForm.name" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Company Name</flux:label>
+                    <flux:input wire:model="partyForm.company_name" />
+                    <flux:error name="partyForm.company_name" />
+                </flux:field>
+                <flux:field class="sm:col-span-2">
+                    <flux:label>Address</flux:label>
+                    <flux:input wire:model="partyForm.address1" />
+                    <flux:error name="partyForm.address1" />
+                </flux:field>
+                <flux:field class="sm:col-span-2">
+                    <flux:label>Address 2</flux:label>
+                    <flux:input wire:model="partyForm.address2" />
+                    <flux:error name="partyForm.address2" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>City</flux:label>
+                    <flux:input wire:model="partyForm.city" />
+                    <flux:error name="partyForm.city" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>State</flux:label>
+                    <flux:input wire:model="partyForm.state" maxlength="2" />
+                    <flux:error name="partyForm.state" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>ZIP</flux:label>
+                    <flux:input wire:model="partyForm.zip" />
+                    <flux:error name="partyForm.zip" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Email</flux:label>
+                    <flux:input type="email" wire:model="partyForm.email" />
+                    <flux:error name="partyForm.email" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Phone</flux:label>
+                    <flux:input wire:model="partyForm.phone" />
+                    <flux:error name="partyForm.phone" />
+                </flux:field>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <flux:modal.close>
+                    <flux:button variant="filled" type="button">Cancel</flux:button>
+                </flux:modal.close>
+                <flux:button type="submit" variant="primary">{{ $editingPartyId ? 'Save Party' : 'Add Party' }}</flux:button>
+            </div>
+        </form>
+    </flux:modal>
+
+    {{-- Remove Party confirmation --}}
+    <flux:modal wire:model="showRemovePartyModal" class="max-w-md">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg">Remove this party?</flux:heading>
+                <flux:subheading class="mt-2">
+                    The party will be removed from the application and the fulfillment snapshot re-synced.
+                    Any unsent mailing for this party will be withdrawn.
+                </flux:subheading>
+            </div>
+            <div class="flex justify-end gap-2">
+                <flux:modal.close>
+                    <flux:button variant="filled">Cancel</flux:button>
+                </flux:modal.close>
+                <flux:button wire:click="removeParty" variant="danger" icon="trash">Remove Party</flux:button>
+            </div>
+        </div>
+    </flux:modal>
+
+    @endif
 </div>

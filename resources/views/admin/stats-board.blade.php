@@ -229,7 +229,7 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-gray-600">
-                                {{ $signup['created_at']->setTimezone('America/New_York')->format('M j, Y g:i A') }}
+                                {{ $signup['created_at']->eastern()->format('M j, Y g:i A') }}
                             </td>
                         </tr>
                     @empty
@@ -276,7 +276,7 @@
                                 <flux:badge size="sm" color="green">{{ $payment['status'] }}</flux:badge>
                             </td>
                             <td class="px-4 py-3 text-gray-600">
-                                {{ $payment['paid_at']->setTimezone('America/New_York')->format('M j, Y g:i A') }}
+                                {{ $payment['paid_at']->eastern()->format('M j, Y g:i A') }}
                             </td>
                         </tr>
                     @empty
@@ -325,7 +325,7 @@
                                 </flux:badge>
                             </td>
                             <td class="px-4 py-3 text-gray-600">
-                                {{ $subscription['created_at']->setTimezone('America/New_York')->format('M j, Y g:i A') }}
+                                {{ $subscription['created_at']->eastern()->format('M j, Y g:i A') }}
                             </td>
                         </tr>
                     @empty

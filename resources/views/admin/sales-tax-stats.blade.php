@@ -146,7 +146,7 @@
                                 </div>
                             </td>
                             <td class="px-4 py-3 text-gray-600">
-                                {{ ($registration['paid_at'] ?? $registration['created_at'])?->setTimezone('America/New_York')->format('M j, Y g:i A') }}
+                                {{ ($registration['paid_at'] ?? $registration['created_at'])?->eastern()->format('M j, Y g:i A') }}
                             </td>
                         </tr>
                     @empty

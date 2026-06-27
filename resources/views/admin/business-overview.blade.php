@@ -106,7 +106,7 @@
                 </div>
                 <div>
                     <flux:text class="text-sm text-gray-500">Created</flux:text>
-                    <flux:text class="mt-1 font-medium">{{ $business->created_at->format('M j, Y g:i A') }}</flux:text>
+                    <flux:text class="mt-1 font-medium">{{ $business->created_at->eastern()->format('M j, Y g:i A') }}</flux:text>
                 </div>
                 <div>
                     <flux:text class="text-sm text-gray-500">Phone</flux:text>
@@ -346,7 +346,7 @@
                         </td>
                         <td class="px-4 py-3">
                             <flux:text class="text-sm text-gray-500">
-                                {{ $payment->paid_at?->format('M j, Y g:i A') ?? $payment->created_at->format('M j, Y
+                                {{ $payment->paid_at?->eastern()->format('M j, Y g:i A') ?? $payment->created_at->eastern()->format('M j, Y
                                 g:i A') }}
                             </flux:text>
                         </td>

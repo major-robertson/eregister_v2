@@ -69,6 +69,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Display Timezone
+    |--------------------------------------------------------------------------
+    |
+    | Timestamps are stored in UTC (above) but presented to users/admins in this
+    | timezone. The `->eastern()` Carbon macro (AppServiceProvider) reads this for
+    | display, and admin datetime inputs are parsed as this zone before storage.
+    |
+    */
+
+    'display_timezone' => 'America/New_York',
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

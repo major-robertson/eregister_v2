@@ -81,8 +81,9 @@ class LienFilingDetail extends Component
         $this->recordingMethod = $this->lienFiling->recording_method?->value ?? '';
         $this->recordingProvider = (string) ($this->lienFiling->recording_provider ?? '');
         $this->recordingReference = (string) ($this->lienFiling->recording_reference ?? '');
+        // Shown/edited in the display timezone; parsed back from it on save.
         $this->recordingSubmittedAt = $this->lienFiling->recording_submitted_at
-            ? $this->lienFiling->recording_submitted_at->format('Y-m-d\TH:i')
+            ? $this->lienFiling->recording_submitted_at->eastern()->format('Y-m-d\TH:i')
             : '';
     }
 
@@ -95,7 +96,7 @@ class LienFilingDetail extends Component
     public function updatedNewStatus(string $value): void
     {
         if ($value === FilingStatus::SubmittedForRecording->value && $this->recordingSubmittedAt === '') {
-            $this->recordingSubmittedAt = now()->format('Y-m-d\TH:i');
+            $this->recordingSubmittedAt = now()->eastern()->format('Y-m-d\TH:i');
         }
     }
 
@@ -334,7 +335,7 @@ class LienFilingDetail extends Component
             recordingProvider: $isRecordingTransition ? ($this->recordingProvider ?: null) : null,
             recordingReference: $isRecordingTransition ? ($this->recordingReference ?: null) : null,
             recordingSubmittedAt: $isRecordingTransition && $this->recordingSubmittedAt
-                ? Carbon::parse($this->recordingSubmittedAt)
+                ? Carbon::parse($this->recordingSubmittedAt, config('app.display_timezone'))->utc()
                 : null,
         );
 
@@ -369,7 +370,7 @@ class LienFilingDetail extends Component
             recordingProvider: $this->recordingProvider ?: null,
             recordingReference: $this->recordingReference ?: null,
             recordingSubmittedAt: $this->recordingSubmittedAt
-                ? Carbon::parse($this->recordingSubmittedAt)
+                ? Carbon::parse($this->recordingSubmittedAt, config('app.display_timezone'))->utc()
                 : null,
         );
 

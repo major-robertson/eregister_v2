@@ -37,7 +37,7 @@
     <flux:callout variant="danger" icon="trash">
         <flux:callout.heading>Filing deleted</flux:callout.heading>
         <flux:callout.text>
-            Deleted on {{ $filing->deleted_at?->format('M j, Y g:i A') ?? 'unknown' }}.
+            Deleted on {{ $filing->deleted_at?->eastern()->format('M j, Y g:i A') ?? 'unknown' }}.
             This filing is no longer visible to the customer and all automated emails have been stopped.
         </flux:callout.text>
     </flux:callout>
@@ -81,7 +81,7 @@
                 </div>
                 <div class="flex items-center justify-between">
                     <flux:text class="text-gray-500">Deleted</flux:text>
-                    <flux:text class="font-medium text-red-600">{{ $filing->deleted_at?->format('M j, Y g:i A') ?? '—' }}</flux:text>
+                    <flux:text class="font-medium text-red-600">{{ $filing->deleted_at?->eastern()->format('M j, Y g:i A') ?? '—' }}</flux:text>
                 </div>
                 <div class="flex items-center justify-between">
                     <flux:text class="text-gray-500">Created</flux:text>
@@ -107,7 +107,7 @@
                     <flux:text class="text-gray-500">Paid</flux:text>
                     <flux:text class="font-medium">
                         @if ($filing->paid_at)
-                        {{ $filing->paid_at->format('M j, Y g:i A') }}
+                        {{ $filing->paid_at->eastern()->format('M j, Y g:i A') }}
                         @else
                         Not paid
                         @endif
@@ -121,7 +121,7 @@
                 @if ($refundablePayment->isRefunded())
                 <div class="flex items-center justify-between">
                     <flux:text class="text-gray-500">Refunded</flux:text>
-                    <flux:text class="font-medium text-red-600">{{ $refundablePayment->refunded_at->format('M j, Y g:i A') }}</flux:text>
+                    <flux:text class="font-medium text-red-600">{{ $refundablePayment->refunded_at->eastern()->format('M j, Y g:i A') }}</flux:text>
                 </div>
                 @endif
                 @endif
@@ -691,14 +691,14 @@
 
                     <div class="flex items-center justify-between">
                         <flux:text class="text-sm text-gray-500">Created</flux:text>
-                        <flux:text class="font-medium">{{ $filing->created_at->format('M j, Y g:i A') }}</flux:text>
+                        <flux:text class="font-medium">{{ $filing->created_at->eastern()->format('M j, Y g:i A') }}</flux:text>
                     </div>
 
                     <div class="flex items-center justify-between">
                         <flux:text class="text-sm text-gray-500">Paid</flux:text>
                         <flux:text class="font-medium">
                             @if ($filing->paid_at)
-                            {{ $filing->paid_at->format('M j, Y g:i A') }}
+                            {{ $filing->paid_at->eastern()->format('M j, Y g:i A') }}
                             @else
                             Not paid
                             @endif
@@ -708,7 +708,7 @@
                     @if ($refundablePayment?->isRefunded())
                     <div class="flex items-center justify-between">
                         <flux:text class="text-sm text-gray-500">Refunded</flux:text>
-                        <flux:text class="font-medium text-red-600">{{ $refundablePayment->refunded_at->format('M j, Y g:i A') }}</flux:text>
+                        <flux:text class="font-medium text-red-600">{{ $refundablePayment->refunded_at->eastern()->format('M j, Y g:i A') }}</flux:text>
                     </div>
                     @endif
                 </div>
@@ -846,7 +846,7 @@
                             </flux:badge>
                             @endif
                             <flux:text class="text-xs text-gray-400">
-                                {{ $event->created_at->format('M j, g:i A') }}
+                                {{ $event->created_at->eastern()->format('M j, g:i A') }}
                                 @if ($event->creator)
                                 &middot; {{ $event->creator->name }}
                                 @endif
@@ -861,7 +861,7 @@
                             <div class="min-w-0">
                                 <flux:text class="text-sm text-gray-600">{{ $event->payload_json['comment'] ?? '' }}</flux:text>
                                 <flux:text class="text-xs text-gray-400">
-                                    {{ $event->created_at->format('M j, g:i A') }}
+                                    {{ $event->created_at->eastern()->format('M j, g:i A') }}
                                     @if ($event->creator)
                                     &middot; {{ $event->creator->name }}
                                     @endif
@@ -874,7 +874,7 @@
                             <div class="min-w-0">
                                 <flux:text class="text-sm font-medium text-red-600">Refunded {{ $event->payload_json['amount'] ?? '' }}</flux:text>
                                 <flux:text class="text-xs text-gray-400">
-                                    {{ $event->created_at->format('M j, g:i A') }}
+                                    {{ $event->created_at->eastern()->format('M j, g:i A') }}
                                     @if ($event->creator)
                                     &middot; {{ $event->creator->name }}
                                     @endif
@@ -900,7 +900,7 @@
                                 </ul>
                                 @endif
                                 <flux:text class="text-xs text-gray-400">
-                                    {{ $event->created_at->format('M j, g:i A') }}
+                                    {{ $event->created_at->eastern()->format('M j, g:i A') }}
                                     @if ($event->creator)
                                     &middot; {{ $event->creator->name }}
                                     @endif

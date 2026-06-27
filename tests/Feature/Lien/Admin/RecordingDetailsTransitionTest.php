@@ -45,13 +45,14 @@ describe('transitioning to SubmittedForRecording via the admin component', funct
     });
 
     it('prefills recording_submitted_at with the current timestamp when SubmittedForRecording is selected', function () {
-        Carbon::setTestNow('2026-04-25 16:42:00');
+        Carbon::setTestNow('2026-04-25 16:42:00'); // UTC
 
         $component = Livewire::test(LienFilingDetail::class, ['lienFiling' => $this->filing])
             ->set('newStatus', FilingStatus::SubmittedForRecording->value);
 
-        // The updatedNewStatus hook should have populated the field for us.
-        expect($component->get('recordingSubmittedAt'))->toBe('2026-04-25T16:42');
+        // The updatedNewStatus hook prefills "now" in the display timezone:
+        // 16:42 UTC == 12:42 Eastern (EDT, UTC-4).
+        expect($component->get('recordingSubmittedAt'))->toBe('2026-04-25T12:42');
 
         Carbon::setTestNow();
     });
@@ -109,7 +110,8 @@ describe('transitioning to SubmittedForRecording via the admin component', funct
             ->and($this->filing->recording_method)->toBe(RecordingMethod::Mail)
             ->and($this->filing->recording_provider)->toBe('USPS Certified')
             ->and($this->filing->recording_reference)->toBe('CM-1234-5678')
-            ->and($this->filing->recording_submitted_at?->format('Y-m-d H:i'))->toBe('2026-04-25 14:30');
+            // Admin enters 14:30 Eastern (EDT) → stored as 18:30 UTC.
+            ->and($this->filing->recording_submitted_at?->format('Y-m-d H:i'))->toBe('2026-04-25 18:30');
     });
 
     it('does NOT require recording_method for transitions to other statuses', function () {
@@ -133,6 +135,25 @@ describe('updating recording details after the fact', function () {
         ]);
     });
 
+    it('shows the stored UTC time in Eastern and round-trips it back to UTC unchanged', function () {
+        // 18:30 UTC == 14:30 Eastern (EDT, UTC-4).
+        $this->filing->update([
+            'recording_submitted_at' => Carbon::parse('2026-04-25 18:30:00', 'UTC'),
+        ]);
+
+        $component = Livewire::test(LienFilingDetail::class, ['lienFiling' => $this->filing->refresh()]);
+
+        // Displayed in Eastern, not the raw UTC 18:30.
+        expect($component->get('recordingSubmittedAt'))->toBe('2026-04-25T14:30');
+
+        // Re-submitting that same Eastern value keeps the stored UTC value intact.
+        $component->set('recordingProvider', 'Simplifile')
+            ->call('updateRecordingDetails')
+            ->assertHasNoErrors();
+
+        expect($this->filing->refresh()->recording_submitted_at?->format('Y-m-d H:i'))->toBe('2026-04-25 18:30');
+    });
+
     it('updates the recording fields without changing status and writes an event', function () {
         $sentAt = Carbon::parse('2026-04-26 09:15:00');
 
@@ -147,7 +168,8 @@ describe('updating recording details after the fact', function () {
         expect($this->filing->status)->toBe(FilingStatus::SubmittedForRecording)
             ->and($this->filing->recording_provider)->toBe('Simplifile')
             ->and($this->filing->recording_reference)->toBe('SF-9999')
-            ->and($this->filing->recording_submitted_at?->format('Y-m-d H:i'))->toBe('2026-04-26 09:15');
+            // Admin enters 09:15 Eastern (EDT) → stored as 13:15 UTC.
+            ->and($this->filing->recording_submitted_at?->format('Y-m-d H:i'))->toBe('2026-04-26 13:15');
 
         $event = $this->filing->events()
             ->where('event_type', 'recording_details_updated')
@@ -190,7 +212,9 @@ describe('updating recording details after the fact', function () {
             ->set('recordingMethod', RecordingMethod::Erecord->value)
             ->set('recordingProvider', 'Simplifile')
             ->set('recordingReference', 'SF-1')
-            ->set('recordingSubmittedAt', $sentAt->format('Y-m-d\TH:i'))
+            // The form shows/edits the time in the display timezone; re-submitting
+            // that same Eastern value must round-trip to the stored UTC value unchanged.
+            ->set('recordingSubmittedAt', $sentAt->copy()->eastern()->format('Y-m-d\TH:i'))
             ->call('updateRecordingDetails')
             ->assertHasNoErrors();
 

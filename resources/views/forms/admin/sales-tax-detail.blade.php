@@ -76,13 +76,13 @@
                     <div>
                         <dt class="text-xs uppercase tracking-wide text-text-secondary">Paid</dt>
                         <dd class="mt-1 text-sm text-text-primary">
-                            {{ $app?->paid_at?->format('M j, Y g:ia') ?? '—' }}
+                            {{ $app?->paid_at?->eastern()->format('M j, Y g:ia') ?? '—' }}
                         </dd>
                     </div>
                     <div>
                         <dt class="text-xs uppercase tracking-wide text-text-secondary">Submitted by Customer</dt>
                         <dd class="mt-1 text-sm text-text-primary">
-                            {{ $app?->submitted_at?->format('M j, Y g:ia') ?? '—' }}
+                            {{ $app?->submitted_at?->eastern()->format('M j, Y g:ia') ?? '—' }}
                         </dd>
                     </div>
                 </dl>
@@ -164,7 +164,7 @@
                                     </div>
                                     <flux:text class="mt-1 text-xs text-text-secondary">
                                         {{ $transition->changedBy?->name ?? 'System' }}
-                                        &middot; {{ $transition->created_at->format('M j, Y g:ia') }}
+                                        &middot; {{ $transition->created_at->eastern()->format('M j, Y g:ia') }}
                                         ({{ $transition->created_at->diffForHumans() }})
                                     </flux:text>
                                     @if ($transition->comment)

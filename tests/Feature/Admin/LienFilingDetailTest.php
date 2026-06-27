@@ -381,6 +381,30 @@ describe('activity log', function () {
             ->assertSee('Activity Log')
             ->assertSee('This filing needs additional documentation.');
     });
+
+    it('renders activity log timestamps in Eastern time, not UTC', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view', 'lien.update');
+
+        $business = Business::factory()->create();
+        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        $filing = LienFiling::factory()->forProject($project)->create();
+
+        $event = $filing->events()->create([
+            'business_id' => $filing->business_id,
+            'event_type' => 'note_added',
+            'payload_json' => ['comment' => 'Timezone check note.'],
+            'created_by' => $admin->id,
+        ]);
+        // 6:00 PM UTC on a winter date == 1:00 PM Eastern (EST, UTC-5).
+        $event->forceFill(['created_at' => '2026-01-15 18:00:00'])->save();
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->assertSee('Jan 15, 1:00 PM')      // Eastern
+            ->assertDontSee('Jan 15, 6:00 PM'); // not raw UTC
+    });
 });
 
 describe('add comment', function () {

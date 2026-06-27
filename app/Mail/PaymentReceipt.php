@@ -34,7 +34,7 @@ class PaymentReceipt extends Mailable implements ShouldQueue
                 'userName' => $this->recipientName(),
                 'itemDescription' => $this->itemDescription(),
                 'amount' => $this->payment->formattedAmount(),
-                'paidAt' => $this->payment->paid_at?->format('F j, Y g:i A'),
+                'paidAt' => $this->payment->paid_at?->eastern()->format('F j, Y g:i A'),
                 'paymentId' => $this->payment->id,
             ],
         );

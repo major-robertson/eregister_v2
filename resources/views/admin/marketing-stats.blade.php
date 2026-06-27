@@ -247,7 +247,7 @@
                             <td class="px-4 py-3">{{ $visit['source'] }}</td>
                             <td class="px-4 py-3">{{ $visit['step_name'] }}</td>
                             <td class="px-4 py-3 text-gray-600">
-                                {{ $visit['visited_at']->setTimezone('America/New_York')->format('M j, g:i A') }}
+                                {{ $visit['visited_at']->eastern()->format('M j, g:i A') }}
                             </td>
                         </tr>
                         @empty
@@ -286,7 +286,7 @@
                             </td>
                             <td class="px-4 py-3">{{ $event['step_name'] }}</td>
                             <td class="px-4 py-3 text-gray-600">
-                                {{ $event['occurred_at']->setTimezone('America/New_York')->format('M j, g:i A') }}
+                                {{ $event['occurred_at']->eastern()->format('M j, g:i A') }}
                             </td>
                         </tr>
                         @empty

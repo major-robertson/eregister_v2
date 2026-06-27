@@ -154,6 +154,17 @@ class AppServiceProvider extends ServiceProvider
     {
         Date::use(CarbonImmutable::class);
 
+        // Timestamps are stored in UTC (config app.timezone). The whole product
+        // displays times in Eastern, so `->eastern()` is the one place that
+        // converts for display. Use it before ->format() at every user/admin-facing
+        // timestamp. Must be a real closure (not an arrow fn) so Carbon can rebind
+        // $this to the date instance; registered on both Carbon flavors.
+        $eastern = function () {
+            return $this->setTimezone(config('app.display_timezone'));
+        };
+        CarbonImmutable::macro('eastern', $eastern);
+        \Carbon\Carbon::macro('eastern', $eastern);
+
         DB::prohibitDestructiveCommands(
             app()->isProduction(),
         );

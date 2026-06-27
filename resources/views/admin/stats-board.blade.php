@@ -145,6 +145,34 @@
                 </div>
             </div>
         </div>
+
+        <!-- Formations Card -->
+        <div class="rounded-lg border border-border bg-white p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="flex size-10 items-center justify-center rounded-lg bg-indigo-100">
+                    <flux:icon name="building-office-2" class="size-5 text-indigo-600" />
+                </div>
+                <flux:heading size="sm">Formations Paid</flux:heading>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <flux:text class="text-sm text-gray-500">Today</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $formationStats['today'] }}</flux:text>
+                </div>
+                <div>
+                    <flux:text class="text-sm text-gray-500">Yesterday</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $formationStats['yesterday'] }}</flux:text>
+                </div>
+                <div>
+                    <flux:text class="text-sm text-gray-500">This Week</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $formationStats['this_week'] }}</flux:text>
+                </div>
+                <div>
+                    <flux:text class="text-sm text-gray-500">This Month</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $formationStats['this_month'] }}</flux:text>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Recent Signups Table -->

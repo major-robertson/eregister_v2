@@ -3,6 +3,7 @@
 namespace App\Domains\Admin\Livewire;
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Forms\Models\LlcFormation;
 use App\Domains\Forms\Models\SalesTaxRegistration;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Models\LienFiling;
@@ -27,6 +28,7 @@ class StatsBoard extends Component
             'subscriptionStats' => $this->getSubscriptionStats(),
             'lienFilingStats' => $this->getLienFilingStats(),
             'salesTaxStats' => $this->getSalesTaxStats(),
+            'formationStats' => $this->getFormationStats(),
             'recentSignups' => $this->getRecentSignups(),
             'recentPayments' => $this->getRecentPayments(),
             'recentSubscriptions' => $this->getRecentSubscriptions(),
@@ -161,6 +163,25 @@ class StatsBoard extends Component
             'this_week' => SalesTaxRegistration::whereNotNull('paid_at')
                 ->whereBetween('paid_at', $this->getEstDateRange('this_week'))->count(),
             'this_month' => SalesTaxRegistration::whereNotNull('paid_at')
+                ->whereBetween('paid_at', $this->getEstDateRange('this_month'))->count(),
+        ];
+    }
+
+    /**
+     * Get paid LLC formation counts for different time periods (EST).
+     *
+     * @return array{today: int, yesterday: int, this_week: int, this_month: int}
+     */
+    protected function getFormationStats(): array
+    {
+        return [
+            'today' => LlcFormation::whereNotNull('paid_at')
+                ->whereBetween('paid_at', $this->getEstDateRange('today'))->count(),
+            'yesterday' => LlcFormation::whereNotNull('paid_at')
+                ->whereBetween('paid_at', $this->getEstDateRange('yesterday'))->count(),
+            'this_week' => LlcFormation::whereNotNull('paid_at')
+                ->whereBetween('paid_at', $this->getEstDateRange('this_week'))->count(),
+            'this_month' => LlcFormation::whereNotNull('paid_at')
                 ->whereBetween('paid_at', $this->getEstDateRange('this_month'))->count(),
         ];
     }

@@ -210,6 +210,68 @@ describe('displaying sales tax stats', function () {
     });
 });
 
+describe('displaying formation stats', function () {
+    it('displays the formations paid section', function () {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $this->actingAs($admin);
+
+        Livewire::test(StatsBoard::class)
+            ->assertSee('Formations Paid');
+    });
+
+    it('counts paid LLC formations and excludes other form types', function () {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $business = Business::factory()->create();
+
+        FormApplication::create([
+            'business_id' => $business->id,
+            'form_type' => 'llc',
+            'definition_version' => 1,
+            'selected_states' => ['WY'],
+            'status' => 'submitted',
+            'current_phase' => 'review',
+            'core_data' => [],
+            'created_by_user_id' => $admin->id,
+            'paid_at' => now(),
+        ]);
+
+        // An unpaid LLC and a paid sales-tax application must not be counted.
+        FormApplication::create([
+            'business_id' => $business->id,
+            'form_type' => 'llc',
+            'definition_version' => 1,
+            'selected_states' => ['DE'],
+            'status' => 'draft',
+            'current_phase' => 'core',
+            'core_data' => [],
+            'created_by_user_id' => $admin->id,
+        ]);
+
+        FormApplication::create([
+            'business_id' => $business->id,
+            'form_type' => 'sales_tax_permit',
+            'definition_version' => 1,
+            'selected_states' => ['CA'],
+            'status' => 'submitted',
+            'current_phase' => 'review',
+            'core_data' => [],
+            'created_by_user_id' => $admin->id,
+            'paid_at' => now(),
+        ]);
+
+        $this->actingAs($admin);
+
+        $stats = Livewire::test(StatsBoard::class)->viewData('formationStats');
+
+        expect($stats['this_month'])->toBe(1)
+            ->and($stats['today'])->toBe(1);
+    });
+});
+
 describe('user business info in signups table', function () {
     it('shows state from business address', function () {
         $admin = User::factory()->create();

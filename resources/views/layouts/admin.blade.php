@@ -26,6 +26,12 @@
                     {{ __('Sales Tax') }}
                 </flux:sidebar.item>
                 @endcan
+                @can('llc.view')
+                <flux:sidebar.item icon="building-office-2" :href="route('admin.formations.board')"
+                    :current="request()->routeIs('admin.formations.*')" wire:navigate>
+                    {{ __('Formations') }}
+                </flux:sidebar.item>
+                @endcan
             </flux:sidebar.group>
 
             @role('admin')
@@ -41,6 +47,10 @@
                 <flux:sidebar.item icon="receipt-percent" :href="route('admin.sales-tax-stats')"
                     :current="request()->routeIs('admin.sales-tax-stats')" wire:navigate>
                     {{ __('Sales Tax Stats') }}
+                </flux:sidebar.item>
+                <flux:sidebar.item icon="building-office-2" :href="route('admin.formation-stats')"
+                    :current="request()->routeIs('admin.formation-stats')" wire:navigate>
+                    {{ __('Formation Stats') }}
                 </flux:sidebar.item>
                 <flux:sidebar.item icon="megaphone" :href="route('admin.marketing')"
                     :current="request()->routeIs('admin.marketing')" wire:navigate>

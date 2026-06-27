@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
         // Billing / Pricing seeders
         $this->call([
             PriceSeeder::class,
+            FormationFeeSeeder::class,
         ]);
 
         // Admin permissions and roles

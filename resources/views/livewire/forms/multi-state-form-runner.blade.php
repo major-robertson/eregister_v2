@@ -58,14 +58,22 @@
                 Please review all your information before submitting.
             </p>
 
-            {{-- Shared answers (asked once) --}}
+            {{-- Shared answers (asked once). The "shared across states"
+                 framing only applies to multi-state sales tax filings;
+                 formations (LLC, corporation, etc.) file in a single
+                 state, so they get a plain "Your Information" header. --}}
+            @php
+                $isMultiState = $this->application->form_type === \App\Domains\Forms\Models\SalesTaxRegistration::FORM_TYPE;
+            @endphp
             <x-ui.card>
                 <x-slot:header>
-                    <flux:heading size="lg">Shared Answers</flux:heading>
+                    <flux:heading size="lg">{{ $isMultiState ? 'Shared Answers' : 'Your Information' }}</flux:heading>
                 </x-slot:header>
-                <p class="mb-4 text-sm text-text-secondary">
-                    Answered once — applied to every state in your application.
-                </p>
+                @if ($isMultiState)
+                    <p class="mb-4 text-sm text-text-secondary">
+                        Answered once — applied to every state in your application.
+                    </p>
+                @endif
                 @include('livewire.forms.partials.answer-summary', [
                     'data' => $this->coreData,
                     'exclude' => ['responsible_people'],
@@ -88,7 +96,10 @@
                 @endif
             </x-ui.card>
 
-            {{-- Per-State Summary (state-only answers) --}}
+            {{-- Per-State Summary (state-only answers) — only relevant for
+                 sales tax registrations, where each state is a separate filing.
+                 Formations (LLC, corporation, etc.) file in a single state. --}}
+            @if ($isMultiState)
             @foreach ($this->application->selected_states as $stateCode)
                 @php
                     $stateRecord = $this->application->stateRecord($stateCode);
@@ -118,6 +129,7 @@
                     @endif
                 </x-ui.card>
             @endforeach
+            @endif
 
             <div class="flex justify-between pt-4">
                 <flux:button wire:click="previousStep" type="button" variant="ghost">

@@ -57,8 +57,6 @@ function bootReviewReadyLlc(Business $business, User $user): FormApplication
                     'ownership_percent' => 100,
                 ],
             ],
-            'agent_type' => 'self',
-            'agent_address' => $address,
         ],
         'created_by_user_id' => $user->id,
     ]);
@@ -73,17 +71,19 @@ function bootReviewReadyLlc(Business $business, User $user): FormApplication
     return $application;
 }
 
-it('redirects an unpaid, unsubscribed LLC to checkout on submit', function () {
+it('redirects an unpaid LLC to the formations checkout on submit', function () {
     $application = bootReviewReadyLlc($this->business, $this->user);
 
     Livewire::test(MultiStateFormRunner::class, ['application' => $application])
         ->call('submit')
-        ->assertRedirect(route('portal.checkout', $application));
+        ->assertRedirect(route('formations.checkout', $application));
 
     expect($application->fresh()->status)->toBe('draft');
 });
 
-it('submits an LLC directly when the business already has an active subscription', function () {
+it('still routes to checkout even when the business already holds an LLC subscription', function () {
+    // Billing is per-application: each LLC owes its own one-time state filing
+    // fee, so an existing membership subscription does NOT bypass checkout.
     $this->business->subscriptions()->create([
         'type' => 'llc',
         'stripe_id' => 'sub_test_'.uniqid(),
@@ -93,6 +93,17 @@ it('submits an LLC directly when the business already has an active subscription
     ]);
 
     $application = bootReviewReadyLlc($this->business, $this->user);
+
+    Livewire::test(MultiStateFormRunner::class, ['application' => $application])
+        ->call('submit')
+        ->assertRedirect(route('formations.checkout', $application));
+
+    expect($application->fresh()->status)->toBe('draft');
+});
+
+it('submits an already-paid LLC directly on submit', function () {
+    $application = bootReviewReadyLlc($this->business, $this->user);
+    $application->update(['paid_at' => now()]);
 
     Livewire::test(MultiStateFormRunner::class, ['application' => $application])
         ->call('submit')

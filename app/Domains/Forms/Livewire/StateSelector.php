@@ -56,6 +56,16 @@ class StateSelector extends Component
 
         // Load form type configuration
         $config = FormTypeConfig::get($formType);
+
+        // One-per-business form types (e.g. LLC): a company can form only one.
+        // Block starting a second once one is paid/submitted.
+        if (($config['one_per_business'] ?? false) && $this->businessAlreadyHasFormation()) {
+            session()->flash('error', 'This company already has an LLC. A company can form only one LLC.');
+            $this->redirect($this->workspaceDashboardUrl());
+
+            return;
+        }
+
         $this->stateMode = $config['state_mode'];
         $this->maxStates = $config['max_states'] ?? ($this->stateMode === 'single' ? 1 : null);
 
@@ -160,6 +170,15 @@ class StateSelector extends Component
 
     public function proceed(): void
     {
+        // Safety re-check for one-per-business types (e.g. a second tab).
+        if ((FormTypeConfig::get($this->formType)['one_per_business'] ?? false)
+            && $this->businessAlreadyHasFormation()) {
+            session()->flash('error', 'This company already has an LLC. A company can form only one LLC.');
+            $this->redirect($this->workspaceDashboardUrl());
+
+            return;
+        }
+
         // Get selectable states (exclude blocked)
         $selectableStates = array_diff($this->availableStates, $this->blockedStates);
 
@@ -231,6 +250,25 @@ class StateSelector extends Component
         }
 
         return $url;
+    }
+
+    /**
+     * Whether this business already has a paid/submitted application of the
+     * current form type (used to enforce one-per-business form types).
+     */
+    private function businessAlreadyHasFormation(): bool
+    {
+        return FormApplication::where('business_id', $this->business->id)
+            ->where('form_type', $this->formType)
+            ->where(fn ($q) => $q->whereNotNull('paid_at')->orWhere('status', 'submitted'))
+            ->exists();
+    }
+
+    private function workspaceDashboardUrl(): string
+    {
+        $workspace = app(WorkspaceRegistry::class)->findByFormType($this->formType);
+
+        return $workspace ? route($workspace->dashboardRoute) : route('dashboard');
     }
 
     private function buildDefinitionSnapshot(FormApplication $application): array

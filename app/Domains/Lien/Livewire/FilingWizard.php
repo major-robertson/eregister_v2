@@ -285,7 +285,7 @@ class FilingWizard extends Component
             ], [
                 'project_type_category.required' => 'Please select a property type.',
             ]),
-            2 => $this->validateOwnerRequired(),
+            2 => $this->validatePartiesStep(),
             3 => $this->validateWorkStep(),
             default => null,
         };
@@ -312,14 +312,31 @@ class FilingWizard extends Component
     }
 
     /**
-     * Validate that a property owner has been added.
+     * Validate the Parties step: a property owner is always required, and a
+     * General Contractor (and Subcontractor, where applicable) is required when
+     * the claimant is downstream of the GC. All gaps are collected so they
+     * surface together.
      */
-    private function validateOwnerRequired(): void
+    private function validatePartiesStep(): void
     {
-        if (! $this->project->ownerParty()) {
-            $this->addError('owner_required', 'Property owner is required to continue.');
+        $messages = [];
 
-            throw new \Illuminate\Validation\ValidationException(validator([], []));
+        if (! $this->project->ownerParty()) {
+            $messages['owner_required'] = 'Property owner is required to continue.';
+        }
+
+        $claimantType = $this->project->claimant_type;
+
+        if ($claimantType?->requiresGcParty() && ! $this->project->gcParty()) {
+            $messages['gc_required'] = 'Add the General Contractor you contracted under to continue.';
+        }
+
+        if ($claimantType?->requiresSubcontractorParty() && ! $this->project->subcontractorParty()) {
+            $messages['subcontractor_required'] = 'Add the Subcontractor you contracted under to continue.';
+        }
+
+        if ($messages !== []) {
+            throw \Illuminate\Validation\ValidationException::withMessages($messages);
         }
     }
 
@@ -562,7 +579,7 @@ class FilingWizard extends Component
     /**
      * Open the party modal for adding or editing a party.
      */
-    public function openPartyModal(?int $partyId = null): void
+    public function openPartyModal(?int $partyId = null, ?string $defaultRole = null): void
     {
         $this->resetPartyForm();
 
@@ -579,6 +596,8 @@ class FilingWizard extends Component
             $this->partyZip = $party->zip;
             $this->partyEmail = $party->email;
             $this->partyPhone = $party->phone;
+        } elseif ($defaultRole) {
+            $this->partyRole = $defaultRole;
         }
 
         $this->showPartyModal = true;

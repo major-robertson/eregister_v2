@@ -217,6 +217,14 @@ class LienProject extends Model
     }
 
     /**
+     * Get the subcontractor party for this project.
+     */
+    public function subcontractorParty(): ?LienParty
+    {
+        return $this->parties()->where('role', 'subcontractor')->first();
+    }
+
+    /**
      * Check if the project wizard is complete.
      */
     public function isWizardComplete(): bool

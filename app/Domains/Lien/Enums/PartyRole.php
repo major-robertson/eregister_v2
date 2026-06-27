@@ -8,6 +8,7 @@ enum PartyRole: string
     case Customer = 'customer';
     case Owner = 'owner';
     case Gc = 'gc';
+    case Subcontractor = 'subcontractor';
     case Lender = 'lender';
     case Other = 'other';
 
@@ -18,6 +19,7 @@ enum PartyRole: string
             self::Customer => 'Customer / Hiring Party',
             self::Owner => 'Property Owner',
             self::Gc => 'General Contractor',
+            self::Subcontractor => 'Subcontractor',
             self::Lender => 'Construction Lender',
             self::Other => 'Other',
         };

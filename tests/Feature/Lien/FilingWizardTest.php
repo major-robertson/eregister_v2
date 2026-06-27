@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Lien\Enums\ClaimantType;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Livewire\FilingWizard;
 use App\Domains\Lien\Models\LienFiling;
@@ -22,6 +23,7 @@ beforeEach(function () {
 
     $this->project = LienProject::factory()->forBusiness($this->business)->create([
         'jobsite_state' => 'AZ',
+        'claimant_type' => ClaimantType::Gc,
         'first_furnish_date' => now()->subDays(30),
         'last_furnish_date' => now()->subDays(5),
         'completion_date' => now()->subDays(3),
@@ -313,5 +315,96 @@ describe('Filing Wizard has_written_contract', function () {
         // For now, just verify the project model was updated correctly
         $this->project->refresh();
         expect($this->project->has_written_contract)->toBeTrue();
+    });
+});
+
+describe('Filing Wizard contractor requirement', function () {
+    it('blocks a subcontractor claimant at the Parties step until a GC is added', function () {
+        $this->project->update(['claimant_type' => ClaimantType::Subcontractor]);
+
+        $component = Livewire::test(FilingWizard::class, [
+            'project' => $this->project,
+            'deadline' => $this->deadline,
+        ]);
+
+        // Step 1 -> 2
+        $component->set('project_type_category', 'residential')
+            ->call('nextStep')
+            ->assertSet('step', 2);
+
+        // Step 2 with no GC party -> blocked
+        $component->call('nextStep')
+            ->assertHasErrors('gc_required')
+            ->assertSet('step', 2);
+
+        // Add the General Contractor, then the step advances
+        LienParty::create([
+            'business_id' => $this->business->id,
+            'project_id' => $this->project->id,
+            'role' => 'gc',
+            'name' => 'Acme General Contractor',
+            'address1' => '500 Builder Blvd',
+            'city' => 'Mesa',
+            'state' => 'AZ',
+            'zip' => '85210',
+        ]);
+
+        $component->call('nextStep')
+            ->assertHasNoErrors('gc_required')
+            ->assertSet('step', 3);
+    });
+
+    it('requires both a GC and a subcontractor for a sub-subcontractor claimant', function () {
+        $this->project->update(['claimant_type' => ClaimantType::SubSubContractor]);
+
+        $component = Livewire::test(FilingWizard::class, [
+            'project' => $this->project,
+            'deadline' => $this->deadline,
+        ]);
+
+        $component->set('project_type_category', 'residential')
+            ->call('nextStep')
+            ->call('nextStep')
+            ->assertHasErrors(['gc_required', 'subcontractor_required'])
+            ->assertSet('step', 2);
+
+        // Add only the GC -> still blocked on the subcontractor
+        LienParty::create([
+            'business_id' => $this->business->id,
+            'project_id' => $this->project->id,
+            'role' => 'gc',
+            'name' => 'Acme General Contractor',
+        ]);
+
+        $component->call('nextStep')
+            ->assertHasNoErrors('gc_required')
+            ->assertHasErrors('subcontractor_required')
+            ->assertSet('step', 2);
+
+        // Add the subcontractor -> advances
+        LienParty::create([
+            'business_id' => $this->business->id,
+            'project_id' => $this->project->id,
+            'role' => 'subcontractor',
+            'name' => 'Bravo Subcontractor',
+        ]);
+
+        $component->call('nextStep')
+            ->assertHasNoErrors(['gc_required', 'subcontractor_required'])
+            ->assertSet('step', 3);
+    });
+
+    it('does not require a contractor for a GC claimant', function () {
+        // $this->project is already claimant_type Gc with an owner party added
+        $component = Livewire::test(FilingWizard::class, [
+            'project' => $this->project,
+            'deadline' => $this->deadline,
+        ]);
+
+        $component->set('project_type_category', 'residential')
+            ->call('nextStep')
+            ->call('nextStep')
+            ->assertHasNoErrors(['gc_required', 'subcontractor_required'])
+            ->assertSet('step', 3);
     });
 });

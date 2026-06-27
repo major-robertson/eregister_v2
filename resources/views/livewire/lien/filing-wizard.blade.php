@@ -213,6 +213,10 @@
             @php
                 $ownerParty = $parties->firstWhere('role.value', 'owner');
                 $otherParties = $parties->filter(fn($p) => $p->role->value !== 'owner');
+                $gcParty = $parties->firstWhere('role.value', 'gc');
+                $subParty = $parties->firstWhere('role.value', 'subcontractor');
+                $needsGc = $project->claimant_type?->requiresGcParty() ?? false;
+                $needsSub = $project->claimant_type?->requiresSubcontractorParty() ?? false;
             @endphp
 
             <div class="space-y-3">
@@ -274,6 +278,34 @@
                         </flux:button>
                     </div>
                     <flux:error name="owner_required" />
+                @endif
+
+                {{-- General Contractor (required for subcontractor / supplier claimants) --}}
+                @if($needsGc && ! $gcParty)
+                    <div class="flex items-center justify-between py-6 px-5 border-2 border-dashed border-zinc-400 dark:border-zinc-500 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-zinc-700 dark:text-zinc-300">General Contractor</span>
+                            <flux:badge size="sm" color="red">Required</flux:badge>
+                        </div>
+                        <flux:button wire:click="openPartyModal(null, 'gc')" size="sm" variant="primary" icon="plus">
+                            Add
+                        </flux:button>
+                    </div>
+                    <flux:error name="gc_required" />
+                @endif
+
+                {{-- Subcontractor (required for sub-subcontractor / supplier-to-subcontractor claimants) --}}
+                @if($needsSub && ! $subParty)
+                    <div class="flex items-center justify-between py-6 px-5 border-2 border-dashed border-zinc-400 dark:border-zinc-500 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-zinc-700 dark:text-zinc-300">Subcontractor</span>
+                            <flux:badge size="sm" color="red">Required</flux:badge>
+                        </div>
+                        <flux:button wire:click="openPartyModal(null, 'subcontractor')" size="sm" variant="primary" icon="plus">
+                            Add
+                        </flux:button>
+                    </div>
+                    <flux:error name="subcontractor_required" />
                 @endif
 
                 {{-- Other Parties --}}

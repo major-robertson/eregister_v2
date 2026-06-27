@@ -178,4 +178,32 @@ enum FilingStatus: string
             self::Draft, self::AwaitingPayment => false,
         };
     }
+
+    /**
+     * Whether the fulfillment document is already "out the door" — mailed, submitted
+     * for recording, recorded, completed, canceled, or refunded. Past this point the
+     * immutable snapshot (payload_json / parties_snapshot_json) must NOT be re-synced
+     * from later admin edits to the application data.
+     */
+    public function isFulfillmentLocked(): bool
+    {
+        return match ($this) {
+            self::Mailed, self::SubmittedForRecording, self::Recorded, self::Complete, self::Canceled, self::Refunded => true,
+            default => false,
+        };
+    }
+
+    /**
+     * The status values that are fulfillment-locked. Single-sources off
+     * isFulfillmentLocked() so the set never drifts; used by query scopes.
+     *
+     * @return list<string>
+     */
+    public static function fulfillmentLockedValues(): array
+    {
+        return array_values(array_map(
+            fn (self $status): string => $status->value,
+            array_filter(self::cases(), fn (self $status): bool => $status->isFulfillmentLocked()),
+        ));
+    }
 }

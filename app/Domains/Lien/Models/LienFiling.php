@@ -8,6 +8,7 @@ use App\Domains\Lien\Enums\RecordingMethod;
 use App\Domains\Lien\Enums\ServiceLevel;
 use App\Domains\Lien\Exceptions\InvalidStatusTransitionException;
 use App\Models\EmailSequence;
+use App\Models\Payment;
 use App\Models\User;
 use Database\Factories\Lien\LienFilingFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -180,12 +181,12 @@ class LienFiling extends Model implements HasMedia
 
     public function payment(): MorphOne
     {
-        return $this->morphOne(\App\Models\Payment::class, 'purchasable')->latestOfMany();
+        return $this->morphOne(Payment::class, 'purchasable')->latestOfMany();
     }
 
     public function payments(): MorphMany
     {
-        return $this->morphMany(\App\Models\Payment::class, 'purchasable');
+        return $this->morphMany(Payment::class, 'purchasable');
     }
 
     public function fulfillmentTask(): HasOne
@@ -215,6 +216,28 @@ class LienFiling extends Model implements HasMedia
     public function isFullService(): bool
     {
         return $this->service_level === ServiceLevel::FullService;
+    }
+
+    /**
+     * Whether this filing's immutable fulfillment snapshot can still be re-synced
+     * from edited application data. True only once a snapshot exists (i.e. the filing
+     * has been through payment) and before the document is out the door. Draft /
+     * AwaitingPayment filings have no snapshot yet, so they are naturally excluded.
+     */
+    public function canApplicationSnapshotBeResynced(): bool
+    {
+        return $this->payload_json !== null && ! $this->status->isFulfillmentLocked();
+    }
+
+    /**
+     * Scope to filings whose fulfillment snapshot can still be re-synced: a snapshot
+     * exists and the status is not fulfillment-locked. Used to find the sibling
+     * filings on a project that should be updated when application data is corrected.
+     */
+    public function scopeSnapshotEditable(Builder $query): Builder
+    {
+        return $query->whereNotNull('payload_json')
+            ->whereNotIn('status', FilingStatus::fulfillmentLockedValues());
     }
 
     /**

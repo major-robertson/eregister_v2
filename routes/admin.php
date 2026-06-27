@@ -2,6 +2,7 @@
 
 use App\Domains\Admin\Livewire\BusinessesList;
 use App\Domains\Admin\Livewire\BusinessOverview;
+use App\Domains\Admin\Livewire\FormationStats;
 use App\Domains\Admin\Livewire\LienStats;
 use App\Domains\Admin\Livewire\MarketingStats;
 use App\Domains\Admin\Livewire\RolesBoard;
@@ -9,6 +10,9 @@ use App\Domains\Admin\Livewire\SalesTaxStats;
 use App\Domains\Admin\Livewire\StatsBoard;
 use App\Domains\Admin\Livewire\UserOverview;
 use App\Domains\Admin\Livewire\UsersList;
+use App\Domains\Forms\Admin\Livewire\FormationApplicationStateDetail;
+use App\Domains\Forms\Admin\Livewire\FormationsBoard;
+use App\Domains\Forms\Admin\Livewire\FormationsBoardAll;
 use App\Domains\Forms\Admin\Livewire\SalesTaxApplicationStateDetail;
 use App\Domains\Forms\Admin\Livewire\SalesTaxBoard;
 use App\Domains\Forms\Admin\Livewire\SalesTaxBoardAll;
@@ -56,6 +60,19 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
                 ->name('states.show');
         });
 
+    // Formations admin routes - require llc.view permission. Mirrors the
+    // sales-tax board; the /states/ detail nesting leaves room for future
+    // /applications/, /reports/ namespaces under the same workspace.
+    Route::prefix('formations')
+        ->name('admin.formations.')
+        ->middleware(['permission:llc.view'])
+        ->group(function () {
+            Route::get('/board', FormationsBoard::class)->name('board');
+            Route::get('/board/all', FormationsBoardAll::class)->name('board-all');
+            Route::get('/states/{formApplicationState}', FormationApplicationStateDetail::class)
+                ->name('states.show');
+        });
+
     // Users management - admin role only
     Route::prefix('users')
         ->name('admin.users.')
@@ -97,5 +114,10 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     // Sales tax stats - admin role only
     Route::get('/sales-tax-stats', SalesTaxStats::class)
         ->name('admin.sales-tax-stats')
+        ->middleware('role:admin');
+
+    // Formation stats - admin role only
+    Route::get('/formation-stats', FormationStats::class)
+        ->name('admin.formation-stats')
         ->middleware('role:admin');
 });

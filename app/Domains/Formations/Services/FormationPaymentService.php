@@ -199,6 +199,15 @@ class FormationPaymentService
                 'business_id' => $business->id,
                 'purchasable_type' => $application->getMorphClass(),
                 'purchasable_id' => $application->id,
+                // Point at the membership price so renewal revenue is captured
+                // by the formation revenue filter (product_family = 'formation').
+                // Null-safe (no throw) in case the catalog isn't seeded.
+                'price_id' => Price::query()
+                    ->where('product_family', 'formation')
+                    ->where('product_key', 'llc')
+                    ->where('variant_key', 'membership')
+                    ->where('billing_type', 'subscription')
+                    ->value('id'),
                 'amount_cents' => $invoice->amount_paid ?? $invoice->total ?? 0,
                 'currency' => strtolower($invoice->currency ?? 'usd'),
                 'status' => PaymentStatus::Succeeded,

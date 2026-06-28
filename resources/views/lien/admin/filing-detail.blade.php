@@ -10,6 +10,31 @@
                 {{ $filing->project?->business?->name }} — {{ $filing->project?->name }}
             </flux:text>
         </div>
+        @php
+            $demandRecipients = $filing->isDemandLetter()
+                ? ($filing->project?->nonClaimantParties() ?? collect())
+                : collect();
+        @endphp
+        @if ($demandRecipients->isNotEmpty())
+        <flux:dropdown>
+            <flux:button icon="arrow-down-tray" variant="primary" size="sm">Demand Letter</flux:button>
+            <flux:menu>
+                @foreach ($demandRecipients as $party)
+                <flux:menu.item
+                    icon="document-arrow-down"
+                    :href="route('admin.liens.demand-letter', [$filing->public_id, $party->id])">
+                    {{ $party->displayName() ?: 'Unnamed party' }} — {{ $party->role->label() }}
+                </flux:menu.item>
+                @endforeach
+                <flux:menu.separator />
+                <flux:menu.item
+                    icon="document-duplicate"
+                    :href="route('admin.liens.demand-letters', $filing->public_id)">
+                    Download all ({{ $demandRecipients->count() }})
+                </flux:menu.item>
+            </flux:menu>
+        </flux:dropdown>
+        @endif
         @if ($isDeleted)
         <flux:badge color="zinc" size="lg">Deleted</flux:badge>
         @else

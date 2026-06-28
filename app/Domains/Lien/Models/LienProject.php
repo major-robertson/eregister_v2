@@ -5,12 +5,14 @@ namespace App\Domains\Lien\Models;
 use App\Domains\Lien\Concerns\BelongsToBusiness;
 use App\Domains\Lien\Enums\ClaimantType;
 use App\Domains\Lien\Enums\NocStatus;
+use App\Domains\Lien\Enums\PartyRole;
 use App\Models\User;
 use Database\Factories\Lien\LienProjectFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class LienProject extends Model
@@ -224,6 +226,20 @@ class LienProject extends Model
     public function subcontractorParty(): ?LienParty
     {
         return $this->parties()->where('role', 'subcontractor')->first();
+    }
+
+    /**
+     * Every party except the claimant — i.e. the parties a demand letter can be
+     * addressed to (the claimant is always the sender). Reads from the loaded
+     * `parties` collection so it reuses eager-loaded data.
+     *
+     * @return Collection<int, LienParty>
+     */
+    public function nonClaimantParties(): Collection
+    {
+        return $this->parties
+            ->reject(fn (LienParty $party) => $party->role === PartyRole::Claimant)
+            ->values();
     }
 
     /**

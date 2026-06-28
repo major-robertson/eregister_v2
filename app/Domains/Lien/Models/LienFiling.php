@@ -211,6 +211,16 @@ class LienFiling extends Model implements HasMedia
     }
 
     /**
+     * Whether this filing is for a Payment Demand Letter. Gates the admin
+     * "Download Demand Letter" affordance; more document-type predicates can
+     * follow the same shape as additional generators land.
+     */
+    public function isDemandLetter(): bool
+    {
+        return $this->documentType?->slug === 'demand_letter';
+    }
+
+    /**
      * Check if the filing is full service.
      */
     public function isFullService(): bool

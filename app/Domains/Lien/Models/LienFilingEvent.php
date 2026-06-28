@@ -67,6 +67,8 @@ class LienFilingEvent extends Model
             'application_project_updated' => 'Project details updated',
             'application_filing_updated' => 'Filing details updated',
             'application_parties_updated' => 'Parties updated',
+            'esign_sent' => 'Sent for e-signature',
+            'esign_completed' => 'E-signature completed',
             default => ucfirst(str_replace('_', ' ', $this->event_type)),
         };
     }

@@ -78,11 +78,28 @@ class FilingShow extends Component
     {
         $this->filing->load(['project', 'documentType', 'recipients', 'events' => fn ($q) => $q->latest(), 'payment']);
 
+        // Surface a "Review & Sign" link when this filing is awaiting the current
+        // user's e-signature.
+        $signUrl = null;
+        if ($this->filing->status === FilingStatus::AwaitingEsign) {
+            $active = $this->filing->activeSignatureRequest();
+
+            if ($active !== null && $active->signer_user_id === auth()->id()) {
+                $ttlDays = (int) config('esign.signing.invitation_link_ttl_days', 14);
+                $signUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+                    'esign.sign',
+                    now()->addDays($ttlDays),
+                    ['request' => $active->public_id],
+                );
+            }
+        }
+
         return view('livewire.lien.filing-show', [
             'events' => $this->filing->events,
             'recipients' => $this->filing->recipients,
             'proofs' => $this->filing->getMedia('proofs'),
             'canDownload' => $this->filing->isPaid() && $this->filing->getFirstMedia('generated'),
+            'signUrl' => $signUrl,
         ])->layout('layouts.lien', ['title' => $this->filing->documentType->name]);
     }
 }

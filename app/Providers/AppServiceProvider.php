@@ -100,6 +100,8 @@ class AppServiceProvider extends ServiceProvider
             'form_application' => \App\Domains\Forms\Models\FormApplication::class,
             'email_sequence' => \App\Models\EmailSequence::class,
             'payment' => \App\Models\Payment::class,
+            'signature_request' => \App\Domains\Esign\Models\SignatureRequest::class,
+            'signature_document' => \App\Domains\Esign\Models\SignatureDocument::class,
         ]);
     }
 

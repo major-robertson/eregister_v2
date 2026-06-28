@@ -42,6 +42,18 @@
         </flux:callout>
     @endif
 
+    @if($signUrl)
+        <flux:callout color="purple" icon="pencil-square">
+            <flux:callout.heading>Your signature is needed</flux:callout.heading>
+            <flux:callout.text>
+                This document is ready for your electronic signature.
+            </flux:callout.text>
+            <x-slot:actions>
+                <flux:button href="{{ $signUrl }}" variant="primary" icon="pencil-square">Review &amp; Sign</flux:button>
+            </x-slot:actions>
+        </flux:callout>
+    @endif
+
     {{-- Hero Status Panel --}}
     <div class="rounded-xl border border-border bg-white overflow-hidden">
         <div class="p-8 text-center">

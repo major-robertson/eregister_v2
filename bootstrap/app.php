@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         then: function (): void {
             Route::middleware('web')->group(base_path('routes/portal.php'));
             Route::middleware('web')->group(base_path('routes/lien.php'));
+            Route::middleware('web')->group(base_path('routes/esign.php'));
             Route::middleware('web')->group(base_path('routes/sales-tax.php'));
             Route::middleware('web')->group(base_path('routes/formations.php'));
             Route::middleware('web')->group(base_path('routes/admin.php'));
@@ -42,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'business.complete' => \App\Domains\Portal\Http\Middleware\EnsureBusinessProfileComplete::class,
             'application.access' => \App\Domains\Portal\Http\Middleware\EnsureHasAccess::class,
             'lien.onboarding' => \App\Domains\Lien\Http\Middleware\EnsureLienOnboardingComplete::class,
+            'esign.verified' => \App\Domains\Esign\Http\Middleware\EnsureSignerEmailVerified::class,
             'marketing.lead' => \App\Http\Middleware\ActivateMarketingLeadContext::class,
             // API middleware
             'api.key' => \App\Http\Middleware\ValidateApiKey::class,

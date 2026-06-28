@@ -14,26 +14,52 @@
             $demandRecipients = $filing->isDemandLetter()
                 ? ($filing->project?->nonClaimantParties() ?? collect())
                 : collect();
+            // Once signed, the prominent download serves the SIGNED letters; the
+            // on-the-fly unsigned draft stays available but is labeled as such.
+            $headerSignedDocs = $signedEsignRequest
+                ? $signedEsignRequest->documents->filter(fn ($d) => $d->signed_at !== null)
+                : collect();
         @endphp
-        @if ($demandRecipients->isNotEmpty())
+        @if ($filing->isDemandLetter() && ($demandRecipients->isNotEmpty() || $headerSignedDocs->isNotEmpty()))
         <flux:dropdown>
             <flux:button icon="arrow-down-tray" variant="primary" size="sm">Demand Letter</flux:button>
             <flux:menu>
+                @if ($headerSignedDocs->isNotEmpty())
+                    @foreach ($headerSignedDocs as $signedDoc)
+                    <flux:menu.item
+                        wire:key="hdr-signed-{{ $signedDoc->id }}"
+                        icon="document-check"
+                        :href="route('admin.liens.esign.documents.download', $signedDoc->public_id)">
+                        {{ $signedDoc->label }} — signed
+                    </flux:menu.item>
+                    @endforeach
+                    @if ($demandRecipients->isNotEmpty())
+                    <flux:menu.separator />
+                    @endif
+                @endif
                 @foreach ($demandRecipients as $party)
                 <flux:menu.item
+                    wire:key="hdr-draft-{{ $party->id }}"
                     icon="document-arrow-down"
                     :href="route('admin.liens.demand-letter', [$filing->public_id, $party->id])">
-                    {{ $party->displayName() ?: 'Unnamed party' }} — {{ $party->role->label() }}
+                    {{ $party->displayName() ?: 'Unnamed party' }} — {{ $party->role->label() }}@if ($headerSignedDocs->isNotEmpty()) (unsigned draft)@endif
                 </flux:menu.item>
                 @endforeach
+                @if ($demandRecipients->isNotEmpty())
                 <flux:menu.separator />
                 <flux:menu.item
                     icon="document-duplicate"
                     :href="route('admin.liens.demand-letters', $filing->public_id)">
-                    Download all ({{ $demandRecipients->count() }})
+                    {{ $headerSignedDocs->isNotEmpty() ? 'Download all unsigned drafts' : 'Download all' }} ({{ $demandRecipients->count() }})
                 </flux:menu.item>
+                @endif
             </flux:menu>
         </flux:dropdown>
+        @endif
+        @if ($canSendEsign)
+        <flux:button wire:click="confirmSendForEsign" icon="pencil-square" variant="primary" size="sm">
+            {{ $hasPriorEsign ? 'Re-send for E-Sign' : 'Send for E-Sign' }}
+        </flux:button>
         @endif
         @if ($isDeleted)
         <flux:badge color="zinc" size="lg">Deleted</flux:badge>
@@ -723,6 +749,141 @@
 
             </div>
 
+            {{-- Send for E-Sign confirmation modal (always present; toggled by showSendEsignModal) --}}
+            <flux:modal wire:model="showSendEsignModal" class="max-w-md">
+                <div class="space-y-6">
+                    <div>
+                        <flux:heading size="lg">{{ $hasPriorEsign ? 'Re-send for e-signature?' : 'Send for e-signature?' }}</flux:heading>
+                        <flux:subheading class="mt-2">
+                            We'll generate and lock {{ $recipientCount }} demand letter{{ $recipientCount === 1 ? '' : 's' }},
+                            then email {{ $filing->createdBy?->name ?? 'the filing creator' }}
+                            (<span class="font-medium">{{ $filing->createdBy?->email }}</span>) a link to review and sign.
+                            The filing status will change to <strong>Awaiting E-Signature</strong>.
+                        </flux:subheading>
+                    </div>
+
+                    @if ($hasPriorEsign)
+                    <flux:callout variant="warning" icon="exclamation-triangle">
+                        <flux:callout.text>
+                            This filing has <strong>already been e-signed</strong>. Sending again starts a brand-new
+                            signature request with a new signing link. The previously signed copies stay available
+                            to download below.
+                        </flux:callout.text>
+                    </flux:callout>
+                    @endif
+
+                    <div class="flex justify-end gap-2">
+                        <flux:modal.close>
+                            <flux:button variant="filled">Cancel</flux:button>
+                        </flux:modal.close>
+                        <flux:button wire:click="sendForEsign" variant="primary" icon="pencil-square">
+                            {{ $hasPriorEsign ? 'Re-send for E-Sign' : 'Send for E-Sign' }}
+                        </flux:button>
+                    </div>
+                </div>
+            </flux:modal>
+
+            {{-- E-Signature status panel: appears once a session has been started --}}
+            @if ($esignRequest)
+            <div class="rounded-lg border border-border bg-white p-6">
+                <div class="mb-4 flex items-center justify-between">
+                    <flux:heading size="lg">E-Signature</flux:heading>
+                    <flux:badge color="{{ $esignRequest->status->color() }}">{{ $esignRequest->status->label() }}</flux:badge>
+                </div>
+
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-start justify-between gap-3">
+                        <flux:text class="text-gray-500">Signer</flux:text>
+                        <div class="text-right">
+                            <flux:text class="font-medium">{{ $esignRequest->signer_name_snapshot ?: '—' }}</flux:text>
+                            <flux:text class="block text-xs text-gray-400">{{ $esignRequest->signer_email_snapshot }}</flux:text>
+                        </div>
+                    </div>
+                    @if ($esignRequest->invited_at)
+                    <div class="flex items-center justify-between">
+                        <flux:text class="text-gray-500">Sent</flux:text>
+                        <flux:text class="font-medium">{{ $esignRequest->invited_at->eastern()->format('M j, Y g:i A') }}</flux:text>
+                    </div>
+                    @endif
+                    @if ($esignRequest->first_opened_at)
+                    <div class="flex items-center justify-between">
+                        <flux:text class="text-gray-500">Opened</flux:text>
+                        <flux:text class="font-medium">{{ $esignRequest->first_opened_at->eastern()->format('M j, Y g:i A') }}</flux:text>
+                    </div>
+                    @endif
+                    @if ($esignRequest->completed_at)
+                    <div class="flex items-center justify-between">
+                        <flux:text class="text-gray-500">Signed</flux:text>
+                        <flux:text class="font-medium">{{ $esignRequest->completed_at->eastern()->format('M j, Y g:i A') }}</flux:text>
+                    </div>
+                    @endif
+                    @if ($esignRequest->consent)
+                    <div class="flex items-center justify-between">
+                        <flux:text class="text-gray-500">Consent</flux:text>
+                        <flux:text class="font-medium text-xs">{{ $esignRequest->consent->consent_scope }} · {{ $esignRequest->consent->version }}</flux:text>
+                    </div>
+                    @endif
+                </div>
+
+                @if ($esignRequest->intent_statement)
+                <flux:text class="mt-3 block rounded bg-gray-50 p-2 text-xs text-gray-600">{{ $esignRequest->intent_statement }}</flux:text>
+                @endif
+
+                <div class="mt-4 space-y-2">
+                    @foreach ($esignRequest->documents as $doc)
+                    <div wire:key="esign-doc-{{ $doc->id }}" class="rounded-lg border border-gray-200 p-2">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="min-w-0">
+                                <flux:text class="font-mono text-xs text-gray-500">{{ $doc->document_identifier }}</flux:text>
+                                <flux:text class="truncate text-sm font-medium">{{ $doc->label }}</flux:text>
+                            </div>
+                            @if ($doc->signed_at)
+                            <flux:badge size="sm" color="green">Signed</flux:badge>
+                            @elseif ($doc->locked_at)
+                            <flux:badge size="sm" color="zinc">Locked</flux:badge>
+                            @endif
+                        </div>
+                        <div class="mt-1 space-y-0.5 text-[11px] text-gray-400">
+                            @if ($doc->locked_document_hash)
+                            <div>locked: <span class="font-mono">{{ \Illuminate\Support\Str::limit($doc->locked_document_hash, 16, '…') }}</span></div>
+                            @endif
+                            @if ($doc->signed_document_hash)
+                            <div>signed: <span class="font-mono">{{ \Illuminate\Support\Str::limit($doc->signed_document_hash, 16, '…') }}</span></div>
+                            @endif
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+
+                {{-- Signed documents stay downloadable by admins even after a re-send
+                     starts a new (unsigned) session. Sourced from the latest completed session. --}}
+                @if ($signedEsignRequest)
+                <div class="mt-4 border-t border-gray-100 pt-4">
+                    <flux:text class="mb-2 block text-sm font-medium text-gray-700">Signed documents</flux:text>
+                    <div class="space-y-2">
+                        @foreach ($signedEsignRequest->documents as $signedDoc)
+                        @if ($signedDoc->signed_at)
+                        <flux:button wire:key="signed-doc-{{ $signedDoc->id }}" size="sm" variant="ghost"
+                            icon="arrow-down-tray" class="w-full justify-start"
+                            :href="route('admin.liens.esign.documents.download', $signedDoc->public_id)">
+                            {{ $signedDoc->document_identifier }} — {{ $signedDoc->label }}
+                        </flux:button>
+                        @endif
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                <div class="mt-4 flex flex-wrap gap-2 border-t border-gray-100 pt-4">
+                    <flux:button size="sm" variant="ghost" icon="shield-check" wire:click="verifyChain">Verify audit chain</flux:button>
+                    @if ($esignRequest->isActive() && $canChangeStatus)
+                    <flux:button size="sm" variant="ghost" icon="x-mark" wire:click="voidEsign"
+                        wire:confirm="Void this signature request? The signer's link will stop working.">Void</flux:button>
+                    @endif
+                </div>
+            </div>
+            @endif
+
             {{-- Recording Details Card: appears once recording_method has been set on this filing.
                  Lets admins fill in or correct provider/reference/submitted_at after the SubmittedForRecording
                  transition without needing to re-run a status change. --}}
@@ -1030,6 +1191,23 @@
                                 <flux:text class="text-xs text-gray-600">{{ $partyMeta['label'] }}</flux:text>
                                 @endif
                                 @include('lien.admin.partials.application-change-list', ['changes' => $event->payload_json['changes'] ?? []])
+                                <flux:text class="text-xs text-gray-400">
+                                    {{ $event->created_at->eastern()->format('M j, g:i A') }}
+                                    @if ($event->creator) &middot; {{ $event->creator->name }} @endif
+                                </flux:text>
+                            </div>
+                        </div>
+                        @elseif (in_array($event->event_type, ['esign_sent', 'esign_completed'], true))
+                        <div class="flex items-start gap-2">
+                            <flux:icon name="pencil-square" class="mt-0.5 size-4 shrink-0 text-purple-500" />
+                            <div class="min-w-0">
+                                <flux:text class="text-sm font-medium text-purple-700">{{ $event->description() }}</flux:text>
+                                @if ($event->event_type === 'esign_sent' && ! empty($event->payload_json['signer_email']))
+                                <flux:text class="text-xs text-gray-600">
+                                    to {{ $event->payload_json['signer_email'] }} &middot;
+                                    {{ $event->payload_json['documents'] ?? 1 }} letter(s)
+                                </flux:text>
+                                @endif
                                 <flux:text class="text-xs text-gray-400">
                                     {{ $event->created_at->eastern()->format('M j, g:i A') }}
                                     @if ($event->creator) &middot; {{ $event->creator->name }} @endif

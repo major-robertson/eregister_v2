@@ -10,6 +10,11 @@ use App\Domains\Lien\Admin\Actions\UpdateLienFilingDetails;
 use App\Domains\Lien\Admin\Actions\UpdateLienParties;
 use App\Domains\Lien\Admin\Actions\UpdateLienProjectDetails;
 use App\Domains\Lien\Admin\Actions\UpdateRecordingDetails;
+use App\Domains\Esign\Actions\VerifySignatureChain;
+use App\Domains\Esign\Actions\VoidSignatureRequest;
+use App\Domains\Esign\Enums\SignatureRequestStatus;
+use App\Domains\Esign\Exceptions\EsignException;
+use App\Domains\Lien\Esign\Actions\SendDemandLetterForSignature;
 use App\Domains\Lien\Admin\Enums\KanbanColumn;
 use App\Domains\Lien\Enums\DeadlineStatus;
 use App\Domains\Lien\Enums\FilingStatus;
@@ -40,6 +45,8 @@ class LienFilingDetail extends Component
     public bool $showRefundModal = false;
 
     public bool $showDeleteModal = false;
+
+    public bool $showSendEsignModal = false;
 
     /**
      * Recording-detail form fields. Bound to the conditional sub-form inside
@@ -91,6 +98,7 @@ class LienFilingDetail extends Component
     private const ACTIVITY_EVENT_TYPES = [
         'status_changed', 'note_added', 'payment_refunded', 'recording_details_updated',
         'application_project_updated', 'application_filing_updated', 'application_parties_updated',
+        'esign_sent', 'esign_completed',
     ];
 
     public function mount(string|LienFiling $lienFiling): void
@@ -181,6 +189,30 @@ class LienFilingDetail extends Component
             && auth()->user()->can('refund', $this->lienFiling)
             && $refundablePayment?->isRefundable();
 
+        $esignRequest = $this->lienFiling->signatureRequests()
+            ->with(['documents' => fn ($q) => $q->orderBy('sort_order'), 'documents.media', 'events.actor'])
+            ->latest('id')
+            ->first();
+
+        // The most recently completed session — its signed PDFs stay downloadable
+        // by admins even after a later re-send starts a fresh (unsigned) session.
+        $signedEsignRequest = $this->lienFiling->signatureRequests()
+            ->where('status', SignatureRequestStatus::Completed->value)
+            ->with(['documents' => fn ($q) => $q->orderBy('sort_order'), 'documents.media'])
+            ->latest('id')
+            ->first();
+
+        $recipientCount = $this->lienFiling->isDemandLetter()
+            ? ($this->lienFiling->project?->nonClaimantParties()->count() ?? 0)
+            : 0;
+
+        $canSendEsign = ! $isDeleted
+            && $this->lienFiling->isDemandLetter()
+            && $recipientCount > 0
+            && $esignRequest?->isActive() !== true
+            && $this->lienFiling->canTransitionTo(FilingStatus::AwaitingEsign)
+            && auth()->user()->can('changeStatus', $this->lienFiling);
+
         return view('lien.admin.filing-detail', [
             'filing' => $this->lienFiling,
             'kanbanColumn' => KanbanColumn::forFiling($this->lienFiling),
@@ -195,6 +227,11 @@ class LienFilingDetail extends Component
             'refundablePayment' => $refundablePayment,
             'requiredDeadlines' => $requiredDeadlines,
             'filingDocStatus' => $filingDocStatus,
+            'esignRequest' => $esignRequest,
+            'signedEsignRequest' => $signedEsignRequest,
+            'hasPriorEsign' => $signedEsignRequest !== null,
+            'recipientCount' => $recipientCount,
+            'canSendEsign' => $canSendEsign,
         ])->layout('layouts.admin', ['title' => 'Filing Detail']);
     }
 
@@ -560,6 +597,95 @@ class LienFilingDetail extends Component
         session()->flash('success', $this->lienFiling->needs_review
             ? 'Filing flagged for manager review.'
             : 'Review flag removed.');
+    }
+
+    // ------------------------------------------------------------------
+    // E-signature
+    // ------------------------------------------------------------------
+
+    /**
+     * Open the "Send for E-Sign" confirmation modal.
+     */
+    public function confirmSendForEsign(): void
+    {
+        $this->authorize('changeStatus', $this->lienFiling);
+        $this->showSendEsignModal = true;
+    }
+
+    /**
+     * Generate + lock the demand letters, email the signer, and move the filing
+     * to AwaitingEsign.
+     */
+    public function sendForEsign(): void
+    {
+        $this->authorize('changeStatus', $this->lienFiling);
+
+        try {
+            app(SendDemandLetterForSignature::class)->execute($this->lienFiling, auth()->user());
+
+            $this->showSendEsignModal = false;
+            $this->afterEdit();
+
+            session()->flash('success', 'Sent for e-signature. The signer has been emailed a signing link.');
+        } catch (EsignException $e) {
+            $this->showSendEsignModal = false;
+
+            session()->flash('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Void the active signing session (e.g. to resend with corrected recipients),
+     * moving the filing into review so it stops chasing the signer.
+     */
+    public function voidEsign(): void
+    {
+        $this->authorize('changeStatus', $this->lienFiling);
+
+        $request = $this->lienFiling->activeSignatureRequest();
+
+        if ($request === null) {
+            session()->flash('error', 'There is no active signature request to void.');
+
+            return;
+        }
+
+        app(VoidSignatureRequest::class)->execute($request, auth()->user(), 'Voided by admin.');
+
+        if ($this->lienFiling->status === FilingStatus::AwaitingEsign
+            && $this->lienFiling->canTransitionTo(FilingStatus::NeedsReview)) {
+            app(ChangeFilingStatus::class)->execute(
+                filing: $this->lienFiling,
+                newStatus: FilingStatus::NeedsReview,
+                note: 'E-signature request voided.',
+            );
+        }
+
+        $this->afterEdit();
+
+        session()->flash('success', 'Signature request voided.');
+    }
+
+    /**
+     * Verify the integrity of the audit-trail hash chain for the latest session.
+     */
+    public function verifyChain(): void
+    {
+        $request = $this->lienFiling->latestSignatureRequest();
+
+        if ($request === null) {
+            session()->flash('error', 'There is no signature request to verify.');
+
+            return;
+        }
+
+        $result = app(VerifySignatureChain::class)->execute($request);
+
+        if ($result->valid) {
+            session()->flash('success', "Audit chain verified — {$result->eventCount} events, intact.");
+        } else {
+            session()->flash('error', "Audit chain INVALID at event #{$result->brokenAtEventId}: {$result->reason}");
+        }
     }
 
     // ------------------------------------------------------------------

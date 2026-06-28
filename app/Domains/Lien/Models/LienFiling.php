@@ -2,6 +2,7 @@
 
 namespace App\Domains\Lien\Models;
 
+use App\Domains\Esign\Models\SignatureRequest;
 use App\Domains\Lien\Concerns\BelongsToBusiness;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Enums\RecordingMethod;
@@ -177,6 +178,25 @@ class LienFiling extends Model implements HasMedia
     public function events(): HasMany
     {
         return $this->hasMany(LienFilingEvent::class, 'filing_id');
+    }
+
+    /**
+     * E-signature sessions for this filing (polymorphic). Each "Send for E-Sign"
+     * creates one; only one is active at a time.
+     */
+    public function signatureRequests(): MorphMany
+    {
+        return $this->morphMany(SignatureRequest::class, 'signable');
+    }
+
+    public function activeSignatureRequest(): ?SignatureRequest
+    {
+        return $this->signatureRequests()->active()->latest('id')->first();
+    }
+
+    public function latestSignatureRequest(): ?SignatureRequest
+    {
+        return $this->signatureRequests()->latest('id')->first();
     }
 
     public function payment(): MorphOne

@@ -184,8 +184,9 @@
             <table class="w-full text-left text-sm">
                 <thead class="border-b border-border bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 font-medium text-gray-700">Name</th>
                         <th class="px-4 py-3 font-medium text-gray-700">Email</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">Landing Path</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">Referrer</th>
                         <th class="px-4 py-3 font-medium text-gray-700">State</th>
                         <th class="px-4 py-3 font-medium text-gray-700">Has Business</th>
                         <th class="px-4 py-3 font-medium text-gray-700">Lien Ready</th>
@@ -196,8 +197,21 @@
                 <tbody class="divide-y divide-border">
                     @forelse ($recentSignups as $signup)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3">{{ $signup['name'] }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $signup['email'] }}</td>
+                            <td class="px-4 py-3 text-gray-600">
+                                @if ($signup['landing_path'])
+                                    <span class="font-mono text-xs">{{ $signup['landing_path'] }}</span>
+                                @else
+                                    <span class="text-gray-400">—</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-gray-600">
+                                @if ($signup['referrer'])
+                                    <span class="font-mono text-xs">{{ $signup['referrer'] }}</span>
+                                @else
+                                    <span class="text-gray-400">Direct</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3">
                                 @if ($signup['state'])
                                     {{ $signup['state'] }}
@@ -234,7 +248,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-4 py-8 text-center text-gray-400">
+                            <td colspan="8" class="px-4 py-8 text-center text-gray-400">
                                 No signups yet.
                             </td>
                         </tr>
@@ -253,27 +267,27 @@
             <table class="w-full text-left text-sm">
                 <thead class="border-b border-border bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 font-medium text-gray-700">Name</th>
                         <th class="px-4 py-3 font-medium text-gray-700">Email</th>
                         <th class="px-4 py-3 font-medium text-gray-700">Amount</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">Kind</th>
                         <th class="px-4 py-3 font-medium text-gray-700">Type</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Status</th>
                         <th class="px-4 py-3 font-medium text-gray-700">Payment Date (EST)</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-border">
                     @forelse ($recentPayments as $payment)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3">{{ $payment['name'] }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $payment['email'] }}</td>
                             <td class="px-4 py-3 font-medium">{{ $payment['amount'] }}</td>
+                            <td class="px-4 py-3">
+                                <flux:badge size="sm" color="{{ $payment['kind_color'] }}">
+                                    {{ $payment['kind'] }}
+                                </flux:badge>
+                            </td>
                             <td class="px-4 py-3">
                                 <flux:badge size="sm" color="{{ $payment['type'] === 'Subscription' ? 'purple' : 'blue' }}">
                                     {{ $payment['type'] }}
                                 </flux:badge>
-                            </td>
-                            <td class="px-4 py-3">
-                                <flux:badge size="sm" color="green">{{ $payment['status'] }}</flux:badge>
                             </td>
                             <td class="px-4 py-3 text-gray-600">
                                 {{ $payment['paid_at']->eastern()->format('M j, Y g:i A') }}
@@ -281,7 +295,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-8 text-center text-gray-400">
+                            <td colspan="5" class="px-4 py-8 text-center text-gray-400">
                                 No payments yet.
                             </td>
                         </tr>

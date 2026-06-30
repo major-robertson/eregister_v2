@@ -203,8 +203,9 @@ class StatsBoard extends Component
 
                 return [
                     'id' => $user->id,
-                    'name' => $user->name,
                     'email' => $user->email,
+                    'landing_path' => $user->signup_landing_path,
+                    'referrer' => $this->stripScheme($user->signup_referrer),
                     'state' => $business?->business_address['state'] ?? null,
                     'has_business' => $business !== null,
                     'lien_ready' => $business?->lien_onboarding_completed_at !== null,
@@ -221,23 +222,77 @@ class StatsBoard extends Component
     {
         return Payment::query()
             ->where('status', PaymentStatus::Succeeded)
-            ->with(['business.users'])
+            ->with(['business.users', 'price'])
             ->latest('paid_at')
             ->limit(20)
             ->get()
             ->map(function (Payment $payment) {
                 $user = $payment->business?->users->first();
+                $kind = $this->paymentKind($payment);
 
                 return [
                     'id' => $payment->id,
-                    'name' => $user?->name ?? 'Unknown',
                     'email' => $user?->email ?? 'Unknown',
                     'amount' => $payment->formattedAmount(),
+                    'kind' => $kind['label'],
+                    'kind_color' => $kind['color'],
                     'type' => $payment->stripe_subscription_id ? 'Subscription' : 'One-time',
-                    'status' => $payment->status->label(),
                     'paid_at' => $payment->paid_at,
                 ];
             });
+    }
+
+    /**
+     * Resolve the human-readable "kind" of a payment (the product purchased)
+     * and a badge color, derived from the catalog price snapshot. Falls back to
+     * subscription/one-time when no price is attached (e.g. legacy SaaS rows).
+     *
+     * @return array{label: string, color: string}
+     */
+    protected function paymentKind(Payment $payment): array
+    {
+        $price = $payment->price;
+
+        if ($price) {
+            $label = match ($price->product_key) {
+                'prelim_notice' => 'Preliminary Notice',
+                'noi' => 'Notice of Intent',
+                'mechanics_lien' => 'Mechanics Lien',
+                'lien_release' => 'Lien Release',
+                'demand_letter' => 'Demand Letter',
+                'sales_tax_permit' => 'Sales Tax Reg',
+                'llc' => 'LLC Formation',
+                default => ucwords(str_replace('_', ' ', (string) $price->product_key)),
+            };
+
+            $color = match ($price->product_family) {
+                'lien' => 'amber',
+                'tax' => 'teal',
+                'llc', 'formation' => 'indigo',
+                'saas' => 'purple',
+                default => 'zinc',
+            };
+
+            return ['label' => $label, 'color' => $color];
+        }
+
+        if ($payment->stripe_subscription_id) {
+            return ['label' => 'Subscription', 'color' => 'purple'];
+        }
+
+        return ['label' => 'Other', 'color' => 'zinc'];
+    }
+
+    /**
+     * Strip the http(s):// scheme from a URL for compact display.
+     */
+    protected function stripScheme(?string $url): ?string
+    {
+        if ($url === null || $url === '') {
+            return null;
+        }
+
+        return preg_replace('#^https?://#i', '', $url);
     }
 
     /**

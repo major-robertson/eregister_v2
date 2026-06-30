@@ -35,10 +35,10 @@
             </flux:sidebar.group>
 
             @role('admin')
-            <flux:sidebar.group :heading="__('System')">
+            <flux:sidebar.group :heading="__('Stats')">
                 <flux:sidebar.item icon="chart-bar" :href="route('admin.stats')"
                     :current="request()->routeIs('admin.stats')" wire:navigate>
-                    {{ __('Stats') }}
+                    {{ __('Stats Overview') }}
                 </flux:sidebar.item>
                 <flux:sidebar.item icon="clipboard-document-list" :href="route('admin.lien-stats')"
                     :current="request()->routeIs('admin.lien-stats')" wire:navigate>
@@ -56,6 +56,9 @@
                     :current="request()->routeIs('admin.marketing')" wire:navigate>
                     {{ __('Marketing') }}
                 </flux:sidebar.item>
+            </flux:sidebar.group>
+
+            <flux:sidebar.group :heading="__('System')">
                 <flux:sidebar.item icon="user-group" :href="route('admin.users.index')"
                     :current="request()->routeIs('admin.users.*')" wire:navigate>
                     {{ __('Users') }}

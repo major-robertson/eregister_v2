@@ -1,145 +1,148 @@
 <div class="space-y-6">
     <div>
         <flux:heading size="xl">Lien Stats</flux:heading>
-        <flux:text class="mt-1">View lien project progress and filing status across all users.</flux:text>
+        <flux:text class="mt-1">Overview of lien filing revenue and filings.</flux:text>
     </div>
 
-    <div class="rounded-lg border border-border bg-white">
-        <div class="flex items-center justify-between border-b border-border px-4 py-3">
-            <flux:heading size="sm">All Lien Projects</flux:heading>
-            <div class="w-80">
-                <flux:input type="search" placeholder="Search by project, business, or user..."
-                    wire:model.live.debounce.300ms="search" icon="magnifying-glass" />
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <!-- Revenue Card -->
+        <div class="rounded-lg border border-border bg-white p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="flex size-10 items-center justify-center rounded-lg bg-green-100">
+                    <flux:icon name="banknotes" class="size-5 text-green-600" />
+                </div>
+                <flux:heading size="sm">Revenue</flux:heading>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <flux:text class="text-sm text-gray-500">Today</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $this->formatCents($revenueStats['today']) }}</flux:text>
+                </div>
+                <div>
+                    <flux:text class="text-sm text-gray-500">Yesterday</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $this->formatCents($revenueStats['yesterday']) }}</flux:text>
+                </div>
+                <div>
+                    <flux:text class="text-sm text-gray-500">This Week</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $this->formatCents($revenueStats['this_week']) }}</flux:text>
+                </div>
+                <div>
+                    <flux:text class="text-sm text-gray-500">This Month</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $this->formatCents($revenueStats['this_month']) }}</flux:text>
+                </div>
             </div>
         </div>
 
+        <!-- Filings Started Card -->
+        <div class="rounded-lg border border-border bg-white p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="flex size-10 items-center justify-center rounded-lg bg-blue-100">
+                    <flux:icon name="pencil-square" class="size-5 text-blue-600" />
+                </div>
+                <flux:heading size="sm">Filings Started</flux:heading>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <flux:text class="text-sm text-gray-500">Today</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $filingStats['started']['today'] }}</flux:text>
+                </div>
+                <div>
+                    <flux:text class="text-sm text-gray-500">Yesterday</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $filingStats['started']['yesterday'] }}</flux:text>
+                </div>
+                <div>
+                    <flux:text class="text-sm text-gray-500">This Week</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $filingStats['started']['this_week'] }}</flux:text>
+                </div>
+                <div>
+                    <flux:text class="text-sm text-gray-500">This Month</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $filingStats['started']['this_month'] }}</flux:text>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filings Paid Card -->
+        <div class="rounded-lg border border-border bg-white p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="flex size-10 items-center justify-center rounded-lg bg-amber-100">
+                    <flux:icon name="document-text" class="size-5 text-amber-600" />
+                </div>
+                <flux:heading size="sm">Filings Paid</flux:heading>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <flux:text class="text-sm text-gray-500">Today</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $filingStats['paid']['today'] }}</flux:text>
+                </div>
+                <div>
+                    <flux:text class="text-sm text-gray-500">Yesterday</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $filingStats['paid']['yesterday'] }}</flux:text>
+                </div>
+                <div>
+                    <flux:text class="text-sm text-gray-500">This Week</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $filingStats['paid']['this_week'] }}</flux:text>
+                </div>
+                <div>
+                    <flux:text class="text-sm text-gray-500">This Month</flux:text>
+                    <flux:text class="text-2xl font-semibold">{{ $filingStats['paid']['this_month'] }}</flux:text>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Filings Table -->
+    <div class="rounded-lg border border-border bg-white">
+        <div class="border-b border-border px-4 py-3">
+            <flux:heading size="sm">Last 20 Filings</flux:heading>
+        </div>
         <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-gray-50 text-left text-sm text-gray-500">
+            <table class="w-full text-left text-sm">
+                <thead class="border-b border-border bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 font-medium">User</th>
-                        <th class="px-4 py-3 font-medium">Business</th>
-                        <th class="px-4 py-3 font-medium">Project</th>
-                        <th class="px-4 py-3 font-medium">Progress</th>
-                        <th class="px-4 py-3 font-medium">Wizard</th>
-                        <th class="px-4 py-3 font-medium">Filings</th>
-                        <th class="px-4 py-3 font-medium">Created</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">Business</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">Name</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">Email</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">Document</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">State</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">Amount</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">Status</th>
+                        <th class="px-4 py-3 font-medium text-gray-700">Date (EST)</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-border">
-                    @forelse ($projects as $project)
-                    @php
-                    $progress = $this->getWizardProgress($project);
-                    $filings = $this->getFilingSummary($project);
-                    @endphp
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3">
-                            @if ($project->createdBy)
-                            <div class="flex items-center gap-3">
-                                <flux:avatar :initials="$project->createdBy->initials()" size="sm" />
-                                <div>
-                                    <flux:text class="font-medium">{{ $project->createdBy->name }}</flux:text>
-                                    <flux:text class="text-sm text-gray-500">{{ $project->createdBy->email }}
-                                    </flux:text>
-                                </div>
-                            </div>
-                            @else
-                            <flux:text class="text-gray-400">Unknown</flux:text>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3">
-                            @if ($project->business)
-                            <flux:text class="font-medium">{{ $project->business->name }}</flux:text>
-                            @else
-                            <flux:text class="text-gray-400">No business</flux:text>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3">
-                            <flux:text class="font-medium">{{ $project->name ?: 'Unnamed Project' }}</flux:text>
-                            @if ($project->job_number)
-                            <flux:text class="text-sm text-gray-500">#{{ $project->job_number }}</flux:text>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3">
-                            <flux:dropdown>
-                                <flux:button variant="ghost" size="sm">
-                                    {{ $progress['filled'] }}/{{ $progress['total'] }} fields
-                                </flux:button>
-
-                                <flux:menu class="w-72">
-                                    <div class="px-3 py-2 space-y-3">
-                                        @foreach ($progress['steps'] as $stepName => $stepData)
-                                        <div>
-                                            <div class="flex items-center justify-between mb-1">
-                                                <flux:text class="font-medium text-sm">{{ $stepName }}</flux:text>
-                                                <flux:badge size="sm"
-                                                    :color="$stepData['filled'] === $stepData['total'] ? 'green' : 'zinc'">
-                                                    {{ $stepData['filled'] }}/{{ $stepData['total'] }}
-                                                </flux:badge>
-                                            </div>
-                                            <div class="space-y-1">
-                                                @foreach ($stepData['fields'] as $fieldLabel => $isFilled)
-                                                <div class="flex items-center gap-2 text-sm">
-                                                    @if ($isFilled)
-                                                    <flux:icon name="check-circle" class="size-4 text-green-500" />
-                                                    @else
-                                                    <flux:icon name="x-circle" class="size-4 text-gray-300" />
-                                                    @endif
-                                                    <span class="{{ $isFilled ? 'text-gray-700' : 'text-gray-400' }}">
-                                                        {{ $fieldLabel }}
-                                                    </span>
-                                                </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                        @endforeach
-                                    </div>
-                                </flux:menu>
-                            </flux:dropdown>
-                        </td>
-                        <td class="px-4 py-3">
-                            @if ($project->isWizardComplete())
-                            <flux:badge size="sm" color="green">Complete</flux:badge>
-                            @else
-                            <flux:badge size="sm" color="amber">In Progress</flux:badge>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3">
-                            @if ($filings['total'] > 0)
-                            <flux:tooltip
-                                content="Total: {{ $filings['total'] }}, Paid: {{ $filings['paid'] }}, Complete: {{ $filings['complete'] }}, Draft: {{ $filings['draft'] }}">
-                                <div class="flex items-center gap-2">
-                                    <flux:badge size="sm" color="zinc">{{ $filings['total'] }}</flux:badge>
-                                    @if ($filings['paid'] > 0)
-                                    <flux:badge size="sm" color="green">{{ $filings['paid'] }} paid</flux:badge>
-                                    @endif
-                                </div>
-                            </flux:tooltip>
-                            @else
-                            <flux:text class="text-gray-400">None</flux:text>
-                            @endif
-                        </td>
-                        <td class="px-4 py-3">
-                            <flux:text class="text-sm text-gray-500">
-                                {{ $project->created_at->format('M j, Y') }}
-                            </flux:text>
-                        </td>
-                    </tr>
+                    @forelse ($recentFilings as $filing)
+                        <tr class="hover:bg-gray-50" wire:key="filing-{{ $filing['id'] }}">
+                            <td class="px-4 py-3">{{ $filing['business'] }}</td>
+                            <td class="px-4 py-3">{{ $filing['name'] }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ $filing['email'] }}</td>
+                            <td class="px-4 py-3">{{ $filing['document'] }}</td>
+                            <td class="px-4 py-3">{{ $filing['state'] }}</td>
+                            <td class="px-4 py-3 font-medium">
+                                @if ($filing['amount'])
+                                    {{ $filing['amount'] }}
+                                @else
+                                    <span class="text-gray-400">—</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
+                                <flux:badge size="sm" color="{{ $filing['status_color'] }}">
+                                    {{ $filing['status_label'] }}
+                                </flux:badge>
+                            </td>
+                            <td class="px-4 py-3 text-gray-600">
+                                {{ ($filing['paid_at'] ?? $filing['created_at'])?->eastern()->format('M j, Y g:i A') }}
+                            </td>
+                        </tr>
                     @empty
-                    <tr>
-                        <td colspan="7" class="px-4 py-12 text-center">
-                            <flux:text class="text-gray-400">No lien projects found.</flux:text>
-                        </td>
-                    </tr>
+                        <tr>
+                            <td colspan="8" class="px-4 py-8 text-center text-gray-400">
+                                No filings yet.
+                            </td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-
-        @if ($projects->hasPages())
-        <div class="border-t border-border px-4 py-3">
-            {{ $projects->links() }}
-        </div>
-        @endif
     </div>
 </div>

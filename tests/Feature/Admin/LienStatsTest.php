@@ -2,9 +2,40 @@
 
 use App\Domains\Admin\Livewire\LienStats;
 use App\Domains\Business\Models\Business;
-use App\Domains\Lien\Models\LienProject;
+use App\Domains\Lien\Enums\FilingStatus;
+use App\Domains\Lien\Models\LienDocumentType;
+use App\Domains\Lien\Models\LienFiling;
+use App\Enums\PaymentStatus;
+use App\Models\Payment;
+use App\Models\Price;
 use App\Models\User;
 use Livewire\Livewire;
+
+function makeLienStatsLienPrice(): Price
+{
+    return Price::create([
+        'product_family' => 'lien',
+        'product_key' => 'demand_letter',
+        'variant_key' => 'default',
+        'billing_type' => 'one_time',
+        'amount_cents' => 29900,
+        'currency' => 'usd',
+        'active' => true,
+    ]);
+}
+
+function makeLienStatsTaxPrice(): Price
+{
+    return Price::create([
+        'product_family' => 'tax',
+        'product_key' => 'sales_tax_permit',
+        'variant_key' => 'per_state',
+        'billing_type' => 'one_time',
+        'amount_cents' => 19900,
+        'currency' => 'usd',
+        'active' => true,
+    ]);
+}
 
 describe('access control', function () {
     it('allows admin to access the lien stats page', function () {
@@ -40,160 +71,129 @@ describe('access control', function () {
     });
 });
 
-describe('displaying lien projects', function () {
-    it('displays lien projects in the list', function () {
+describe('revenue stats', function () {
+    it('only counts lien-family succeeded payments', function () {
         $admin = User::factory()->create();
         $admin->assignRole('admin');
 
-        $user = User::factory()->create([
-            'first_name' => 'John',
-            'last_name' => 'Doe',
-        ]);
-
-        $business = Business::factory()->create([
-            'name' => 'Test Construction LLC',
-        ]);
-        $business->users()->attach($user->id, ['role' => 'owner']);
-
-        LienProject::factory()->create([
-            'name' => 'Main Street Project',
-            'business_id' => $business->id,
-            'created_by_user_id' => $user->id,
-        ]);
-
-        $this->actingAs($admin);
-
-        Livewire::test(LienStats::class)
-            ->assertSee('Main Street Project')
-            ->assertSee('Test Construction LLC')
-            ->assertSee('John Doe');
-    });
-
-    it('shows wizard progress for projects', function () {
-        $admin = User::factory()->create();
-        $admin->assignRole('admin');
-
-        $user = User::factory()->create();
         $business = Business::factory()->create();
-        $business->users()->attach($user->id, ['role' => 'owner']);
+        $lienPrice = makeLienStatsLienPrice();
+        $taxPrice = makeLienStatsTaxPrice();
 
-        LienProject::factory()->create([
-            'name' => 'Test Project',
+        Payment::factory()->succeeded()->create([
             'business_id' => $business->id,
-            'created_by_user_id' => $user->id,
-            'jobsite_address1' => '123 Main St',
-            'jobsite_city' => 'Los Angeles',
-            'jobsite_state' => 'CA',
+            'price_id' => $lienPrice->id,
+            'amount_cents' => 29900,
+        ]);
+
+        // Tax payment must NOT be included in lien revenue.
+        Payment::factory()->succeeded()->create([
+            'business_id' => $business->id,
+            'price_id' => $taxPrice->id,
+            'amount_cents' => 19900,
         ]);
 
         $this->actingAs($admin);
 
         Livewire::test(LienStats::class)
-            ->assertSee('Test Project')
-            ->assertSee('fields');
+            ->assertSee('Revenue')
+            ->assertSee('$299.00')
+            ->assertDontSee('$498.00');
     });
 
-    it('shows wizard complete badge for completed projects', function () {
+    it('excludes non-succeeded lien payments from revenue', function () {
         $admin = User::factory()->create();
         $admin->assignRole('admin');
 
-        $user = User::factory()->create();
         $business = Business::factory()->create();
-        $business->users()->attach($user->id, ['role' => 'owner']);
+        $lienPrice = makeLienStatsLienPrice();
 
-        LienProject::factory()->create([
-            'name' => 'Complete Project',
+        Payment::factory()->create([
             'business_id' => $business->id,
-            'created_by_user_id' => $user->id,
-            'wizard_completed_at' => now(),
+            'price_id' => $lienPrice->id,
+            'amount_cents' => 29900,
+            'status' => PaymentStatus::Initiated,
         ]);
 
         $this->actingAs($admin);
 
         Livewire::test(LienStats::class)
-            ->assertSee('Complete Project')
-            ->assertSee('Complete');
-    });
-
-    it('can search lien projects by name', function () {
-        $admin = User::factory()->create();
-        $admin->assignRole('admin');
-
-        $user = User::factory()->create();
-        $business = Business::factory()->create();
-        $business->users()->attach($user->id, ['role' => 'owner']);
-
-        LienProject::factory()->create([
-            'name' => 'Alpha Project',
-            'business_id' => $business->id,
-            'created_by_user_id' => $user->id,
-        ]);
-
-        LienProject::factory()->create([
-            'name' => 'Beta Project',
-            'business_id' => $business->id,
-            'created_by_user_id' => $user->id,
-        ]);
-
-        $this->actingAs($admin);
-
-        Livewire::test(LienStats::class)
-            ->set('search', 'Alpha')
-            ->assertSee('Alpha Project')
-            ->assertDontSee('Beta Project');
-    });
-
-    it('can search lien projects by business name', function () {
-        $admin = User::factory()->create();
-        $admin->assignRole('admin');
-
-        $user = User::factory()->create();
-
-        $business1 = Business::factory()->create(['name' => 'Unique Construction']);
-        $business1->users()->attach($user->id, ['role' => 'owner']);
-
-        $business2 = Business::factory()->create(['name' => 'Other Company']);
-        $business2->users()->attach($user->id, ['role' => 'owner']);
-
-        LienProject::factory()->create([
-            'name' => 'Project One',
-            'business_id' => $business1->id,
-            'created_by_user_id' => $user->id,
-        ]);
-
-        LienProject::factory()->create([
-            'name' => 'Project Two',
-            'business_id' => $business2->id,
-            'created_by_user_id' => $user->id,
-        ]);
-
-        $this->actingAs($admin);
-
-        Livewire::test(LienStats::class)
-            ->set('search', 'Unique Construction')
-            ->assertSee('Project One')
-            ->assertDontSee('Project Two');
+            ->assertSee('$0.00');
     });
 });
 
-describe('pagination', function () {
-    it('paginates the lien projects list', function () {
+describe('recent filings', function () {
+    it('lists lien filings with payer, document type, and status', function () {
         $admin = User::factory()->create();
         $admin->assignRole('admin');
 
-        $user = User::factory()->create();
-        $business = Business::factory()->create();
-        $business->users()->attach($user->id, ['role' => 'owner']);
+        $business = Business::factory()->create(['name' => 'Filing Co']);
+        $owner = User::factory()->create([
+            'first_name' => 'Lien',
+            'last_name' => 'Owner',
+            'email' => 'lien@example.com',
+        ]);
+        $business->users()->attach($owner->id, ['role' => 'owner']);
 
-        // Create more than 25 projects to trigger pagination
-        LienProject::factory()->count(30)->create([
+        // Unique slug avoids colliding with document types seeded in the
+        // shared test database.
+        $docType = LienDocumentType::create([
+            'slug' => 'lien_stats_test_doc',
+            'name' => 'Lien Stats Test Document',
+            'is_active' => true,
+        ]);
+
+        LienFiling::factory()->paid()->create([
             'business_id' => $business->id,
-            'created_by_user_id' => $user->id,
+            'document_type_id' => $docType->id,
+            'jurisdiction_state' => 'CA',
         ]);
 
         $this->actingAs($admin);
 
         Livewire::test(LienStats::class)
-            ->assertSuccessful();
+            ->assertSee('Last 20 Filings')
+            ->assertSee('Filing Co')
+            ->assertSee('Lien Owner')
+            ->assertSee('lien@example.com')
+            ->assertSee('Lien Stats Test Document')
+            ->assertSee('Submitted'); // FilingStatus::Paid label
+    });
+});
+
+describe('filing stats', function () {
+    it('displays started and paid filing cards', function () {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienStats::class)
+            ->assertSee('Filings Started')
+            ->assertSee('Filings Paid');
+    });
+
+    it('counts started and paid filings for this month', function () {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $business = Business::factory()->create();
+
+        // A paid filing (counts toward both started and paid).
+        LienFiling::factory()->paid()->create([
+            'business_id' => $business->id,
+        ]);
+
+        // A draft filing (counts toward started only).
+        LienFiling::factory()->draft()->create([
+            'business_id' => $business->id,
+        ]);
+
+        $this->actingAs($admin);
+
+        $stats = Livewire::test(LienStats::class)->viewData('filingStats');
+
+        expect($stats['started']['this_month'])->toBe(2)
+            ->and($stats['paid']['this_month'])->toBe(1);
     });
 });

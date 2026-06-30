@@ -2,127 +2,152 @@
 
 namespace App\Domains\Admin\Livewire;
 
-use App\Domains\Lien\Models\LienProject;
+use App\Domains\Lien\Models\LienFiling;
+use App\Enums\PaymentStatus;
+use App\Models\Payment;
+use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Livewire\Component;
-use Livewire\WithPagination;
 
 class LienStats extends Component
 {
-    use WithPagination;
-
-    public string $search = '';
-
-    /**
-     * The wizard fields organized by step for progress tracking.
-     */
-    protected array $wizardFields = [
-        'Step 1: Project Info' => [
-            'name' => 'Project Name',
-            'job_number' => 'Job Number',
-            'claimant_type' => 'Claimant Type',
-        ],
-        'Step 2: Jobsite' => [
-            'jobsite_address1' => 'Address',
-            'jobsite_city' => 'City',
-            'jobsite_state' => 'State',
-            'jobsite_zip' => 'ZIP',
-            'jobsite_county' => 'County',
-        ],
-        'Step 3: Dates' => [
-            'first_furnish_date' => 'First Furnish',
-            'last_furnish_date' => 'Last Furnish',
-            'completion_date' => 'Completion Date',
-        ],
-    ];
-
-    public function updatedSearch(): void
-    {
-        $this->resetPage();
-    }
-
-    /**
-     * Calculate wizard progress for a project.
-     *
-     * @return array{filled: int, total: int, steps: array<string, array{filled: int, total: int, fields: array<string, bool>}>}
-     */
-    public function getWizardProgress(LienProject $project): array
-    {
-        $totalFilled = 0;
-        $totalFields = 0;
-        $steps = [];
-
-        foreach ($this->wizardFields as $stepName => $fields) {
-            $stepFilled = 0;
-            $stepTotal = count($fields);
-            $fieldStatus = [];
-
-            foreach ($fields as $fieldKey => $fieldLabel) {
-                $value = $project->getAttribute($fieldKey);
-                $isFilled = $value !== null && $value !== '';
-                $fieldStatus[$fieldLabel] = $isFilled;
-
-                if ($isFilled) {
-                    $stepFilled++;
-                    $totalFilled++;
-                }
-            }
-
-            $totalFields += $stepTotal;
-            $steps[$stepName] = [
-                'filled' => $stepFilled,
-                'total' => $stepTotal,
-                'fields' => $fieldStatus,
-            ];
-        }
-
-        return [
-            'filled' => $totalFilled,
-            'total' => $totalFields,
-            'steps' => $steps,
-        ];
-    }
-
-    /**
-     * Get filing summary for a project.
-     *
-     * @return array{total: int, paid: int, complete: int, draft: int}
-     */
-    public function getFilingSummary(LienProject $project): array
-    {
-        $filings = $project->filings;
-
-        return [
-            'total' => $filings->count(),
-            'paid' => $filings->filter(fn ($f) => $f->paid_at !== null)->count(),
-            'complete' => $filings->filter(fn ($f) => $f->status->value === 'complete')->count(),
-            'draft' => $filings->filter(fn ($f) => $f->status->value === 'draft')->count(),
-        ];
-    }
+    private const STATS_TIMEZONE = 'America/New_York';
 
     public function render(): View
     {
-        $projects = LienProject::query()
-            ->withoutGlobalScopes()
-            ->with(['business', 'createdBy', 'filings'])
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('name', 'like', "%{$this->search}%")
-                        ->orWhereHas('business', function ($bq) {
-                            $bq->where('name', 'like', "%{$this->search}%");
-                        })
-                        ->orWhereHas('createdBy', function ($uq) {
-                            $uq->where('email', 'like', "%{$this->search}%")
-                                ->orWhere('first_name', 'like', "%{$this->search}%")
-                                ->orWhere('last_name', 'like', "%{$this->search}%");
-                        });
-                });
-            })
-            ->latest()
-            ->paginate(25);
-
         return view('admin.lien-stats', [
-            'projects' => $projects,
+            'revenueStats' => $this->getRevenueStats(),
+            'filingStats' => $this->getFilingStats(),
+            'recentFilings' => $this->getRecentFilings(),
         ])->layout('layouts.admin', ['title' => 'Lien Stats']);
+    }
+
+    /**
+     * Get UTC date range for a given EST period.
+     *
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    protected function getEstDateRange(string $period): array
+    {
+        $now = now(self::STATS_TIMEZONE);
+
+        return match ($period) {
+            'today' => [
+                $now->copy()->startOfDay()->utc(),
+                $now->copy()->endOfDay()->utc(),
+            ],
+            'yesterday' => [
+                $now->copy()->subDay()->startOfDay()->utc(),
+                $now->copy()->subDay()->endOfDay()->utc(),
+            ],
+            'this_week' => [
+                $now->copy()->startOfWeek()->utc(),
+                $now->copy()->endOfWeek()->utc(),
+            ],
+            'this_month' => [
+                $now->copy()->startOfMonth()->utc(),
+                $now->copy()->endOfMonth()->endOfDay()->utc(),
+            ],
+        };
+    }
+
+    /**
+     * Get lien-product revenue (in cents) for different periods (EST).
+     *
+     * @return array{today: int, yesterday: int, this_week: int, this_month: int}
+     */
+    protected function getRevenueStats(): array
+    {
+        return [
+            'today' => $this->sumLienRevenue('today'),
+            'yesterday' => $this->sumLienRevenue('yesterday'),
+            'this_week' => $this->sumLienRevenue('this_week'),
+            'this_month' => $this->sumLienRevenue('this_month'),
+        ];
+    }
+
+    /**
+     * Sum succeeded lien-product payment amounts for an EST period.
+     */
+    protected function sumLienRevenue(string $period): int
+    {
+        return (int) Payment::query()
+            ->where('status', PaymentStatus::Succeeded)
+            ->whereHas('price', fn ($query) => $query->where('product_family', 'lien'))
+            ->whereBetween('paid_at', $this->getEstDateRange($period))
+            ->sum('amount_cents');
+    }
+
+    /**
+     * Get filing counts (started vs paid) for periods (EST).
+     *
+     * @return array{
+     *     started: array{today: int, yesterday: int, this_week: int, this_month: int},
+     *     paid: array{today: int, yesterday: int, this_week: int, this_month: int}
+     * }
+     */
+    protected function getFilingStats(): array
+    {
+        return [
+            'started' => [
+                'today' => $this->filingsQuery()->whereBetween('created_at', $this->getEstDateRange('today'))->count(),
+                'yesterday' => $this->filingsQuery()->whereBetween('created_at', $this->getEstDateRange('yesterday'))->count(),
+                'this_week' => $this->filingsQuery()->whereBetween('created_at', $this->getEstDateRange('this_week'))->count(),
+                'this_month' => $this->filingsQuery()->whereBetween('created_at', $this->getEstDateRange('this_month'))->count(),
+            ],
+            'paid' => [
+                'today' => $this->filingsQuery()->whereNotNull('paid_at')->whereBetween('paid_at', $this->getEstDateRange('today'))->count(),
+                'yesterday' => $this->filingsQuery()->whereNotNull('paid_at')->whereBetween('paid_at', $this->getEstDateRange('yesterday'))->count(),
+                'this_week' => $this->filingsQuery()->whereNotNull('paid_at')->whereBetween('paid_at', $this->getEstDateRange('this_week'))->count(),
+                'this_month' => $this->filingsQuery()->whereNotNull('paid_at')->whereBetween('paid_at', $this->getEstDateRange('this_month'))->count(),
+            ],
+        ];
+    }
+
+    /**
+     * Get the last 20 lien filings with payer, document type, and amount info.
+     */
+    protected function getRecentFilings(): Collection
+    {
+        return $this->filingsQuery()
+            ->with(['business.users', 'documentType', 'payment'])
+            ->orderByDesc('id')
+            ->limit(20)
+            ->get()
+            ->map(function (LienFiling $filing) {
+                $user = $filing->business?->users->first();
+
+                return [
+                    'id' => $filing->id,
+                    'business' => $filing->business?->name ?? 'Unknown',
+                    'name' => $user?->name ?? 'Unknown',
+                    'email' => $user?->email ?? 'Unknown',
+                    'document' => $filing->documentType?->name ?? '—',
+                    'state' => $filing->jurisdiction_state ?? '—',
+                    'amount' => $filing->payment?->formattedAmount(),
+                    'status_label' => $filing->status->label(),
+                    'status_color' => $filing->status->color(),
+                    'paid_at' => $filing->paid_at,
+                    'created_at' => $filing->created_at,
+                ];
+            });
+    }
+
+    /**
+     * Base query for filings across all businesses (admin view bypasses the
+     * per-business global scope).
+     */
+    protected function filingsQuery()
+    {
+        return LienFiling::query()->withoutGlobalScope('business');
+    }
+
+    /**
+     * Format an amount in cents as a USD string.
+     */
+    public function formatCents(int $cents): string
+    {
+        return '$'.number_format($cents / 100, 2);
     }
 }

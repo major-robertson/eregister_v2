@@ -6,6 +6,7 @@ use App\Domains\Forms\Models\FormApplication;
 use App\Domains\Lien\Models\LienFiling;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
+use App\Models\Price;
 use App\Models\User;
 use Livewire\Livewire;
 
@@ -58,7 +59,7 @@ describe('displaying signup stats', function () {
             ->assertSee('Today');
     });
 
-    it('displays the last 20 signups table', function () {
+    it('displays the last 20 signups table with email and attribution', function () {
         $admin = User::factory()->create(['first_name' => 'Admin', 'last_name' => 'User']);
         $admin->assignRole('admin');
 
@@ -66,14 +67,38 @@ describe('displaying signup stats', function () {
             'first_name' => 'Recent',
             'last_name' => 'Signup',
             'email' => 'recent@example.com',
+            'signup_landing_path' => '/liens',
+            'signup_referrer' => 'https://www.google.com/',
         ]);
 
         $this->actingAs($admin);
 
         Livewire::test(StatsBoard::class)
             ->assertSee('Last 20 Signups')
-            ->assertSee('Recent Signup')
-            ->assertSee('recent@example.com');
+            ->assertSee('Landing Path')
+            ->assertSee('Referrer')
+            ->assertSee('recent@example.com')
+            ->assertSee('/liens')
+            // Referrer is shown without the scheme.
+            ->assertSee('www.google.com/')
+            ->assertDontSee('https://www.google.com/');
+    });
+
+    it('does not show the name column in the signups table', function () {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        User::factory()->create([
+            'first_name' => 'Hidden',
+            'last_name' => 'Nameperson',
+            'email' => 'hidden@example.com',
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(StatsBoard::class)
+            ->assertSee('hidden@example.com')
+            ->assertDontSee('Hidden Nameperson');
     });
 });
 
@@ -89,7 +114,7 @@ describe('displaying payment stats', function () {
             ->assertSee('Last 20 Payments');
     });
 
-    it('shows recent payments with user info', function () {
+    it('shows recent payments with email, amount, and kind', function () {
         $admin = User::factory()->create();
         $admin->assignRole('admin');
 
@@ -101,10 +126,21 @@ describe('displaying payment stats', function () {
         ]);
         $business->users()->attach($payer->id, ['role' => 'owner']);
 
+        $price = Price::create([
+            'product_family' => 'lien',
+            'product_key' => 'demand_letter',
+            'variant_key' => 'default',
+            'billing_type' => 'one_time',
+            'amount_cents' => 9900,
+            'currency' => 'usd',
+            'active' => true,
+        ]);
+
         Payment::create([
             'business_id' => $business->id,
             'purchasable_type' => LienFiling::class,
             'purchasable_id' => 1,
+            'price_id' => $price->id,
             'provider' => 'stripe',
             'livemode' => false,
             'amount_cents' => 9900,
@@ -116,9 +152,12 @@ describe('displaying payment stats', function () {
         $this->actingAs($admin);
 
         Livewire::test(StatsBoard::class)
-            ->assertSee('John Payer')
             ->assertSee('payer@example.com')
-            ->assertSee('$99.00');
+            ->assertSee('$99.00')
+            // The "Kind" column derives the product from the price snapshot.
+            ->assertSee('Demand Letter')
+            // Name and Status columns were removed.
+            ->assertDontSee('John Payer');
     });
 });
 
@@ -282,15 +321,14 @@ describe('user business info in signups table', function () {
         ]);
 
         $userWithBusiness = User::factory()->create([
-            'first_name' => 'Texas',
-            'last_name' => 'User',
+            'email' => 'texas@example.com',
         ]);
         $business->users()->attach($userWithBusiness->id, ['role' => 'owner']);
 
         $this->actingAs($admin);
 
         Livewire::test(StatsBoard::class)
-            ->assertSee('Texas User')
+            ->assertSee('texas@example.com')
             ->assertSee('TX');
     });
 
@@ -299,14 +337,13 @@ describe('user business info in signups table', function () {
         $admin->assignRole('admin');
 
         $userWithoutBusiness = User::factory()->create([
-            'first_name' => 'No',
-            'last_name' => 'Business',
+            'email' => 'nobiz@example.com',
         ]);
 
         $this->actingAs($admin);
 
         Livewire::test(StatsBoard::class)
-            ->assertSee('No Business')
+            ->assertSee('nobiz@example.com')
             ->assertSee('None');
     });
 });

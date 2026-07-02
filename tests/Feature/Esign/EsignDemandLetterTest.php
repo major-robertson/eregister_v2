@@ -1,11 +1,11 @@
 <?php
 
 use App\Domains\Business\Models\Business;
-use App\Domains\Esign\Actions\AppendSignatureEvent;
 use App\Domains\Esign\Actions\CompleteSignature;
 use App\Domains\Esign\Actions\VerifySignatureChain;
-use App\Domains\Esign\Enums\SignatureEventType;
 use App\Domains\Esign\Enums\SignatureRequestStatus;
+use App\Domains\Esign\Livewire\SignConsent;
+use App\Domains\Esign\Livewire\SignReview;
 use App\Domains\Esign\Models\EsignConsent;
 use App\Domains\Esign\Models\SignatureEvent;
 use App\Domains\Esign\Models\SignatureRequest;
@@ -18,8 +18,6 @@ use App\Domains\Lien\Models\LienDocumentType;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
-use App\Domains\Esign\Livewire\SignConsent;
-use App\Domains\Esign\Livewire\SignReview;
 use App\Mail\FilingActionReminder;
 use App\Mail\SignerInvitation;
 use App\Models\EmailSequence;

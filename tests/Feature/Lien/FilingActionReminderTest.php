@@ -59,7 +59,7 @@ it('suppresses the reminder sequence when filing leaves a waiting status', funct
 
     expect($sequence->suppressed_at)->toBeNull();
 
-    $this->filing->transitionTo(FilingStatus::InFulfillment);
+    $this->filing->transitionTo(FilingStatus::ReadyToFile);
 
     $sequence->refresh();
     expect($sequence->suppressed_at)->not->toBeNull();
@@ -67,7 +67,7 @@ it('suppresses the reminder sequence when filing leaves a waiting status', funct
 });
 
 it('replaces the old sequence on waiting-to-waiting transitions', function () {
-    $this->filing->transitionTo(FilingStatus::AwaitingClient);
+    $this->filing->transitionTo(FilingStatus::AwaitingNotary);
 
     $oldSequence = EmailSequence::query()
         ->where('sequence_type', 'filing_action_reminder')
@@ -75,9 +75,9 @@ it('replaces the old sequence on waiting-to-waiting transitions', function () {
         ->first();
 
     $oldId = $oldSequence->id;
-    expect($oldSequence->trigger_status)->toBe('awaiting_client');
+    expect($oldSequence->trigger_status)->toBe('awaiting_notary');
 
-    $this->filing->transitionTo(FilingStatus::AwaitingEsign);
+    $this->filing->transitionTo(FilingStatus::AwaitingClient);
 
     expect(EmailSequence::find($oldId))->toBeNull();
 
@@ -88,12 +88,12 @@ it('replaces the old sequence on waiting-to-waiting transitions', function () {
 
     expect($newSequence)->not->toBeNull();
     expect($newSequence->id)->not->toBe($oldId);
-    expect($newSequence->trigger_status)->toBe('awaiting_esign');
+    expect($newSequence->trigger_status)->toBe('awaiting_client');
     expect($newSequence->suppressed_at)->toBeNull();
 });
 
 it('cleans up SentEmail records when replacing a sequence', function () {
-    $this->filing->transitionTo(FilingStatus::AwaitingClient);
+    $this->filing->transitionTo(FilingStatus::AwaitingNotary);
 
     $sequence = EmailSequence::query()
         ->where('sequence_type', 'filing_action_reminder')
@@ -111,7 +111,7 @@ it('cleans up SentEmail records when replacing a sequence', function () {
 
     expect(SentEmail::where('emailable_id', $sequence->id)->count())->toBe(1);
 
-    $this->filing->transitionTo(FilingStatus::AwaitingEsign);
+    $this->filing->transitionTo(FilingStatus::AwaitingClient);
 
     expect(SentEmail::where('emailable_id', $sequence->id)->count())->toBe(0);
 });
@@ -252,8 +252,8 @@ it('escalates the subject line with step number', function (int $step, string $e
 ]);
 
 it('only creates one active sequence per filing', function () {
+    $this->filing->transitionTo(FilingStatus::AwaitingNotary);
     $this->filing->transitionTo(FilingStatus::AwaitingClient);
-    $this->filing->transitionTo(FilingStatus::AwaitingEsign);
 
     $count = EmailSequence::query()
         ->where('sequence_type', 'filing_action_reminder')

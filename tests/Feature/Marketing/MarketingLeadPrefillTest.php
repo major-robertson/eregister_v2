@@ -435,7 +435,8 @@ it('clears active lead session keys and sets completion flag after first project
     Livewire::test(ProjectForm::class)
         ->assertSet('jobsite_address1', '456 Oak Street')
         ->set('name', 'Test Project')
-        ->set('claimant_type', 'subcontractor')
+        ->set('provided_type', 'labor')
+        ->set('hired_by', 'direct_contractor')
         ->call('nextStep');
 
     // After first step, a project is created and context should be cleared
@@ -461,7 +462,8 @@ it('does not pre-fill second project after context is cleared', function () {
     // Create first project
     Livewire::test(ProjectForm::class)
         ->set('name', 'First Project')
-        ->set('claimant_type', 'subcontractor')
+        ->set('provided_type', 'labor')
+        ->set('hired_by', 'direct_contractor')
         ->call('nextStep');
 
     // Session should be cleared now. Second project should have empty fields.
@@ -489,7 +491,8 @@ it('does not pre-fill second project even when lead_ref cookie is still present'
     // Create first project (clears session, sets flag, queues cookie forget)
     Livewire::test(ProjectForm::class)
         ->set('name', 'First Project')
-        ->set('claimant_type', 'subcontractor')
+        ->set('provided_type', 'labor')
+        ->set('hired_by', 'direct_contractor')
         ->call('nextStep');
 
     // Simulate the cookie still being present (e.g. new browser session,

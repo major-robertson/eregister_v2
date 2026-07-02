@@ -16,11 +16,11 @@ enum ClaimantType: string
      * Derive the canonical claimant type from the two role-capture answers.
      *
      * @param  string  $providedType  'labor' | 'materials_only' | 'both'
-     * @param  string  $hiredBy       'owner' | 'direct_contractor' | 'subcontractor'
+     * @param  string  $hiredBy  'owner' | 'direct_contractor' | 'subcontractor'
      *
      * @throws \InvalidArgumentException for any tuple outside the matrix. We do
-     *   NOT fall back to self::Other — that would silently hide bad input. The
-     *   form's `in:` rules guarantee only valid tuples reach this method.
+     *                                   NOT fall back to self::Other — that would silently hide bad input. The
+     *                                   form's `in:` rules guarantee only valid tuples reach this method.
      */
     public static function derive(string $providedType, string $hiredBy): self
     {

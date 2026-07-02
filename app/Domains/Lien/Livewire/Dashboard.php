@@ -123,7 +123,7 @@ class Dashboard extends Component
             'missingInfoProjects' => $missingInfoProjects,
             'draftFilingsCount' => $draftFilingsCount,
             'activityFeed' => $activityFeed,
-        ])->layout('layouts.lien', ['title' => 'Dashboard']);
+        ])->layout('components.layouts.portal', ['title' => 'Dashboard']);
     }
 
     private function buildActivityFeed(int $businessId): Collection

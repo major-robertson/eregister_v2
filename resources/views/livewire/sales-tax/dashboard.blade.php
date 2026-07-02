@@ -1,14 +1,13 @@
 <div class="mx-auto max-w-6xl px-6 py-10">
     <x-ui.page-header title="Sales Tax" subtitle="Register for sales and use tax permits across one or more states.">
         <x-slot:actions>
-            <flux:button
+            <x-ui.action-button
                 href="{{ $this->workspace->startRouteFor($this->workspace->primaryFormType()) }}"
-                variant="primary"
                 icon="plus"
                 wire:navigate
             >
                 Start New Registration
-            </flux:button>
+            </x-ui.action-button>
         </x-slot:actions>
     </x-ui.page-header>
 
@@ -35,14 +34,13 @@
                     Register for sales tax permits across one or more states.
                 </p>
                 <div class="mt-5">
-                    <flux:button
+                    <x-ui.action-button
                         href="{{ $this->workspace->startRouteFor($this->workspace->primaryFormType()) }}"
-                        variant="primary"
                         icon="plus"
                         wire:navigate
                     >
                         Start New Registration
-                    </flux:button>
+                    </x-ui.action-button>
                 </div>
             </div>
         @else

@@ -1,12 +1,11 @@
-<x-layouts.app :title="__('Style Guide')">
+<x-layouts.portal :title="__('Style Guide')">
     <div class="mx-auto max-w-6xl px-6 py-8">
         <x-ui.page-header title="Style Guide" subtitle="Reusable UI components and design patterns">
             <x-slot:actions>
-                <button type="button" class="btn-action" x-data
+                <flux:button variant="primary" icon="bell" x-data
                     @click="$flux.toast({variant: 'success', text: 'This is a toast notification!'})">
-                    <flux:icon name="bell" class="size-5" />
                     Test Toast
-                </button>
+                </flux:button>
             </x-slot:actions>
         </x-ui.page-header>
 
@@ -42,16 +41,22 @@
             <h2 class="mb-4 text-xl font-semibold text-text-primary">Buttons</h2>
             <x-ui.card>
                 <div class="flex flex-wrap items-center gap-4">
-                    <a href="#" class="btn-action">
-                        <flux:icon name="plus-circle" class="size-5" />
-                        Action Button
-                    </a>
+                    <x-ui.action-button icon="plus-circle">Action (revenue only)</x-ui.action-button>
                     <flux:button variant="primary">Primary (Flux)</flux:button>
                     <flux:button variant="ghost">Ghost</flux:button>
                     <flux:button variant="danger">Danger</flux:button>
                 </div>
+                <div class="mt-4 rounded-lg border border-border bg-amber-500/5 p-4 text-sm text-text-primary">
+                    <p class="font-semibold">Button policy</p>
+                    <ul class="mt-2 list-disc space-y-1 ps-5 text-text-secondary">
+                        <li><strong class="text-text-primary">Green action buttons are reserved for revenue moments only</strong> — start filing, start registration, checkout, pay. Green is the conversion color; keeping it scarce keeps it strong.</li>
+                        <li>Every other in-portal button uses Flux primary (accent blue), ghost, or danger.</li>
+                        <li>Urgency states (overdue deadlines) use <code>variant="danger"</code>, never green or amber.</li>
+                        <li>Section accents (amber/indigo/emerald) are identity marks — chips, dots, icons — never buttons or surfaces.</li>
+                    </ul>
+                </div>
                 <div class="mt-4 rounded-lg bg-zinc-50 p-4">
-                    <code class="text-sm">&lt;a class="btn-action"&gt;...&lt;/a&gt;</code>
+                    <code class="text-sm">&lt;x-ui.action-button href="..."&gt;Start filing&lt;/x-ui.action-button&gt; — or class="btn-action" for plain anchors</code>
                 </div>
             </x-ui.card>
         </section>
@@ -234,16 +239,31 @@
             </x-ui.card>
         </section>
 
+        {{-- Section Chips --}}
+        <section class="mb-12">
+            <h2 class="mb-4 text-xl font-semibold text-text-primary">Section Chips</h2>
+            <x-ui.card>
+                <p class="mb-4 text-text-secondary">Workspace identity marks. Rendered automatically by <code>x-ui.page-header</code> on workspace pages and in the mobile header. Identity colors never appear on buttons or surfaces.</p>
+                <div class="flex flex-wrap items-center gap-3">
+                    @foreach (app(\App\Support\Workspaces\WorkspaceRegistry::class)->all() as $workspace)
+                        <x-ui.section-chip :workspace="$workspace" />
+                    @endforeach
+                </div>
+                <div class="mt-4 rounded-lg bg-zinc-50 p-4">
+                    <code class="text-sm">&lt;x-ui.section-chip :workspace="$workspace" /&gt;</code>
+                </div>
+            </x-ui.card>
+        </section>
+
         {{-- Page Header --}}
         <section class="mb-12">
             <h2 class="mb-4 text-xl font-semibold text-text-primary">Page Header</h2>
             <x-ui.card>
                 <x-ui.page-header title="Dashboard" subtitle="Welcome to your Resale Certificate Management System">
                     <x-slot:actions>
-                        <a href="#" class="btn-action">
-                            <flux:icon name="plus-circle" class="size-5" />
+                        <flux:button variant="primary" icon="plus-circle" href="#">
                             Generate Certificate
-                        </a>
+                        </flux:button>
                     </x-slot:actions>
                 </x-ui.page-header>
                 <div class="rounded-lg bg-zinc-50 p-4">
@@ -338,4 +358,4 @@
             </x-ui.card>
         </section>
     </div>
-</x-layouts.app>
+</x-layouts.portal>

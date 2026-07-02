@@ -1,9 +1,9 @@
 <?php
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Formations\Livewire\Dashboard;
 use App\Domains\Forms\Models\FormApplication;
 use App\Domains\Forms\Models\FormApplicationState;
-use App\Domains\Formations\Livewire\Dashboard;
 use App\Models\User;
 use Livewire\Livewire;
 
@@ -158,7 +158,7 @@ it('limits visible formations to ten with a hint when more exist', function () {
         ->assertSee('Showing the 10 most recent');
 });
 
-it('renders the formations state selector inside the Formations workspace sidebar', function () {
+it('renders the formations state selector inside the unified portal sidebar', function () {
     $this->actingAs($this->user);
     session(['current_business_id' => $this->business->id]);
 
@@ -166,7 +166,8 @@ it('renders the formations state selector inside the Formations workspace sideba
 
     $response->assertSuccessful()
         ->assertSee('Select State')
-        // Workspace sidebar markers prove we're inside <x-layouts.workspace key="formations">
+        // Unified portal sidebar markers: the Formations section group and
+        // the global business switcher prove we're inside <x-layouts.portal>
         ->assertSee('Formations')
-        ->assertSee('Exit to Dashboard');
+        ->assertSee('Switch business');
 });

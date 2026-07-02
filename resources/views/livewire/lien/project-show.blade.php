@@ -6,7 +6,7 @@ use App\Domains\Lien\Enums\DeadlineStatus;
     <x-ui.page-header :title="$project->name">
         <x-slot:breadcrumbs>
             <x-ui.breadcrumb :items="[
-                ['label' => 'Lien Projects', 'url' => route('lien.projects.index')],
+                ['label' => 'Projects', 'url' => route('lien.projects.index')],
                 ['label' => $project->name],
             ]" />
         </x-slot:breadcrumbs>

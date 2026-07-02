@@ -11,10 +11,11 @@ use App\Support\Workspaces\SalesTaxWorkspaceData;
 | Workspace Registry
 |--------------------------------------------------------------------------
 |
-| Each entry describes a workspace (sub-portal) the user can enter from
-| /portal. The array key is the internal workspace key used by
-| `<x-layouts.workspace key="..."/>` and `WorkspaceRegistry::find($key)`.
-| The `slug` is the URL slug (independent from the array key).
+| Each entry describes a product section of the unified portal shell
+| (`<x-layouts.portal>` renders every enabled workspace as a labeled
+| sidebar group). The array key is the internal workspace key used by
+| `WorkspaceRegistry::find($key)`. The `slug` is the URL slug
+| (independent from the array key).
 |
 | All values must be config-cache-safe scalars or class strings — no
 | closures — so `php artisan config:cache` works in production.
@@ -36,7 +37,6 @@ return [
         'icon' => 'scale',
         'badge' => 'Liens',
         'badge_color' => 'amber',
-        'bg_class' => 'bg-amber-50/30',
         'dashboard_route' => 'lien.dashboard',
         'enabled' => true,
         'form_types' => [],
@@ -70,7 +70,6 @@ return [
                 'current_pattern' => 'lien.deadlines.*',
             ],
         ],
-        'nav_heading' => 'Lien Management',
     ],
 
     'sales_tax' => [
@@ -80,7 +79,6 @@ return [
         'icon' => 'receipt-percent',
         'badge' => 'Sales Tax',
         'badge_color' => 'emerald',
-        'bg_class' => 'bg-emerald-50/30',
         'dashboard_route' => 'sales-tax.dashboard',
         'enabled' => true,
         // Sourced from the child model so the SalesTaxRegistration global
@@ -101,7 +99,6 @@ return [
                 'current_pattern' => 'sales-tax.dashboard',
             ],
         ],
-        'nav_heading' => 'Sales Tax',
     ],
 
     'formations' => [
@@ -111,7 +108,6 @@ return [
         'icon' => 'building-office-2',
         'badge' => 'Formations',
         'badge_color' => 'indigo',
-        'bg_class' => 'bg-indigo-50/30',
         'dashboard_route' => 'formations.dashboard',
         'enabled' => true,
         // Add more form types here (corporation, dba, nonprofit, sole_proprietorship)
@@ -133,7 +129,6 @@ return [
                 'current_pattern' => 'formations.dashboard',
             ],
         ],
-        'nav_heading' => 'Formations',
     ],
 
 ];

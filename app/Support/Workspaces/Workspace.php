@@ -19,7 +19,6 @@ final readonly class Workspace
         public string $icon,
         public string $badge,
         public string $badgeColor,
-        public string $bgClass,
         public string $dashboardRoute,
         public bool $enabled,
         public array $formTypes,
@@ -28,7 +27,6 @@ final readonly class Workspace
         public ?string $startRouteParam,
         public string $dataResolver,
         public array $nav,
-        public string $navHeading,
         public ?string $checkoutRouteName = null,
         public ?string $confirmationRouteName = null,
     ) {}
@@ -46,7 +44,6 @@ final readonly class Workspace
             icon: $entry['icon'] ?? 'squares-2x2',
             badge: $entry['badge'] ?? $entry['name'],
             badgeColor: $entry['badge_color'] ?? 'zinc',
-            bgClass: $entry['bg_class'] ?? 'bg-zinc-50',
             dashboardRoute: $entry['dashboard_route'],
             enabled: (bool) ($entry['enabled'] ?? true),
             formTypes: (array) ($entry['form_types'] ?? []),
@@ -55,7 +52,6 @@ final readonly class Workspace
             startRouteParam: $entry['start_route_param'] ?? null,
             dataResolver: $entry['data_resolver'],
             nav: $entry['nav'] ?? [],
-            navHeading: $entry['nav_heading'] ?? $entry['name'],
             checkoutRouteName: $entry['checkout_route_name'] ?? null,
             confirmationRouteName: $entry['confirmation_route_name'] ?? null,
         );

@@ -2,7 +2,7 @@
     <x-ui.page-header :title="$isEditing ? 'Edit Project' : 'Create Project'">
         <x-slot:breadcrumbs>
             <x-ui.breadcrumb :items="[
-                ['label' => 'Lien Projects', 'url' => route('lien.projects.index')],
+                ['label' => 'Projects', 'url' => route('lien.projects.index')],
                 ['label' => $isEditing ? 'Edit' : 'Create'],
             ]" />
         </x-slot:breadcrumbs>

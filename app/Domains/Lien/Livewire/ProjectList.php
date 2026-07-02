@@ -57,6 +57,6 @@ class ProjectList extends Component
 
         return view('livewire.lien.project-list', [
             'projects' => $projects,
-        ])->layout('layouts.lien', ['title' => 'Lien Projects']);
+        ])->layout('components.layouts.portal', ['title' => 'Lien Projects']);
     }
 }

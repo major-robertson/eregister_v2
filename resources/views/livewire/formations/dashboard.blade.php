@@ -1,14 +1,13 @@
 <div class="mx-auto max-w-6xl px-6 py-10">
     <x-ui.page-header title="Formations" subtitle="Form your business and manage your formation documents.">
         <x-slot:actions>
-            <flux:button
+            <x-ui.action-button
                 href="{{ $this->workspace->startRouteFor('llc') }}"
-                variant="primary"
                 icon="plus"
                 wire:navigate
             >
                 Form an LLC
-            </flux:button>
+            </x-ui.action-button>
         </x-slot:actions>
     </x-ui.page-header>
 
@@ -35,14 +34,13 @@
                     Get started by forming your LLC.
                 </p>
                 <div class="mt-5">
-                    <flux:button
+                    <x-ui.action-button
                         href="{{ $this->workspace->startRouteFor('llc') }}"
-                        variant="primary"
                         icon="plus"
                         wire:navigate
                     >
                         Form an LLC
-                    </flux:button>
+                    </x-ui.action-button>
                 </div>
             </div>
         @else

@@ -432,7 +432,7 @@ class ProjectForm extends Component
             'stepTitles' => $this->getStepTitles(),
             'nocStatuses' => NocStatus::cases(),
             'primaryDateField' => $this->primaryDateField(),
-        ])->layout('layouts.lien', [
+        ])->layout('components.layouts.portal', [
             'title' => $this->isEditing ? 'Edit Project' : 'Create Project',
         ]);
     }

@@ -135,14 +135,13 @@
                 <flux:button wire:click="previousStep" type="button" variant="ghost">
                     Back
                 </flux:button>
-                <flux:button
+                <x-ui.action-button
                     wire:click="submit"
                     type="button"
-                    variant="primary"
                     :disabled="!$allStatesComplete"
                 >
                     Proceed to Payment
-                </flux:button>
+                </x-ui.action-button>
             </div>
         </div>
     @else

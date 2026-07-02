@@ -1,4 +1,4 @@
-<x-layouts.app :title="$business->name ?? 'Dashboard'">
+<x-layouts.portal :title="$business->name ?? 'Dashboard'">
     <div class="mx-auto max-w-6xl px-6 py-10">
         <x-ui.page-header :title="$business->name ?? 'Dashboard'" subtitle="Manage your business and applications" />
 
@@ -164,4 +164,4 @@
             </div>
         </section>
     </div>
-</x-layouts.app>
+</x-layouts.portal>

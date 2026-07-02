@@ -75,9 +75,6 @@ class Dashboard extends Component
     public function render(): View
     {
         return view('livewire.formations.dashboard')
-            ->layout('layouts.workspace', [
-                'key' => 'formations',
-                'title' => 'Formations',
-            ]);
+            ->layout('components.layouts.portal', ['title' => 'Formations']);
     }
 }

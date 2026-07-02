@@ -100,6 +100,6 @@ class FilingShow extends Component
             'proofs' => $this->filing->getMedia('proofs'),
             'canDownload' => $this->filing->isPaid() && $this->filing->getFirstMedia('generated'),
             'signUrl' => $signUrl,
-        ])->layout('layouts.lien', ['title' => $this->filing->documentType->name]);
+        ])->layout('components.layouts.portal', ['title' => $this->filing->documentType->name]);
     }
 }

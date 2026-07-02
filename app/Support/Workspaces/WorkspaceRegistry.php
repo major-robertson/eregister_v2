@@ -39,13 +39,42 @@ class WorkspaceRegistry
     /**
      * Look up the workspace that owns the given forms-runner form type
      * (e.g. `sales_tax_permit` -> the Sales Tax workspace). Returns null
-     * if no workspace claims this form type, in which case callers should
-     * fall back to the generic `layouts.app` shell.
+     * if no workspace claims this form type.
      */
     public function findByFormType(string $formType): ?Workspace
     {
         foreach ($this->all() as $workspace) {
             if ($workspace->claimsFormType($formType)) {
+                return $workspace;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The workspace owning the current page, matched by URL prefix
+     * (/portal/{slug}/...) rather than nav route patterns, so it covers
+     * every page under a section (filing wizard, checkouts, payment
+     * confirmations). During Livewire update requests the page URL only
+     * survives in the Referer, so fall back to url()->previous() there —
+     * otherwise section chips would vanish on the first interaction.
+     */
+    public function current(): ?Workspace
+    {
+        $request = request();
+
+        $url = $request->routeIs('livewire.update') ? url()->previous() : $request->url();
+        $path = trim(parse_url($url, PHP_URL_PATH) ?? '', '/');
+
+        foreach ($this->all() as $workspace) {
+            if (! $workspace->enabled) {
+                continue;
+            }
+
+            $prefix = "portal/{$workspace->slug}";
+
+            if ($path === $prefix || str_starts_with($path, "{$prefix}/")) {
                 return $workspace;
             }
         }

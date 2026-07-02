@@ -634,12 +634,6 @@ class MultiStateFormRunner extends Component
 
         $workspace = app(WorkspaceRegistry::class)->findByFormType($this->application->form_type);
 
-        $layout = $workspace ? 'layouts.workspace' : 'layouts.app';
-        $layoutData = ['title' => 'Application'];
-        if ($workspace) {
-            $layoutData['key'] = $workspace->key;
-        }
-
         return view('livewire.forms.multi-state-form-runner', [
             'currentStep' => $currentStep,
             'visibleFields' => $this->getVisibleFieldsProperty(),
@@ -659,6 +653,6 @@ class MultiStateFormRunner extends Component
             // step of the wizard. Falls back to the dashboard if the workspace
             // doesn't expose a start route (shouldn't happen in practice).
             'startUrl' => $workspace?->startRouteFor($this->application->form_type) ?? route('dashboard'),
-        ])->layout($layout, $layoutData);
+        ])->layout('components.layouts.portal', ['title' => 'Application']);
     }
 }

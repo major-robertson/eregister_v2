@@ -2,7 +2,7 @@
     <x-ui.page-header :title="'Create ' . $documentType->name">
         <x-slot:breadcrumbs>
             <x-ui.breadcrumb :items="[
-                ['label' => 'Lien Projects', 'url' => route('lien.projects.index')],
+                ['label' => 'Projects', 'url' => route('lien.projects.index')],
                 ['label' => $project->name, 'url' => route('lien.projects.show', $project)],
                 ['label' => $documentType->name],
             ]" />
@@ -703,9 +703,9 @@
                     Continue
                 </flux:button>
             @elseif(!$this->requiresAttorneyReferral)
-                <flux:button wire:click="proceedToCheckout" variant="primary">
+                <x-ui.action-button wire:click="proceedToCheckout">
                     Proceed to Payment
-                </flux:button>
+                </x-ui.action-button>
             @endif
         </div>
     </div>

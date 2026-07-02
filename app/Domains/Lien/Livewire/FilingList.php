@@ -46,6 +46,6 @@ class FilingList extends Component
         return view('livewire.lien.filing-list', [
             'filings' => $filings,
             'statuses' => FilingStatus::cases(),
-        ])->layout('layouts.lien', ['title' => 'Filings']);
+        ])->layout('components.layouts.portal', ['title' => 'Filings']);
     }
 }

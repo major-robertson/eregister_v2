@@ -818,6 +818,6 @@ class FilingWizard extends Component
             'claimantInfo' => $this->claimantInfo,
             'partyRoles' => collect(PartyRole::cases())->filter(fn ($role) => $role !== PartyRole::Claimant)->values(),
             'requiredDateFields' => $this->requiredDateFields,
-        ])->layout('layouts.lien', ['title' => 'Create '.$this->deadline->documentType->name]);
+        ])->layout('components.layouts.portal', ['title' => 'Create '.$this->deadline->documentType->name]);
     }
 }

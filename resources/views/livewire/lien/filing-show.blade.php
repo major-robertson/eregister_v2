@@ -2,7 +2,7 @@
     <x-ui.page-header :title="$filing->documentType->name">
         <x-slot:breadcrumbs>
             <x-ui.breadcrumb :items="[
-                ['label' => 'Lien Projects', 'url' => route('lien.projects.index')],
+                ['label' => 'Projects', 'url' => route('lien.projects.index')],
                 ['label' => $filing->project->name, 'url' => route('lien.projects.show', $filing->project)],
                 ['label' => $filing->documentType->name],
             ]" />
@@ -109,12 +109,9 @@
 
             @if($filing->status->value === 'awaiting_payment')
                 <div class="mt-6">
-                    <flux:button
-                        href="{{ route('lien.filings.checkout', $filing) }}"
-                        variant="primary"
-                    >
+                    <x-ui.action-button href="{{ route('lien.filings.checkout', $filing) }}">
                         Complete Payment
-                    </flux:button>
+                    </x-ui.action-button>
                 </div>
             @endif
 

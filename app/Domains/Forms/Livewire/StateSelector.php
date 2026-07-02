@@ -286,13 +286,6 @@ class StateSelector extends Component
     public function render(): View
     {
         $config = FormTypeConfig::get($this->formType);
-        $workspace = app(WorkspaceRegistry::class)->findByFormType($this->formType);
-
-        $layout = $workspace ? 'layouts.workspace' : 'layouts.app';
-        $layoutData = ['title' => 'Select States'];
-        if ($workspace) {
-            $layoutData['key'] = $workspace->key;
-        }
 
         return view('livewire.forms.state-selector', [
             'stateCount' => count($this->selectedStates),
@@ -304,6 +297,6 @@ class StateSelector extends Component
             'blockedStates' => $this->blockedStates,
             'formTypeName' => $config['name'],
             'excludedStates' => $this->excludedStates,
-        ])->layout($layout, $layoutData);
+        ])->layout('components.layouts.portal', ['title' => 'Select States']);
     }
 }

@@ -1,4 +1,4 @@
-<x-layouts.workspace key="formations" title="Payment Successful">
+<x-layouts.portal title="Payment Successful">
     <div class="mx-auto max-w-lg space-y-6 px-6 py-10">
         <x-ui.card>
             <div class="space-y-4 text-center">
@@ -46,4 +46,4 @@
             </flux:button>
         </div>
     </div>
-</x-layouts.workspace>
+</x-layouts.portal>

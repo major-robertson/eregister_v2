@@ -160,7 +160,7 @@ it('ignores form applications of other types', function () {
         ->assertDontSee('DE');
 });
 
-it('renders the sales tax state selector inside the Sales Tax workspace sidebar', function () {
+it('renders the sales tax state selector inside the unified portal sidebar', function () {
     $this->actingAs($this->user);
     session(['current_business_id' => $this->business->id]);
 
@@ -168,8 +168,9 @@ it('renders the sales tax state selector inside the Sales Tax workspace sidebar'
 
     $response->assertSuccessful()
         ->assertSee('Select States')
-        // Workspace sidebar markers prove we're inside <x-layouts.workspace key="sales_tax">
-        // and not the generic <x-layouts.app> shell.
+        // Unified portal sidebar markers: the Sales Tax section group and
+        // the global business switcher prove we're inside
+        // <x-layouts.portal> and not a bare/minimal shell.
         ->assertSee('Sales Tax')
-        ->assertSee('Exit to Dashboard');
+        ->assertSee('Switch business');
 });

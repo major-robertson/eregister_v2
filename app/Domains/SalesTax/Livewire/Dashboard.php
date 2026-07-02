@@ -77,9 +77,6 @@ class Dashboard extends Component
     public function render(): View
     {
         return view('livewire.sales-tax.dashboard')
-            ->layout('layouts.workspace', [
-                'key' => 'sales_tax',
-                'title' => 'Sales Tax',
-            ]);
+            ->layout('components.layouts.portal', ['title' => 'Sales Tax']);
     }
 }

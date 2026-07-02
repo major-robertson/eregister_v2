@@ -179,6 +179,6 @@ class Checkout extends Component
             'billingType' => $config['billing_type'],
             'isSubscription' => $config['billing_type'] === 'subscription',
             'subscriptionInterval' => $config['subscription_interval'] ?? null,
-        ])->layout('layouts.app', ['title' => 'Checkout']);
+        ])->layout('components.layouts.portal', ['title' => 'Checkout']);
     }
 }

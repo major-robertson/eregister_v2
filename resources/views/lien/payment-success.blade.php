@@ -12,12 +12,12 @@
 </script>
 @endpush
 
-<x-layouts.lien title="Payment Successful">
+<x-layouts.portal title="Payment Successful">
     <div class="max-w-lg mx-auto space-y-6">
         <x-ui.page-header title="Payment Successful">
             <x-slot:breadcrumbs>
                 <x-ui.breadcrumb :items="[
-                    ['label' => 'Lien Projects', 'url' => route('lien.projects.index')],
+                    ['label' => 'Projects', 'url' => route('lien.projects.index')],
                     ['label' => $filing->project->name, 'url' => route('lien.projects.show', $filing->project)],
                     ['label' => 'Payment Successful'],
                 ]" />
@@ -64,4 +64,4 @@
             </flux:button>
         </div>
     </div>
-</x-layouts.lien>
+</x-layouts.portal>

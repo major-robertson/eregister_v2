@@ -1,4 +1,4 @@
-<x-layouts.workspace key="sales_tax" title="Processing Payment">
+<x-layouts.portal title="Processing Payment">
     <div class="mx-auto max-w-lg space-y-6 px-6 py-10">
         <x-ui.card>
             <div
@@ -77,4 +77,4 @@
         }));
     });
     </script>
-</x-layouts.workspace>
+</x-layouts.portal>

@@ -1,9 +1,9 @@
-<x-layouts.lien title="Processing Payment">
+<x-layouts.portal title="Processing Payment">
     <div class="max-w-lg mx-auto space-y-6">
         <x-ui.page-header title="Processing Payment">
             <x-slot:breadcrumbs>
                 <x-ui.breadcrumb :items="[
-                    ['label' => 'Lien Projects', 'url' => route('lien.projects.index')],
+                    ['label' => 'Projects', 'url' => route('lien.projects.index')],
                     ['label' => $filing->project->name, 'url' => route('lien.projects.show', $filing->project)],
                     ['label' => 'Processing Payment'],
                 ]" />
@@ -96,4 +96,4 @@
         }));
     });
     </script>
-</x-layouts.lien>
+</x-layouts.portal>

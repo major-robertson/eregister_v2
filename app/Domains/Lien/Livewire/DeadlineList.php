@@ -45,6 +45,6 @@ class DeadlineList extends Component
         return view('livewire.lien.deadline-list', [
             'deadlines' => $deadlines,
             'statuses' => DeadlineStatus::cases(),
-        ])->layout('layouts.lien', ['title' => 'Deadlines']);
+        ])->layout('components.layouts.portal', ['title' => 'Deadlines']);
     }
 }

@@ -138,6 +138,6 @@ class ProjectShow extends Component
             'filings' => $this->project->filings,
             'nextDeadline' => $nextDeadline,
             'hasAnyMissedDeadline' => $hasAnyMissedDeadline,
-        ])->layout('layouts.lien', ['title' => $this->project->name]);
+        ])->layout('components.layouts.portal', ['title' => $this->project->name]);
     }
 }

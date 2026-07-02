@@ -1,24 +1,31 @@
-@props(['key', 'title' => null])
+@props(['title' => null])
 
 @php
-    /** @var \App\Support\Workspaces\Workspace $workspace */
-    $workspace = app(\App\Support\Workspaces\WorkspaceRegistry::class)->find($key);
+    $registry = app(\App\Support\Workspaces\WorkspaceRegistry::class);
 
-    if (! $workspace) {
-        throw new \RuntimeException("Unknown workspace key: {$key}");
-    }
+    $workspaces = collect($registry->all())->filter(fn ($workspace) => $workspace->enabled);
+
+    /** @var \App\Support\Workspaces\Workspace|null $currentWorkspace */
+    $currentWorkspace = $registry->current();
 
     // Tailwind v4 only emits classes it sees as static literals in scanned
-    // files, and opacity-modified classes pulled from a config string
-    // aren't reliably detected. Keep the per-color tint classes as literals
-    // here so the JIT scanner picks them up.
-    $sidebarTints = [
-        'amber' => 'bg-amber-50/30',
-        'emerald' => 'bg-emerald-50/30',
-        'blue' => 'bg-blue-50/30',
-        'zinc' => 'bg-zinc-50/30',
+    // files, and the color name comes from config/workspaces.php at runtime.
+    // Keep the per-color identity classes as literals here so the JIT
+    // scanner picks them up.
+    $sectionDots = [
+        'amber' => 'bg-amber-500',
+        'indigo' => 'bg-indigo-500',
+        'emerald' => 'bg-emerald-500',
+        'blue' => 'bg-blue-500',
+        'zinc' => 'bg-zinc-500',
     ];
-    $sidebarTint = $sidebarTints[$workspace->badgeColor] ?? 'bg-zinc-50';
+    $sectionIcons = [
+        'amber' => 'text-amber-600',
+        'indigo' => 'text-indigo-600',
+        'emerald' => 'text-emerald-600',
+        'blue' => 'text-blue-600',
+        'zinc' => 'text-zinc-600',
+    ];
 @endphp
 
 <!DOCTYPE html>
@@ -27,57 +34,72 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-bg-light">
-        <flux:sidebar sticky collapsible class="border-e border-border {{ $sidebarTint }} max-lg:bg-zinc-50">
+        <flux:sidebar sticky collapsible class="border-e border-border bg-zinc-50">
             <flux:sidebar.header>
-                <x-app-logo
-                    :sidebar="true"
-                    :href="route($workspace->dashboardRoute)"
-                    :badge="$workspace->badge"
-                    :badge-color="$workspace->badgeColor"
-                    wire:navigate
-                />
+                <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 
+            <livewire:business.business-dropdown />
+
             <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__($workspace->navHeading)">
+                <flux:sidebar.item
+                    icon="home"
+                    :href="route('dashboard')"
+                    :current="request()->routeIs('dashboard')"
+                    :accent="false"
+                    wire:navigate
+                >
+                    {{ __('Home') }}
+                </flux:sidebar.item>
+
+                @foreach ($workspaces as $workspace)
+                    <div class="sidebar-group-heading mt-2 flex items-center gap-2">
+                        <span class="size-1.5 shrink-0 rounded-full {{ $sectionDots[$workspace->badgeColor] ?? 'bg-zinc-500' }}"></span>
+                        {{ __($workspace->name) }}
+                    </div>
+
                     @foreach ($workspace->nav as $item)
+                        @php $current = request()->routeIs($item['current_pattern']); @endphp
                         <flux:sidebar.item
-                            :icon="$item['icon']"
                             :href="route($item['route'])"
-                            :current="request()->routeIs($item['current_pattern'])"
+                            :current="$current"
+                            :accent="false"
+                            class="data-current:[&_[data-content]]:font-semibold"
                             wire:navigate
                         >
+                            <x-slot:icon>
+                                <flux:icon
+                                    :icon="$item['icon']"
+                                    class="size-4 shrink-0 {{ $current ? ($sectionIcons[$workspace->badgeColor] ?? '') : '' }} [[data-flux-sidebar-item]:hover_&]:text-current!"
+                                />
+                            </x-slot:icon>
                             {{ __($item['label']) }}
                         </flux:sidebar.item>
                     @endforeach
-                </flux:sidebar.group>
+                @endforeach
             </flux:sidebar.nav>
 
             <flux:spacer />
 
             <flux:sidebar.nav>
-                <flux:sidebar.item icon="cog-6-tooth" :href="route('profile.edit')" :current="request()->routeIs('profile.*')" wire:navigate>
+                <flux:sidebar.item icon="cog-6-tooth" :href="route('profile.edit')" :current="request()->routeIs('profile.*')" :accent="false" wire:navigate>
                     {{ __('Settings') }}
-                </flux:sidebar.item>
-                <flux:sidebar.item icon="arrow-left" :href="route('dashboard')" wire:navigate>
-                    {{ __('Exit to Dashboard') }}
                 </flux:sidebar.item>
             </flux:sidebar.nav>
 
             <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
         </flux:sidebar>
 
-        <!-- Mobile User Menu -->
-        <flux:header class="lg:hidden border-b border-border {{ $sidebarTint }}">
+        <!-- Mobile header -->
+        <flux:header class="border-b border-border bg-zinc-50 lg:hidden">
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
-            <x-app-logo
-                :href="route($workspace->dashboardRoute)"
-                :badge="$workspace->badge"
-                :badge-color="$workspace->badgeColor"
-                wire:navigate
-            />
+            @if ($currentWorkspace)
+                <x-ui.section-chip :workspace="$currentWorkspace" />
+            @else
+                <x-app-logo href="{{ route('dashboard') }}" wire:navigate />
+            @endif
 
             <flux:spacer />
 
@@ -107,9 +129,6 @@
                     <flux:menu.separator />
 
                     <flux:menu.radio.group>
-                        <flux:menu.item :href="route('dashboard')" icon="home" wire:navigate>
-                            {{ __('Exit to Dashboard') }}
-                        </flux:menu.item>
                         <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>
                             {{ __('Settings') }}
                         </flux:menu.item>

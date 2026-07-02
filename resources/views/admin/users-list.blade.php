@@ -13,22 +13,20 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-gray-50 text-left text-sm text-gray-500">
-                    <tr>
-                        <th class="px-4 py-3 font-medium">User</th>
-                        <th class="px-4 py-3 font-medium">Businesses</th>
-                        <th class="px-4 py-3 font-medium">Subscription</th>
-                        <th class="px-4 py-3 font-medium">2FA</th>
-                        <th class="px-4 py-3 font-medium">Joined</th>
-                        <th class="px-4 py-3 font-medium"></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
+        <div class="px-4 pb-4">
+            <flux:table :paginate="$users">
+                <flux:table.columns>
+                    <flux:table.column>User</flux:table.column>
+                    <flux:table.column>Businesses</flux:table.column>
+                    <flux:table.column>Subscription</flux:table.column>
+                    <flux:table.column>2FA</flux:table.column>
+                    <flux:table.column>Joined</flux:table.column>
+                    <flux:table.column></flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
                     @forelse ($users as $user)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3">
+                    <flux:table.row wire:key="user-{{ $user->id }}">
+                        <flux:table.cell>
                             <div class="flex items-center gap-3">
                                 <flux:avatar :initials="$user->initials()" size="sm" />
                                 <div>
@@ -36,53 +34,47 @@
                                     <flux:text class="text-sm text-gray-500">{{ $user->email }}</flux:text>
                                 </div>
                             </div>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:badge size="sm" color="zinc">
                                 {{ $user->businesses_count }}
                             </flux:badge>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             @if ($user->has_subscription)
                             <flux:badge size="sm" color="green">Active</flux:badge>
                             @else
                             <flux:badge size="sm" color="zinc">None</flux:badge>
                             @endif
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             @if ($user->two_factor_confirmed_at)
                             <flux:badge size="sm" color="green">Enabled</flux:badge>
                             @else
                             <flux:badge size="sm" color="zinc">Disabled</flux:badge>
                             @endif
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:text class="text-sm text-gray-500">
                                 {{ $user->created_at->format('M j, Y') }}
                             </flux:text>
-                        </td>
-                        <td class="px-4 py-3 text-right">
+                        </flux:table.cell>
+                        <flux:table.cell align="end">
                             <flux:button variant="ghost" size="sm" icon="eye" :href="route('admin.users.show', $user)"
                                 wire:navigate>
                                 View
                             </flux:button>
-                        </td>
-                    </tr>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @empty
-                    <tr>
-                        <td colspan="6" class="px-4 py-12 text-center">
+                    <flux:table.row>
+                        <flux:table.cell colspan="6" class="py-12 text-center">
                             <flux:text class="text-gray-400">No users found.</flux:text>
-                        </td>
-                    </tr>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @endforelse
-                </tbody>
-            </table>
+                </flux:table.rows>
+            </flux:table>
         </div>
-
-        @if ($users->hasPages())
-        <div class="border-t border-border px-4 py-3">
-            {{ $users->links() }}
-        </div>
-        @endif
     </div>
 </div>

@@ -180,51 +180,49 @@
         <div class="border-b border-border px-4 py-3">
             <flux:heading size="sm">Last 20 Signups</flux:heading>
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-                <thead class="border-b border-border bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 font-medium text-gray-700">Email</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Landing Path</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Referrer</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">State</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Has Business</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Lien Ready</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Subscribed</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Signup Date (EST)</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
+        <div class="px-4 pb-4">
+            <flux:table>
+                <flux:table.columns>
+                    <flux:table.column>Email</flux:table.column>
+                    <flux:table.column>Landing Path</flux:table.column>
+                    <flux:table.column>Referrer</flux:table.column>
+                    <flux:table.column>State</flux:table.column>
+                    <flux:table.column>Has Business</flux:table.column>
+                    <flux:table.column>Lien Ready</flux:table.column>
+                    <flux:table.column>Subscribed</flux:table.column>
+                    <flux:table.column>Signup Date (EST)</flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
                     @forelse ($recentSignups as $signup)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-gray-600">{{ $signup['email'] }}</td>
-                            <td class="px-4 py-3 text-gray-600">
+                        <flux:table.row>
+                            <flux:table.cell class="text-gray-600">{{ $signup['email'] }}</flux:table.cell>
+                            <flux:table.cell class="text-gray-600">
                                 @if ($signup['landing_path'])
                                     <span class="font-mono text-xs">{{ $signup['landing_path'] }}</span>
                                 @else
                                     <span class="text-gray-400">—</span>
                                 @endif
-                            </td>
-                            <td class="px-4 py-3 text-gray-600">
+                            </flux:table.cell>
+                            <flux:table.cell class="text-gray-600">
                                 @if ($signup['referrer'])
                                     <span class="font-mono text-xs">{{ $signup['referrer'] }}</span>
                                 @else
                                     <span class="text-gray-400">Direct</span>
                                 @endif
-                            </td>
-                            <td class="px-4 py-3">
+                            </flux:table.cell>
+                            <flux:table.cell>
                                 @if ($signup['state'])
                                     {{ $signup['state'] }}
                                 @else
                                     <span class="text-gray-400">None</span>
                                 @endif
-                            </td>
-                            <td class="px-4 py-3">
+                            </flux:table.cell>
+                            <flux:table.cell>
                                 <flux:badge size="sm" color="{{ $signup['has_business'] ? 'green' : 'zinc' }}">
                                     {{ $signup['has_business'] ? 'Yes' : 'No' }}
                                 </flux:badge>
-                            </td>
-                            <td class="px-4 py-3">
+                            </flux:table.cell>
+                            <flux:table.cell>
                                 @if (!$signup['has_business'])
                                     <flux:badge size="sm" color="zinc">N/A</flux:badge>
                                 @else
@@ -232,8 +230,8 @@
                                         {{ $signup['lien_ready'] ? 'Yes' : 'No' }}
                                     </flux:badge>
                                 @endif
-                            </td>
-                            <td class="px-4 py-3">
+                            </flux:table.cell>
+                            <flux:table.cell>
                                 @if (!$signup['has_business'])
                                     <flux:badge size="sm" color="zinc">N/A</flux:badge>
                                 @else
@@ -241,20 +239,20 @@
                                         {{ $signup['subscribed'] ? 'Yes' : 'No' }}
                                     </flux:badge>
                                 @endif
-                            </td>
-                            <td class="px-4 py-3 text-gray-600">
+                            </flux:table.cell>
+                            <flux:table.cell class="text-gray-600">
                                 {{ $signup['created_at']->eastern()->format('M j, Y g:i A') }}
-                            </td>
-                        </tr>
+                            </flux:table.cell>
+                        </flux:table.row>
                     @empty
-                        <tr>
-                            <td colspan="8" class="px-4 py-8 text-center text-gray-400">
+                        <flux:table.row>
+                            <flux:table.cell colspan="8" class="py-8 text-center text-gray-400">
                                 No signups yet.
-                            </td>
-                        </tr>
+                            </flux:table.cell>
+                        </flux:table.row>
                     @endforelse
-                </tbody>
-            </table>
+                </flux:table.rows>
+            </flux:table>
         </div>
     </div>
 
@@ -263,45 +261,43 @@
         <div class="border-b border-border px-4 py-3">
             <flux:heading size="sm">Last 20 Payments</flux:heading>
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-                <thead class="border-b border-border bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 font-medium text-gray-700">Email</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Amount</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Kind</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Type</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Payment Date (EST)</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
+        <div class="px-4 pb-4">
+            <flux:table>
+                <flux:table.columns>
+                    <flux:table.column>Email</flux:table.column>
+                    <flux:table.column>Amount</flux:table.column>
+                    <flux:table.column>Kind</flux:table.column>
+                    <flux:table.column>Type</flux:table.column>
+                    <flux:table.column>Payment Date (EST)</flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
                     @forelse ($recentPayments as $payment)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-gray-600">{{ $payment['email'] }}</td>
-                            <td class="px-4 py-3 font-medium">{{ $payment['amount'] }}</td>
-                            <td class="px-4 py-3">
+                        <flux:table.row>
+                            <flux:table.cell class="text-gray-600">{{ $payment['email'] }}</flux:table.cell>
+                            <flux:table.cell class="font-medium">{{ $payment['amount'] }}</flux:table.cell>
+                            <flux:table.cell>
                                 <flux:badge size="sm" color="{{ $payment['kind_color'] }}">
                                     {{ $payment['kind'] }}
                                 </flux:badge>
-                            </td>
-                            <td class="px-4 py-3">
+                            </flux:table.cell>
+                            <flux:table.cell>
                                 <flux:badge size="sm" color="{{ $payment['type'] === 'Subscription' ? 'purple' : 'blue' }}">
                                     {{ $payment['type'] }}
                                 </flux:badge>
-                            </td>
-                            <td class="px-4 py-3 text-gray-600">
+                            </flux:table.cell>
+                            <flux:table.cell class="text-gray-600">
                                 {{ $payment['paid_at']->eastern()->format('M j, Y g:i A') }}
-                            </td>
-                        </tr>
+                            </flux:table.cell>
+                        </flux:table.row>
                     @empty
-                        <tr>
-                            <td colspan="5" class="px-4 py-8 text-center text-gray-400">
+                        <flux:table.row>
+                            <flux:table.cell colspan="5" class="py-8 text-center text-gray-400">
                                 No payments yet.
-                            </td>
-                        </tr>
+                            </flux:table.cell>
+                        </flux:table.row>
                     @endforelse
-                </tbody>
-            </table>
+                </flux:table.rows>
+            </flux:table>
         </div>
     </div>
 
@@ -310,47 +306,45 @@
         <div class="border-b border-border px-4 py-3">
             <flux:heading size="sm">Last 20 Subscriptions</flux:heading>
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-                <thead class="border-b border-border bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 font-medium text-gray-700">Name</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Email</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">State</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Status</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Start Date (EST)</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
+        <div class="px-4 pb-4">
+            <flux:table>
+                <flux:table.columns>
+                    <flux:table.column>Name</flux:table.column>
+                    <flux:table.column>Email</flux:table.column>
+                    <flux:table.column>State</flux:table.column>
+                    <flux:table.column>Status</flux:table.column>
+                    <flux:table.column>Start Date (EST)</flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
                     @forelse ($recentSubscriptions as $subscription)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3">{{ $subscription['name'] }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $subscription['email'] }}</td>
-                            <td class="px-4 py-3">
+                        <flux:table.row>
+                            <flux:table.cell>{{ $subscription['name'] }}</flux:table.cell>
+                            <flux:table.cell class="text-gray-600">{{ $subscription['email'] }}</flux:table.cell>
+                            <flux:table.cell>
                                 @if ($subscription['state'])
                                     {{ $subscription['state'] }}
                                 @else
                                     <span class="text-gray-400">None</span>
                                 @endif
-                            </td>
-                            <td class="px-4 py-3">
+                            </flux:table.cell>
+                            <flux:table.cell>
                                 <flux:badge size="sm" color="{{ $subscription['status_color'] }}">
                                     {{ $subscription['status'] }}
                                 </flux:badge>
-                            </td>
-                            <td class="px-4 py-3 text-gray-600">
+                            </flux:table.cell>
+                            <flux:table.cell class="text-gray-600">
                                 {{ $subscription['created_at']->eastern()->format('M j, Y g:i A') }}
-                            </td>
-                        </tr>
+                            </flux:table.cell>
+                        </flux:table.row>
                     @empty
-                        <tr>
-                            <td colspan="5" class="px-4 py-8 text-center text-gray-400">
+                        <flux:table.row>
+                            <flux:table.cell colspan="5" class="py-8 text-center text-gray-400">
                                 No subscriptions yet.
-                            </td>
-                        </tr>
+                            </flux:table.cell>
+                        </flux:table.row>
                     @endforelse
-                </tbody>
-            </table>
+                </flux:table.rows>
+            </flux:table>
         </div>
     </div>
 </div>

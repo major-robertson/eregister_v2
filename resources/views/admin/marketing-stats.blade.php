@@ -125,49 +125,47 @@
         <div class="border-b border-border px-4 py-3">
             <flux:heading size="sm">Campaigns</flux:heading>
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-                <thead class="border-b border-border bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 font-medium text-gray-700">Name</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Status</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Steps</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Enrolled</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">In Progress</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Completed</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Failed</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
+        <div class="px-4 pb-4">
+            <flux:table>
+                <flux:table.columns>
+                    <flux:table.column>Name</flux:table.column>
+                    <flux:table.column>Status</flux:table.column>
+                    <flux:table.column>Steps</flux:table.column>
+                    <flux:table.column>Enrolled</flux:table.column>
+                    <flux:table.column>In Progress</flux:table.column>
+                    <flux:table.column>Completed</flux:table.column>
+                    <flux:table.column>Failed</flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
                     @forelse ($campaigns as $campaign)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 font-medium">{{ $campaign['name'] }}</td>
-                        <td class="px-4 py-3">
+                    <flux:table.row wire:key="campaign-{{ $campaign['id'] }}">
+                        <flux:table.cell class="font-medium">{{ $campaign['name'] }}</flux:table.cell>
+                        <flux:table.cell>
                             <flux:badge size="sm" color="{{ $campaign['status']->color() }}">
                                 {{ $campaign['status']->label() }}
                             </flux:badge>
-                        </td>
-                        <td class="px-4 py-3">{{ $campaign['steps_count'] }}</td>
-                        <td class="px-4 py-3">{{ $campaign['total_enrolled'] }}</td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>{{ $campaign['steps_count'] }}</flux:table.cell>
+                        <flux:table.cell>{{ $campaign['total_enrolled'] }}</flux:table.cell>
+                        <flux:table.cell>
                             <flux:badge size="sm" color="blue">{{ $campaign['in_progress'] }}</flux:badge>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:badge size="sm" color="green">{{ $campaign['completed'] }}</flux:badge>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:badge size="sm" color="red">{{ $campaign['failed'] }}</flux:badge>
-                        </td>
-                    </tr>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @empty
-                    <tr>
-                        <td colspan="7" class="px-4 py-8 text-center text-gray-400">
+                    <flux:table.row>
+                        <flux:table.cell colspan="7" class="py-8 text-center text-gray-400">
                             No campaigns yet.
-                        </td>
-                    </tr>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @endforelse
-                </tbody>
-            </table>
+                </flux:table.rows>
+            </flux:table>
         </div>
     </div>
 
@@ -177,49 +175,47 @@
             <flux:heading size="sm">Redirect Campaigns</flux:heading>
             <flux:text class="mt-1 text-sm text-gray-500">Banner ads and partnership links (/r/slug)</flux:text>
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-                <thead class="border-b border-border bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 font-medium text-gray-700">Slug</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Destination</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Source</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Status</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Total Clicks</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Today</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">This Week</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">This Month</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Signups</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
+        <div class="px-4 pb-4">
+            <flux:table>
+                <flux:table.columns>
+                    <flux:table.column>Slug</flux:table.column>
+                    <flux:table.column>Destination</flux:table.column>
+                    <flux:table.column>Source</flux:table.column>
+                    <flux:table.column>Status</flux:table.column>
+                    <flux:table.column>Total Clicks</flux:table.column>
+                    <flux:table.column>Today</flux:table.column>
+                    <flux:table.column>This Week</flux:table.column>
+                    <flux:table.column>This Month</flux:table.column>
+                    <flux:table.column>Signups</flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
                     @forelse ($redirectStats as $redirect)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 font-mono text-sm">/r/{{ $redirect['slug'] }}</td>
-                        <td class="px-4 py-3">{{ $redirect['destination_path'] }}</td>
-                        <td class="px-4 py-3">{{ $redirect['utm_source'] }}</td>
-                        <td class="px-4 py-3">
+                    <flux:table.row wire:key="redirect-{{ $redirect['id'] }}">
+                        <flux:table.cell class="font-mono text-sm">/r/{{ $redirect['slug'] }}</flux:table.cell>
+                        <flux:table.cell>{{ $redirect['destination_path'] }}</flux:table.cell>
+                        <flux:table.cell>{{ $redirect['utm_source'] }}</flux:table.cell>
+                        <flux:table.cell>
                             <flux:badge size="sm" color="{{ $redirect['is_active'] ? 'green' : 'zinc' }}">
                                 {{ $redirect['is_active'] ? 'Active' : 'Inactive' }}
                             </flux:badge>
-                        </td>
-                        <td class="px-4 py-3 font-semibold">{{ number_format($redirect['total_clicks']) }}</td>
-                        <td class="px-4 py-3">{{ $redirect['clicks_today'] }}</td>
-                        <td class="px-4 py-3">{{ $redirect['clicks_this_week'] }}</td>
-                        <td class="px-4 py-3">{{ $redirect['clicks_this_month'] }}</td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell class="font-semibold">{{ number_format($redirect['total_clicks']) }}</flux:table.cell>
+                        <flux:table.cell>{{ $redirect['clicks_today'] }}</flux:table.cell>
+                        <flux:table.cell>{{ $redirect['clicks_this_week'] }}</flux:table.cell>
+                        <flux:table.cell>{{ $redirect['clicks_this_month'] }}</flux:table.cell>
+                        <flux:table.cell>
                             <flux:badge size="sm" color="blue">{{ $redirect['attributed_signups'] }}</flux:badge>
-                        </td>
-                    </tr>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @empty
-                    <tr>
-                        <td colspan="9" class="px-4 py-8 text-center text-gray-400">
+                    <flux:table.row>
+                        <flux:table.cell colspan="9" class="py-8 text-center text-gray-400">
                             No redirect campaigns yet.
-                        </td>
-                    </tr>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @endforelse
-                </tbody>
-            </table>
+                </flux:table.rows>
+            </flux:table>
         </div>
     </div>
 
@@ -230,35 +226,33 @@
             <div class="border-b border-border px-4 py-3">
                 <flux:heading size="sm">Recent Visits</flux:heading>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="border-b border-border bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3 font-medium text-gray-700">Lead</th>
-                            <th class="px-4 py-3 font-medium text-gray-700">Source</th>
-                            <th class="px-4 py-3 font-medium text-gray-700">Step</th>
-                            <th class="px-4 py-3 font-medium text-gray-700">Time (EST)</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border">
+            <div class="px-4 pb-4">
+                <flux:table>
+                    <flux:table.columns>
+                        <flux:table.column>Lead</flux:table.column>
+                        <flux:table.column>Source</flux:table.column>
+                        <flux:table.column>Step</flux:table.column>
+                        <flux:table.column>Time (EST)</flux:table.column>
+                    </flux:table.columns>
+                    <flux:table.rows>
                         @forelse ($recentVisits as $visit)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3">{{ $visit['lead_name'] }}</td>
-                            <td class="px-4 py-3">{{ $visit['source'] }}</td>
-                            <td class="px-4 py-3">{{ $visit['step_name'] }}</td>
-                            <td class="px-4 py-3 text-gray-600">
+                        <flux:table.row wire:key="visit-{{ $visit['id'] }}">
+                            <flux:table.cell>{{ $visit['lead_name'] }}</flux:table.cell>
+                            <flux:table.cell>{{ $visit['source'] }}</flux:table.cell>
+                            <flux:table.cell>{{ $visit['step_name'] }}</flux:table.cell>
+                            <flux:table.cell class="text-gray-600">
                                 {{ $visit['visited_at']->eastern()->format('M j, g:i A') }}
-                            </td>
-                        </tr>
+                            </flux:table.cell>
+                        </flux:table.row>
                         @empty
-                        <tr>
-                            <td colspan="4" class="px-4 py-8 text-center text-gray-400">
+                        <flux:table.row>
+                            <flux:table.cell colspan="4" class="py-8 text-center text-gray-400">
                                 No visits yet.
-                            </td>
-                        </tr>
+                            </flux:table.cell>
+                        </flux:table.row>
                         @endforelse
-                    </tbody>
-                </table>
+                    </flux:table.rows>
+                </flux:table>
             </div>
         </div>
 
@@ -267,37 +261,35 @@
             <div class="border-b border-border px-4 py-3">
                 <flux:heading size="sm">Recent Conversions</flux:heading>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="border-b border-border bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3 font-medium text-gray-700">Lead</th>
-                            <th class="px-4 py-3 font-medium text-gray-700">Event</th>
-                            <th class="px-4 py-3 font-medium text-gray-700">Step</th>
-                            <th class="px-4 py-3 font-medium text-gray-700">Time (EST)</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border">
+            <div class="px-4 pb-4">
+                <flux:table>
+                    <flux:table.columns>
+                        <flux:table.column>Lead</flux:table.column>
+                        <flux:table.column>Event</flux:table.column>
+                        <flux:table.column>Step</flux:table.column>
+                        <flux:table.column>Time (EST)</flux:table.column>
+                    </flux:table.columns>
+                    <flux:table.rows>
                         @forelse ($recentEvents as $event)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3">{{ $event['lead_name'] }}</td>
-                            <td class="px-4 py-3">
+                        <flux:table.row wire:key="event-{{ $event['id'] }}">
+                            <flux:table.cell>{{ $event['lead_name'] }}</flux:table.cell>
+                            <flux:table.cell>
                                 <flux:badge size="sm" color="amber">{{ $event['event_type'] }}</flux:badge>
-                            </td>
-                            <td class="px-4 py-3">{{ $event['step_name'] }}</td>
-                            <td class="px-4 py-3 text-gray-600">
+                            </flux:table.cell>
+                            <flux:table.cell>{{ $event['step_name'] }}</flux:table.cell>
+                            <flux:table.cell class="text-gray-600">
                                 {{ $event['occurred_at']->eastern()->format('M j, g:i A') }}
-                            </td>
-                        </tr>
+                            </flux:table.cell>
+                        </flux:table.row>
                         @empty
-                        <tr>
-                            <td colspan="4" class="px-4 py-8 text-center text-gray-400">
+                        <flux:table.row>
+                            <flux:table.cell colspan="4" class="py-8 text-center text-gray-400">
                                 No conversion events yet.
-                            </td>
-                        </tr>
+                            </flux:table.cell>
+                        </flux:table.row>
                         @endforelse
-                    </tbody>
-                </table>
+                    </flux:table.rows>
+                </flux:table>
             </div>
         </div>
     </div>

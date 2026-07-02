@@ -77,10 +77,10 @@
                     <flux:heading size="sm">Roles & Permissions</flux:heading>
                 </div>
 
-                <div class="divide-y divide-border">
+                <flux:accordion class="px-4">
                     @foreach ($roles as $role)
-                        <details class="group">
-                            <summary class="flex cursor-pointer items-center justify-between px-4 py-3 hover:bg-gray-50">
+                        <flux:accordion.item wire:key="role-{{ $role->id }}">
+                            <flux:accordion.heading>
                                 <div class="flex items-center gap-2">
                                     <flux:badge size="sm" color="{{ $role->name === 'admin' ? 'red' : 'blue' }}">
                                         {{ str_replace('_', ' ', $role->name) }}
@@ -89,9 +89,8 @@
                                         {{ $role->permissions->count() }} permissions
                                     </flux:text>
                                 </div>
-                                <flux:icon name="chevron-down" class="size-4 text-gray-400 transition group-open:rotate-180" />
-                            </summary>
-                            <div class="border-t border-border bg-gray-50 px-4 py-3">
+                            </flux:accordion.heading>
+                            <flux:accordion.content>
                                 @if ($role->name === 'admin')
                                     <flux:text class="text-sm text-gray-600 italic">
                                         Admin role bypasses all permission checks.
@@ -106,10 +105,10 @@
                                         @endforeach
                                     </div>
                                 @endif
-                            </div>
-                        </details>
+                            </flux:accordion.content>
+                        </flux:accordion.item>
                     @endforeach
-                </div>
+                </flux:accordion>
             </div>
         </div>
     </div>

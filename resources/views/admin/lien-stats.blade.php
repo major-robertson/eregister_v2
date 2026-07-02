@@ -96,53 +96,51 @@
         <div class="border-b border-border px-4 py-3">
             <flux:heading size="sm">Last 20 Filings</flux:heading>
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-                <thead class="border-b border-border bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 font-medium text-gray-700">Business</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Name</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Email</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Document</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">State</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Amount</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Status</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Date (EST)</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
+        <div class="px-4 pb-4">
+            <flux:table>
+                <flux:table.columns>
+                    <flux:table.column>Business</flux:table.column>
+                    <flux:table.column>Name</flux:table.column>
+                    <flux:table.column>Email</flux:table.column>
+                    <flux:table.column>Document</flux:table.column>
+                    <flux:table.column>State</flux:table.column>
+                    <flux:table.column>Amount</flux:table.column>
+                    <flux:table.column>Status</flux:table.column>
+                    <flux:table.column>Date (EST)</flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
                     @forelse ($recentFilings as $filing)
-                        <tr class="hover:bg-gray-50" wire:key="filing-{{ $filing['id'] }}">
-                            <td class="px-4 py-3">{{ $filing['business'] }}</td>
-                            <td class="px-4 py-3">{{ $filing['name'] }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $filing['email'] }}</td>
-                            <td class="px-4 py-3">{{ $filing['document'] }}</td>
-                            <td class="px-4 py-3">{{ $filing['state'] }}</td>
-                            <td class="px-4 py-3 font-medium">
+                        <flux:table.row wire:key="filing-{{ $filing['id'] }}">
+                            <flux:table.cell>{{ $filing['business'] }}</flux:table.cell>
+                            <flux:table.cell>{{ $filing['name'] }}</flux:table.cell>
+                            <flux:table.cell class="text-gray-600">{{ $filing['email'] }}</flux:table.cell>
+                            <flux:table.cell>{{ $filing['document'] }}</flux:table.cell>
+                            <flux:table.cell>{{ $filing['state'] }}</flux:table.cell>
+                            <flux:table.cell class="font-medium">
                                 @if ($filing['amount'])
                                     {{ $filing['amount'] }}
                                 @else
                                     <span class="text-gray-400">—</span>
                                 @endif
-                            </td>
-                            <td class="px-4 py-3">
+                            </flux:table.cell>
+                            <flux:table.cell>
                                 <flux:badge size="sm" color="{{ $filing['status_color'] }}">
                                     {{ $filing['status_label'] }}
                                 </flux:badge>
-                            </td>
-                            <td class="px-4 py-3 text-gray-600">
+                            </flux:table.cell>
+                            <flux:table.cell class="text-gray-600">
                                 {{ ($filing['paid_at'] ?? $filing['created_at'])?->eastern()->format('M j, Y g:i A') }}
-                            </td>
-                        </tr>
+                            </flux:table.cell>
+                        </flux:table.row>
                     @empty
-                        <tr>
-                            <td colspan="8" class="px-4 py-8 text-center text-gray-400">
+                        <flux:table.row>
+                            <flux:table.cell colspan="8" class="py-8 text-center text-gray-400">
                                 No filings yet.
-                            </td>
-                        </tr>
+                            </flux:table.cell>
+                        </flux:table.row>
                     @endforelse
-                </tbody>
-            </table>
+                </flux:table.rows>
+            </flux:table>
         </div>
     </div>
 </div>

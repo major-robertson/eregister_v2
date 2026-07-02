@@ -96,40 +96,38 @@
         <div class="border-b border-border px-4 py-3">
             <flux:heading size="sm">Last 20 Formations</flux:heading>
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-                <thead class="border-b border-border bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 font-medium text-gray-700">Business</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Name</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Email</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">State</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Amount</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Status</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Progress</th>
-                        <th class="px-4 py-3 font-medium text-gray-700">Date (EST)</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
+        <div class="px-4 pb-4">
+            <flux:table>
+                <flux:table.columns>
+                    <flux:table.column>Business</flux:table.column>
+                    <flux:table.column>Name</flux:table.column>
+                    <flux:table.column>Email</flux:table.column>
+                    <flux:table.column>State</flux:table.column>
+                    <flux:table.column>Amount</flux:table.column>
+                    <flux:table.column>Status</flux:table.column>
+                    <flux:table.column>Progress</flux:table.column>
+                    <flux:table.column>Date (EST)</flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
                     @forelse ($recentFormations as $formation)
-                        <tr class="hover:bg-gray-50" wire:key="formation-{{ $formation['id'] }}">
-                            <td class="px-4 py-3">{{ $formation['business'] }}</td>
-                            <td class="px-4 py-3">{{ $formation['name'] }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $formation['email'] }}</td>
-                            <td class="px-4 py-3">{{ $formation['state'] }}</td>
-                            <td class="px-4 py-3 font-medium">
+                        <flux:table.row wire:key="formation-{{ $formation['id'] }}">
+                            <flux:table.cell>{{ $formation['business'] }}</flux:table.cell>
+                            <flux:table.cell>{{ $formation['name'] }}</flux:table.cell>
+                            <flux:table.cell class="text-gray-600">{{ $formation['email'] }}</flux:table.cell>
+                            <flux:table.cell>{{ $formation['state'] }}</flux:table.cell>
+                            <flux:table.cell class="font-medium">
                                 @if ($formation['amount'])
                                     {{ $formation['amount'] }}
                                 @else
                                     <span class="text-gray-400">—</span>
                                 @endif
-                            </td>
-                            <td class="px-4 py-3">
+                            </flux:table.cell>
+                            <flux:table.cell>
                                 <flux:badge size="sm" color="{{ $formation['paid_at'] ? 'green' : 'zinc' }}">
                                     {{ $formation['status'] }}
                                 </flux:badge>
-                            </td>
-                            <td class="px-4 py-3">
+                            </flux:table.cell>
+                            <flux:table.cell>
                                 @php
                                     $done = $formation['progress']['done'];
                                     $total = $formation['progress']['total'];
@@ -144,20 +142,20 @@
                                 <div class="mt-1 h-1.5 w-32 overflow-hidden rounded-full bg-gray-200">
                                     <div class="h-full rounded-full bg-blue-500" style="width: {{ $percent }}%"></div>
                                 </div>
-                            </td>
-                            <td class="px-4 py-3 text-gray-600">
+                            </flux:table.cell>
+                            <flux:table.cell class="text-gray-600">
                                 {{ ($formation['paid_at'] ?? $formation['created_at'])?->eastern()->format('M j, Y g:i A') }}
-                            </td>
-                        </tr>
+                            </flux:table.cell>
+                        </flux:table.row>
                     @empty
-                        <tr>
-                            <td colspan="8" class="px-4 py-8 text-center text-gray-400">
+                        <flux:table.row>
+                            <flux:table.cell colspan="8" class="py-8 text-center text-gray-400">
                                 No formations yet.
-                            </td>
-                        </tr>
+                            </flux:table.cell>
+                        </flux:table.row>
                     @endforelse
-                </tbody>
-            </table>
+                </flux:table.rows>
+            </flux:table>
         </div>
     </div>
 </div>

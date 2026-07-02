@@ -13,27 +13,25 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-gray-50 text-left text-sm text-gray-500">
-                    <tr>
-                        <th class="px-4 py-3 font-medium">Business</th>
-                        <th class="px-4 py-3 font-medium">Onboarding</th>
-                        <th class="px-4 py-3 font-medium">Users</th>
-                        <th class="px-4 py-3 font-medium">Applications</th>
-                        <th class="px-4 py-3 font-medium">Lien Projects</th>
-                        <th class="px-4 py-3 font-medium">Subscription</th>
-                        <th class="px-4 py-3 font-medium">Created</th>
-                        <th class="px-4 py-3 font-medium"></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
+        <div class="px-4 pb-4">
+            <flux:table :paginate="$businesses">
+                <flux:table.columns>
+                    <flux:table.column>Business</flux:table.column>
+                    <flux:table.column>Onboarding</flux:table.column>
+                    <flux:table.column>Users</flux:table.column>
+                    <flux:table.column>Applications</flux:table.column>
+                    <flux:table.column>Lien Projects</flux:table.column>
+                    <flux:table.column>Subscription</flux:table.column>
+                    <flux:table.column>Created</flux:table.column>
+                    <flux:table.column></flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
                     @forelse ($businesses as $business)
                     @php
                     $address = $business->business_address ?? [];
                     @endphp
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3">
+                    <flux:table.row wire:key="business-{{ $business->id }}">
+                        <flux:table.cell>
                             <div>
                                 <flux:text class="font-medium">
                                     {{ $address['city'] ?? 'Unknown' }}, {{ $address['state'] ?? 'N/A' }}
@@ -42,8 +40,8 @@
                                     {{ $address['street'] ?? 'No address' }}
                                 </flux:text>
                             </div>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <div class="flex gap-1">
                                 @if ($business->onboarding_completed_at)
                                 <flux:badge size="sm" color="green" title="Onboarding Complete">Main</flux:badge>
@@ -55,50 +53,44 @@
                                 <flux:badge size="sm" color="zinc">None</flux:badge>
                                 @endif
                             </div>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:badge size="sm" color="zinc">{{ $business->users_count }}</flux:badge>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:badge size="sm" color="zinc">{{ $business->form_applications_count }}</flux:badge>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:badge size="sm" color="zinc">{{ $business->lien_projects_count }}</flux:badge>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             @if ($business->has_active_subscription)
                             <flux:badge size="sm" color="green">Active</flux:badge>
                             @else
                             <flux:badge size="sm" color="zinc">None</flux:badge>
                             @endif
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:text class="text-sm text-gray-500">
                                 {{ $business->created_at->format('M j, Y') }}
                             </flux:text>
-                        </td>
-                        <td class="px-4 py-3 text-right">
+                        </flux:table.cell>
+                        <flux:table.cell align="end">
                             <flux:button variant="ghost" size="sm" icon="eye"
                                 :href="route('admin.businesses.show', $business)" wire:navigate>
                                 View
                             </flux:button>
-                        </td>
-                    </tr>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @empty
-                    <tr>
-                        <td colspan="8" class="px-4 py-12 text-center">
+                    <flux:table.row>
+                        <flux:table.cell colspan="8" class="py-12 text-center">
                             <flux:text class="text-gray-400">No businesses found.</flux:text>
-                        </td>
-                    </tr>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @endforelse
-                </tbody>
-            </table>
+                </flux:table.rows>
+            </flux:table>
         </div>
-
-        @if ($businesses->hasPages())
-        <div class="border-t border-border px-4 py-3">
-            {{ $businesses->links() }}
-        </div>
-        @endif
     </div>
 </div>

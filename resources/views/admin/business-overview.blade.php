@@ -183,22 +183,20 @@
             <flux:heading size="sm">Users</flux:heading>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-gray-50 text-left text-sm text-gray-500">
-                    <tr>
-                        <th class="px-4 py-3 font-medium">User</th>
-                        <th class="px-4 py-3 font-medium">Role</th>
-                        <th class="px-4 py-3 font-medium">Email Verified</th>
-                        <th class="px-4 py-3 font-medium">2FA</th>
-                        <th class="px-4 py-3 font-medium">Joined</th>
-                        <th class="px-4 py-3 font-medium"></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
+        <div class="px-4 pb-4">
+            <flux:table>
+                <flux:table.columns>
+                    <flux:table.column>User</flux:table.column>
+                    <flux:table.column>Role</flux:table.column>
+                    <flux:table.column>Email Verified</flux:table.column>
+                    <flux:table.column>2FA</flux:table.column>
+                    <flux:table.column>Joined</flux:table.column>
+                    <flux:table.column></flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
                     @forelse ($business->users as $user)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3">
+                    <flux:table.row wire:key="user-{{ $user->id }}">
+                        <flux:table.cell>
                             <div class="flex items-center gap-3">
                                 <flux:avatar :initials="$user->initials()" size="sm" />
                                 <div>
@@ -206,47 +204,47 @@
                                     <flux:text class="text-sm text-gray-500">{{ $user->email }}</flux:text>
                                 </div>
                             </div>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:badge size="sm" color="{{ $user->pivot->role === 'owner' ? 'blue' : 'zinc' }}">
                                 {{ ucfirst($user->pivot->role) }}
                             </flux:badge>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             @if ($user->hasVerifiedEmail())
                             <flux:badge size="sm" color="green">Verified</flux:badge>
                             @else
                             <flux:badge size="sm" color="amber">Pending</flux:badge>
                             @endif
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             @if ($user->two_factor_confirmed_at)
                             <flux:badge size="sm" color="green">Enabled</flux:badge>
                             @else
                             <flux:badge size="sm" color="zinc">Disabled</flux:badge>
                             @endif
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:text class="text-sm text-gray-500">
                                 {{ \Carbon\Carbon::parse($user->pivot->created_at)->format('M j, Y') }}
                             </flux:text>
-                        </td>
-                        <td class="px-4 py-3 text-right">
+                        </flux:table.cell>
+                        <flux:table.cell align="end">
                             <flux:button variant="ghost" size="sm" icon="eye" :href="route('admin.users.show', $user)"
                                 wire:navigate>
                                 View
                             </flux:button>
-                        </td>
-                    </tr>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @empty
-                    <tr>
-                        <td colspan="6" class="px-4 py-12 text-center">
+                    <flux:table.row>
+                        <flux:table.cell colspan="6" class="py-12 text-center">
                             <flux:text class="text-gray-400">No users found.</flux:text>
-                        </td>
-                    </tr>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @endforelse
-                </tbody>
-            </table>
+                </flux:table.rows>
+            </flux:table>
         </div>
     </div>
 
@@ -256,34 +254,32 @@
             <flux:heading size="sm">Subscriptions</flux:heading>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-gray-50 text-left text-sm text-gray-500">
-                    <tr>
-                        <th class="px-4 py-3 font-medium">Plan</th>
-                        <th class="px-4 py-3 font-medium">Status</th>
-                        <th class="px-4 py-3 font-medium">Started</th>
-                        <th class="px-4 py-3 font-medium">Ends At</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
+        <div class="px-4 pb-4">
+            <flux:table>
+                <flux:table.columns>
+                    <flux:table.column>Plan</flux:table.column>
+                    <flux:table.column>Status</flux:table.column>
+                    <flux:table.column>Started</flux:table.column>
+                    <flux:table.column>Ends At</flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
                     @forelse ($subscriptions as $subscription)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3">
+                    <flux:table.row wire:key="subscription-{{ $subscription->id }}">
+                        <flux:table.cell>
                             <flux:text class="font-medium">{{ ucfirst($subscription->type ?? 'default') }}</flux:text>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:badge size="sm"
                                 color="{{ $this->getSubscriptionStatusColor($subscription->stripe_status) }}">
                                 {{ $this->formatSubscriptionStatus($subscription->stripe_status) }}
                             </flux:badge>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:text class="text-sm text-gray-500">
                                 {{ \Carbon\Carbon::parse($subscription->created_at)->format('M j, Y') }}
                             </flux:text>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             @if ($subscription->ends_at)
                             <flux:text class="text-sm text-gray-500">
                                 {{ \Carbon\Carbon::parse($subscription->ends_at)->format('M j, Y') }}
@@ -291,17 +287,17 @@
                             @else
                             <flux:text class="text-sm text-gray-400">-</flux:text>
                             @endif
-                        </td>
-                    </tr>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @empty
-                    <tr>
-                        <td colspan="4" class="px-4 py-12 text-center">
+                    <flux:table.row>
+                        <flux:table.cell colspan="4" class="py-12 text-center">
                             <flux:text class="text-gray-400">No subscriptions found.</flux:text>
-                        </td>
-                    </tr>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @endforelse
-                </tbody>
-            </table>
+                </flux:table.rows>
+            </flux:table>
         </div>
     </div>
 
@@ -311,23 +307,21 @@
             <flux:heading size="sm">Payments</flux:heading>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-gray-50 text-left text-sm text-gray-500">
-                    <tr>
-                        <th class="px-4 py-3 font-medium">Amount</th>
-                        <th class="px-4 py-3 font-medium">Status</th>
-                        <th class="px-4 py-3 font-medium">Type</th>
-                        <th class="px-4 py-3 font-medium">Date</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
+        <div class="px-4 pb-4">
+            <flux:table :paginate="$payments">
+                <flux:table.columns>
+                    <flux:table.column>Amount</flux:table.column>
+                    <flux:table.column>Status</flux:table.column>
+                    <flux:table.column>Type</flux:table.column>
+                    <flux:table.column>Date</flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
                     @forelse ($payments as $payment)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3">
+                    <flux:table.row wire:key="payment-{{ $payment->id }}">
+                        <flux:table.cell>
                             <flux:text class="font-medium">{{ $payment->formattedAmount() }}</flux:text>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             @php
                             $badgeColor = match($payment->status) {
                                 \App\Enums\PaymentStatus::Succeeded => 'green',
@@ -338,35 +332,29 @@
                             <flux:badge size="sm" color="{{ $badgeColor }}">
                                 {{ $payment->status->label() }}
                             </flux:badge>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:text class="text-sm">
                                 {{ $payment->stripe_subscription_id ? 'Subscription' : 'One-time' }}
                             </flux:text>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:text class="text-sm text-gray-500">
                                 {{ $payment->paid_at?->eastern()->format('M j, Y g:i A') ?? $payment->created_at->eastern()->format('M j, Y
                                 g:i A') }}
                             </flux:text>
-                        </td>
-                    </tr>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @empty
-                    <tr>
-                        <td colspan="4" class="px-4 py-12 text-center">
+                    <flux:table.row>
+                        <flux:table.cell colspan="4" class="py-12 text-center">
                             <flux:text class="text-gray-400">No payments found.</flux:text>
-                        </td>
-                    </tr>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @endforelse
-                </tbody>
-            </table>
+                </flux:table.rows>
+            </flux:table>
         </div>
-
-        @if ($payments->hasPages())
-        <div class="border-t border-border px-4 py-3">
-            {{ $payments->links() }}
-        </div>
-        @endif
     </div>
 
     <!-- Form Applications Table -->
@@ -375,26 +363,24 @@
             <flux:heading size="sm">Form Applications</flux:heading>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-gray-50 text-left text-sm text-gray-500">
-                    <tr>
-                        <th class="px-4 py-3 font-medium">Form Type</th>
-                        <th class="px-4 py-3 font-medium">Status</th>
-                        <th class="px-4 py-3 font-medium">Phase</th>
-                        <th class="px-4 py-3 font-medium">States</th>
-                        <th class="px-4 py-3 font-medium">Progress</th>
-                        <th class="px-4 py-3 font-medium">Created</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
+        <div class="px-4 pb-4">
+            <flux:table :paginate="$formApplications">
+                <flux:table.columns>
+                    <flux:table.column>Form Type</flux:table.column>
+                    <flux:table.column>Status</flux:table.column>
+                    <flux:table.column>Phase</flux:table.column>
+                    <flux:table.column>States</flux:table.column>
+                    <flux:table.column>Progress</flux:table.column>
+                    <flux:table.column>Created</flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
                     @forelse ($formApplications as $application)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3">
+                    <flux:table.row wire:key="application-{{ $application->id }}">
+                        <flux:table.cell>
                             <flux:text class="font-medium">{{ ucfirst(str_replace('_', ' ', $application->form_type)) }}
                             </flux:text>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             @if ($application->submitted_at)
                             <flux:badge size="sm" color="green">Submitted</flux:badge>
                             @elseif ($application->paid_at)
@@ -402,42 +388,36 @@
                             @else
                             <flux:badge size="sm" color="zinc">Draft</flux:badge>
                             @endif
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:text class="text-sm">{{ ucfirst($application->current_phase ?? 'N/A') }}</flux:text>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:text class="text-sm">
                                 {{ implode(', ', $application->selected_states ?? []) ?: 'None' }}
                             </flux:text>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:text class="text-sm">
                                 {{ $application->completedStateCount() }}/{{ $application->stateCount() }} states
                             </flux:text>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:text class="text-sm text-gray-500">
                                 {{ $application->created_at->format('M j, Y') }}
                             </flux:text>
-                        </td>
-                    </tr>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @empty
-                    <tr>
-                        <td colspan="6" class="px-4 py-12 text-center">
+                    <flux:table.row>
+                        <flux:table.cell colspan="6" class="py-12 text-center">
                             <flux:text class="text-gray-400">No form applications found.</flux:text>
-                        </td>
-                    </tr>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @endforelse
-                </tbody>
-            </table>
+                </flux:table.rows>
+            </flux:table>
         </div>
-
-        @if ($formApplications->hasPages())
-        <div class="border-t border-border px-4 py-3">
-            {{ $formApplications->links() }}
-        </div>
-        @endif
     </div>
 
     <!-- Lien Projects Table -->
@@ -446,58 +426,50 @@
             <flux:heading size="sm">Lien Projects</flux:heading>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-gray-50 text-left text-sm text-gray-500">
-                    <tr>
-                        <th class="px-4 py-3 font-medium">Project</th>
-                        <th class="px-4 py-3 font-medium">Wizard Status</th>
-                        <th class="px-4 py-3 font-medium">Filings</th>
-                        <th class="px-4 py-3 font-medium">Created</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border">
+        <div class="px-4 pb-4">
+            <flux:table :paginate="$lienProjects">
+                <flux:table.columns>
+                    <flux:table.column>Project</flux:table.column>
+                    <flux:table.column>Wizard Status</flux:table.column>
+                    <flux:table.column>Filings</flux:table.column>
+                    <flux:table.column>Created</flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
                     @forelse ($lienProjects as $project)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3">
+                    <flux:table.row wire:key="project-{{ $project->id }}">
+                        <flux:table.cell>
                             <div>
                                 <flux:text class="font-medium">{{ $project->name ?? 'Unnamed Project' }}</flux:text>
                                 <flux:text class="text-sm text-gray-500">
                                     {{ $project->jobsite_city ?? 'Unknown' }}, {{ $project->jobsite_state ?? 'N/A' }}
                                 </flux:text>
                             </div>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             @if ($project->wizard_completed_at)
                             <flux:badge size="sm" color="green">Complete</flux:badge>
                             @else
                             <flux:badge size="sm" color="amber">Draft</flux:badge>
                             @endif
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:badge size="sm" color="zinc">{{ $project->filings_count }}</flux:badge>
-                        </td>
-                        <td class="px-4 py-3">
+                        </flux:table.cell>
+                        <flux:table.cell>
                             <flux:text class="text-sm text-gray-500">
                                 {{ $project->created_at->format('M j, Y') }}
                             </flux:text>
-                        </td>
-                    </tr>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @empty
-                    <tr>
-                        <td colspan="4" class="px-4 py-12 text-center">
+                    <flux:table.row>
+                        <flux:table.cell colspan="4" class="py-12 text-center">
                             <flux:text class="text-gray-400">No lien projects found.</flux:text>
-                        </td>
-                    </tr>
+                        </flux:table.cell>
+                    </flux:table.row>
                     @endforelse
-                </tbody>
-            </table>
+                </flux:table.rows>
+            </flux:table>
         </div>
-
-        @if ($lienProjects->hasPages())
-        <div class="border-t border-border px-4 py-3">
-            {{ $lienProjects->links() }}
-        </div>
-        @endif
     </div>
 </div>

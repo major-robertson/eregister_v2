@@ -113,10 +113,10 @@
 
             <flux:field>
                 <flux:label>State *</flux:label>
-                <flux:select wire:model.live="jobsite_state">
-                    <option value="">Select...</option>
+                {{-- Live so state-specific lien rules and date requirements refresh on change --}}
+                <flux:select variant="combobox" placeholder="Select..." wire:model.live="jobsite_state">
                     @foreach($states as $code => $name)
-                    <option value="{{ $code }}">{{ $code }}</option>
+                    <flux:select.option value="{{ $code }}">{{ $name }}</flux:select.option>
                     @endforeach
                 </flux:select>
                 <flux:error name="jobsite_state" />
@@ -174,14 +174,14 @@
             @if($primaryDateField === 'completion_date')
                 <flux:field>
                     <flux:label>Completion Date</flux:label>
-                    <flux:input type="date" wire:model="completion_date" />
+                    <flux:date-picker wire:model="completion_date" />
                     <flux:description>When the project was substantially complete</flux:description>
                     <flux:error name="completion_date" />
                 </flux:field>
             @else
                 <flux:field>
                     <flux:label>Last Furnish Date</flux:label>
-                    <flux:input type="date" wire:model="last_furnish_date" />
+                    <flux:date-picker wire:model="last_furnish_date" />
                     <flux:description>When you last provided labor/materials</flux:description>
                     <flux:error name="last_furnish_date" />
                 </flux:field>
@@ -189,17 +189,13 @@
         </div>
 
         {{-- Additional optional dates --}}
-        <details class="group">
-            <summary class="flex items-center justify-between cursor-pointer p-4 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-                <div class="flex items-center gap-2">
-                    <span class="font-medium">Additional Dates (optional)</span>
-                </div>
-                <flux:icon name="chevron-down" class="w-5 h-5 transition-transform group-open:rotate-180" />
-            </summary>
-            <div class="p-4 border border-t-0 border-zinc-200 dark:border-zinc-700 rounded-b-lg space-y-4">
+        <flux:accordion>
+        <flux:accordion.item heading="Additional Dates (optional)">
+        <flux:accordion.content>
+            <div class="space-y-4">
                 <flux:field>
                     <flux:label>First Furnish Date</flux:label>
-                    <flux:input type="date" wire:model="first_furnish_date" />
+                    <flux:date-picker wire:model="first_furnish_date" />
                     <flux:description>When you first provided labor/materials</flux:description>
                     <flux:error name="first_furnish_date" />
                 </flux:field>
@@ -207,20 +203,22 @@
                 @if($primaryDateField === 'completion_date')
                     <flux:field>
                         <flux:label>Last Furnish Date</flux:label>
-                        <flux:input type="date" wire:model="last_furnish_date" />
+                        <flux:date-picker wire:model="last_furnish_date" />
                         <flux:description>When you last provided labor/materials</flux:description>
                         <flux:error name="last_furnish_date" />
                     </flux:field>
                 @else
                     <flux:field>
                         <flux:label>Completion Date</flux:label>
-                        <flux:input type="date" wire:model="completion_date" />
+                        <flux:date-picker wire:model="completion_date" />
                         <flux:description>When the project was substantially complete</flux:description>
                         <flux:error name="completion_date" />
                     </flux:field>
                 @endif
             </div>
-        </details>
+        </flux:accordion.content>
+        </flux:accordion.item>
+        </flux:accordion>
 
         {{-- NOC Question - only for CA, NV, AZ, OR --}}
         @if($this->showNocQuestion())
@@ -243,7 +241,7 @@
             @if($noc_status === 'yes')
             <flux:field>
                 <flux:label>NOC Recorded Date *</flux:label>
-                <flux:input type="date" wire:model="noc_recorded_at" />
+                <flux:date-picker wire:model="noc_recorded_at" />
                 <flux:error name="noc_recorded_at" />
             </flux:field>
             @endif

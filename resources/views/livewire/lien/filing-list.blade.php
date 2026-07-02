@@ -40,90 +40,70 @@
                 </div>
             </div>
         @else
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-zinc-200 dark:divide-zinc-700">
-                    <thead>
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                                Status
-                            </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                                Document Type
-                            </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                                Project
-                            </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                                Jurisdiction
-                            </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                                Created
-                            </th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-zinc-200 dark:divide-zinc-700">
-                        @foreach($filings as $filing)
-                            <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                                <td class="px-4 py-4 whitespace-nowrap">
-                                    <flux:badge :color="$filing->status->color()">
-                                        {{ $filing->status->label() }}
-                                    </flux:badge>
-                                </td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm text-zinc-900 dark:text-white">
-                                    {{ $filing->documentType?->name ?? '-' }}
-                                </td>
-                                <td class="px-4 py-4 whitespace-nowrap">
-                                    <a href="{{ route('lien.projects.show', $filing->project) }}"
-                                       class="text-sm font-medium text-zinc-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
-                                       wire:navigate>
-                                        {{ $filing->project?->name ?? '-' }}
-                                    </a>
-                                </td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
-                                    @if($filing->jurisdiction_county && $filing->jurisdiction_state)
-                                        {{ $filing->jurisdiction_county }}, {{ $filing->jurisdiction_state }}
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                                <td class="px-4 py-4 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
-                                    {{ $filing->created_at->format('M j, Y') }}
-                                </td>
-                                <td class="px-4 py-4 whitespace-nowrap text-right text-sm">
-                                    <div class="flex items-center justify-end gap-2">
-                                        <flux:button href="{{ route('lien.filings.show', $filing) }}" variant="ghost" size="sm" wire:navigate>
-                                            View
+            <flux:table :paginate="$filings">
+                <flux:table.columns>
+                    <flux:table.column>Status</flux:table.column>
+                    <flux:table.column>Document Type</flux:table.column>
+                    <flux:table.column>Project</flux:table.column>
+                    <flux:table.column>Jurisdiction</flux:table.column>
+                    <flux:table.column>Created</flux:table.column>
+                    <flux:table.column align="end">Actions</flux:table.column>
+                </flux:table.columns>
+                <flux:table.rows>
+                    @foreach($filings as $filing)
+                        <flux:table.row wire:key="filing-{{ $filing->id }}">
+                            <flux:table.cell class="whitespace-nowrap">
+                                <flux:badge :color="$filing->status->color()">
+                                    {{ $filing->status->label() }}
+                                </flux:badge>
+                            </flux:table.cell>
+                            <flux:table.cell class="whitespace-nowrap text-sm text-zinc-900 dark:text-white">
+                                {{ $filing->documentType?->name ?? '-' }}
+                            </flux:table.cell>
+                            <flux:table.cell class="whitespace-nowrap">
+                                <a href="{{ route('lien.projects.show', $filing->project) }}"
+                                   class="text-sm font-medium text-zinc-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+                                   wire:navigate>
+                                    {{ $filing->project?->name ?? '-' }}
+                                </a>
+                            </flux:table.cell>
+                            <flux:table.cell class="whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+                                @if($filing->jurisdiction_county && $filing->jurisdiction_state)
+                                    {{ $filing->jurisdiction_county }}, {{ $filing->jurisdiction_state }}
+                                @else
+                                    -
+                                @endif
+                            </flux:table.cell>
+                            <flux:table.cell class="whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">
+                                {{ $filing->created_at->format('M j, Y') }}
+                            </flux:table.cell>
+                            <flux:table.cell align="end" class="whitespace-nowrap text-sm">
+                                <div class="flex items-center justify-end gap-2">
+                                    <flux:button href="{{ route('lien.filings.show', $filing) }}" variant="ghost" size="sm" wire:navigate>
+                                        View
+                                    </flux:button>
+
+                                    @if($filing->status === \App\Domains\Lien\Enums\FilingStatus::Draft && $filing->project_deadline_id)
+                                        <flux:button
+                                            href="{{ route('lien.filings.start', ['project' => $filing->project, 'deadline' => $filing->project_deadline_id]) }}"
+                                            variant="primary"
+                                            size="sm"
+                                            wire:navigate
+                                        >
+                                            Resume
                                         </flux:button>
-
-                                        @if($filing->status === \App\Domains\Lien\Enums\FilingStatus::Draft && $filing->project_deadline_id)
-                                            <flux:button
-                                                href="{{ route('lien.filings.start', ['project' => $filing->project, 'deadline' => $filing->project_deadline_id]) }}"
-                                                variant="primary"
-                                                size="sm"
-                                                wire:navigate
-                                            >
-                                                Resume
-                                            </flux:button>
-                                        @elseif($filing->status === \App\Domains\Lien\Enums\FilingStatus::AwaitingPayment)
-                                            {{-- No wire:navigate: checkout uses layouts.minimal and Stripe.js needs a full page load to mount the Payment Element --}}
-                                            <flux:button href="{{ route('lien.filings.checkout', $filing) }}" variant="primary" size="sm">
-                                                Pay
-                                            </flux:button>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="mt-4">
-                {{ $filings->links() }}
-            </div>
+                                    @elseif($filing->status === \App\Domains\Lien\Enums\FilingStatus::AwaitingPayment)
+                                        {{-- No wire:navigate: checkout uses layouts.minimal and Stripe.js needs a full page load to mount the Payment Element --}}
+                                        <flux:button href="{{ route('lien.filings.checkout', $filing) }}" variant="primary" size="sm">
+                                            Pay
+                                        </flux:button>
+                                    @endif
+                                </div>
+                            </flux:table.cell>
+                        </flux:table.row>
+                    @endforeach
+                </flux:table.rows>
+            </flux:table>
         @endif
     </x-ui.card>
 </div>

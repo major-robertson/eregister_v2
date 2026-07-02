@@ -102,7 +102,11 @@
 
                     <flux:field>
                         <flux:label>State</flux:label>
-                        <flux:input wire:model="state" maxlength="2" placeholder="CA" />
+                        <flux:select variant="combobox" clearable placeholder="Select..." wire:model="state">
+                            @foreach (config('states') as $code => $name)
+                                <flux:select.option value="{{ $code }}">{{ $name }}</flux:select.option>
+                            @endforeach
+                        </flux:select>
                         <flux:error name="state" />
                     </flux:field>
 

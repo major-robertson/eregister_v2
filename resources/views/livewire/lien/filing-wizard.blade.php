@@ -58,7 +58,7 @@
                 @if(array_key_exists('completion_date', $requiredDateFields))
                     <flux:field>
                         <flux:label>Completion Date *</flux:label>
-                        <flux:input type="date" wire:model="completion_date" />
+                        <flux:date-picker wire:model="completion_date" />
                         <flux:description>When the project was substantially complete</flux:description>
                         <flux:error name="completion_date" />
                     </flux:field>
@@ -67,7 +67,7 @@
                 @if(array_key_exists('last_furnish_date', $requiredDateFields))
                     <flux:field>
                         <flux:label>Last Furnish Date *</flux:label>
-                        <flux:input type="date" wire:model="last_furnish_date" />
+                        <flux:date-picker wire:model="last_furnish_date" />
                         <flux:description>When you last provided labor/materials</flux:description>
                         <flux:error name="last_furnish_date" />
                     </flux:field>
@@ -76,7 +76,7 @@
                 @if(array_key_exists('first_furnish_date', $requiredDateFields))
                     <flux:field>
                         <flux:label>First Furnish Date *</flux:label>
-                        <flux:input type="date" wire:model="first_furnish_date" />
+                        <flux:date-picker wire:model="first_furnish_date" />
                         <flux:description>When you first provided labor/materials</flux:description>
                         <flux:error name="first_furnish_date" />
                     </flux:field>
@@ -398,14 +398,10 @@
                 </flux:field>
 
                 {{-- Collapsible Amount Breakdown --}}
-                <details class="group">
-                    <summary class="flex items-center justify-between cursor-pointer p-4 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-                        <div class="flex items-center gap-2">
-                            <span class="font-medium">Optional: Amount Breakdown (advanced)</span>
-                        </div>
-                        <flux:icon name="chevron-down" class="w-5 h-5 transition-transform group-open:rotate-180" />
-                    </summary>
-                    <div class="p-4 border border-t-0 border-zinc-200 dark:border-zinc-700 rounded-b-lg space-y-4">
+                <flux:accordion>
+                <flux:accordion.item heading="Optional: Amount Breakdown (advanced)">
+                <flux:accordion.content>
+                    <div class="space-y-4">
                         <flux:field>
                             <flux:label>A. Base Contract Amount</flux:label>
                             <div class="relative">
@@ -456,7 +452,9 @@
                             </div>
                         @endif
                     </div>
-                </details>
+                </flux:accordion.content>
+                </flux:accordion.item>
+                </flux:accordion>
             </div>
 
         @elseif($step === 4)
@@ -622,12 +620,10 @@
                     @endphp
 
                     {{-- Mobile: Collapsible summary --}}
-                    <details class="lg:hidden group rounded-lg border border-zinc-200 dark:border-zinc-700">
-                        <summary class="flex items-center justify-between cursor-pointer p-4 font-medium">
-                            <span>Review your info</span>
-                            <flux:icon name="chevron-down" class="w-5 h-5 transition-transform group-open:rotate-180" />
-                        </summary>
-                        <div class="p-4 pt-0">
+                    <flux:accordion class="lg:hidden rounded-lg border border-zinc-200 dark:border-zinc-700 px-4">
+                    <flux:accordion.item heading="Review your info">
+                    <flux:accordion.content>
+                        <div class="pt-0">
                             <x-ui.info-list>
                                 <x-ui.info-list.item label="Document">
                                     {{ $documentType->name }}
@@ -646,7 +642,9 @@
                                 </x-ui.info-list.item>
                             </x-ui.info-list>
                         </div>
-                    </details>
+                    </flux:accordion.content>
+                    </flux:accordion.item>
+                    </flux:accordion>
 
                     {{-- Desktop: Sticky sidebar --}}
                     <div class="hidden lg:block lg:sticky lg:top-4">
@@ -796,7 +794,11 @@
                     <div class="grid grid-cols-2 gap-4">
                         <flux:field>
                             <flux:label>State</flux:label>
-                            <flux:input wire:model="partyState" maxlength="2" placeholder="CA" />
+                            <flux:select variant="combobox" clearable placeholder="Select..." wire:model="partyState">
+                                @foreach (config('states') as $code => $name)
+                                    <flux:select.option value="{{ $code }}">{{ $name }}</flux:select.option>
+                                @endforeach
+                            </flux:select>
                             <flux:error name="partyState" />
                         </flux:field>
 

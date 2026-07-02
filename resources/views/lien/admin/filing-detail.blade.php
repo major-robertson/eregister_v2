@@ -1579,17 +1579,17 @@
             <div class="grid gap-4 sm:grid-cols-2">
                 <flux:field>
                     <flux:label>First Furnish Date</flux:label>
-                    <flux:input type="date" wire:model="projectForm.first_furnish_date" />
+                    <flux:date-picker wire:model="projectForm.first_furnish_date" />
                     <flux:error name="projectForm.first_furnish_date" />
                 </flux:field>
                 <flux:field>
                     <flux:label>Last Furnish Date</flux:label>
-                    <flux:input type="date" wire:model="projectForm.last_furnish_date" />
+                    <flux:date-picker wire:model="projectForm.last_furnish_date" />
                     <flux:error name="projectForm.last_furnish_date" />
                 </flux:field>
                 <flux:field>
                     <flux:label>Completion Date</flux:label>
-                    <flux:input type="date" wire:model="projectForm.completion_date" />
+                    <flux:date-picker wire:model="projectForm.completion_date" />
                     <flux:error name="projectForm.completion_date" />
                 </flux:field>
                 <flux:field>
@@ -1604,7 +1604,7 @@
                 </flux:field>
                 <flux:field>
                     <flux:label>NOC Recorded</flux:label>
-                    <flux:input type="date" wire:model="projectForm.noc_recorded_at" />
+                    <flux:date-picker wire:model="projectForm.noc_recorded_at" />
                     <flux:error name="projectForm.noc_recorded_at" />
                 </flux:field>
             </div>

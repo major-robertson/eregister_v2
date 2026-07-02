@@ -210,10 +210,18 @@
             <form wire:submit="uploadProof">
                 <flux:field>
                     <flux:label>Upload Proof</flux:label>
-                    <input type="file" wire:model="proofFile" class="text-sm" accept=".pdf,.jpg,.jpeg,.png" />
+                    <flux:file-upload wire:model="proofFile" accept=".pdf,.jpg,.jpeg,.png">
+                        <flux:file-upload.dropzone
+                            inline
+                            heading="Drop file here or click to browse"
+                            text="PDF, JPG, or PNG"
+                            with-progress
+                        />
+                    </flux:file-upload>
                     <flux:error name="proofFile" />
                 </flux:field>
                 @if($proofFile)
+                    <flux:text class="mt-2 text-sm">{{ $proofFile->getClientOriginalName() }}</flux:text>
                     <flux:button type="submit" size="sm" class="mt-2">
                         Upload
                     </flux:button>

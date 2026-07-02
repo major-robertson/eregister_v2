@@ -494,21 +494,18 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                     $displayOptionalSteps = $hasAnyMissedDeadline ? $otherOptionalSteps : $optionalSteps;
                     @endphp
                     @if(count($displayOptionalSteps) > 0)
-                    <div x-data="{ open: false }" class="mt-6 border-t border-zinc-200 dark:border-zinc-700 pt-4">
-                        <button @click="open = !open"
-                            class="flex items-center justify-between w-full py-2 px-1 text-left group hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-lg transition-colors">
+                    <flux:accordion class="mt-6 border-t border-zinc-200 dark:border-zinc-700 pt-4">
+                    <flux:accordion.item>
+                        <flux:accordion.heading>
                             <div class="flex items-center gap-2.5">
                                 <flux:icon name="document-text" class="size-5 text-zinc-400 dark:text-zinc-500" />
                                 <span class="font-medium text-zinc-700 dark:text-zinc-300">Additional Documents</span>
                                 <span class="text-sm text-zinc-400 dark:text-zinc-500">({{ count($displayOptionalSteps)
                                     }} available)</span>
                             </div>
-                            <flux:icon name="chevron-down"
-                                class="size-4 text-zinc-400 dark:text-zinc-500 transition-transform duration-200"
-                                x-bind:class="open && 'rotate-180'" />
-                        </button>
-
-                        <div x-show="open" x-collapse x-cloak class="mt-3 space-y-3">
+                        </flux:accordion.heading>
+                        <flux:accordion.content>
+                        <div class="mt-3 space-y-3">
                             @foreach($displayOptionalSteps as $step)
                             @php
                             $deadline = $step->deadline;
@@ -567,7 +564,9 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                             </div>
                             @endforeach
                         </div>
-                    </div>
+                        </flux:accordion.content>
+                    </flux:accordion.item>
+                    </flux:accordion>
                     @endif
                     @endif
             </x-ui.card>

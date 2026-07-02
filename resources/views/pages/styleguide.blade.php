@@ -282,5 +282,60 @@
                 </div>
             </x-ui.card>
         </section>
+
+        {{-- Flux Pro Components --}}
+        <section class="mb-12">
+            <h2 class="mb-4 text-xl font-semibold text-text-primary">Flux Pro</h2>
+            <x-ui.card>
+                <div class="grid gap-6 md:grid-cols-2">
+                    <flux:field>
+                        <flux:label>Date picker</flux:label>
+                        <flux:date-picker placeholder="Select a date" />
+                    </flux:field>
+                    <flux:field>
+                        <flux:label>Searchable select (combobox)</flux:label>
+                        <flux:select variant="combobox" placeholder="Choose a state...">
+                            <flux:select.option>Alabama</flux:select.option>
+                            <flux:select.option>Alaska</flux:select.option>
+                            <flux:select.option>Arizona</flux:select.option>
+                            <flux:select.option>California</flux:select.option>
+                            <flux:select.option>Colorado</flux:select.option>
+                            <flux:select.option>Florida</flux:select.option>
+                        </flux:select>
+                    </flux:field>
+                </div>
+                <div class="mt-6">
+                    <flux:accordion>
+                        <flux:accordion.item heading="What does flux:accordion replace?">
+                            Hand-rolled Alpine x-show toggles and native details elements.
+                        </flux:accordion.item>
+                        <flux:accordion.item heading="Where is it used?">
+                            Filing wizard amount breakdown, project form additional dates, admin roles reference.
+                        </flux:accordion.item>
+                    </flux:accordion>
+                </div>
+                <div class="mt-6">
+                    <flux:table>
+                        <flux:table.columns>
+                            <flux:table.column>Component</flux:table.column>
+                            <flux:table.column>Replaces</flux:table.column>
+                            <flux:table.column>Status</flux:table.column>
+                        </flux:table.columns>
+                        <flux:table.rows>
+                            <flux:table.row>
+                                <flux:table.cell>flux:table</flux:table.cell>
+                                <flux:table.cell>raw &lt;table&gt; + x-ui.data-table</flux:table.cell>
+                                <flux:table.cell><flux:badge color="green" size="sm">Live</flux:badge></flux:table.cell>
+                            </flux:table.row>
+                            <flux:table.row>
+                                <flux:table.cell>flux:date-picker</flux:table.cell>
+                                <flux:table.cell>input type="date"</flux:table.cell>
+                                <flux:table.cell><flux:badge color="green" size="sm">Live</flux:badge></flux:table.cell>
+                            </flux:table.row>
+                        </flux:table.rows>
+                    </flux:table>
+                </div>
+            </x-ui.card>
+        </section>
     </div>
 </x-layouts.app>

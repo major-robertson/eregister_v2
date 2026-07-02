@@ -87,7 +87,9 @@
 
         {{ $slot }}
 
-        <x-ui.toast-container />
+        @persist('toast')
+            <flux:toast />
+        @endpersist
 
         @fluxScripts
     </body>

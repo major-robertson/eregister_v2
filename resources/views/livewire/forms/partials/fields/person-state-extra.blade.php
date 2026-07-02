@@ -28,7 +28,7 @@
                             <flux:label>{{ $subLabel }}</flux:label>
                             @switch($subType)
                                 @case('date')
-                                    <flux:input type="date" wire:model="{{ $wireModel }}" />
+                                    <flux:date-picker wire:model="{{ $wireModel }}" />
                                     @break
                                 @default
                                     <flux:input

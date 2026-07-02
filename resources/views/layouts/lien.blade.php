@@ -107,7 +107,9 @@
             {{ $slot }}
         </flux:main>
 
-        <x-ui.toast-container />
+        @persist('toast')
+            <flux:toast />
+        @endpersist
 
         @fluxScripts
         @stack('scripts')

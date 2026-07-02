@@ -6,14 +6,12 @@
         @include('livewire.forms.partials.field-help', ['help' => $resolvedHelp])
     @endif
     @if ($needsLive)
-        <flux:input
-            type="date"
+        <flux:date-picker
             wire:model.live="{{ $wireModel }}"
             name="{{ $wireModel }}"
         />
     @else
-        <flux:input
-            type="date"
+        <flux:date-picker
             wire:model="{{ $wireModel }}"
             name="{{ $wireModel }}"
         />

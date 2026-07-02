@@ -122,7 +122,7 @@
                         @if ($business->stripe_id)
                         <flux:text class="font-mono text-sm">{{ $business->stripe_id }}</flux:text>
                         <button type="button" class="text-gray-400 hover:text-gray-600"
-                            onclick="navigator.clipboard.writeText('{{ $business->stripe_id }}'); $dispatch('toast', {message: 'Copied to clipboard', type: 'success'})"
+                            onclick="navigator.clipboard.writeText('{{ $business->stripe_id }}'); Flux.toast({text: 'Copied to clipboard', variant: 'success'})"
                             title="Copy to clipboard">
                             <flux:icon name="clipboard" class="size-4" />
                         </button>

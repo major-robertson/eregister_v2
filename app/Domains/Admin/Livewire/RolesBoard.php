@@ -3,6 +3,7 @@
 namespace App\Domains\Admin\Livewire;
 
 use App\Models\User;
+use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
@@ -117,7 +118,7 @@ class RolesBoard extends Component
 
         $this->closeEditModal();
 
-        $this->dispatch('toast', message: "Roles updated for {$user->name}.", type: 'success');
+        Flux::toast(text: "Roles updated for {$user->name}.", variant: 'success');
     }
 
     /**
@@ -131,7 +132,7 @@ class RolesBoard extends Component
         // Clear cache
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $this->dispatch('toast', message: "All roles removed from {$user->name}.", type: 'success');
+        Flux::toast(text: "All roles removed from {$user->name}.", variant: 'success');
     }
 
     /**
@@ -189,7 +190,7 @@ class RolesBoard extends Component
     public function assignRole(): void
     {
         if (! $this->selectedUserId || ! $this->selectedRole) {
-            $this->dispatch('toast', message: 'Please select a user and a role.', type: 'error');
+            Flux::toast(text: 'Please select a user and a role.', variant: 'danger');
 
             return;
         }
@@ -197,7 +198,7 @@ class RolesBoard extends Component
         $user = User::findOrFail($this->selectedUserId);
 
         if ($user->hasRole($this->selectedRole)) {
-            $this->dispatch('toast', message: "{$user->name} already has the {$this->selectedRole} role.", type: 'warning');
+            Flux::toast(text: "{$user->name} already has the {$this->selectedRole} role.", variant: 'warning');
 
             return;
         }
@@ -209,6 +210,6 @@ class RolesBoard extends Component
 
         $this->closeAssignModal();
 
-        $this->dispatch('toast', message: "Role '{$this->selectedRole}' assigned to {$user->name}.", type: 'success');
+        Flux::toast(text: "Role '{$this->selectedRole}' assigned to {$user->name}.", variant: 'success');
     }
 }

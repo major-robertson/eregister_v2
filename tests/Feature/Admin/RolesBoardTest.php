@@ -177,7 +177,7 @@ describe('assigning roles', function () {
             ->set('selectedRole', 'lien_agent')
             ->call('assignRole')
             ->assertSet('showAssignModal', false)
-            ->assertDispatched('toast');
+            ->assertDispatched('toast-show');
 
         expect($targetUser->fresh()->hasRole('lien_agent'))->toBeTrue();
     });
@@ -196,7 +196,7 @@ describe('assigning roles', function () {
             ->call('selectUser', $existingAgent->id)
             ->set('selectedRole', 'lien_agent')
             ->call('assignRole')
-            ->assertDispatched('toast', message: "{$existingAgent->name} already has the lien_agent role.", type: 'warning');
+            ->assertDispatched('toast-show', slots: ['text' => "{$existingAgent->name} already has the lien_agent role."], dataset: ['variant' => 'warning']);
     });
 
     it('requires both user and role to be selected', function () {
@@ -208,7 +208,7 @@ describe('assigning roles', function () {
         Livewire::test(RolesBoard::class)
             ->call('openAssignModal')
             ->call('assignRole')
-            ->assertDispatched('toast', type: 'error');
+            ->assertDispatched('toast-show', dataset: ['variant' => 'danger']);
     });
 });
 
@@ -244,7 +244,7 @@ describe('editing user roles', function () {
             ->set('userRoles.llc_agent', true)
             ->call('saveUserRoles')
             ->assertSet('editingUserId', null)
-            ->assertDispatched('toast');
+            ->assertDispatched('toast-show');
 
         $targetUser->refresh();
         expect($targetUser->hasRole('lien_agent'))->toBeFalse();
@@ -286,7 +286,7 @@ describe('revoking roles', function () {
 
         Livewire::test(RolesBoard::class)
             ->call('removeAllRoles', $targetUser->id)
-            ->assertDispatched('toast');
+            ->assertDispatched('toast-show');
 
         $targetUser->refresh();
         expect($targetUser->roles)->toHaveCount(0);

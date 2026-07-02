@@ -3,7 +3,7 @@
         <x-ui.page-header title="Style Guide" subtitle="Reusable UI components and design patterns">
             <x-slot:actions>
                 <button type="button" class="btn-action" x-data
-                    @click="$dispatch('toast', {type: 'success', message: 'This is a toast notification!'})">
+                    @click="$flux.toast({variant: 'success', text: 'This is a toast notification!'})">
                     <flux:icon name="bell" class="size-5" />
                     Test Toast
                 </button>
@@ -257,28 +257,28 @@
         <section class="mb-12">
             <h2 class="mb-4 text-xl font-semibold text-text-primary">Toast Notifications</h2>
             <x-ui.card>
-                <p class="mb-4 text-text-secondary">Toasts are dispatched via Alpine.js events and automatically
-                    dismissed after 5 seconds.</p>
+                <p class="mb-4 text-text-secondary">Toasts use Flux: <code>Flux::toast()</code> from PHP,
+                    <code>$flux.toast()</code> from Alpine.</p>
                 <div class="flex flex-wrap gap-3">
                     <button type="button"
                         class="rounded-lg bg-action px-4 py-2 text-sm font-medium text-white hover:bg-action-hover"
-                        x-data @click="$dispatch('toast', {type: 'success', message: 'Alabama added to selection'})">
+                        x-data @click="$flux.toast({variant: 'success', text: 'Alabama added to selection'})">
                         Success Toast
                     </button>
                     <button type="button"
                         class="rounded-lg bg-danger px-4 py-2 text-sm font-medium text-white hover:opacity-90" x-data
-                        @click="$dispatch('toast', {type: 'error', message: 'Failed to save changes'})">
+                        @click="$flux.toast({variant: 'danger', text: 'Failed to save changes'})">
                         Error Toast
                     </button>
                     <button type="button"
                         class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover"
-                        x-data @click="$dispatch('toast', {type: 'info', message: 'Processing your request...'})">
+                        x-data @click="$flux.toast('Processing your request...')">
                         Info Toast
                     </button>
                 </div>
                 <div class="mt-4 rounded-lg bg-zinc-50 p-4">
                     <code
-                        class="text-sm">$this->dispatch('toast', type: 'success', message: 'Alabama added to selection');</code>
+                        class="text-sm">Flux::toast(text: 'Alabama added to selection', variant: 'success');</code>
                 </div>
             </x-ui.card>
         </section>

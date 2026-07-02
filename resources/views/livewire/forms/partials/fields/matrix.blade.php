@@ -57,7 +57,7 @@
                 <div class="flex-1">
                     @switch($cellType)
                         @case('date')
-                            <flux:input type="date" wire:model="{{ $cellModel }}" name="{{ $cellModel }}" />
+                            <flux:date-picker wire:model="{{ $cellModel }}" name="{{ $cellModel }}" />
                             @break
 
                         @case('percent')

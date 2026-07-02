@@ -103,7 +103,7 @@
     @case('date')
         <flux:field>
             <flux:label>{{ $subLabel }}</flux:label>
-            <flux:input type="date" wire:model="repeaterForm.{{ $subKey }}" />
+            <flux:date-picker wire:model="repeaterForm.{{ $subKey }}" />
             <flux:error name="repeaterForm.{{ $subKey }}" />
         </flux:field>
         @break
@@ -134,12 +134,27 @@
         @if (! $skipSubField)
             <flux:field>
                 <flux:label>{{ $subLabel }}</flux:label>
-                <flux:select wire:model="repeaterForm.{{ $subKey }}">
-                    <flux:select.option value="">Select...</flux:select.option>
-                    @foreach ($subOptions as $optValue => $optLabel)
-                        <flux:select.option value="{{ $optValue }}">{{ $optLabel }}</flux:select.option>
-                    @endforeach
-                </flux:select>
+                {{-- Long flat lists (e.g. county selectors) get a searchable
+                     combobox; short lists keep the native select. --}}
+                @if (count($subOptions) > 15)
+                    <flux:select
+                        variant="combobox"
+                        clearable
+                        placeholder="Select..."
+                        wire:model="repeaterForm.{{ $subKey }}"
+                    >
+                        @foreach ($subOptions as $optValue => $optLabel)
+                            <flux:select.option value="{{ $optValue }}">{{ $optLabel }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                @else
+                    <flux:select wire:model="repeaterForm.{{ $subKey }}">
+                        <flux:select.option value="">Select...</flux:select.option>
+                        @foreach ($subOptions as $optValue => $optLabel)
+                            <flux:select.option value="{{ $optValue }}">{{ $optLabel }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                @endif
                 <flux:error name="repeaterForm.{{ $subKey }}" />
             </flux:field>
         @endif

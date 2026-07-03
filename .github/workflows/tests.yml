@@ -14,9 +14,26 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     environment: Testing
+    timeout-minutes: 90
     strategy:
       matrix:
         php-version: ['8.4', '8.5']
+
+    # phpunit.xml forces DB_* to 127.0.0.1:3306 / eregister_test_v2 / root with no
+    # password (force="true"), so the job must provide exactly that database.
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+          MYSQL_DATABASE: eregister_test_v2
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
       - name: Checkout
@@ -27,7 +44,7 @@ jobs:
         with:
           php-version: ${{ matrix.php-version }}
           tools: composer:v2
-          coverage: xdebug
+          coverage: none
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -54,10 +71,3 @@ jobs:
 
       - name: Run Tests
         run: ./vendor/bin/pest
-        env:
-          DB_CONNECTION: mysql
-          DB_HOST: ${{ secrets.DB_TEST_HOST }}
-          DB_PORT: ${{ secrets.DB_TEST_PORT }}
-          DB_DATABASE: ${{ secrets.DB_TEST_DATABASE }}
-          DB_USERNAME: ${{ secrets.DB_TEST_USERNAME }}
-          DB_PASSWORD: ${{ secrets.DB_TEST_PASSWORD }}

@@ -5,6 +5,7 @@ use App\Domains\Admin\Livewire\BusinessOverview;
 use App\Domains\Admin\Livewire\FormationStats;
 use App\Domains\Admin\Livewire\LienStats;
 use App\Domains\Admin\Livewire\MarketingStats;
+use App\Domains\Admin\Livewire\PdfCoordinateMapper;
 use App\Domains\Admin\Livewire\RolesBoard;
 use App\Domains\Admin\Livewire\SalesTaxStats;
 use App\Domains\Admin\Livewire\StatsBoard;
@@ -22,6 +23,7 @@ use App\Domains\Lien\Admin\Livewire\LienBoard;
 use App\Domains\Lien\Admin\Livewire\LienBoardAll;
 use App\Domains\Lien\Admin\Livewire\LienFilingDetail;
 use App\Domains\Lien\Admin\Livewire\LienRulesOverview;
+use App\Domains\ResaleCert\Admin\Http\Controllers\SampleCertificateController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -101,6 +103,17 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     Route::get('/roles', RolesBoard::class)
         ->name('admin.roles')
         ->middleware('role:admin');
+
+    // Internal tools - admin role only
+    Route::prefix('tools')
+        ->name('admin.tools.')
+        ->middleware('role:admin')
+        ->group(function () {
+            // PDF coordinate mapper (FPDI field mapping for resale certs,
+            // lien forms, and any other fill-able PDF).
+            Route::get('/pdf-mapper', PdfCoordinateMapper::class)->name('pdf-mapper');
+            Route::get('/pdf-mapper/sample/{stateCode}', SampleCertificateController::class)->name('pdf-mapper.sample');
+        });
 
     // Stats dashboard - admin role only
     Route::get('/stats', StatsBoard::class)

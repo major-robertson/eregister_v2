@@ -72,6 +72,13 @@
                     {{ __('Roles') }}
                 </flux:sidebar.item>
             </flux:sidebar.group>
+
+            <flux:sidebar.group :heading="__('Tools')">
+                <flux:sidebar.item icon="map-pin" :href="route('admin.tools.pdf-mapper')"
+                    :current="request()->routeIs('admin.tools.pdf-mapper')" wire:navigate>
+                    {{ __('PDF Mapper') }}
+                </flux:sidebar.item>
+            </flux:sidebar.group>
             @endrole
         </flux:sidebar.nav>
 

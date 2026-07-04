@@ -54,29 +54,42 @@
                 </flux:sidebar.item>
 
                 @foreach ($workspaces as $workspace)
-                    <div class="sidebar-group-heading mt-2 flex items-center gap-2">
-                        <span class="size-1.5 shrink-0 rounded-full {{ $sectionDots[$workspace->badgeColor] ?? 'bg-zinc-500' }}"></span>
-                        {{ __($workspace->name) }}
-                    </div>
+                    @php
+                        $isCurrentWorkspace = $currentWorkspace?->key === $workspace->key;
+                        $dot = $sectionDots[$workspace->badgeColor] ?? 'bg-zinc-500';
+                    @endphp
 
-                    @foreach ($workspace->nav as $item)
-                        @php $current = request()->routeIs($item['current_pattern']); @endphp
-                        <flux:sidebar.item
-                            :href="route($item['route'])"
-                            :current="$current"
-                            :accent="false"
-                            class="data-current:[&_[data-content]]:font-semibold"
-                            wire:navigate
-                        >
-                            <x-slot:icon>
-                                <flux:icon
-                                    :icon="$item['icon']"
-                                    class="size-4 shrink-0 {{ $current ? ($sectionIcons[$workspace->badgeColor] ?? '') : '' }} [[data-flux-sidebar-item]:hover_&]:text-current!"
-                                />
-                            </x-slot:icon>
-                            {{ __($item['label']) }}
-                        </flux:sidebar.item>
-                    @endforeach
+                    {{-- Every workspace is a collapsible group (even
+                         single-page ones, for consistency), open only for
+                         the workspace you're currently in. --}}
+                    <flux:sidebar.group
+                        expandable
+                        :expanded="$isCurrentWorkspace"
+                        :heading="__($workspace->name)"
+                    >
+                        <x-slot:icon>
+                            <span class="mx-1 block size-2 shrink-0 rounded-full {{ $dot }}"></span>
+                        </x-slot:icon>
+
+                        @foreach ($workspace->nav as $item)
+                            @php $current = request()->routeIs($item['current_pattern']); @endphp
+                            <flux:sidebar.item
+                                :href="route($item['route'])"
+                                :current="$current"
+                                :accent="false"
+                                class="data-current:[&_[data-content]]:font-semibold"
+                                wire:navigate
+                            >
+                                <x-slot:icon>
+                                    <flux:icon
+                                        :icon="$item['icon']"
+                                        class="size-4 shrink-0 {{ $current ? ($sectionIcons[$workspace->badgeColor] ?? '') : '' }} [[data-flux-sidebar-item]:hover_&]:text-current!"
+                                    />
+                                </x-slot:icon>
+                                {{ __($item['label']) }}
+                            </flux:sidebar.item>
+                        @endforeach
+                    </flux:sidebar.group>
                 @endforeach
             </flux:sidebar.nav>
 

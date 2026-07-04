@@ -1,6 +1,7 @@
+@if (($trackConversion ?? false) && $payment)
 @push('scripts')
 <!-- Google Ads Conversion Tracking -->
-<script>
+<script data-navigate-once>
     gtag('event', 'conversion', {
         send_to: "{{ $payment->billing_type === 'subscription'
             ? 'AW-984288380/_vCOCIitwbgZEPyYrNUD'
@@ -10,7 +11,20 @@
         transaction_id: "{{ $payment->id }}"
     });
 </script>
+<!-- Reddit Pixel Conversion -->
+<script data-navigate-once>
+    rdt('track', 'Purchase', {
+        value: {{ number_format($payment->amount_cents / 100, 2, '.', '') }},
+        currency: "USD",
+        conversionId: "purchase-{{ $payment->id }}"
+    });
+</script>
+<script data-navigate-once>
+    // Drop ?payment_intent so a refresh doesn't re-arm the conversion guard.
+    history.replaceState(history.state, '', window.location.pathname);
+</script>
 @endpush
+@endif
 
 <x-layouts.portal title="Payment Successful">
     <div class="max-w-lg mx-auto space-y-6">

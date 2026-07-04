@@ -1,3 +1,20 @@
+@if (($trackConversion ?? false) && $payment)
+    @push('scripts')
+    <!-- Reddit Pixel Conversion (annual subscription) -->
+    <script data-navigate-once>
+        rdt('track', 'Purchase', {
+            value: {{ number_format($payment->amount_cents / 100, 2, '.', '') }},
+            currency: "USD",
+            conversionId: "purchase-{{ $payment->id }}"
+        });
+    </script>
+    <script data-navigate-once>
+        // Drop ?payment_intent so a refresh doesn't re-arm the conversion guard.
+        history.replaceState(history.state, '', window.location.pathname);
+    </script>
+    @endpush
+@endif
+
 <x-layouts.portal title="Subscription Active">
     <div class="mx-auto max-w-lg space-y-6 px-6 py-10">
         <x-ui.card>

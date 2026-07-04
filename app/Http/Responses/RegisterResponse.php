@@ -12,8 +12,10 @@ class RegisterResponse implements RegisterResponseContract
      */
     public function toResponse($request): Response
     {
-        // Flash session to trigger conversion tracking on dashboard
-        session()->flash('just_registered', true);
+        // Signup-conversion marker consumed by the onboarding wizard. A
+        // flash would age out on the /portal -> select-business redirect
+        // before the wizard ever renders, so persist until pulled.
+        session()->put('just_registered', true);
 
         return $request->wantsJson()
             ? response()->json(['two_factor' => false])

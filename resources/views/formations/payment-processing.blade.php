@@ -3,7 +3,9 @@
         <x-ui.card>
             <div
                 class="space-y-4 text-center"
-                x-data="formationPaymentPoller(@js(route('formations.api.payment-status', $application)), @js(route('formations.payment-confirmation', $application)), @js(route('formations.checkout', $application)))"
+                {{-- Keep payment_intent on the confirmation URL so the success
+                     page still fires its one-time ad conversions after polling. --}}
+                x-data="formationPaymentPoller(@js(route('formations.api.payment-status', $application)), @js(route('formations.payment-confirmation', array_filter(['application' => $application, 'payment_intent' => request('payment_intent')]))), @js(route('formations.checkout', $application)))"
                 x-init="startPolling()"
             >
                 <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">

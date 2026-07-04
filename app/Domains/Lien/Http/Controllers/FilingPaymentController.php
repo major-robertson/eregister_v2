@@ -27,9 +27,14 @@ class FilingPaymentController
             ? $filing->payments()->where('stripe_payment_intent_id', $paymentIntentId)->first()
             : $filing->payments()->latest()->first();
 
+        // Only fire ad-platform purchase conversions on the post-payment
+        // landing (Stripe appends ?payment_intent=), not when the user later
+        // revisits the receipt - otherwise the conversion double-counts.
+        $trackConversion = $request->filled('payment_intent');
+
         // Webhook already processed
         if ($payment?->status === PaymentStatus::Succeeded) {
-            return view('lien.payment-success', compact('filing', 'payment'));
+            return view('lien.payment-success', compact('filing', 'payment', 'trackConversion'));
         }
 
         // Server-side fallback: check Stripe directly
@@ -41,7 +46,7 @@ class FilingPaymentController
                 // Update DB idempotently (webhook may still arrive)
                 $this->paymentService->markSucceeded($payment, $pi);
 
-                return view('lien.payment-success', compact('filing', 'payment'));
+                return view('lien.payment-success', compact('filing', 'payment', 'trackConversion'));
             }
         }
 

@@ -1,9 +1,15 @@
-@if (session('just_registered'))
+@if ($justRegistered)
 @push('scripts')
 <!-- Google Ads Conversion Tracking - Create Account -->
-<script>
+<script data-navigate-once>
     gtag('event', 'conversion', {
         send_to: "AW-984288380/XDg5CMWk_7oZEPyYrNUD"
+    });
+</script>
+<!-- Reddit Pixel Conversion - Create Account -->
+<script data-navigate-once>
+    rdt('track', 'SignUp', {
+        conversionId: @js('signup-' . auth()->id())
     });
 </script>
 @endpush

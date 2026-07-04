@@ -1,13 +1,25 @@
 @if (($trackConversion ?? false) && $payment)
     @push('scripts')
     <!-- Google Ads Conversion Tracking (one-time purchase) -->
-    <script>
+    <script data-navigate-once>
         gtag('event', 'conversion', {
             send_to: "AW-984288380/7C62CMuqrbYBEPyYrNUD",
             value: {{ number_format($payment->amount_cents / 100, 2, '.', '') }},
             currency: "USD",
             transaction_id: "{{ $payment->id }}"
         });
+    </script>
+    <!-- Reddit Pixel Conversion (one-time purchase) -->
+    <script data-navigate-once>
+        rdt('track', 'Purchase', {
+            value: {{ number_format($payment->amount_cents / 100, 2, '.', '') }},
+            currency: "USD",
+            conversionId: "purchase-{{ $payment->id }}"
+        });
+    </script>
+    <script data-navigate-once>
+        // Drop ?payment_intent so a refresh doesn't re-arm the conversion guard.
+        history.replaceState(history.state, '', window.location.pathname);
     </script>
     @endpush
 @endif

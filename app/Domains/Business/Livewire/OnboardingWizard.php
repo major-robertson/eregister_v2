@@ -16,6 +16,8 @@ class OnboardingWizard extends Component
 
     public Business $business;
 
+    public bool $justRegistered = false;
+
     // Address (JSON structure for Google Maps compatibility)
     public array $businessAddress = [
         'line1' => '',
@@ -45,6 +47,10 @@ class OnboardingWizard extends Component
         Gate::authorize('update', $business);
 
         $this->business = $business;
+
+        // One-shot: pull (not read) so refreshes and later visits don't
+        // re-fire the signup conversion scripts.
+        $this->justRegistered = (bool) session()->pull('just_registered');
 
         // Ensure legal_name is set from the business name
         if (! $business->legal_name && $business->name) {

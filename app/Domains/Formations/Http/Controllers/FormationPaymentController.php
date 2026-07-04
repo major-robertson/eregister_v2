@@ -32,9 +32,14 @@ class FormationPaymentController
             ? $application->payments()->where('stripe_payment_intent_id', $paymentIntentId)->first()
             : $application->payments()->latest()->first();
 
+        // Only fire ad-platform purchase conversions on the post-payment
+        // landing (Stripe appends ?payment_intent=), not when the user later
+        // revisits the receipt - otherwise the conversion double-counts.
+        $trackConversion = $request->filled('payment_intent');
+
         // Webhook (or stub) already processed.
         if ($payment?->status === PaymentStatus::Succeeded) {
-            return view('formations.payment-success', compact('application', 'payment'));
+            return view('formations.payment-success', compact('application', 'payment', 'trackConversion'));
         }
 
         // Server-side fallback: ask Stripe directly about the PaymentIntent.
@@ -45,7 +50,7 @@ class FormationPaymentController
             if ($pi->status === 'succeeded') {
                 $this->paymentService->markSucceeded($payment, $pi);
 
-                return view('formations.payment-success', compact('application', 'payment'));
+                return view('formations.payment-success', compact('application', 'payment', 'trackConversion'));
             }
         }
 
@@ -54,7 +59,7 @@ class FormationPaymentController
         if ($application->isPaid()) {
             $payment = $application->payments()->latest()->first();
 
-            return view('formations.payment-success', compact('application', 'payment'));
+            return view('formations.payment-success', compact('application', 'payment', 'trackConversion'));
         }
 
         return view('formations.payment-processing', compact('application'));

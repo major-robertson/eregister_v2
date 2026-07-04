@@ -34,10 +34,15 @@ class SubscriptionPaymentController
                 ->latest()
                 ->first();
 
+        // Only fire ad-platform purchase conversions on the post-payment
+        // landing (Stripe appends ?payment_intent=), not when the user later
+        // revisits the page - otherwise the conversion double-counts.
+        $trackConversion = $request->filled('payment_intent');
+
         $subscribed = $business->subscribed(config('resale_cert.subscription_type'));
 
         if ($subscribed || $payment?->status === PaymentStatus::Succeeded) {
-            return view('resale-cert.payment-success', compact('business', 'payment'));
+            return view('resale-cert.payment-success', compact('business', 'payment', 'trackConversion'));
         }
 
         // Server-side fallback: ask Stripe directly in case the webhook is behind.
@@ -48,7 +53,7 @@ class SubscriptionPaymentController
             if ($pi->status === 'succeeded') {
                 $this->paymentService->markSucceeded($payment, $pi);
 
-                return view('resale-cert.payment-success', compact('business', 'payment'));
+                return view('resale-cert.payment-success', compact('business', 'payment', 'trackConversion'));
             }
         }
 

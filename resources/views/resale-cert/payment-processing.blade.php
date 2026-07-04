@@ -3,7 +3,9 @@
         <x-ui.card>
             <div
                 class="space-y-4 text-center"
-                x-data="resaleCertPaymentPoller(@js(route('resale-cert.api.payment-status')), @js(route('resale-cert.payment-confirmation')), @js(route('resale-cert.checkout')))"
+                {{-- Keep payment_intent on the confirmation URL so the success
+                     page still fires its one-time ad conversions after polling. --}}
+                x-data="resaleCertPaymentPoller(@js(route('resale-cert.api.payment-status')), @js(route('resale-cert.payment-confirmation', array_filter(['payment_intent' => request('payment_intent')]))), @js(route('resale-cert.checkout')))"
                 x-init="startPolling()"
             >
                 <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">

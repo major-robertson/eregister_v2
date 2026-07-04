@@ -13,7 +13,9 @@
         <x-ui.card>
             <div 
                 class="text-center space-y-4"
-                x-data="paymentPoller(@js(route('lien.api.payment-status', $filing)), @js(route('lien.filings.payment-confirmation', $filing)))"
+                {{-- Keep payment_intent on the confirmation URL so the success
+                     page still fires its one-time ad conversions after polling. --}}
+                x-data="paymentPoller(@js(route('lien.api.payment-status', $filing)), @js(route('lien.filings.payment-confirmation', array_filter(['filing' => $filing, 'payment_intent' => request('payment_intent')]))))"
                 x-init="startPolling()"
             >
                 <div class="mx-auto w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">

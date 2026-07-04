@@ -29,8 +29,9 @@ class CompleteSignature
 
     /**
      * @param  array<string, mixed>  $presentedText  Exact UI strings + document list the signer saw.
+     * @param  \App\Models\UserSignature|null  $signature  The visual signature (drawn or typed-in-font) applied to the documents.
      */
-    public function execute(SignatureRequest $request, User $signer, string $adoptedName, array $presentedText): SignatureRequest
+    public function execute(SignatureRequest $request, User $signer, string $adoptedName, array $presentedText, ?\App\Models\UserSignature $signature = null): SignatureRequest
     {
         if ($request->isCompleted()) {
             return $request;
@@ -40,11 +41,17 @@ class CompleteSignature
         $ip = request()?->ip();
         $ua = request()?->userAgent();
 
+        // Inline the signature PNG once so every signed PDF embeds identical
+        // bytes and the audit metadata can hash them.
+        $signatureImage = $signature?->imageDataUri();
+        $signatureMethod = $signature?->esignMethod() ?? 'typed_name';
+
         // Record intent + adoption (short transaction).
-        DB::transaction(function () use ($request, $signer, $adoptedName, $presentedText, $ip, $ua): void {
+        DB::transaction(function () use ($request, $signer, $adoptedName, $presentedText, $ip, $ua, $signature, $signatureMethod): void {
             $request->update([
                 'adopted_name' => $adoptedName,
-                'signature_method' => 'typed_name',
+                'signature_method' => $signatureMethod,
+                'user_signature_id' => $signature?->id,
                 'email_verified_at_sign' => $signer->email_verified_at,
                 'presented_text_json' => $presentedText,
                 'status' => SignatureRequestStatus::Signing,
@@ -55,7 +62,12 @@ class CompleteSignature
 
             $this->events->execute($request, SignatureEventType::SignatureCompleted,
                 actorType: 'signer', actorUserId: $signer->id, ip: $ip, userAgent: $ua,
-                metadata: ['adopted_name' => $adoptedName]);
+                metadata: array_filter([
+                    'adopted_name' => $adoptedName,
+                    'signature_method' => $signatureMethod,
+                    'user_signature_id' => $signature?->id,
+                    'signature_image_sha256' => $signature ? \App\Domains\Esign\Actions\AdoptSignature::imageSha256($signature) : null,
+                ], fn ($value) => $value !== null));
         });
 
         // Render + store each signed letter (idempotent; outside a wrapping txn).
@@ -70,6 +82,8 @@ class CompleteSignature
                 signatureId: $document->document_identifier,
                 request: $request,
                 document: $document,
+                signatureImageDataUri: $signatureImage,
+                signatureMethod: $signatureMethod,
             );
 
             $bytes = $signable->renderSigned(SignableDocument::fromModel($document), $context);

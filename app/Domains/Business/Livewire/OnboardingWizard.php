@@ -144,6 +144,10 @@ class OnboardingWizard extends Component
 
         if ($isFirstBusiness && $user->signedUpFromLiens()) {
             $redirectRoute = route('lien.onboarding');
+        } elseif ($isFirstBusiness && $user->signedUpFromResaleCerts()) {
+            // Lands on the resale dashboard, which shows the pricing card
+            // one click from checkout for unsubscribed businesses.
+            $redirectRoute = route('resale-cert.dashboard');
         } elseif ($isFirstBusiness && $landingPath === '/sales-tax-registration') {
             $redirectRoute = route('sales-tax.registrations.start');
         } elseif ($isFirstBusiness && $landingPath === '/llc') {

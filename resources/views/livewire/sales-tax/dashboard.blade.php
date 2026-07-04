@@ -95,4 +95,53 @@
             @endif
         @endif
     </section>
+
+    {{-- Free blank resale certificates + Resale Certificate Generator upsell --}}
+    @if ($this->blankFormStates !== [])
+        <section class="mb-12">
+            <h2 class="mb-6 text-lg font-semibold text-text-primary">Resale Certificates</h2>
+
+            <div class="rounded-xl border border-border bg-white px-6 py-5 shadow-sm">
+                <div class="flex items-start gap-4">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
+                        <flux:icon name="document-check" class="size-5 text-blue-600" />
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="font-medium text-text-primary">Blank resale certificate forms — free with your registration</div>
+                        <p class="mt-1 text-sm text-text-secondary">
+                            Download the official blank form for any state you registered in, print it, and fill it out by hand.
+                        </p>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            @foreach ($this->blankFormStates as $state)
+                                <flux:button
+                                    href="{{ route('sales-tax.blank-resale-certificate', $state) }}"
+                                    variant="ghost"
+                                    size="sm"
+                                    icon="arrow-down-tray"
+                                >
+                                    {{ $state }}
+                                </flux:button>
+                            @endforeach
+                        </div>
+
+                        @unless ($this->hasResaleCertSubscription)
+                            <div class="mt-4 rounded-lg bg-blue-500/5 p-4">
+                                <p class="text-sm text-text-primary">
+                                    <span class="font-medium">Skip the paperwork:</span>
+                                    the Resale Certificate Generator fills your certificates automatically —
+                                    every vendor, every state, e-signed and tracked for expiration. Unlimited
+                                    certificates for $297/year.
+                                </p>
+                                <div class="mt-3">
+                                    <x-ui.action-button href="{{ route('resale-cert.dashboard') }}" wire:navigate>
+                                        Generate Certificates Automatically
+                                    </x-ui.action-button>
+                                </div>
+                            </div>
+                        @endunless
+                    </div>
+                </div>
+            </div>
+        </section>
+    @endif
 </div>

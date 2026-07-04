@@ -35,6 +35,9 @@ class DemandLetterSignedGenerator
     {
         return [
             'name' => $context->adoptedName,
+            // Drawn/typed-in-font signature PNG as a data URI (DOMPDF embeds
+            // it inline); null falls back to the italic-serif typed name.
+            'image' => $context->signatureImageDataUri,
             'signed_at_eastern' => $context->signedAtUtc->eastern()->format('M j, Y g:i A').' ET',
             'signed_at_utc' => $context->signedAtUtc->utc()->format('M j, Y g:i A').' UTC',
             'signature_id' => $context->signatureId,

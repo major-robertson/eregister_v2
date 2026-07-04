@@ -33,6 +33,7 @@ class SignatureRequest extends Model
         'intent_statement',
         'presented_text_json',
         'signature_method',
+        'user_signature_id',
         'adopted_name',
         'email_verified_at_sign',
         'consent_id',

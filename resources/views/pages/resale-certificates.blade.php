@@ -18,7 +18,7 @@
                 Buy wholesale without paying sales tax. A resale certificate lets you make tax-exempt purchases for items you'll resell—accepted by vendors in all 50 states.
             </p>
             <div class="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                <a href="{{ route('register') }}" class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-8 py-4 text-base font-semibold text-white transition hover:bg-emerald-700">
+                <a href="{{ auth()->check() ? route('resale-cert.dashboard') : route('register') }}" class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-8 py-4 text-base font-semibold text-white transition hover:bg-emerald-700">
                     Get Started
                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -170,7 +170,7 @@
                 <h2 class="text-3xl font-bold tracking-tight text-white sm:text-4xl">Ready to Get Started?</h2>
                 <p class="mt-6 text-lg text-zinc-300">Get a valid resale certificate and start buying wholesale tax-free. Accepted by vendors across all 50 states.</p>
                 <div class="mt-10">
-                    <a href="{{ route('register') }}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-emerald-500 hover:shadow-xl">
+                    <a href="{{ auth()->check() ? route('resale-cert.dashboard') : route('register') }}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-8 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-emerald-500 hover:shadow-xl">
                         Get Started Now
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />

@@ -74,6 +74,34 @@ class Dashboard extends Component
         return $this->registrations->count() > 10;
     }
 
+    /**
+     * States from PAID registrations that have a downloadable blank resale
+     * certificate form (a free perk; the auto-filled version is the Resale
+     * Certificate Generator product).
+     *
+     * @return list<string>
+     */
+    #[Computed]
+    public function blankFormStates(): array
+    {
+        return SalesTaxRegistration::query()
+            ->where('business_id', $this->business->id)
+            ->whereNotNull('paid_at')
+            ->pluck('selected_states')
+            ->flatten()
+            ->unique()
+            ->filter(fn ($state) => \App\Domains\ResaleCert\Http\Controllers\BlankFormDownloadController::templateFor($state) !== null)
+            ->sort()
+            ->values()
+            ->all();
+    }
+
+    #[Computed]
+    public function hasResaleCertSubscription(): bool
+    {
+        return $this->business->subscribed(config('resale_cert.subscription_type'));
+    }
+
     public function render(): View
     {
         return view('livewire.sales-tax.dashboard')

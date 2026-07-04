@@ -35,6 +35,8 @@ class AppServiceProvider extends ServiceProvider
         // Register domain console commands
         $this->commands([
             \App\Domains\Lien\Console\SendDeadlineReminders::class,
+            \App\Domains\ResaleCert\Console\CheckExpiringCertificates::class,
+            \App\Domains\ResaleCert\Console\VerifyResaleSignatureChain::class,
         ]);
 
         // Bind ConditionEvaluator as transient (non-singleton) to prevent state leaking
@@ -139,6 +141,22 @@ class AppServiceProvider extends ServiceProvider
 
         // Formations domain components
         Livewire::component('formations.dashboard', \App\Domains\Formations\Livewire\Dashboard::class);
+
+        // Admin tools
+        Livewire::component('admin.pdf-coordinate-mapper', \App\Domains\Admin\Livewire\PdfCoordinateMapper::class);
+
+        // Resale certificate domain components
+        Livewire::component('resale-cert.dashboard', \App\Domains\ResaleCert\Livewire\Dashboard::class);
+        Livewire::component('resale-cert.subscription-checkout', \App\Domains\ResaleCert\Livewire\SubscriptionCheckout::class);
+        Livewire::component('resale-cert.resale-onboarding', \App\Domains\ResaleCert\Livewire\ResaleOnboarding::class);
+        Livewire::component('resale-cert.profile-settings', \App\Domains\ResaleCert\Livewire\ProfileSettings::class);
+        Livewire::component('resale-cert.vendor-list', \App\Domains\ResaleCert\Livewire\VendorList::class);
+        Livewire::component('resale-cert.vendor-form', \App\Domains\ResaleCert\Livewire\VendorForm::class);
+        Livewire::component('resale-cert.vendor-show', \App\Domains\ResaleCert\Livewire\VendorShow::class);
+        Livewire::component('resale-cert.certificate-list', \App\Domains\ResaleCert\Livewire\CertificateList::class);
+        Livewire::component('resale-cert.certificate-wizard', \App\Domains\ResaleCert\Livewire\CertificateWizard::class);
+        Livewire::component('resale-cert.certificate-show', \App\Domains\ResaleCert\Livewire\CertificateShow::class);
+        Livewire::component('resale-cert.signature-pad', \App\Domains\ResaleCert\Livewire\SignaturePad::class);
 
         // Marketing domain components
         Livewire::component('marketing.contractor-landing', \App\Domains\Marketing\Livewire\ContractorLanding::class);

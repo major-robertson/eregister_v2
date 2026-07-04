@@ -2,8 +2,8 @@
 
 namespace App\Domains\Lien\Models;
 
+use App\Domains\Business\Concerns\BelongsToBusiness;
 use App\Domains\Esign\Models\SignatureRequest;
-use App\Domains\Lien\Concerns\BelongsToBusiness;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Enums\RecordingMethod;
 use App\Domains\Lien\Enums\ServiceLevel;

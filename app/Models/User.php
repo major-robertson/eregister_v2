@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -119,6 +121,20 @@ class User extends Authenticatable
         return $this->businesses()->where('businesses.id', $business->id)->exists();
     }
 
+    public function adoptedSignatures(): HasMany
+    {
+        return $this->hasMany(UserSignature::class);
+    }
+
+    /**
+     * The active site-wide e-signature (drawn or typed), applied to resale
+     * certificates and esign-signed documents alike.
+     */
+    public function currentSignature(): HasOne
+    {
+        return $this->hasOne(UserSignature::class)->where('is_current', true);
+    }
+
     /**
      * Whether the user signed up from any /liens marketing page
      * (the main /liens page or any sub-page like /liens/payment-demand-letter).
@@ -132,5 +148,19 @@ class User extends Authenticatable
         }
 
         return $path === '/liens' || str_starts_with($path, '/liens/');
+    }
+
+    /**
+     * Whether the user signed up from the resale certificates marketing page.
+     */
+    public function signedUpFromResaleCerts(): bool
+    {
+        $path = $this->signup_landing_path;
+
+        if (! $path) {
+            return false;
+        }
+
+        return $path === '/resale-certificates' || str_starts_with($path, '/resale-certificates/');
     }
 }

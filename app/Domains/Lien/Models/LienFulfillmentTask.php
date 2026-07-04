@@ -2,7 +2,7 @@
 
 namespace App\Domains\Lien\Models;
 
-use App\Domains\Lien\Concerns\BelongsToBusiness;
+use App\Domains\Business\Concerns\BelongsToBusiness;
 use App\Domains\Lien\Enums\FulfillmentStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

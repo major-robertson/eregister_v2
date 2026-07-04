@@ -17,3 +17,8 @@ Schedule::job(new ProcessCampaignSteps)->hourly();
 
 // Email sequences (abandon checkout, nurture, etc.) - run every 15 minutes
 Schedule::command('email:process-sequences')->everyFifteenMinutes()->withoutOverlapping();
+
+// Expiring resale certificates - daily digest at 9 AM Eastern (13/14 UTC)
+Schedule::command('resale-cert:check-expiring --send-emails')
+    ->dailyAt('13:00')
+    ->withoutOverlapping();

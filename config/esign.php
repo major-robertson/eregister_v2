@@ -16,7 +16,9 @@ return [
     |
     */
     'consent' => [
-        'version' => '2026-06-v1',
+        // Bumped 2026-07: support@ -> contact@ in the disclosures. Any wording
+        // change requires a new version so prior consents stay attributable.
+        'version' => '2026-07-v1',
 
         'heading' => 'Consent to Use Electronic Signatures and Records',
 
@@ -28,10 +30,10 @@ return [
 
         // Consumer disclosures required by ESIGN for electronic records.
         'disclosures' => [
-            'withdrawal' => 'You may withdraw your consent to use electronic records and signatures at any time before you sign by emailing support@eregister.com. Withdrawing consent does not affect the legal validity of records or signatures provided electronically before the withdrawal.',
-            'paper_copy' => 'You may request a paper copy of any document at no charge by emailing support@eregister.com.',
+            'withdrawal' => 'You may withdraw your consent to use electronic records and signatures at any time before you sign by emailing contact@eregister.com. Withdrawing consent does not affect the legal validity of records or signatures provided electronically before the withdrawal.',
+            'paper_copy' => 'You may request a paper copy of any document at no charge by emailing contact@eregister.com.',
             'fees' => 'There is no fee to receive these records electronically, to request a paper copy, or to withdraw your consent.',
-            'contact_update' => 'To update the email address or other contact information we use to send you electronic records, email support@eregister.com.',
+            'contact_update' => 'To update the email address or other contact information we use to send you electronic records, email contact@eregister.com.',
             'hardware_software' => 'To access and retain these records you need: a device with internet access, a current web browser, a valid email account, and the ability to open and save PDF files (for example, a PDF reader). Because you can read this consent and the document on screen now, you can access the electronic form being used.',
         ],
     ],
@@ -77,6 +79,21 @@ return [
             'requires_recipient_acknowledgment' => false,
             'allowed_signer_role' => 'filing_creator',
             'consent_scope' => 'demand_letters',
+        ],
+
+        // Resale certificates use a reusable drawn signature (adopted once,
+        // stamped on every generated certificate) rather than the one-shot
+        // SignatureRequest ceremony, but consent is captured through the same
+        // EsignConsent table with this scope.
+        'resale_certificate' => [
+            'title' => 'Resale Certificates',
+            'document_id_prefix' => 'RC',
+            'supports_esign' => true,
+            'requires_notary' => false,
+            'signature_method' => 'drawn_signature',
+            'requires_recipient_acknowledgment' => false,
+            'allowed_signer_role' => 'business_member',
+            'consent_scope' => 'sales_tax_resale_certs',
         ],
 
     ],

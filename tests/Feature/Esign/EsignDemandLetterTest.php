@@ -30,6 +30,8 @@ use Livewire\Livewire;
 
 beforeEach(function () {
     Storage::fake('s3');
+    // Adopted signature PNGs (applied at signing) live on the resale-cert disk.
+    Storage::fake(config('resale_cert.disk'));
 });
 
 function esignParty(LienProject $project, PartyRole $role, string $name, ?string $company = null, array $extra = []): LienParty
@@ -249,15 +251,19 @@ describe('signer flow', function () {
         // Consent.
         Livewire::test(SignConsent::class, ['request' => $request])->set('acknowledged', true)->call('accept');
 
-        // Review + sign all.
+        // Review + sign all (typed signature captured in a script font,
+        // which is also adopted as the signer's saved site-wide signature).
         Livewire::test(SignReview::class, ['request' => $request->fresh()])
             ->set('adoptedName', 'Carl Claimant')
-            ->call('signAll')
+            ->call('signAll', tinySignaturePng(), null, 'typed', 'dancing-script')
             ->assertRedirect(route('esign.sign.done', $request->public_id));
 
         $request->refresh()->load('documents');
         expect($request->status)->toBe(SignatureRequestStatus::Completed);
         expect($request->adopted_name)->toBe('Carl Claimant');
+        expect($request->user_signature_id)->not->toBeNull();
+        expect($request->signature_method)->toBe('typed_name');
+        expect($signer->fresh()->currentSignature()->exists())->toBeTrue();
         expect($request->email_verified_at_sign)->not->toBeNull();
         expect($request->presented_text_json['document_list_snapshot'])->toHaveCount(2);
 
@@ -282,7 +288,7 @@ describe('signer flow', function () {
         $this->actingAs($signer);
 
         Livewire::test(SignConsent::class, ['request' => $request])->set('acknowledged', true)->call('accept');
-        Livewire::test(SignReview::class, ['request' => $request->fresh()])->set('adoptedName', 'Carl Claimant')->call('signAll');
+        Livewire::test(SignReview::class, ['request' => $request->fresh()])->set('adoptedName', 'Carl Claimant')->call('signAll', tinySignaturePng(), null, 'typed', 'dancing-script');
 
         Storage::disk('s3')->buildTemporaryUrlsUsing(fn ($path) => 'https://s3.test/'.$path);
         $document = $request->documents()->first();
@@ -362,7 +368,7 @@ describe('admin panel', function () {
         $this->actingAs($signer);
 
         Livewire::test(SignConsent::class, ['request' => $request])->set('acknowledged', true)->call('accept');
-        Livewire::test(SignReview::class, ['request' => $request->fresh()])->set('adoptedName', 'Carl Claimant')->call('signAll');
+        Livewire::test(SignReview::class, ['request' => $request->fresh()])->set('adoptedName', 'Carl Claimant')->call('signAll', tinySignaturePng(), null, 'typed', 'dancing-script');
 
         Storage::disk('s3')->buildTemporaryUrlsUsing(fn ($path) => 'https://s3.test/'.$path);
         $document = $request->documents()->first();

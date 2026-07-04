@@ -1,11 +1,17 @@
 <?php
 
-namespace App\Domains\Lien\Concerns;
+namespace App\Domains\Business\Concerns;
 
 use App\Domains\Business\Models\Business;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Tenant scoping for business-owned domain models: a global scope pins
+ * queries to the current business and business_id auto-fills on create.
+ * Shared by the Lien and ResaleCert domains (and any future business-scoped
+ * domain) — promoted from the identical per-domain copies.
+ */
 trait BelongsToBusiness
 {
     protected static function bootBelongsToBusiness(): void

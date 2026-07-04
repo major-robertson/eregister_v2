@@ -45,3 +45,25 @@ function something()
 {
     // ..
 }
+
+/**
+ * A valid 1x1 transparent PNG data URI for signature-capture tests.
+ */
+function tinySignaturePng(): string
+{
+    return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+}
+
+/**
+ * Give a business an active resale-cert subscription (stub row, no Stripe).
+ */
+function subscribeToResaleCerts(App\Domains\Business\Models\Business $business): void
+{
+    $business->subscriptions()->create([
+        'type' => config('resale_cert.subscription_type'),
+        'stripe_id' => 'stub_'.uniqid(),
+        'stripe_status' => 'active',
+        'stripe_price' => 'stub_price',
+        'quantity' => 1,
+    ]);
+}

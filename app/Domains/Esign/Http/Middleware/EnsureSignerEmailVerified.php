@@ -19,6 +19,10 @@ class EnsureSignerEmailVerified
         $user = $request->user();
 
         if ($user !== null && $user->email_verified_at === null) {
+            // Remember where they were headed so the post-verification
+            // response (VerifyEmailResponse) can send them straight back.
+            $request->session()->put('url.intended', $request->fullUrl());
+
             // Build the response explicitly: on a Livewire full-page route the
             // redirect() helper resolves to Livewire's Redirector, which is not
             // a Symfony Response.

@@ -68,6 +68,7 @@ class PaymentReceipt extends Mailable implements ShouldQueue
                 'demand_letter' => 'Payment Demand Letter',
                 'sales_tax_permit' => 'Sales & Use Tax Permit',
                 'llc' => 'LLC Formation',
+                'resale_cert_generator' => 'Resale Certificate Generator (Annual Subscription)',
                 default => ucwords(str_replace('_', ' ', $price->product_key)),
             };
 

@@ -4,6 +4,11 @@ namespace App\Domains\Business\Models;
 
 use App\Domains\Forms\Models\FormApplication;
 use App\Domains\Lien\Models\LienProject;
+use App\Domains\ResaleCert\Models\ResaleCertificate;
+use App\Domains\ResaleCert\Models\ResaleProfile;
+use App\Domains\ResaleCert\Models\ResaleTaxRegistration;
+use App\Domains\ResaleCert\Models\ResaleVendor;
+use App\Models\Payment;
 use App\Models\User;
 use Database\Factories\Business\BusinessFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,6 +16,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Laravel\Cashier\Billable;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -100,6 +106,33 @@ class Business extends Model implements HasMedia
     public function lienProjects(): HasMany
     {
         return $this->hasMany(LienProject::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    // The resale relations drop the tenant global scope (this Business IS the
+    // tenant key here) but keep SoftDeletes and friends intact.
+    public function resaleProfile(): HasOne
+    {
+        return $this->hasOne(ResaleProfile::class)->withoutGlobalScope('business');
+    }
+
+    public function resaleTaxRegistrations(): HasMany
+    {
+        return $this->hasMany(ResaleTaxRegistration::class)->withoutGlobalScope('business');
+    }
+
+    public function resaleVendors(): HasMany
+    {
+        return $this->hasMany(ResaleVendor::class)->withoutGlobalScope('business');
+    }
+
+    public function resaleCertificates(): HasMany
+    {
+        return $this->hasMany(ResaleCertificate::class)->withoutGlobalScope('business');
     }
 
     public function hasAccessTo(string $code): bool

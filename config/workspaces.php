@@ -4,6 +4,7 @@ use App\Domains\Forms\Models\LlcFormation;
 use App\Domains\Forms\Models\SalesTaxRegistration;
 use App\Support\Workspaces\FormationsWorkspaceData;
 use App\Support\Workspaces\LienWorkspaceData;
+use App\Support\Workspaces\ResaleCertWorkspaceData;
 use App\Support\Workspaces\SalesTaxWorkspaceData;
 
 /*
@@ -97,6 +98,48 @@ return [
                 'icon' => 'home',
                 'route' => 'sales-tax.dashboard',
                 'current_pattern' => 'sales-tax.dashboard',
+            ],
+        ],
+    ],
+
+    'resale_cert' => [
+        'name' => 'Resale Certificates',
+        'slug' => 'resale-certificates',
+        'description' => 'Generate resale certificates for every state you buy in — one subscription, unlimited certificates.',
+        'icon' => 'document-check',
+        'badge' => 'Resale Certs',
+        'badge_color' => 'blue',
+        'dashboard_route' => 'resale-cert.dashboard',
+        'enabled' => true,
+        'form_types' => [],
+        'start_route_name' => null,
+        'application_route_name' => null,
+        'start_route_param' => null,
+        'data_resolver' => ResaleCertWorkspaceData::class,
+        'nav' => [
+            [
+                'label' => 'Dashboard',
+                'icon' => 'home',
+                'route' => 'resale-cert.dashboard',
+                'current_pattern' => 'resale-cert.dashboard',
+            ],
+            [
+                'label' => 'Certificates',
+                'icon' => 'document-check',
+                'route' => 'resale-cert.certificates.index',
+                'current_pattern' => 'resale-cert.certificates.*',
+            ],
+            [
+                'label' => 'Vendors',
+                'icon' => 'building-storefront',
+                'route' => 'resale-cert.vendors.index',
+                'current_pattern' => 'resale-cert.vendors.*',
+            ],
+            [
+                'label' => 'Settings',
+                'icon' => 'cog-6-tooth',
+                'route' => 'resale-cert.settings',
+                'current_pattern' => 'resale-cert.settings',
             ],
         ],
     ],

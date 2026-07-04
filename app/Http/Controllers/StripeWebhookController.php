@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Domains\Formations\Services\LlcStripeWebhookHandler;
 use App\Domains\Lien\Services\LienStripeWebhookHandler;
+use App\Domains\ResaleCert\Services\ResaleCertStripeWebhookHandler;
 use App\Domains\SalesTax\Services\TaxStripeWebhookHandler;
 use App\Models\StripeWebhookEvent;
 use Illuminate\Http\Request;
@@ -96,6 +97,7 @@ class StripeWebhookController
             'lien' => app(LienStripeWebhookHandler::class),
             'tax' => app(TaxStripeWebhookHandler::class),
             'llc' => app(LlcStripeWebhookHandler::class),
+            'resale_cert' => app(ResaleCertStripeWebhookHandler::class),
             // Future domains:
             // 'saas' => app(SaasStripeWebhookHandler::class),
             default => null,
@@ -149,6 +151,10 @@ class StripeWebhookController
 
             if ($type === 'llc') {
                 return 'llc';
+            }
+
+            if ($type === 'resale_cert') {
+                return 'resale_cert';
             }
         }
 

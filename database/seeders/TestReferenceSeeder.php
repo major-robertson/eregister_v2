@@ -13,6 +13,8 @@ class TestReferenceSeeder extends Seeder
             LienDocumentTypeSeeder::class,
             LienStateRuleSeeder::class,
             LienDeadlineRuleSeeder::class,
+            ResaleStateRuleSeeder::class,
+            ResaleCertPriceSeeder::class,
         ]);
     }
 }

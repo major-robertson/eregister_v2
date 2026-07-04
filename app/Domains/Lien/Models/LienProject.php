@@ -2,7 +2,7 @@
 
 namespace App\Domains\Lien\Models;
 
-use App\Domains\Lien\Concerns\BelongsToBusiness;
+use App\Domains\Business\Concerns\BelongsToBusiness;
 use App\Domains\Lien\Enums\ClaimantType;
 use App\Domains\Lien\Enums\NocStatus;
 use App\Domains\Lien\Enums\PartyRole;

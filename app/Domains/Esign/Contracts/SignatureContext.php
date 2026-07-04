@@ -8,9 +8,11 @@ use Carbon\CarbonInterface;
 
 /**
  * Everything an adapter needs to render the SIGNED version of a document: the
- * adopted (typed) name, when it was signed, a stable signature id, and the
- * request + document models so the certificate page can read the consent,
- * hashes, and audit-trail events.
+ * adopted name, when it was signed, a stable signature id, and the request +
+ * document models so the certificate page can read the consent, hashes, and
+ * audit-trail events. When the signer used a visual signature (drawn or
+ * typed-in-font), its PNG rides along as a data URI for embedding into the
+ * signed PDF.
  */
 final class SignatureContext
 {
@@ -20,5 +22,7 @@ final class SignatureContext
         public readonly string $signatureId,
         public readonly SignatureRequest $request,
         public readonly SignatureDocument $document,
+        public readonly ?string $signatureImageDataUri = null,
+        public readonly ?string $signatureMethod = null,
     ) {}
 }

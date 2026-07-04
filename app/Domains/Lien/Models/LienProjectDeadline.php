@@ -2,7 +2,7 @@
 
 namespace App\Domains\Lien\Models;
 
-use App\Domains\Lien\Concerns\BelongsToBusiness;
+use App\Domains\Business\Concerns\BelongsToBusiness;
 use App\Domains\Lien\Enums\DeadlineStatus;
 use Database\Factories\Lien\LienProjectDeadlineFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

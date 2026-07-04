@@ -2,6 +2,7 @@
 
 use App\Domains\Forms\Livewire\MultiStateFormRunner;
 use App\Domains\Forms\Livewire\StateSelector;
+use App\Domains\ResaleCert\Http\Controllers\BlankFormDownloadController;
 use App\Domains\SalesTax\Http\Controllers\RegistrationPaymentController;
 use App\Domains\SalesTax\Livewire\Dashboard;
 use App\Domains\SalesTax\Livewire\RegistrationCheckout;
@@ -47,6 +48,12 @@ Route::middleware(['auth', 'business.current', 'business.complete'])
 
         Route::get('/registrations/{application}/payment-confirmation', [RegistrationPaymentController::class, 'confirmation'])
             ->name('sales-tax.registrations.payment-confirmation');
+
+        // Free blank resale certificate forms — a perk for paid sales-tax
+        // registrations (gated in the controller). The filled/auto-generated
+        // version is the Resale Certificate Generator subscription.
+        Route::get('/blank-resale-certificate/{state}', BlankFormDownloadController::class)
+            ->name('sales-tax.blank-resale-certificate');
     });
 
 // API route for payment status polling (processing page).

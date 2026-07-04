@@ -33,6 +33,12 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PriceSeeder::class,
             FormationFeeSeeder::class,
+            ResaleCertPriceSeeder::class,
+        ]);
+
+        // Resale certificate reference data
+        $this->call([
+            ResaleStateRuleSeeder::class,
         ]);
 
         // Admin permissions and roles

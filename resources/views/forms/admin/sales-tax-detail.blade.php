@@ -110,25 +110,26 @@
 
             {{-- Application core data summary (shape-aware: matrix /
                  applies / locations / repeater values render readably;
-                 encrypted-at-rest sensitive values are masked). --}}
-            @if (! empty($app?->core_data))
+                 sensitive fields like FEIN/SSN are decrypted for admin
+                 review since processing the application requires them). --}}
+            @if (! empty($decryptedCoreData))
                 <div class="rounded-xl border border-border bg-white p-6">
                     <flux:heading size="md">Shared Application Data</flux:heading>
                     <div class="mt-4">
                         @include('livewire.forms.partials.answer-summary', [
-                            'data' => $app->core_data,
+                            'data' => $decryptedCoreData,
                         ])
                     </div>
                 </div>
             @endif
 
             {{-- State-specific answers for THIS state card --}}
-            @if (! empty($state->data) && collect($state->data)->except('responsible_people_extra')->filter()->isNotEmpty())
+            @if (! empty($decryptedStateData) && collect($decryptedStateData)->except('responsible_people_extra')->filter()->isNotEmpty())
                 <div class="rounded-xl border border-border bg-white p-6">
                     <flux:heading size="md">{{ config('states.'.$state->state_code, $state->state_code) }} Specific Data</flux:heading>
                     <div class="mt-4">
                         @include('livewire.forms.partials.answer-summary', [
-                            'data' => $state->data,
+                            'data' => $decryptedStateData,
                             'exclude' => ['responsible_people_extra'],
                             'stripPrefix' => strtolower($state->state_code).'_',
                         ])

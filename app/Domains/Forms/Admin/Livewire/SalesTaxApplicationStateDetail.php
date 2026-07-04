@@ -2,6 +2,8 @@
 
 namespace App\Domains\Forms\Admin\Livewire;
 
+use App\Domains\Forms\Engine\FormRegistry;
+use App\Domains\Forms\Engine\SensitiveDataProtector;
 use App\Domains\Forms\Enums\FormApplicationStateAdminStatus;
 use App\Domains\Forms\Models\FormApplicationState;
 use Illuminate\Contracts\View\View;
@@ -19,6 +21,23 @@ class SalesTaxApplicationStateDetail extends Component
 
     public string $comment = '';
 
+    /**
+     * Decrypted core (shared) application data. Sensitive fields (FEIN,
+     * SSN, etc.) are stored encrypted-at-rest; admins processing an
+     * application need to read them, so this decrypts them for display
+     * using the same protector the form runner uses on load.
+     *
+     * @var array<string, mixed>
+     */
+    public array $decryptedCoreData = [];
+
+    /**
+     * Decrypted state-specific data for the current state card.
+     *
+     * @var array<string, mixed>
+     */
+    public array $decryptedStateData = [];
+
     public function mount(FormApplicationState $formApplicationState): void
     {
         Gate::authorize('tax.view');
@@ -32,6 +51,24 @@ class SalesTaxApplicationStateDetail extends Component
         ]);
 
         $this->state = $formApplicationState;
+
+        $protector = app(SensitiveDataProtector::class);
+        $registry = app(FormRegistry::class);
+        $formType = $this->state->application?->form_type;
+
+        if ($formType) {
+            $base = $registry->getBase($formType);
+            $this->decryptedCoreData = $protector->decryptCoreData(
+                $this->state->application->core_data ?? [],
+                $base
+            );
+
+            $stateDef = $registry->get($formType, $this->state->state_code);
+            $this->decryptedStateData = $protector->decryptStateData(
+                $this->state->data ?? [],
+                $stateDef
+            );
+        }
     }
 
     /**

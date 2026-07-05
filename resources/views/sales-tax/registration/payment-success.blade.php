@@ -17,6 +17,14 @@
             conversionId: "purchase-{{ $payment->id }}"
         });
     </script>
+    <!-- OpenAI Ads Conversion (one-time purchase) -->
+    <script data-navigate-once>
+        oaiq("measure", "order_created", {
+            type: "contents",
+            amount: {{ number_format($payment->amount_cents / 100, 2, '.', '') }},
+            currency: "USD"
+        }, { event_id: "order-{{ $payment->id }}" });
+    </script>
     <script data-navigate-once>
         // Drop ?payment_intent so a refresh doesn't re-arm the conversion guard.
         history.replaceState(history.state, '', window.location.pathname);

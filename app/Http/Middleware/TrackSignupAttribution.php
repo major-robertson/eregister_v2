@@ -39,6 +39,7 @@ class TrackSignupAttribution
         $this->captureUtmParams($request);
         $this->captureReferrer($request);
         $this->captureRedditClickId($request);
+        $this->captureOpenAiClickId($request);
 
         return $next($request);
     }
@@ -51,6 +52,18 @@ class TrackSignupAttribution
     {
         if (! session()->has('signup_rdt_cid') && $this->isStorableParam($request->query('rdt_cid'))) {
             session()->put('signup_rdt_cid', $request->query('rdt_cid'));
+        }
+    }
+
+    /**
+     * Capture the OpenAI/ChatGPT Ads click token (?oppref=) if not already
+     * set. Passed to the Conversions API as an attribution signal for the
+     * webhook-driven purchase events the pixel can't fire.
+     */
+    protected function captureOpenAiClickId(Request $request): void
+    {
+        if (! session()->has('signup_oppref') && $this->isStorableParam($request->query('oppref'))) {
+            session()->put('signup_oppref', $request->query('oppref'));
         }
     }
 

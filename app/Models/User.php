@@ -41,6 +41,7 @@ class User extends Authenticatable
         'signup_utm_term',
         'signup_utm_content',
         'signup_rdt_cid',
+        'signup_oppref',
         'signup_ip',
         'signup_user_agent',
         'attributed_marketing_lead_id',

@@ -37,6 +37,24 @@ rdt('track', 'PageVisit');
 </script>
 <!-- DO NOT MODIFY UNLESS TO REPLACE A USER IDENTIFIER -->
 <!-- End Reddit Pixel -->
+
+<!-- OpenAI (ChatGPT) Ads Pixel -->
+<script>
+!function(w,d,s,u){if(w.oaiq)return;var q=function(){q.q.push(arguments)};q.q=[];w.oaiq=q;var j=d.createElement(s);j.async=1;j.src=u;var f=d.getElementsByTagName(s)[0];f.parentNode.insertBefore(j,f)}(window,document,"script","https://bzrcdn.openai.com/sdk/oaiq.min.js");
+oaiq("init", {
+    pixelId: @js(config('services.openai_ads.pixel_id')),
+    debug: {{ config('app.debug') ? 'true' : 'false' }},
+@auth
+    // OpenAI requires match keys pre-hashed (lowercase 64-char hex). Our
+    // CAPI events hash the same way so the two sources reconcile.
+    user: {
+        email_sha256: @js(hash('sha256', mb_strtolower(trim(auth()->user()->email)))),
+        external_id_sha256: @js(hash('sha256', (string) auth()->id())),
+    },
+@endauth
+});
+</script>
+<!-- End OpenAI Ads Pixel -->
 @endunless
 
 <meta charset="utf-8" />

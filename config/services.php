@@ -72,4 +72,13 @@ return [
         'capi_test_id' => env('REDDIT_CAPI_TEST_ID'),
     ],
 
+    'openai_ads' => [
+        'pixel_id' => env('OPENAI_ADS_PIXEL_ID', 'TcHDQSw1yCahUVdmMVK7uW'),
+        'capi_token' => env('OPENAI_ADS_CAPI_TOKEN'),
+        'capi_enabled' => env('OPENAI_ADS_CAPI_ENABLED', false),
+        // Local testing only: validate_only asks OpenAI to check the payload
+        // without recording a conversion. Leave false in production.
+        'capi_validate_only' => env('OPENAI_ADS_CAPI_VALIDATE_ONLY', false),
+    ],
+
 ];

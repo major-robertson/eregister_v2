@@ -6,6 +6,7 @@ use App\Enums\PaymentStatus;
 use App\Mail\PaymentReceipt;
 use App\Models\Payment;
 use App\Models\SentEmail;
+use App\Services\OpenAiConversionsApi;
 use App\Services\RedditConversionsApi;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -76,7 +77,9 @@ class RegistrationPaymentService
         // review - the charge is real and the browser pixel counts it, so
         // CAPI must mirror it or coverage skews by ad blocker.
         if ($queueConversion) {
-            app(RedditConversionsApi::class)->queuePurchase($payment->fresh());
+            $conversionPayment = $payment->fresh();
+            app(RedditConversionsApi::class)->queuePurchase($conversionPayment);
+            app(OpenAiConversionsApi::class)->queuePurchase($conversionPayment);
         }
 
         if (! $sendEmails) {

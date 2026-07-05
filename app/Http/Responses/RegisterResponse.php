@@ -2,6 +2,7 @@
 
 namespace App\Http\Responses;
 
+use App\Services\OpenAiConversionsApi;
 use App\Services\RedditConversionsApi;
 use Laravel\Fortify\Contracts\RegisterResponse as RegisterResponseContract;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,9 +19,10 @@ class RegisterResponse implements RegisterResponseContract
         // before the wizard ever renders, so persist until pulled.
         session()->put('just_registered', true);
 
-        // Server-side counterpart of the wizard's pixel SignUp event; same
-        // conversion id, so Reddit dedupes when both arrive.
+        // Server-side counterpart of the wizard's pixel signup events; same
+        // conversion/event id per platform, so each dedupes when both arrive.
         app(RedditConversionsApi::class)->queueSignUp($request->user(), $request);
+        app(OpenAiConversionsApi::class)->queueRegistration($request->user(), $request);
 
         return $request->wantsJson()
             ? response()->json(['two_factor' => false])

@@ -8,6 +8,14 @@
             conversionId: "purchase-{{ $payment->id }}"
         });
     </script>
+    <!-- OpenAI Ads Conversion (LLC formation) -->
+    <script data-navigate-once>
+        oaiq("measure", "{{ $payment->billing_type === 'subscription' ? 'subscription_created' : 'order_created' }}", {
+            type: "{{ $payment->billing_type === 'subscription' ? 'plan_enrollment' : 'contents' }}",
+            amount: {{ number_format($payment->amount_cents / 100, 2, '.', '') }},
+            currency: "USD"
+        }, { event_id: "{{ $payment->billing_type === 'subscription' ? 'subscription' : 'order' }}-{{ $payment->id }}" });
+    </script>
     <script data-navigate-once>
         // Drop ?payment_intent so a refresh doesn't re-arm the conversion guard.
         history.replaceState(history.state, '', window.location.pathname);

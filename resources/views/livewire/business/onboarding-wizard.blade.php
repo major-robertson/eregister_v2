@@ -12,6 +12,12 @@
         conversionId: @js('signup-' . auth()->id())
     });
 </script>
+<!-- OpenAI Ads Conversion - Create Account -->
+<script data-navigate-once>
+    oaiq("measure", "registration_completed", {
+        type: "customer_action"
+    }, { event_id: @js('signup-' . auth()->id()) });
+</script>
 @endpush
 @endif
 

@@ -9,6 +9,7 @@ use App\Mail\PaymentReceipt;
 use App\Models\Payment;
 use App\Models\Price;
 use App\Models\SentEmail;
+use App\Services\RedditConversionsApi;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -36,8 +37,9 @@ class FormationPaymentService
     public function markSucceeded(Payment $payment, StripeObject $paymentIntent): void
     {
         $sendEmails = false;
+        $queueConversion = false;
 
-        DB::transaction(function () use ($payment, $paymentIntent, &$sendEmails) {
+        DB::transaction(function () use ($payment, $paymentIntent, &$sendEmails, &$queueConversion) {
             $payment = Payment::lockForUpdate()->find($payment->id);
 
             if ($payment->status === PaymentStatus::Succeeded) {
@@ -53,6 +55,8 @@ class FormationPaymentService
                 'requires_manual_review' => $flagForReview,
                 'error_message' => $flagForReview ? $this->buildReviewMessage($payment, $paymentIntent) : null,
             ]);
+
+            $queueConversion = true;
 
             // Record the membership subscription locally so subscribed('llc')
             // reflects reality (the only Stripe webhook endpoint is our custom
@@ -85,12 +89,20 @@ class FormationPaymentService
             }
         });
 
+        // Fire on the first transition to succeeded even when flagged for
+        // review - the charge is real and the browser pixel counts it, so
+        // CAPI must mirror it or coverage skews by ad blocker.
+        if ($queueConversion) {
+            app(RedditConversionsApi::class)->queuePurchase($payment->fresh());
+        }
+
         if (! $sendEmails) {
             return;
         }
 
         DB::afterCommit(function () use ($payment) {
             $payment = $payment->fresh();
+
             $user = $payment->business->users()->first();
 
             if (! $user) {

@@ -32,6 +32,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\TrackSignupAttribution::class,
         ]);
 
+        // Reddit's pixel writes _rdt_uuid as plaintext; without this
+        // exclusion EncryptCookies nulls it and the Conversions API loses
+        // its browser match key.
+        $middleware->encryptCookies(except: ['_rdt_uuid']);
+
         // Exclude webhooks from CSRF verification
         $middleware->validateCsrfTokens(except: [
             'webhooks/stripe',

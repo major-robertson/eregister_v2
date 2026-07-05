@@ -8,6 +8,7 @@ use App\Mail\PaymentReceipt;
 use App\Models\Payment;
 use App\Models\Price;
 use App\Models\SentEmail;
+use App\Services\RedditConversionsApi;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -23,8 +24,9 @@ class ResaleCertPaymentService
     public function markSucceeded(Payment $payment, StripeObject $paymentIntent): void
     {
         $sendEmails = false;
+        $queueConversion = false;
 
-        DB::transaction(function () use ($payment, $paymentIntent, &$sendEmails) {
+        DB::transaction(function () use ($payment, $paymentIntent, &$sendEmails, &$queueConversion) {
             $payment = Payment::lockForUpdate()->find($payment->id);
 
             if ($payment->status === PaymentStatus::Succeeded) {
@@ -40,6 +42,8 @@ class ResaleCertPaymentService
                 'requires_manual_review' => $flagForReview,
                 'error_message' => $flagForReview ? $this->buildReviewMessage($payment, $paymentIntent) : null,
             ]);
+
+            $queueConversion = true;
 
             // subscribed('resale_cert') is the access gate, so the local row
             // must exist the moment payment lands (Cashier's own webhook
@@ -57,12 +61,20 @@ class ResaleCertPaymentService
             $sendEmails = true;
         });
 
+        // Fire on the first transition to succeeded even when flagged for
+        // review - the charge is real and the browser pixel counts it, so
+        // CAPI must mirror it or coverage skews by ad blocker.
+        if ($queueConversion) {
+            app(RedditConversionsApi::class)->queuePurchase($payment->fresh());
+        }
+
         if (! $sendEmails) {
             return;
         }
 
         DB::afterCommit(function () use ($payment) {
             $payment = $payment->fresh();
+
             $user = $payment->business->users()->first();
 
             if (! $user) {

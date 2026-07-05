@@ -2,6 +2,7 @@
 
 namespace App\Http\Responses;
 
+use App\Services\RedditConversionsApi;
 use Laravel\Fortify\Contracts\RegisterResponse as RegisterResponseContract;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -16,6 +17,10 @@ class RegisterResponse implements RegisterResponseContract
         // flash would age out on the /portal -> select-business redirect
         // before the wizard ever renders, so persist until pulled.
         session()->put('just_registered', true);
+
+        // Server-side counterpart of the wizard's pixel SignUp event; same
+        // conversion id, so Reddit dedupes when both arrive.
+        app(RedditConversionsApi::class)->queueSignUp($request->user(), $request);
 
         return $request->wantsJson()
             ? response()->json(['two_factor' => false])

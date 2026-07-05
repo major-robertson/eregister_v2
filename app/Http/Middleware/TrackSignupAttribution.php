@@ -38,8 +38,20 @@ class TrackSignupAttribution
 
         $this->captureUtmParams($request);
         $this->captureReferrer($request);
+        $this->captureRedditClickId($request);
 
         return $next($request);
+    }
+
+    /**
+     * Capture the Reddit Ads click id (?rdt_cid=) if not already set.
+     * Passed to the Conversions API as a deterministic attribution signal.
+     */
+    protected function captureRedditClickId(Request $request): void
+    {
+        if (! session()->has('signup_rdt_cid') && $this->isStorableParam($request->query('rdt_cid'))) {
+            session()->put('signup_rdt_cid', $request->query('rdt_cid'));
+        }
     }
 
     /**
@@ -51,10 +63,21 @@ class TrackSignupAttribution
             $sessionKey = 'signup_'.$param;
 
             // Only capture if not already set (first-touch attribution)
-            if (! session()->has($sessionKey) && $request->has($param)) {
-                session()->put($sessionKey, $request->input($param));
+            if (! session()->has($sessionKey) && $this->isStorableParam($request->query($param))) {
+                session()->put($sessionKey, $request->query($param));
             }
         }
+    }
+
+    /**
+     * Reject array (?param[]=) and oversize query values: they would fail
+     * the users-table insert at registration and, because the session key
+     * is first-touch and only cleared on success, 500 every registration
+     * attempt for the rest of the session.
+     */
+    protected function isStorableParam(mixed $value): bool
+    {
+        return is_string($value) && $value !== '' && strlen($value) <= 255;
     }
 
     /**

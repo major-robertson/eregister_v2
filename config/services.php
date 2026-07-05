@@ -63,4 +63,13 @@ return [
         'api_key' => env('NOSYNELLY_API_KEY'),
     ],
 
+    'reddit' => [
+        'pixel_id' => env('REDDIT_PIXEL_ID', 'a2_j93ntx48v4gy'),
+        'capi_token' => env('REDDIT_CAPI_TOKEN'),
+        'capi_enabled' => env('REDDIT_CAPI_ENABLED', false),
+        // Local testing only: events tagged with a test_id show up in the
+        // Events Manager test panel and never count as real conversions.
+        'capi_test_id' => env('REDDIT_CAPI_TEST_ID'),
+    ],
+
 ];

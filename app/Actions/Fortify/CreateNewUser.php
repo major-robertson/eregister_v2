@@ -67,6 +67,7 @@ class CreateNewUser implements CreatesNewUsers
             'signup_utm_campaign' => session('signup_utm_campaign'),
             'signup_utm_term' => session('signup_utm_term'),
             'signup_utm_content' => session('signup_utm_content'),
+            'signup_rdt_cid' => session('signup_rdt_cid'),
             'signup_ip' => request()->ip(),
             'signup_user_agent' => request()->userAgent(),
             // First-touch attribution: set once, never overwritten
@@ -110,6 +111,7 @@ class CreateNewUser implements CreatesNewUsers
             'signup_utm_campaign',
             'signup_utm_term',
             'signup_utm_content',
+            'signup_rdt_cid',
         ]);
     }
 }

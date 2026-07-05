@@ -9,6 +9,7 @@ use App\Jobs\SendWorkingOnOrderEmail;
 use App\Mail\PaymentReceipt;
 use App\Models\Payment;
 use App\Models\SentEmail;
+use App\Services\RedditConversionsApi;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -26,8 +27,9 @@ class LienPaymentService
     public function markSucceeded(Payment $payment, StripeObject $stripePaymentIntent): void
     {
         $sendEmails = false;
+        $queueConversion = false;
 
-        DB::transaction(function () use ($payment, $stripePaymentIntent, &$sendEmails) {
+        DB::transaction(function () use ($payment, $stripePaymentIntent, &$sendEmails, &$queueConversion) {
             $payment = Payment::lockForUpdate()->find($payment->id);
 
             if ($payment->status === PaymentStatus::Succeeded) {
@@ -43,6 +45,8 @@ class LienPaymentService
                 'requires_manual_review' => $flagForReview,
                 'error_message' => $flagForReview ? $this->buildReviewMessage($payment, $stripePaymentIntent) : null,
             ]);
+
+            $queueConversion = true;
 
             if ($flagForReview) {
                 Log::info('Payment succeeded but flagged for review', [
@@ -76,12 +80,20 @@ class LienPaymentService
             }
         });
 
+        // Fire on the first transition to succeeded even when flagged for
+        // review - the charge is real and the browser pixel counts it, so
+        // CAPI must mirror it or coverage skews by ad blocker.
+        if ($queueConversion) {
+            app(RedditConversionsApi::class)->queuePurchase($payment->fresh());
+        }
+
         if (! $sendEmails) {
             return;
         }
 
         DB::afterCommit(function () use ($payment) {
             $payment = $payment->fresh();
+
             $user = $payment->business->users()->first();
 
             if (! $user) {

@@ -805,10 +805,15 @@ class FilingWizard extends Component
 
     public function render(): View
     {
-        $pricing = config('lien.pricing.'.$this->deadline->documentType->slug, [
-            'self_serve' => 4900,
-            'full_service' => 9900,
-        ]);
+        $slug = $this->deadline->documentType->slug;
+        $state = strtoupper((string) $this->project->jobsite_state);
+        $pricing = array_replace(
+            config('lien.pricing.'.$slug, [
+                'self_serve' => 4900,
+                'full_service' => 9900,
+            ]),
+            config("lien.state_pricing.{$state}.{$slug}", []),
+        );
 
         return view('livewire.lien.filing-wizard', [
             'parties' => $this->project->parties,

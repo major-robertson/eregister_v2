@@ -72,9 +72,12 @@ class PaymentReceipt extends Mailable implements ShouldQueue
                 default => ucwords(str_replace('_', ' ', $price->product_key)),
             };
 
-            $variant = match ($price->variant_key) {
-                'full_service' => '(Full Service)',
-                'self_serve' => '(Self Serve)',
+            // Match on suffix so state-specific variants (e.g. "NJ_full_service")
+            // still resolve to the right service-level label.
+            $variantKey = (string) $price->variant_key;
+            $variant = match (true) {
+                str_ends_with($variantKey, 'full_service') => '(Full Service)',
+                str_ends_with($variantKey, 'self_serve') => '(Self Serve)',
                 default => '',
             };
 

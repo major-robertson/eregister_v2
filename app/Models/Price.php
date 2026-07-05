@@ -60,6 +60,32 @@ class Price extends Model
     }
 
     /**
+     * Resolve a lien price, honoring per-state overrides.
+     *
+     * State-specific rows use variant_key "{STATE}_{service_level}" (e.g.
+     * "NJ_full_service"). When a matching active row exists it wins; otherwise
+     * we fall back to the default service-level price. State codes are
+     * normalized to uppercase to match how they are stored/seeded.
+     */
+    public static function resolveLien(string $productKey, string $serviceLevel, ?string $state): self
+    {
+        if ($state !== null && $state !== '') {
+            $stateSpecific = static::where('product_family', 'lien')
+                ->where('product_key', $productKey)
+                ->where('variant_key', strtoupper($state).'_'.$serviceLevel)
+                ->where('billing_type', 'one_time')
+                ->where('active', true)
+                ->first();
+
+            if ($stateSpecific !== null) {
+                return $stateSpecific;
+            }
+        }
+
+        return static::resolve('lien', $productKey, $serviceLevel, 'one_time');
+    }
+
+    /**
      * Get the Stripe Price ID for the current environment.
      * Detects live vs test based on configured Stripe secret key prefix.
      */

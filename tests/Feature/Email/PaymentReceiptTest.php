@@ -102,6 +102,43 @@ it('includes itemized information in the receipt', function () {
     expect($rendered)->toContain($this->user->first_name);
 });
 
+it('labels the service level for a state-specific price variant', function () {
+    // NJ full-service mechanics lien uses variant_key "NJ_full_service"; the
+    // receipt must still resolve the "(Full Service)" suffix.
+    // The migration seeds this row into the test DB, so upsert to avoid a
+    // unique-constraint clash while keeping the test self-contained.
+    $njPrice = Price::updateOrCreate(
+        [
+            'product_family' => 'lien',
+            'product_key' => 'mechanics_lien',
+            'variant_key' => 'NJ_full_service',
+            'billing_type' => 'one_time',
+        ],
+        [
+            'amount_cents' => 89900,
+            'currency' => 'usd',
+            'active' => true,
+        ],
+    );
+
+    $filing = LienFiling::factory()->forProject($this->project)->create([
+        'status' => FilingStatus::AwaitingPayment,
+        'jurisdiction_state' => 'NJ',
+        'created_by_user_id' => $this->user->id,
+    ]);
+
+    $payment = Payment::factory()->forPurchasable($filing)->succeeded()->create([
+        'price_id' => $njPrice->id,
+        'amount_cents' => 89900,
+    ]);
+
+    $rendered = (new PaymentReceipt($payment))->render();
+
+    expect($rendered)->toContain('Mechanics Lien')
+        ->and($rendered)->toContain('(Full Service)')
+        ->and($rendered)->toContain('$899.00');
+});
+
 it('records sent email in sent_emails table', function () {
     Mail::fake();
 

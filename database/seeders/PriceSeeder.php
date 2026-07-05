@@ -103,6 +103,31 @@ class PriceSeeder extends Seeder
             );
         }
 
+        // Per-state lien pricing overrides, derived from config so the amount
+        // lives in one place (config/lien.php `state_pricing`). Stored as
+        // variant_key "{STATE}_{service_level}"; charged via inline-amount
+        // PaymentIntent, so the Stripe Price IDs stay null. See
+        // Price::resolveLien().
+        foreach (config('lien.state_pricing', []) as $state => $documentTypes) {
+            foreach ($documentTypes as $productKey => $variants) {
+                foreach ($variants as $serviceLevel => $amountCents) {
+                    Price::updateOrCreate(
+                        [
+                            'product_family' => 'lien',
+                            'product_key' => $productKey,
+                            'variant_key' => strtoupper($state).'_'.$serviceLevel,
+                            'billing_type' => 'one_time',
+                        ],
+                        [
+                            'amount_cents' => $amountCents,
+                            'currency' => 'usd',
+                            'active' => true,
+                        ]
+                    );
+                }
+            }
+        }
+
         // Sales & Use Tax permit registration: $199 per selected state,
         // one-time. Charged via an inline-amount PaymentIntent (amount =
         // amount_cents x state count), so the Stripe Price IDs below are

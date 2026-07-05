@@ -71,6 +71,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | State-Specific Pricing Overrides
+    |--------------------------------------------------------------------------
+    |
+    | Per-state overrides that take precedence over the default `pricing`
+    | above, keyed by uppercase 2-letter state code, then document type, then
+    | service level (cents). Only the listed service levels are overridden;
+    | unlisted ones fall back to the default price. This is the single source
+    | of truth for state pricing: the wizard display reads it directly, and
+    | PriceSeeder derives the corresponding DB rows from it (see
+    | Price::resolveLien / variant_key "{STATE}_{service_level}").
+    |
+    */
+    'state_pricing' => [
+        'NJ' => [
+            'mechanics_lien' => ['full_service' => 89900], // $899
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Stripe Price IDs
     |--------------------------------------------------------------------------
     |

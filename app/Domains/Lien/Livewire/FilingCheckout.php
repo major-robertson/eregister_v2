@@ -64,12 +64,11 @@ class FilingCheckout extends Component
 
     protected function initializePayment(): void
     {
-        // 1. Get pricing from single source of truth
-        $price = Price::resolve(
-            'lien',
+        // 1. Get pricing from single source of truth (state-aware for liens)
+        $price = Price::resolveLien(
             $this->filing->documentType->slug,
             $this->filing->service_level->value,
-            'one_time'
+            $this->filing->jurisdiction_state,
         );
         $this->amountCents = $price->amount_cents;
 

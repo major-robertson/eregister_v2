@@ -193,6 +193,15 @@
     </div>
 </section>
 
+{{-- Pricing --}}
+<x-lien.pricing-section
+    product-key="demand_letter"
+    document-name="payment demand letter"
+    title="Payment Demand Letter Pricing"
+    full-service-text="We prepare your demand letter and deliver it to the debtor with proof of service — plus a copy for your records."
+    class="bg-white"
+/>
+
 {{-- FAQ --}}
 <section class="bg-zinc-50 py-24">
     <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">

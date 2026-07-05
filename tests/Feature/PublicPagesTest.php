@@ -28,6 +28,7 @@ it('can render all public pages', function (string $uri) {
     'notice-of-intent-to-lien' => '/liens/notice-of-intent-to-lien',
     'lien-release' => '/liens/lien-release',
     'payment-demand-letter' => '/liens/payment-demand-letter',
+    'liens-pricing' => '/liens/pricing',
     // Government
     'government' => '/government',
     'government-website-redesign' => '/government/website-redesign',

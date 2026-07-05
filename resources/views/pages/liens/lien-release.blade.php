@@ -165,6 +165,16 @@
     </div>
 </section>
 
+{{-- Pricing --}}
+<x-lien.pricing-section
+    product-key="lien_release"
+    document-name="lien release"
+    title="Lien Release Pricing"
+    self-serve-text="We prepare your state-compliant lien release — you review, sign, and record it yourself."
+    full-service-text="We prepare your lien release and record it with the county recorder where the lien was filed, clearing the title."
+    class="bg-white"
+/>
+
 {{-- FAQ --}}
 <section class="bg-zinc-50 py-24">
     <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">

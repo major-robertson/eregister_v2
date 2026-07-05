@@ -161,6 +161,15 @@
     </div>
 </section>
 
+{{-- Pricing --}}
+<x-lien.pricing-section
+    product-key="prelim_notice"
+    document-name="preliminary notice"
+    title="Preliminary Notice Pricing"
+    full-service-text="We prepare your preliminary notice and deliver it to the owner, general contractor, and lender — with proof of service."
+    class="bg-white"
+/>
+
 {{-- FAQ --}}
 <section class="bg-zinc-50 py-24">
     <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">

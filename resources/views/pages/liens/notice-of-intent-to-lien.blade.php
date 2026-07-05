@@ -137,6 +137,15 @@
     </div>
 </section>
 
+{{-- Pricing --}}
+<x-lien.pricing-section
+    product-key="noi"
+    document-name="notice of intent to lien"
+    title="Notice of Intent to Lien Pricing"
+    full-service-text="We prepare your notice of intent and deliver it to the owner, general contractor, and every other required party — with proof of delivery."
+    class="border-y border-zinc-200 bg-zinc-50"
+/>
+
 {{-- FAQ --}}
 <section class="bg-zinc-50 py-24">
     <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">

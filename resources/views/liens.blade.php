@@ -502,6 +502,16 @@
     </div>
 </section>
 
+{{-- Pricing --}}
+<x-lien.pricing-section
+    product-key="mechanics_lien"
+    document-name="mechanics lien"
+    title="Mechanics Lien Filing Pricing"
+    self-serve-text="We prepare your state-compliant mechanics lien — you review, sign, and record it with the county yourself."
+    full-service-text="We prepare your mechanics lien, record it with the county, and serve every required party — with proof of filing."
+    class="border-t border-zinc-200 bg-zinc-50"
+/>
+
 {{-- Stats --}}
 <section class="border-y border-zinc-200 bg-zinc-900 py-16">
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">

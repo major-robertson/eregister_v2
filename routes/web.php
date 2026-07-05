@@ -75,6 +75,7 @@ Route::view('liens/preliminary-notice', 'pages.liens.preliminary-notice')->name(
 Route::view('liens/notice-of-intent-to-lien', 'pages.liens.notice-of-intent-to-lien')->name('liens.notice-of-intent-to-lien');
 Route::view('liens/lien-release', 'pages.liens.lien-release')->name('liens.lien-release');
 Route::view('liens/payment-demand-letter', 'pages.liens.payment-demand-letter')->name('liens.payment-demand-letter');
+Route::view('liens/pricing', 'pages.liens.pricing')->name('liens.pricing');
 
 // Government
 Route::prefix('government')->name('government.')->group(function () {

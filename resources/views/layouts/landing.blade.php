@@ -136,6 +136,11 @@
                                 <a href="{{ route('liens.payment-demand-letter') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
                                     Payment Demand Letter
                                 </a>
+                                <div class="mt-1 border-t border-zinc-100 pt-1">
+                                    <a href="{{ route('liens.pricing') }}" class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">
+                                        Pricing
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -259,6 +264,7 @@
                             <a href="{{ route('liens.notice-of-intent-to-lien') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Notice of Intent to Lien</a>
                             <a href="{{ route('liens.lien-release') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Lien Release</a>
                             <a href="{{ route('liens.payment-demand-letter') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Payment Demand Letter</a>
+                            <a href="{{ route('liens.pricing') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Pricing</a>
                         </div>
                     </details>
 
@@ -344,6 +350,7 @@
                         <li><a href="{{ route('liens.notice-of-intent-to-lien') }}" class="text-sm text-zinc-400 transition hover:text-white">Notice of Intent</a></li>
                         <li><a href="{{ route('liens.lien-release') }}" class="text-sm text-zinc-400 transition hover:text-white">Lien Release</a></li>
                         <li><a href="{{ route('liens.payment-demand-letter') }}" class="text-sm text-zinc-400 transition hover:text-white">Demand Letter</a></li>
+                        <li><a href="{{ route('liens.pricing') }}" class="text-sm text-zinc-400 transition hover:text-white">Pricing</a></li>
                     </ul>
                 </div>
 

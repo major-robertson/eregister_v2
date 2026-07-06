@@ -769,7 +769,7 @@
                     {{-- Editable address fields --}}
                     <flux:field>
                         <div class="flex items-center justify-between">
-                            <flux:label>Address</flux:label>
+                            <flux:label>Address *</flux:label>
                             @if($partyRole === 'owner' && !$ownerAddressSource)
                                 <flux:button type="button" wire:click="useJobsiteAddress" size="sm" variant="primary" icon="map-pin">
                                     Use Jobsite Address
@@ -786,14 +786,14 @@
                     </flux:field>
 
                     <flux:field>
-                        <flux:label>City</flux:label>
+                        <flux:label>City *</flux:label>
                         <flux:input wire:model="partyCity" />
                         <flux:error name="partyCity" />
                     </flux:field>
 
                     <div class="grid grid-cols-2 gap-4">
                         <flux:field>
-                            <flux:label>State</flux:label>
+                            <flux:label>State *</flux:label>
                             <flux:select variant="combobox" clearable placeholder="Select..." wire:model="partyState">
                                 @foreach (config('states') as $code => $name)
                                     <flux:select.option value="{{ $code }}">{{ $name }}</flux:select.option>
@@ -803,7 +803,7 @@
                         </flux:field>
 
                         <flux:field>
-                            <flux:label>ZIP</flux:label>
+                            <flux:label>ZIP *</flux:label>
                             <flux:input wire:model="partyZip" />
                             <flux:error name="partyZip" />
                         </flux:field>

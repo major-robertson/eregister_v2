@@ -408,3 +408,60 @@ describe('Filing Wizard contractor requirement', function () {
             ->assertSet('step', 3);
     });
 });
+
+describe('Filing Wizard party address requirement', function () {
+    it('requires a full mailing address when adding a contractor', function () {
+        $component = Livewire::test(FilingWizard::class, [
+            'project' => $this->project,
+            'deadline' => $this->deadline,
+        ]);
+
+        // Name + role only, no address -> blocked on every address field.
+        $component->call('openPartyModal', null, 'gc')
+            ->set('partyName', 'Acme General Contractor')
+            ->call('saveParty')
+            ->assertHasErrors([
+                'partyAddress1' => 'required',
+                'partyCity' => 'required',
+                'partyState' => 'required',
+                'partyZip' => 'required',
+            ]);
+
+        expect($this->project->parties()->where('role', 'gc')->count())->toBe(0);
+    });
+
+    it('saves a contractor once a full address is supplied', function () {
+        $component = Livewire::test(FilingWizard::class, [
+            'project' => $this->project,
+            'deadline' => $this->deadline,
+        ]);
+
+        $component->call('openPartyModal', null, 'gc')
+            ->set('partyName', 'Acme General Contractor')
+            ->set('partyAddress1', '500 Builder Blvd')
+            ->set('partyCity', 'Mesa')
+            ->set('partyState', 'AZ')
+            ->set('partyZip', '85210')
+            ->call('saveParty')
+            ->assertHasNoErrors();
+
+        expect($this->project->parties()->where('role', 'gc')->count())->toBe(1);
+    });
+
+    it('requires an address for a non-contractor party too', function () {
+        $component = Livewire::test(FilingWizard::class, [
+            'project' => $this->project,
+            'deadline' => $this->deadline,
+        ]);
+
+        $component->call('openPartyModal', null, 'lender')
+            ->set('partyName', 'First National Bank')
+            ->call('saveParty')
+            ->assertHasErrors([
+                'partyAddress1' => 'required',
+                'partyCity' => 'required',
+                'partyState' => 'required',
+                'partyZip' => 'required',
+            ]);
+    });
+});

@@ -83,7 +83,7 @@
                 </div>
 
                 <flux:field>
-                    <flux:label>Address</flux:label>
+                    <flux:label>Address *</flux:label>
                     <flux:input wire:model="address1" placeholder="Street address" />
                     <flux:error name="address1" />
                 </flux:field>
@@ -95,13 +95,13 @@
 
                 <div class="grid grid-cols-3 gap-4">
                     <flux:field>
-                        <flux:label>City</flux:label>
+                        <flux:label>City *</flux:label>
                         <flux:input wire:model="city" />
                         <flux:error name="city" />
                     </flux:field>
 
                     <flux:field>
-                        <flux:label>State</flux:label>
+                        <flux:label>State *</flux:label>
                         <flux:select variant="combobox" clearable placeholder="Select..." wire:model="state">
                             @foreach (config('states') as $code => $name)
                                 <flux:select.option value="{{ $code }}">{{ $name }}</flux:select.option>
@@ -111,7 +111,7 @@
                     </flux:field>
 
                     <flux:field>
-                        <flux:label>ZIP</flux:label>
+                        <flux:label>ZIP *</flux:label>
                         <flux:input wire:model="zip" />
                         <flux:error name="zip" />
                     </flux:field>

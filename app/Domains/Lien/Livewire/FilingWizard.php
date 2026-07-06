@@ -621,13 +621,19 @@ class FilingWizard extends Component
             'partyRole' => ['required', Rule::enum(PartyRole::class)],
             'partyName' => ['required', 'string', 'max:255'],
             'partyCompanyName' => ['nullable', 'string', 'max:255'],
-            'partyAddress1' => ['nullable', 'string', 'max:255'],
+            'partyAddress1' => ['required', 'string', 'max:255'],
             'partyAddress2' => ['nullable', 'string', 'max:255'],
-            'partyCity' => ['nullable', 'string', 'max:255'],
-            'partyState' => ['nullable', 'string', 'max:2'],
-            'partyZip' => ['nullable', 'string', 'max:10'],
+            'partyCity' => ['required', 'string', 'max:255'],
+            'partyState' => ['required', 'string', 'max:2'],
+            'partyZip' => ['required', 'string', 'max:10'],
             'partyEmail' => ['nullable', 'email', 'max:255'],
             'partyPhone' => ['nullable', 'string', 'max:50'],
+        ], [], [
+            'partyName' => 'name',
+            'partyAddress1' => 'street address',
+            'partyCity' => 'city',
+            'partyState' => 'state',
+            'partyZip' => 'ZIP code',
         ]);
 
         $data = [

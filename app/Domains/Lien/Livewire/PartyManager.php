@@ -50,13 +50,26 @@ class PartyManager extends Component
             'role' => ['required', Rule::enum(PartyRole::class)],
             'name' => ['required', 'string', 'max:255'],
             'company_name' => ['nullable', 'string', 'max:255'],
-            'address1' => ['nullable', 'string', 'max:255'],
+            'address1' => ['required', 'string', 'max:255'],
             'address2' => ['nullable', 'string', 'max:255'],
-            'city' => ['nullable', 'string', 'max:255'],
-            'state' => ['nullable', 'string', 'max:2'],
-            'zip' => ['nullable', 'string', 'max:10'],
+            'city' => ['required', 'string', 'max:255'],
+            'state' => ['required', 'string', 'max:2'],
+            'zip' => ['required', 'string', 'max:10'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
+        ];
+    }
+
+    /**
+     * Friendlier field names for validation messages.
+     */
+    protected function validationAttributes(): array
+    {
+        return [
+            'address1' => 'street address',
+            'city' => 'city',
+            'state' => 'state',
+            'zip' => 'ZIP code',
         ];
     }
 

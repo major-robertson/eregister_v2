@@ -6,8 +6,8 @@
     Rendered via spatie/laravel-pdf's DOMPDF driver: plain HTML + inline CSS only
     (no flex/grid), and kept to a single page.
 
-    Vars: $date, $recipient[name|company|address], $salutation, $amount,
-          $start_date, $end_date, $work, $sender[name|company|phone|email]
+    Vars: $date, $recipient[name|company|address_lines], $salutation, $amount,
+          $start_date, $end_date, $work, $sender[name|company|address_lines|phone|email]
 --}}
 <div class="letter">
     <p class="date">{{ $date }}</p>
@@ -15,7 +15,10 @@
     <div class="recipient">
         @if (($recipient['name'] ?? null))<div>{{ $recipient['name'] }}</div>@endif
         @if (($recipient['company'] ?? null))<div>{{ $recipient['company'] }}</div>@endif
-        @if (($recipient['address'] ?? null))<div>{{ $recipient['address'] }}</div>@endif
+        {{-- New payloads carry block lines; fall back to the legacy single-line address. --}}
+        @foreach (($recipient['address_lines'] ?? array_filter([$recipient['address'] ?? null])) as $line)
+            <div>{{ $line }}</div>
+        @endforeach
     </div>
 
     <p class="salutation">{{ $salutation }}</p>
@@ -57,7 +60,10 @@
     <div class="signature">
         @if (($sender['name'] ?? null))<div>{{ $sender['name'] }}</div>@endif
         @if (($sender['company'] ?? null))<div>{{ $sender['company'] }}</div>@endif
-        @if (($sender['phone'] ?? null))<div>Phone: {{ $sender['phone'] }}</div>@endif
-        @if (($sender['email'] ?? null))<div>Email: {{ $sender['email'] }}</div>@endif
+        @foreach (($sender['address_lines'] ?? []) as $line)
+            <div>{{ $line }}</div>
+        @endforeach
+        @if (($sender['phone'] ?? null))<div>{{ $sender['phone'] }}</div>@endif
+        @if (($sender['email'] ?? null))<div>{{ $sender['email'] }}</div>@endif
     </div>
 </div>

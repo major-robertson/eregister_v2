@@ -73,7 +73,8 @@ class DemandLetterGenerator
             'recipient' => [
                 'name' => $recipient->name ?: null,
                 'company' => $recipient->company_name ?: null,
-                'address' => $recipient->addressLine() ?: null,
+                // Block format: street / optional unit / "City, State Zip".
+                'address_lines' => $recipient->addressLines(),
             ],
             'salutation' => $this->salutation($recipient),
             // Number only — the "$" is fixed text in the letter template.
@@ -85,6 +86,8 @@ class DemandLetterGenerator
             'sender' => [
                 'name' => $claimant?->name ?: null,
                 'company' => ($claimant?->company_name ?: null) ?? $project?->business?->name,
+                // Client's mailing address, stacked under their name in the sign-off.
+                'address_lines' => $claimant?->addressLines() ?? [],
                 'phone' => $claimant?->phone ?: null,
                 'email' => $claimant?->email ?: null,
             ],

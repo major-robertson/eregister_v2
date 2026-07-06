@@ -56,6 +56,31 @@ class LienParty extends Model
     }
 
     /**
+     * Mailing address as stacked block lines: street, optional unit, then
+     * "City, State Zip". Excludes name/company. Each part is optional.
+     *
+     * @return list<string>
+     */
+    public function addressLines(): array
+    {
+        return array_values(array_filter([
+            $this->address1,
+            $this->address2,
+            $this->cityStateZip(),
+        ]));
+    }
+
+    /**
+     * "City, State Zip" on a single line (each component optional).
+     */
+    public function cityStateZip(): string
+    {
+        $cityState = implode(', ', array_filter([$this->city, $this->state]));
+
+        return trim(implode(' ', array_filter([$cityState, $this->zip])));
+    }
+
+    /**
      * Get the display name (company name if available, otherwise name).
      */
     public function displayName(): string

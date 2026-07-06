@@ -31,7 +31,7 @@
             <div class="flex h-16 items-center justify-between">
                 <!-- Logo -->
                 <a href="{{ route('government.home') }}" class="flex items-center gap-3" wire:navigate>
-                    <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" class="h-9 brightness-0" />
+                    <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" class="h-9" />
                     <span
                         class="rounded-md bg-blue-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-blue-700">
                         Government
@@ -227,7 +227,7 @@
                 <div class="col-span-2 md:col-span-2">
                     <a href="{{ route('government.home') }}" class="flex items-center gap-3">
                         <img src="/img/logo/eregister-logo-light-svg.svg" alt="eRegister"
-                            class="h-10 brightness-0 invert" />
+                            class="h-10" />
                         <span
                             class="rounded-md bg-blue-500/15 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-blue-300 ring-1 ring-inset ring-blue-500/30">
                             Government

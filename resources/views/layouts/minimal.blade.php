@@ -8,7 +8,7 @@
             {{-- Simple header with logo --}}
             <header class="border-b border-border px-6 py-4">
                 <a href="{{ route('home') }}" class="flex items-center" wire:navigate>
-                    <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" class="h-8 brightness-0" />
+                    <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" class="h-8" />
                 </a>
             </header>
 

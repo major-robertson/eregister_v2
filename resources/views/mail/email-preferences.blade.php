@@ -10,7 +10,7 @@
 <body class="flex min-h-screen items-center justify-center bg-zinc-50 antialiased">
     <div class="mx-auto w-full max-w-lg px-6 py-12">
         <a href="{{ route('home') }}">
-            <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" class="mx-auto mb-8 h-8 brightness-0" />
+            <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" class="mx-auto mb-8 h-8" />
         </a>
         <h1 class="text-center text-xl font-semibold text-zinc-900">Email Preferences</h1>
         <p class="mt-2 text-center text-sm text-zinc-500">

@@ -1885,8 +1885,8 @@
                 class="bg-zinc-100 dark:bg-zinc-800 relative lg:-ms-px -mb-px lg:mb-0 rounded-t-lg lg:rounded-t-none lg:rounded-e-lg! aspect-[335/376] lg:aspect-auto w-full lg:w-[438px] shrink-0 overflow-hidden flex items-center justify-center shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]">
                 {{-- eRegister Logo --}}
                 <div class="flex items-center justify-center p-8">
-                    <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" class="h-12 brightness-0 dark:hidden" />
-                    <img src="/img/logo/eregister-logo-light-svg.svg" alt="eRegister" class="hidden h-12 brightness-0 invert dark:block" />
+                    <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" class="h-12 dark:hidden" />
+                    <img src="/img/logo/eregister-logo-light-svg.svg" alt="eRegister" class="hidden h-12 dark:block" />
                 </div>
             </div>
         </main>

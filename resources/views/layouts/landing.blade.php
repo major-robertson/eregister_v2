@@ -14,7 +14,7 @@
             <div class="flex h-16 items-center justify-between">
                 <!-- Logo -->
                 <a href="{{ route('home') }}" class="flex items-center" wire:navigate>
-                    <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" class="h-9 brightness-0" />
+                    <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" class="h-9" />
                 </a>
 
                 <!-- Main Navigation (Desktop) -->
@@ -321,7 +321,7 @@
                 {{-- Company Info --}}
                 <div class="col-span-2 md:col-span-1">
                     <a href="{{ route('home') }}" class="flex items-center" wire:navigate>
-                        <img src="/img/logo/eregister-logo-light-svg.svg" alt="eRegister" class="h-10 brightness-0 invert" />
+                        <img src="/img/logo/eregister-logo-light-svg.svg" alt="eRegister" class="h-10" />
                     </a>
                     <p class="mt-4 text-sm text-zinc-400">
                         Business formation, compliance, and payment protection across all 50 states.

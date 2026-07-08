@@ -602,6 +602,35 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                 @endif
             </x-ui.card>
 
+            {{-- Lien Waivers --}}
+            <x-ui.card>
+                <x-slot:header>
+                    <div class="flex items-center justify-between">
+                        <span>Lien Waivers</span>
+                        <flux:button href="{{ route('lien.waivers.create', ['project' => $project->public_id]) }}"
+                            size="sm" variant="ghost" icon="plus" wire:navigate>
+                            Create waiver
+                        </flux:button>
+                    </div>
+                </x-slot:header>
+
+                @php
+                $projectWaiverCount = \App\Domains\Lien\Models\LienWaiver::query()
+                    ->where('project_id', $project->id)
+                    ->count();
+                @endphp
+
+                @if($projectWaiverCount === 0)
+                <p class="text-sm text-zinc-500">No waivers yet. Generate a state-compliant lien waiver for
+                    this project — downloading is free.</p>
+                @else
+                <a href="{{ route('lien.waivers.list', ['project' => $project->public_id]) }}"
+                    class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400" wire:navigate>
+                    {{ $projectWaiverCount }} {{ \Illuminate\Support\Str::plural('waiver', $projectWaiverCount) }} on this project &rarr;
+                </a>
+                @endif
+            </x-ui.card>
+
             {{-- Recent Filings --}}
             <x-ui.card>
                 <x-slot:header>Recent Filings</x-slot:header>

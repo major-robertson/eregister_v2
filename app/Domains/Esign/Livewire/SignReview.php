@@ -46,7 +46,9 @@ class SignReview extends Component
             return;
         }
 
-        $this->adoptedName = (string) (auth()->user()->name ?? '');
+        $this->adoptedName = $request->isGuest()
+            ? (string) ($request->signer_name_snapshot ?? '')
+            : (string) (auth()->user()->name ?? '');
         $this->useSaved = $this->savedSignature !== null;
 
         // Record the first review-screen view once.
@@ -59,7 +61,8 @@ class SignReview extends Component
     #[Computed]
     public function savedSignature(): ?UserSignature
     {
-        return auth()->user()->currentSignature;
+        // Guests have no account to keep a site-wide signature on.
+        return auth()->user()?->currentSignature;
     }
 
     #[Computed]
@@ -98,7 +101,7 @@ class SignReview extends Component
 
         app(CompleteSignature::class)->execute(
             $request,
-            auth()->user(),
+            $request->isGuest() ? null : auth()->user(),
             trim($this->adoptedName),
             $this->presentedText($request),
             $signature,
@@ -116,6 +119,13 @@ class SignReview extends Component
      */
     protected function resolveSignature(?string $signatureImage, ?string $strokesJson, ?string $method, ?string $typedFont): ?UserSignature
     {
+        // Guests sign with their typed legal name — there's no account to
+        // persist a reusable signature onto, so the signed PDF renders the
+        // adopted name in the signature style.
+        if ($this->request->isGuest()) {
+            return null;
+        }
+
         if ($this->useSaved && $this->savedSignature) {
             return $this->savedSignature;
         }
@@ -143,9 +153,11 @@ class SignReview extends Component
      */
     private function presentedText(SignatureRequest $request): array
     {
+        $policy = $request->policy();
+
         return [
-            'intent_statement' => config('esign.signing.intent'),
-            'sign_button' => config('esign.signing.sign_button'),
+            'intent_statement' => $policy->intentStatement(),
+            'sign_button' => $policy->signButton(),
             'typed_name_label' => config('esign.signing.typed_name_label'),
             'document_list_snapshot' => $request->documents->map(fn ($document) => [
                 'document_identifier' => $document->document_identifier,
@@ -159,10 +171,11 @@ class SignReview extends Component
     {
         return view('livewire.esign.sign-review', [
             'documents' => $this->request->documents,
-            'intent' => config('esign.signing.intent'),
-            'signButton' => config('esign.signing.sign_button'),
+            'intent' => $this->request->policy()->intentStatement(),
+            'signButton' => $this->request->policy()->signButton(),
             'typedNameLabel' => config('esign.signing.typed_name_label'),
             'title' => config("esign.document_types.{$this->request->document_signing_policy_key}.title", 'Documents'),
+            'isGuest' => $this->request->isGuest(),
         ])->layout('layouts.minimal');
     }
 }

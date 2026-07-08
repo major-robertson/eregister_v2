@@ -95,6 +95,7 @@ class StripeWebhookController
 
         $handler = match ($domain) {
             'lien' => app(LienStripeWebhookHandler::class),
+            'lien_waiver' => app(\App\Domains\Lien\Waivers\Services\LienWaiverStripeWebhookHandler::class),
             'tax' => app(TaxStripeWebhookHandler::class),
             'llc' => app(LlcStripeWebhookHandler::class),
             'resale_cert' => app(ResaleCertStripeWebhookHandler::class),
@@ -155,6 +156,10 @@ class StripeWebhookController
 
             if ($type === 'resale_cert') {
                 return 'resale_cert';
+            }
+
+            if ($type === 'lien_waiver') {
+                return 'lien_waiver';
             }
         }
 

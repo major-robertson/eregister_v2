@@ -96,6 +96,9 @@
             <flux:spacer />
 
             <flux:sidebar.nav>
+                <flux:sidebar.item icon="document-check" :href="route('esign.mine')" :current="request()->routeIs('esign.mine')" :accent="false" wire:navigate>
+                    {{ __('Signed Documents') }}
+                </flux:sidebar.item>
                 <flux:sidebar.item icon="cog-6-tooth" :href="route('profile.edit')" :current="request()->routeIs('profile.*')" :accent="false" wire:navigate>
                     {{ __('Settings') }}
                 </flux:sidebar.item>

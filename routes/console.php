@@ -12,6 +12,9 @@ Artisan::command('inspire', function () {
 // Lien deadline reminders - run hourly to catch different business timezones
 Schedule::command('lien:send-deadline-reminders')->hourly();
 
+// Lien waiver signature reminders - hourly; per-(waiver, interval) dedup log
+Schedule::command('lien:send-waiver-reminders')->hourly()->withoutOverlapping();
+
 // Marketing campaign step processing - run hourly
 Schedule::job(new ProcessCampaignSteps)->hourly();
 

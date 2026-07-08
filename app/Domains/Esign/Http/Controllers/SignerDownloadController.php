@@ -6,6 +6,7 @@ use App\Domains\Esign\Actions\AppendSignatureEvent;
 use App\Domains\Esign\Enums\SignatureEventType;
 use App\Domains\Esign\Models\SignatureDocument;
 use App\Domains\Esign\Models\SignatureRequest;
+use App\Domains\Esign\Support\GuestSignerSession;
 use Illuminate\Http\RedirectResponse;
 
 /**
@@ -18,7 +19,12 @@ class SignerDownloadController
 
     public function download(SignatureRequest $request, SignatureDocument $document): RedirectResponse
     {
-        abort_unless(auth()->id() === $request->signer_user_id, 403);
+        if ($request->isGuest()) {
+            abort_unless(GuestSignerSession::isVerified($request), 403);
+        } else {
+            abort_unless(auth()->id() === $request->signer_user_id, 403);
+        }
+
         abort_unless($document->signature_request_id === $request->id, 404);
 
         $media = $document->signedMedia();

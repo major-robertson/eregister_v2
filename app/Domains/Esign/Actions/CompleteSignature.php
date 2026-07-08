@@ -28,10 +28,11 @@ class CompleteSignature
     ) {}
 
     /**
+     * @param  User|null  $signer  Null for guest sessions — identity is the OTP-verified email.
      * @param  array<string, mixed>  $presentedText  Exact UI strings + document list the signer saw.
      * @param  \App\Models\UserSignature|null  $signature  The visual signature (drawn or typed-in-font) applied to the documents.
      */
-    public function execute(SignatureRequest $request, User $signer, string $adoptedName, array $presentedText, ?\App\Models\UserSignature $signature = null): SignatureRequest
+    public function execute(SignatureRequest $request, ?User $signer, string $adoptedName, array $presentedText, ?\App\Models\UserSignature $signature = null): SignatureRequest
     {
         if ($request->isCompleted()) {
             return $request;
@@ -52,16 +53,17 @@ class CompleteSignature
                 'adopted_name' => $adoptedName,
                 'signature_method' => $signatureMethod,
                 'user_signature_id' => $signature?->id,
-                'email_verified_at_sign' => $signer->email_verified_at,
+                // Guests: the OTP verification timestamp is the email-control proof.
+                'email_verified_at_sign' => $signer?->email_verified_at ?? $request->guest_verified_at,
                 'presented_text_json' => $presentedText,
                 'status' => SignatureRequestStatus::Signing,
             ]);
 
             $this->events->execute($request, SignatureEventType::SignatureStarted,
-                actorType: 'signer', actorUserId: $signer->id, ip: $ip, userAgent: $ua);
+                actorType: 'signer', actorUserId: $signer?->id, ip: $ip, userAgent: $ua);
 
             $this->events->execute($request, SignatureEventType::SignatureCompleted,
-                actorType: 'signer', actorUserId: $signer->id, ip: $ip, userAgent: $ua,
+                actorType: 'signer', actorUserId: $signer?->id, ip: $ip, userAgent: $ua,
                 metadata: array_filter([
                     'adopted_name' => $adoptedName,
                     'signature_method' => $signatureMethod,
@@ -91,7 +93,7 @@ class CompleteSignature
             $document->storeSigned($bytes, $hash);
 
             $this->events->execute($request, SignatureEventType::FinalPdfGenerated,
-                document: $document, actorType: 'signer', actorUserId: $signer->id, ip: $ip, userAgent: $ua,
+                document: $document, actorType: 'signer', actorUserId: $signer?->id, ip: $ip, userAgent: $ua,
                 metadata: ['sha256' => $hash, 'document_identifier' => $document->document_identifier]);
         }
 

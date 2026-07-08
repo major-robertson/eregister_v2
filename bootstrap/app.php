@@ -51,6 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'lien.onboarding' => \App\Domains\Lien\Http\Middleware\EnsureLienOnboardingComplete::class,
             'resale.subscribed' => \App\Domains\ResaleCert\Http\Middleware\EnsureResaleCertSubscribed::class,
             'esign.verified' => \App\Domains\Esign\Http\Middleware\EnsureSignerEmailVerified::class,
+            'esign.signer' => \App\Domains\Esign\Http\Middleware\EnsureSignerAccess::class,
             'marketing.lead' => \App\Http\Middleware\ActivateMarketingLeadContext::class,
             // API middleware
             'api.key' => \App\Http\Middleware\ValidateApiKey::class,

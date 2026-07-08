@@ -26,7 +26,7 @@ return [
 
         'checkbox' => 'I can access and retain electronic records, and I agree to use electronic signatures and electronic records for the documents described above.',
 
-        'accept_button' => 'I Agree — Continue',
+        'accept_button' => 'I Agree, Continue',
 
         // Consumer disclosures required by ESIGN for electronic records.
         'disclosures' => [
@@ -79,6 +79,21 @@ return [
             'requires_recipient_acknowledgment' => false,
             'allowed_signer_role' => 'filing_creator',
             'consent_scope' => 'demand_letters',
+        ],
+
+        'lien_waiver' => [
+            'title' => 'Lien Waiver',
+            'document_id_prefix' => 'LW',
+            'supports_esign' => true,
+            'requires_notary' => false,
+            'signature_method' => 'typed_name',
+            'requires_recipient_acknowledgment' => false,
+            // provide: the business's own user signs; collect: the vendor
+            // counterparty signs as a GUEST (no account, email-code identity).
+            'allowed_signer_role' => 'waiver_signer',
+            'consent_scope' => 'lien_waivers',
+            'sign_button' => 'Sign Lien Waiver',
+            'intent' => 'I have reviewed the lien waiver listed below. By clicking Sign Lien Waiver, I intend to electronically sign it and be bound by its terms.',
         ],
 
         // Resale certificates use a reusable drawn signature (adopted once,

@@ -67,6 +67,23 @@ final class DocumentSigningPolicy
         return $this->config['title'] ?? Str::headline($this->key);
     }
 
+    /**
+     * The sign-button label shown (and snapshotted) on the review screen.
+     * Falls back to the global signing config for legacy document types.
+     */
+    public function signButton(): string
+    {
+        return $this->config['sign_button'] ?? config('esign.signing.sign_button');
+    }
+
+    /**
+     * The legally-meaningful intent statement the signer sees.
+     */
+    public function intentStatement(): string
+    {
+        return $this->config['intent'] ?? config('esign.signing.intent');
+    }
+
     public function documentIdPrefix(): string
     {
         return $this->config['document_id_prefix'] ?? 'DOC';

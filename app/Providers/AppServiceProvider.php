@@ -35,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
         // Register domain console commands
         $this->commands([
             \App\Domains\Lien\Console\SendDeadlineReminders::class,
+            \App\Domains\Lien\Console\SendWaiverReminders::class,
             \App\Domains\ResaleCert\Console\CheckExpiringCertificates::class,
             \App\Domains\ResaleCert\Console\VerifyResaleSignatureChain::class,
         ]);
@@ -99,6 +100,8 @@ class AppServiceProvider extends ServiceProvider
             'business' => \App\Domains\Business\Models\Business::class,
             'lien_filing' => \App\Domains\Lien\Models\LienFiling::class,
             'lien_project' => \App\Domains\Lien\Models\LienProject::class,
+            'lien_waiver' => \App\Domains\Lien\Models\LienWaiver::class,
+            'lien_contact' => \App\Domains\Lien\Models\LienContact::class,
             'form_application' => \App\Domains\Forms\Models\FormApplication::class,
             'email_sequence' => \App\Models\EmailSequence::class,
             'payment' => \App\Models\Payment::class,
@@ -125,6 +128,13 @@ class AppServiceProvider extends ServiceProvider
         Livewire::component('lien.filing-wizard', \App\Domains\Lien\Livewire\FilingWizard::class);
         Livewire::component('lien.filing-show', \App\Domains\Lien\Livewire\FilingShow::class);
         Livewire::component('lien.filing-checkout', \App\Domains\Lien\Livewire\FilingCheckout::class);
+        Livewire::component('lien.waivers.dashboard', \App\Domains\Lien\Livewire\Waivers\WaiverDashboard::class);
+        Livewire::component('lien.waivers.list', \App\Domains\Lien\Livewire\Waivers\WaiverList::class);
+        Livewire::component('lien.waivers.wizard', \App\Domains\Lien\Livewire\Waivers\WaiverWizard::class);
+        Livewire::component('lien.waivers.show', \App\Domains\Lien\Livewire\Waivers\WaiverShow::class);
+        Livewire::component('lien.waivers.subscription-checkout', \App\Domains\Lien\Livewire\Waivers\WaiverSubscriptionCheckout::class);
+        Livewire::component('lien.waivers.contact-list', \App\Domains\Lien\Livewire\Waivers\ContactList::class);
+        Livewire::component('lien.waivers.contact-form', \App\Domains\Lien\Livewire\Waivers\ContactForm::class);
 
         // Lien admin components
         Livewire::component('lien.admin.board', \App\Domains\Lien\Admin\Livewire\LienBoard::class);

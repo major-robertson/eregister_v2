@@ -13,6 +13,15 @@ use App\Domains\Lien\Livewire\LienProfileComplete;
 use App\Domains\Lien\Livewire\ProjectForm;
 use App\Domains\Lien\Livewire\ProjectList;
 use App\Domains\Lien\Livewire\ProjectShow;
+use App\Domains\Lien\Http\Controllers\WaiverDownloadController;
+use App\Domains\Lien\Http\Controllers\WaiverPaymentController;
+use App\Domains\Lien\Livewire\Waivers\ContactForm;
+use App\Domains\Lien\Livewire\Waivers\ContactList;
+use App\Domains\Lien\Livewire\Waivers\WaiverDashboard;
+use App\Domains\Lien\Livewire\Waivers\WaiverList;
+use App\Domains\Lien\Livewire\Waivers\WaiverShow;
+use App\Domains\Lien\Livewire\Waivers\WaiverSubscriptionCheckout;
+use App\Domains\Lien\Livewire\Waivers\WaiverWizard;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -56,6 +65,23 @@ Route::middleware(['auth', 'business.current', 'business.complete', 'lien.onboar
 
         // Filings list
         Route::get('/filings', FilingList::class)->name('lien.filings.index');
+
+        // Lien waivers
+        Route::get('/waivers', WaiverDashboard::class)->name('lien.waivers.index');
+        Route::get('/waivers/all', WaiverList::class)->name('lien.waivers.list');
+        Route::get('/waivers/new', WaiverWizard::class)->name('lien.waivers.create');
+        Route::get('/waivers/subscribe', WaiverSubscriptionCheckout::class)->name('lien.waivers.subscribe');
+        Route::get('/waivers/payment-confirmation', [WaiverPaymentController::class, 'confirmation'])
+            ->name('lien.waivers.payment-confirmation');
+
+        // Waiver contact directory (also reachable inline from the wizard)
+        Route::get('/waivers/contacts', ContactList::class)->name('lien.waivers.contacts.index');
+        Route::get('/waivers/contacts/new', ContactForm::class)->name('lien.waivers.contacts.create');
+        Route::get('/waivers/contacts/{contact}/edit', ContactForm::class)->name('lien.waivers.contacts.edit');
+
+        Route::get('/waivers/{waiver}', WaiverShow::class)->name('lien.waivers.show');
+        Route::get('/waivers/{waiver}/download', [WaiverDownloadController::class, 'download'])
+            ->name('lien.waivers.download');
 
         // Deadlines list
         Route::get('/deadlines', DeadlineList::class)->name('lien.deadlines.index');

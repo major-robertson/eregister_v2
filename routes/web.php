@@ -71,6 +71,10 @@ Route::view('sales-tax-registration', 'pages.sales-tax-registration')->name('sal
 Route::view('resale-certificates', 'pages.resale-certificates')->name('resale-certificates');
 
 // Payment Protection (lien sub-pages)
+Route::get('liens/lien-waivers', [\App\Http\Controllers\WaiverLandingController::class, 'index'])->name('liens.lien-waivers');
+// Registered before the {state} route so "pricing" resolves to the page, not a state code.
+Route::view('liens/lien-waivers/pricing', 'pages.liens.lien-waivers-pricing')->name('liens.lien-waivers.pricing');
+Route::get('liens/lien-waivers/{state}', [\App\Http\Controllers\WaiverLandingController::class, 'state'])->name('liens.lien-waivers.state');
 Route::view('liens/preliminary-notice', 'pages.liens.preliminary-notice')->name('liens.preliminary-notice');
 Route::view('liens/notice-of-intent-to-lien', 'pages.liens.notice-of-intent-to-lien')->name('liens.notice-of-intent-to-lien');
 Route::view('liens/lien-release', 'pages.liens.lien-release')->name('liens.lien-release');

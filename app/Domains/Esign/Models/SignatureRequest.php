@@ -2,6 +2,7 @@
 
 namespace App\Domains\Esign\Models;
 
+use App\Domains\Esign\DocumentSigningPolicy;
 use App\Domains\Esign\Enums\SignatureRequestStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -30,6 +31,11 @@ class SignatureRequest extends Model
         'signer_name_snapshot',
         'signer_email_snapshot',
         'signer_phone_snapshot',
+        'guest_code_hash',
+        'guest_code_expires_at',
+        'guest_code_attempts',
+        'guest_code_last_sent_at',
+        'guest_verified_at',
         'intent_statement',
         'presented_text_json',
         'signature_method',
@@ -51,6 +57,10 @@ class SignatureRequest extends Model
             'status' => SignatureRequestStatus::class,
             'presented_text_json' => 'array',
             'email_verified_at_sign' => 'datetime',
+            'guest_code_expires_at' => 'datetime',
+            'guest_code_attempts' => 'integer',
+            'guest_code_last_sent_at' => 'datetime',
+            'guest_verified_at' => 'datetime',
             'invited_at' => 'datetime',
             'first_opened_at' => 'datetime',
             'completed_at' => 'datetime',
@@ -101,6 +111,20 @@ class SignatureRequest extends Model
     public function events(): HasMany
     {
         return $this->hasMany(SignatureEvent::class)->orderBy('id');
+    }
+
+    /**
+     * Guest sessions have no account — the signer proves control of the
+     * invited email with a one-time code instead of logging in.
+     */
+    public function isGuest(): bool
+    {
+        return $this->signer_user_id === null;
+    }
+
+    public function policy(): DocumentSigningPolicy
+    {
+        return DocumentSigningPolicy::for($this->document_signing_policy_key);
     }
 
     public function isActive(): bool

@@ -28,6 +28,10 @@ class SignDone extends Component
         return view('livewire.esign.sign-done', [
             'documents' => $this->request->documents,
             'title' => config("esign.document_types.{$this->request->document_signing_policy_key}.title", 'Documents'),
+            'isGuest' => $this->request->isGuest(),
+            'registerUrl' => route('register').'?'.http_build_query(array_filter([
+                'email' => $this->request->signer_email_snapshot,
+            ])),
         ])->layout('layouts.minimal');
     }
 }

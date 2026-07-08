@@ -65,6 +65,27 @@ return [
                 'current_pattern' => 'lien.filings.index',
             ],
             [
+                'label' => 'Waivers',
+                'icon' => 'document-check',
+                'route' => 'lien.waivers.index',
+                // Explicit list (not lien.waivers.*) so the Contacts sub-namespace
+                // highlights Contacts only, not both items.
+                'current_pattern' => [
+                    'lien.waivers.index',
+                    'lien.waivers.list',
+                    'lien.waivers.create',
+                    'lien.waivers.show',
+                    'lien.waivers.subscribe',
+                    'lien.waivers.payment-confirmation',
+                ],
+            ],
+            [
+                'label' => 'Contacts',
+                'icon' => 'user-group',
+                'route' => 'lien.waivers.contacts.index',
+                'current_pattern' => 'lien.waivers.contacts.*',
+            ],
+            [
                 'label' => 'Deadlines',
                 'icon' => 'calendar',
                 'route' => 'lien.deadlines.index',

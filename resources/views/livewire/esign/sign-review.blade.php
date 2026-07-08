@@ -27,11 +27,12 @@
                 return el ? Alpine.$data(el) : null;
             },
             signing: false,
+            guest: @js($isGuest ?? false),
             async submit() {
                 if (this.signing) return;
 
                 let sig = null;
-                if (! $wire.useSaved) {
+                if (! this.guest && ! $wire.useSaved) {
                     sig = this.capture?.export();
                     if (! sig) return;
                 }
@@ -52,7 +53,13 @@
             <flux:error name="adoptedName" />
         </flux:field>
 
-        @if ($this->savedSignatureDataUri)
+        @if (($isGuest ?? false))
+            <flux:text class="text-xs text-zinc-500">
+                Your typed legal name is adopted as your electronic signature and applied to the document.
+            </flux:text>
+        @endif
+
+        @if (! ($isGuest ?? false) && $this->savedSignatureDataUri)
             <div class="rounded border border-gray-200 bg-gray-50 p-3">
                 <label class="flex items-start gap-2">
                     <input type="checkbox" wire:model.live="useSaved" class="mt-0.5 h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500" />
@@ -64,7 +71,7 @@
             </div>
         @endif
 
-        @if (! $useSaved || ! $this->savedSignatureDataUri)
+        @if (! ($isGuest ?? false) && (! $useSaved || ! $this->savedSignatureDataUri))
             <div class="rounded border border-gray-200 bg-gray-50 p-3">
                 <div class="mb-2 text-xs text-gray-500">Your signature</div>
                 <x-esign.signature-capture :default-name="$adoptedName" />
@@ -74,14 +81,14 @@
             </div>
         @endif
 
-        <flux:button type="button" x-on:click="submit()" x-bind:disabled="signing || (! $wire.useSaved && ! capture?.hasSignature)"
+        <flux:button type="button" x-on:click="submit()" x-bind:disabled="signing || (! guest && ! $wire.useSaved && ! capture?.hasSignature)"
             variant="primary" icon="pencil-square" class="w-full">
             <span x-show="!signing">{{ $signButton }}</span>
             <span x-show="signing" x-cloak>Signing...</span>
         </flux:button>
         <flux:text class="text-center text-xs text-gray-500">
             By clicking “{{ $signButton }}”, you confirm you intend to be legally bound by your electronic
-            signature on each listed letter.
+            signature on each listed document.
         </flux:text>
     </div>
 </div>

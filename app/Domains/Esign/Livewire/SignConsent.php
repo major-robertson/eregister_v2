@@ -49,7 +49,8 @@ class SignConsent extends Component
         $policy = DocumentSigningPolicy::for($this->request->document_signing_policy_key);
 
         $consent = EsignConsent::create([
-            'user_id' => auth()->id(),
+            'user_id' => $this->request->isGuest() ? null : auth()->id(),
+            'guest_email' => $this->request->isGuest() ? $this->request->signer_email_snapshot : null,
             'consent_scope' => $policy->consentScope(),
             'version' => $config['version'],
             'disclosure_text' => $this->fullConsentText($config),
@@ -64,7 +65,12 @@ class SignConsent extends Component
 
         app(AppendSignatureEvent::class)->execute($this->request, SignatureEventType::ConsentAccepted,
             actorType: 'signer', actorUserId: auth()->id(), ip: request()->ip(), userAgent: request()->userAgent(),
-            metadata: ['consent_id' => $consent->id, 'scope' => $policy->consentScope(), 'version' => $config['version']]);
+            metadata: array_filter([
+                'consent_id' => $consent->id,
+                'scope' => $policy->consentScope(),
+                'version' => $config['version'],
+                'guest_email' => $this->request->isGuest() ? $this->request->signer_email_snapshot : null,
+            ], fn ($value) => $value !== null));
 
         return $this->redirectRoute('esign.sign.review', ['request' => $this->request->public_id], navigate: true);
     }

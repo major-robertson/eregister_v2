@@ -7,6 +7,8 @@ use App\Domains\Lien\Documents\DemandLetterGenerator;
 use App\Domains\Lien\Documents\DemandLetterSignedGenerator;
 use App\Domains\Lien\Esign\DemandLetterSignable;
 use App\Domains\Lien\Models\LienFiling;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 
@@ -26,6 +28,12 @@ class EsignServiceProvider extends ServiceProvider
                 $this->app->make(DemandLetterSignedGenerator::class),
             ));
 
+            $resolver->register('lien_waiver', fn (\App\Domains\Lien\Models\LienWaiver $waiver): \App\Domains\Lien\Esign\LienWaiverSignable => new \App\Domains\Lien\Esign\LienWaiverSignable(
+                $waiver,
+                $this->app->make(\App\Domains\Lien\Documents\WaiverGenerator::class),
+                $this->app->make(\App\Domains\Lien\Documents\WaiverSignedGenerator::class),
+            ));
+
             return $resolver;
         });
 
@@ -39,5 +47,10 @@ class EsignServiceProvider extends ServiceProvider
         Livewire::component('esign.sign-consent', \App\Domains\Esign\Livewire\SignConsent::class);
         Livewire::component('esign.sign-review', \App\Domains\Esign\Livewire\SignReview::class);
         Livewire::component('esign.sign-done', \App\Domains\Esign\Livewire\SignDone::class);
+        Livewire::component('esign.sign-verify-identity', \App\Domains\Esign\Livewire\SignVerifyIdentity::class);
+        Livewire::component('esign.my-documents', \App\Domains\Esign\Livewire\MyDocuments::class);
+
+        // Attach completed guest signatures to accounts by email at login.
+        Event::listen(Login::class, \App\Domains\Esign\Listeners\ClaimGuestSignatureRequests::class);
     }
 }

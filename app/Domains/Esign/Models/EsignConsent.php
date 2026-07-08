@@ -16,6 +16,7 @@ class EsignConsent extends Model
 {
     protected $fillable = [
         'user_id',
+        'guest_email',
         'consent_scope',
         'version',
         'disclosure_text',

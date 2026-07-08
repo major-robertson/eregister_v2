@@ -12,6 +12,10 @@ enum SignatureEventType: string
     case DocumentLocked = 'document_locked';
     case SignerInvited = 'signer_invited';
     case SignerOpened = 'signer_opened';
+    // Guest signers only: control of the invited email proven via one-time code.
+    case SignerIdentityVerified = 'signer_identity_verified';
+    // Guest signers only: a one-time code email was issued (send-cap audit).
+    case GuestCodeSent = 'guest_code_sent';
     case ConsentAccepted = 'consent_accepted';
     case DocumentViewed = 'document_viewed';
     case SignatureStarted = 'signature_started';
@@ -29,6 +33,8 @@ enum SignatureEventType: string
             self::DocumentLocked => 'Document locked',
             self::SignerInvited => 'Signer invited',
             self::SignerOpened => 'Signer opened',
+            self::SignerIdentityVerified => 'Signer identity verified',
+            self::GuestCodeSent => 'Verification code sent',
             self::ConsentAccepted => 'Consent accepted',
             self::DocumentViewed => 'Document viewed',
             self::SignatureStarted => 'Signature started',

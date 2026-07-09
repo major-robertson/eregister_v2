@@ -518,19 +518,19 @@
         <div class="grid gap-8 text-center sm:grid-cols-4">
             <div>
                 <div class="text-4xl font-bold text-white">50</div>
-                <div class="mt-1 text-sm text-zinc-400">States covered</div>
+                <div class="mt-1 text-sm text-zinc-400">States' lien rules</div>
             </div>
             <div>
                 <div class="text-4xl font-bold text-white">2 min</div>
                 <div class="mt-1 text-sm text-zinc-400">Average filing time</div>
             </div>
             <div>
-                <div class="text-4xl font-bold text-white">10K+</div>
-                <div class="mt-1 text-sm text-zinc-400">Liens filed</div>
+                <div class="text-4xl font-bold text-white">Free</div>
+                <div class="mt-1 text-sm text-zinc-400">Lien tracking</div>
             </div>
             <div>
-                <div class="text-4xl font-bold text-white">99%</div>
-                <div class="mt-1 text-sm text-zinc-400">Success rate</div>
+                <div class="text-4xl font-bold text-white">Flat rate</div>
+                <div class="mt-1 text-sm text-zinc-400">State fees included</div>
             </div>
         </div>
     </div>

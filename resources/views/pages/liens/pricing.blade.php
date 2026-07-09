@@ -170,6 +170,24 @@
     </div>
 </section>
 
+{{-- Cross-reference: lien waivers --}}
+<section class="bg-white pb-24">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col items-start justify-between gap-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-8 sm:flex-row sm:items-center">
+            <div>
+                <h3 class="text-xl font-bold text-zinc-900">Sending or collecting lien waivers?</h3>
+                <p class="mt-2 text-zinc-600">Waivers are what get your check released before it ever comes to a lien. Generating them is free for every state, and e-signature with automatic reminders is a flat monthly subscription, priced separately from lien filings.</p>
+            </div>
+            <a href="{{ route('liens.lien-waivers.pricing') }}" class="inline-flex shrink-0 items-center gap-2 rounded-lg bg-zinc-900 px-6 py-3 font-semibold text-white transition hover:bg-zinc-800">
+                See lien waiver pricing
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+            </a>
+        </div>
+    </div>
+</section>
+
 {{-- Self-serve vs full-service --}}
 <section class="border-y border-zinc-200 bg-zinc-50 py-24">
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
@@ -245,24 +263,6 @@
                 </summary>
                 <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">Self-serve means we prepare the state-compliant document and you handle signing, sending, or recording it. Full-service means we do it all — preparation, filing or recording where required, delivery to every required party, and proof of service.</div>
             </details>
-        </div>
-    </div>
-</section>
-
-{{-- Cross-reference: lien waivers --}}
-<section class="bg-white py-16">
-    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        <div class="flex flex-col items-start justify-between gap-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-8 sm:flex-row sm:items-center">
-            <div>
-                <h3 class="text-xl font-bold text-zinc-900">Sending or collecting lien waivers?</h3>
-                <p class="mt-2 text-zinc-600">Waivers are what get your check released before it ever comes to a lien. Generating them is free for every state, and e-signature with automatic reminders is a flat monthly subscription, priced separately from lien filings.</p>
-            </div>
-            <a href="{{ route('liens.lien-waivers.pricing') }}" class="inline-flex shrink-0 items-center gap-2 rounded-lg bg-zinc-900 px-6 py-3 font-semibold text-white transition hover:bg-zinc-800">
-                See lien waiver pricing
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-            </a>
         </div>
     </div>
 </section>

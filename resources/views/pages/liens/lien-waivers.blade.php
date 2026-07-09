@@ -1,6 +1,6 @@
 @extends('layouts.landing')
 
-@section('title', 'Free Lien Waiver Generator | Lien Waiver Forms for All 50 States')
+@section('title', 'Lien Waiver Generator | Free Forms for All 50 States')
 
 @section('meta')
 <link rel="canonical" href="{{ route('liens.lien-waivers') }}" />
@@ -27,7 +27,7 @@
             Free to generate, no credit card required
         </div>
         <h1 class="mt-8 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-            Free Lien Waiver Generator<br>
+            Lien Waiver Generator<br>
             <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Correct Forms for All 50 States</span>
         </h1>
         <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">
@@ -40,7 +40,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
             </a>
-            <a href="#pricing" class="inline-flex items-center gap-2 rounded-lg border border-zinc-600 px-8 py-4 text-base font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-white">
+            <a href="{{ route('liens.lien-waivers.pricing') }}" class="inline-flex items-center gap-2 rounded-lg border border-zinc-600 px-8 py-4 text-base font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-white">
                 See pricing
             </a>
         </div>

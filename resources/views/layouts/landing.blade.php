@@ -127,13 +127,10 @@
                                 <a href="{{ route('liens.notice-of-intent-to-lien') }}" class="block rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">Notice of Intent to Lien</a>
                                 <a href="{{ route('liens.lien-release') }}" class="block rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">Lien Release</a>
                                 <a href="{{ route('liens.payment-demand-letter') }}" class="block rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">Payment Demand Letter</a>
-
-                                <p class="mt-2 border-t border-zinc-100 px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Lien Waivers</p>
                                 <a href="{{ route('liens.lien-waivers') }}" class="block rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">Lien Waiver Generator</a>
-                                <a href="{{ route('liens.lien-waivers.pricing') }}" class="block rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">Lien Waiver Pricing</a>
 
                                 <div class="mt-2 border-t border-zinc-100 pt-1">
-                                    <a href="{{ route('liens.pricing') }}" class="block rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">Lien Filing Pricing</a>
+                                    <a href="{{ route('liens.pricing') }}" class="block rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900">Pricing</a>
                                 </div>
                             </div>
                         </div>
@@ -259,13 +256,9 @@
                             <a href="{{ route('liens.notice-of-intent-to-lien') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Notice of Intent to Lien</a>
                             <a href="{{ route('liens.lien-release') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Lien Release</a>
                             <a href="{{ route('liens.payment-demand-letter') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Payment Demand Letter</a>
-
-                            <p class="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-400">Lien Waivers</p>
                             <a href="{{ route('liens.lien-waivers') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Lien Waiver Generator</a>
-                            <a href="{{ route('liens.lien-waivers.pricing') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Lien Waiver Pricing</a>
 
-                            <p class="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wide text-zinc-400">Pricing</p>
-                            <a href="{{ route('liens.pricing') }}" class="block rounded-lg px-3 py-1.5 text-sm text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">Lien Filing Pricing</a>
+                            <a href="{{ route('liens.pricing') }}" class="mt-2 block rounded-lg border-t border-zinc-100 px-3 pb-1.5 pt-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-100">Pricing</a>
                         </div>
                     </details>
 

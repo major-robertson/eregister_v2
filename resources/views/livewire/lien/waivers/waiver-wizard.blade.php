@@ -12,20 +12,23 @@
     <div class="flex items-center justify-between mb-8">
         @foreach ($stepTitles as $stepNum => $label)
             @php
+                $isSkipped = $this->stepIsSkipped($stepNum);
                 $isActive = $step === $stepNum;
-                $isComplete = $step > $stepNum;
+                // Deep-link-skipped steps (project/type) read as already done.
+                $isComplete = $step > $stepNum || $isSkipped;
+                $isClickable = $isComplete && ! $isSkipped && ! $isActive;
             @endphp
             <div class="flex items-center {{ $stepNum < $totalSteps ? 'flex-1' : '' }}">
                 <button wire:click="goToStep({{ $stepNum }})"
                     @class([
                         'flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium transition',
                         'bg-blue-600 text-white' => $isActive,
-                        'bg-green-500 text-white' => $isComplete,
+                        'bg-green-500 text-white' => $isComplete && ! $isActive,
                         'bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400' => ! $isActive && ! $isComplete,
-                        'cursor-pointer' => $isComplete,
-                        'cursor-default' => ! $isComplete,
+                        'cursor-pointer' => $isClickable,
+                        'cursor-default' => ! $isClickable,
                     ])
-                    @if (! $isComplete) disabled @endif
+                    @if (! $isClickable) disabled @endif
                 >
                     @if ($isComplete)
                         <flux:icon name="check" class="w-4 h-4" />
@@ -125,64 +128,73 @@
 
         @elseif ($step === 3)
             {{-- Step 3: Waiver type --}}
-            <x-slot:header>Which waiver do you need?</x-slot:header>
+            <x-slot:header>
+                <div>
+                    <h2 class="text-lg font-bold text-text-primary">Which waiver do you need?</h2>
+                    <p class="mt-1 text-sm text-text-secondary">Answer two questions or pick the exact form directly below.</p>
+                </div>
+            </x-slot:header>
 
             <div class="space-y-6">
-                {{-- State advisories --}}
-                @foreach ($stateRules['ui_notes'] ?? [] as $note)
-                    <flux:callout color="blue" icon="information-circle" wire:key="ui-note-{{ $loop->index }}">
-                        {{ $note }}
-                    </flux:callout>
-                @endforeach
-
-                @if (! empty($stateRules['advance_waiver_note']))
-                    <flux:callout color="amber" icon="information-circle">
-                        {{ $stateRules['advance_waiver_note'] }}
-                    </flux:callout>
-                @endif
-
-                {{-- Guided questions --}}
-                <flux:field>
-                    <flux:label>Is this for a progress payment or the final payment?</flux:label>
-                    <div class="mt-2 grid grid-cols-2 gap-3">
+                {{-- Q1: timing --}}
+                <div>
+                    <p class="mb-2.5 text-[15px] font-semibold text-text-primary">Is this for a progress payment or the final payment?</p>
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         @foreach (['progress' => ['Progress payment', 'One payment along the way: more work or payments are coming.'], 'final' => ['Final payment', 'The last payment on this project.']] as $value => [$label, $hint])
+                            @php $selected = $paymentType === $value; @endphp
                             <button
                                 type="button"
                                 wire:key="payment-type-{{ $value }}"
                                 wire:click="$set('paymentType', '{{ $value }}')"
                                 @class([
-                                    'rounded-lg border-2 p-4 text-left transition',
-                                    'border-blue-600 bg-blue-50/60 dark:border-blue-500 dark:bg-blue-900/20' => $paymentType === $value,
-                                    'border-zinc-200 hover:border-zinc-300 dark:border-zinc-700 dark:hover:border-zinc-600' => $paymentType !== $value,
+                                    'flex items-start gap-3 rounded-xl border p-4 text-left transition',
+                                    'border-primary bg-primary/5' => $selected,
+                                    'border-border bg-white hover:border-primary/40' => ! $selected,
                                 ])
                             >
-                                <span class="block font-medium text-zinc-900 dark:text-white">{{ $label }}</span>
-                                <span class="mt-1 block text-xs text-zinc-500">{{ $hint }}</span>
+                                <span @class([
+                                    'mt-0.5 size-[18px] shrink-0 rounded-full bg-white',
+                                    'border-[5px] border-primary' => $selected,
+                                    'border-[1.5px] border-zinc-300' => ! $selected,
+                                ])></span>
+                                <span class="min-w-0">
+                                    <span class="block text-[15px] font-semibold text-text-primary">{{ $label }}</span>
+                                    <span class="mt-0.5 block text-sm text-text-secondary">{{ $hint }}</span>
+                                </span>
                             </button>
                         @endforeach
                     </div>
-                </flux:field>
+                </div>
 
-                <flux:field>
-                    <flux:label>Has the payment actually been received or cleared?</flux:label>
-                    <div class="mt-2 grid grid-cols-2 gap-3">
+                {{-- Q2: condition --}}
+                <div>
+                    <p class="mb-2.5 text-[15px] font-semibold text-text-primary">Has the payment actually been received or cleared?</p>
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         @foreach (['no' => ['Not yet', 'Safest: the waiver only takes effect once the money arrives (conditional).'], 'yes' => ['Yes, money in hand', 'The waiver takes effect immediately when signed (unconditional).']] as $value => [$label, $hint])
+                            @php $selected = $paymentReceived === $value; @endphp
                             <button
                                 type="button"
                                 wire:key="payment-received-{{ $value }}"
                                 wire:click="$set('paymentReceived', '{{ $value }}')"
                                 @class([
-                                    'rounded-lg border-2 p-4 text-left transition',
-                                    'border-blue-600 bg-blue-50/60 dark:border-blue-500 dark:bg-blue-900/20' => $paymentReceived === $value,
-                                    'border-zinc-200 hover:border-zinc-300 dark:border-zinc-700 dark:hover:border-zinc-600' => $paymentReceived !== $value,
+                                    'flex items-start gap-3 rounded-xl border p-4 text-left transition',
+                                    'border-primary bg-primary/5' => $selected,
+                                    'border-border bg-white hover:border-primary/40' => ! $selected,
                                 ])
                             >
-                                <span class="block font-medium text-zinc-900 dark:text-white">{{ $label }}</span>
-                                <span class="mt-1 block text-xs text-zinc-500">{{ $hint }}</span>
+                                <span @class([
+                                    'mt-0.5 size-[18px] shrink-0 rounded-full bg-white',
+                                    'border-[5px] border-primary' => $selected,
+                                    'border-[1.5px] border-zinc-300' => ! $selected,
+                                ])></span>
+                                <span class="min-w-0">
+                                    <span class="block text-[15px] font-semibold text-text-primary">{{ $label }}</span>
+                                    <span class="mt-0.5 block text-sm text-text-secondary">{{ $hint }}</span>
+                                </span>
                             </button>
                         @endforeach
                     </div>
-                </flux:field>
+                </div>
 
                 {{-- Redirected to the state's equivalent form --}}
                 @if ($redirectNotice)
@@ -190,20 +202,6 @@
                         {{ $redirectNotice }}
                     </flux:callout>
                 @endif
-
-                {{-- Resolved selection --}}
-                @if ($kind !== '' && isset($kinds[$kind]))
-                    <flux:callout color="green" icon="check-circle">
-                        <flux:callout.heading>{{ $kinds[$kind]['title'] }}</flux:callout.heading>
-                        <flux:callout.text>
-                            {{ \App\Domains\Lien\Enums\WaiverKind::from($kind)->description() }}
-                            @if (! empty($stateRules['statute']))
-                                <span class="block mt-1 text-xs">Statutory basis: {{ $stateRules['statute'] }}</span>
-                            @endif
-                        </flux:callout.text>
-                    </flux:callout>
-                @endif
-                <flux:error name="kind" />
 
                 {{-- Notary/witness states can't e-sign --}}
                 @if ($form && ! $form->esignAllowed)
@@ -217,111 +215,121 @@
                     </flux:callout>
                 @endif
 
-                {{-- Power-user grid --}}
-                <div class="border-t border-zinc-200 pt-4 dark:border-zinc-700">
-                    <flux:switch wire:model.live="showAllKinds" label="Show all form types" />
+                <flux:error name="kind" />
+            </div>
 
-                    @if ($showAllKinds)
-                        <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                            @foreach ($kinds as $kindValue => $entry)
-                                @if ($entry['enabled'])
-                                    <button
-                                        type="button"
-                                        wire:key="kind-{{ $kindValue }}"
-                                        wire:click="selectKind('{{ $kindValue }}')"
-                                        @class([
-                                            'rounded-lg border-2 p-4 text-left transition',
-                                            'border-blue-600 bg-blue-50/60 dark:border-blue-500 dark:bg-blue-900/20' => $kind === $kindValue,
-                                            'border-zinc-200 hover:border-zinc-300 dark:border-zinc-700 dark:hover:border-zinc-600' => $kind !== $kindValue,
-                                        ])
-                                    >
-                                        <span class="block text-sm font-medium text-zinc-900 dark:text-white">{{ $entry['title'] }}</span>
-                                        <span class="mt-1 block text-xs text-zinc-500">{{ $entry['kind']->shortLabel() }}</span>
-                                    </button>
-                                @else
-                                    {{-- Never hidden: greyed out with the state's explanation --}}
-                                    <div
-                                        wire:key="kind-{{ $kindValue }}"
-                                        class="cursor-not-allowed rounded-lg border-2 border-zinc-200 p-4 opacity-60 dark:border-zinc-700"
-                                    >
-                                        <span class="block text-sm font-medium text-zinc-500 dark:text-zinc-400">{{ $entry['title'] }}</span>
-                                        <span class="mt-1 block text-xs text-zinc-400">
-                                            {{ $entry['disabled_reason'] ?? 'Not used in this state.' }}
-                                        </span>
-                                    </div>
-                                @endif
-                            @endforeach
+            {{-- "Your form" strip: the exact form, visually distinct. Stays in sync
+                 with the questions above — selecting either updates the other. --}}
+            @php
+                $formGroups = [
+                    'Progress Payment' => ['conditional_progress', 'unconditional_progress'],
+                    'Final Payment' => ['conditional_final', 'unconditional_final'],
+                ];
+            @endphp
+            <div class="-mx-6 -mb-6 mt-6 rounded-b-xl border-t border-border bg-bg-light px-6 py-6">
+                <div class="mb-3.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                    <span class="text-xs font-bold uppercase tracking-wider text-text-secondary">Your form</span>
+                    <span class="text-[13px] text-zinc-400">Know exactly what you need? Pick it here instead.</span>
+                </div>
+                <div class="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+                    @foreach ($formGroups as $groupHeading => $groupKinds)
+                        <div>
+                            <p class="mb-2 text-[13px] font-bold text-text-primary">{{ $groupHeading }}</p>
+                            <div class="flex flex-col gap-2">
+                                @foreach ($groupKinds as $kindValue)
+                                    @php $entry = $kinds[$kindValue] ?? null; @endphp
+                                    @if ($entry)
+                                        @php
+                                            $selected = $kind === $kindValue;
+                                            $name = $entry['kind']->isConditional() ? 'Conditional Waiver' : 'Unconditional Waiver';
+                                        @endphp
+                                        @if ($entry['enabled'])
+                                            <button
+                                                type="button"
+                                                wire:key="kind-{{ $kindValue }}"
+                                                wire:click="selectKind('{{ $kindValue }}')"
+                                                @class([
+                                                    'flex items-center gap-3 rounded-xl border p-3.5 text-left transition',
+                                                    'border-primary bg-primary/5' => $selected,
+                                                    'border-border bg-white hover:border-primary/40' => ! $selected,
+                                                ])
+                                            >
+                                                <span @class([
+                                                    'size-[18px] shrink-0 rounded-full bg-white',
+                                                    'border-[5px] border-primary' => $selected,
+                                                    'border-[1.5px] border-zinc-300' => ! $selected,
+                                                ])></span>
+                                                <span class="min-w-0 flex-1 text-sm font-semibold text-text-primary">{{ $name }}</span>
+                                                @if ($selected)
+                                                    <span class="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">Selected</span>
+                                                @endif
+                                            </button>
+                                        @else
+                                            {{-- Never hidden: greyed with the state's explanation --}}
+                                            <div wire:key="kind-{{ $kindValue }}" class="flex items-start gap-3 rounded-xl border border-border bg-white/50 p-3.5">
+                                                <span class="mt-0.5 size-[18px] shrink-0 rounded-full border-[1.5px] border-zinc-200 bg-white"></span>
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="text-sm font-semibold text-zinc-400">{{ $name }}</div>
+                                                    <div class="mt-0.5 text-xs text-zinc-400">{{ $entry['disabled_reason'] ?? 'Not used in this state.' }}</div>
+                                                </div>
+                                            </div>
+                                        @endif
+                                    @endif
+                                @endforeach
+                            </div>
                         </div>
-                    @endif
+                    @endforeach
                 </div>
             </div>
 
         @elseif ($step === 4)
             {{-- Step 4: Details --}}
-            <x-slot:header>Waiver details</x-slot:header>
+            <x-slot:header>
+                <div>
+                    <h2 class="text-lg font-bold text-text-primary">Waiver details</h2>
+                    <p class="mt-1 text-sm text-text-secondary">The payment this waiver covers, and who's involved.</p>
+                </div>
+            </x-slot:header>
 
             <div class="space-y-6">
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <flux:field>
-                        <flux:label>Payment amount ($)</flux:label>
-                        <flux:input type="number" step="0.01" min="0" wire:model="amount" placeholder="0.00" />
-                        <flux:description>The payment this waiver covers. Leaving it blank is allowed.</flux:description>
-                        <flux:error name="amount" />
-                    </flux:field>
-
-                    @unless ($this->isFinalKind())
-                        <flux:field>
-                            <flux:label>Through date</flux:label>
-                            <flux:date-picker wire:model="through_date" />
-                            <flux:description>You waive rights for work/materials furnished through this date.</flux:description>
-                            <flux:error name="through_date" />
-                        </flux:field>
-                    @endunless
-
-                    <flux:field>
-                        <flux:label>Invoice number</flux:label>
-                        <flux:input wire:model="invoice_number" placeholder="Optional" />
-                        <flux:error name="invoice_number" />
-                    </flux:field>
-                </div>
-
-                @if ($this->isConditionalKind())
+                {{-- Payment --}}
+                <div>
+                    <p class="mb-2.5 text-[15px] font-semibold text-text-primary">Payment</p>
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <flux:field>
-                            <flux:label>Check from (maker)</flux:label>
-                            <flux:input wire:model="check_maker" placeholder="Who the check is from" />
-                            <flux:description>Conditional waivers can identify the expected payment.</flux:description>
-                            <flux:error name="check_maker" />
+                            <flux:label>Payment amount ($) *</flux:label>
+                            <flux:input type="number" step="0.01" min="0" wire:model="amount" placeholder="0.00" />
+                            <flux:description>The payment this waiver covers.</flux:description>
+                            <flux:error name="amount" />
                         </flux:field>
 
+                        @unless ($this->isFinalKind())
+                            <flux:field>
+                                <flux:label>Through date</flux:label>
+                                <flux:date-picker wire:model="through_date" />
+                                <flux:description>You waive rights for work/materials furnished through this date.</flux:description>
+                                <flux:error name="through_date" />
+                            </flux:field>
+                        @endunless
+
                         <flux:field>
-                            <flux:label>Check number</flux:label>
-                            <flux:input wire:model="check_number" placeholder="Optional" />
-                            <flux:error name="check_number" />
+                            <flux:label>Invoice number</flux:label>
+                            <flux:input wire:model="invoice_number" placeholder="Optional" />
+                            <flux:error name="invoice_number" />
                         </flux:field>
                     </div>
-                @endif
+                </div>
 
-                <flux:field>
-                    <flux:label>Exceptions</flux:label>
-                    <flux:textarea wire:model="exceptions" rows="3" placeholder="e.g., disputed change order #4, retention, unbilled extras..." />
-                    <flux:description>
-                        Anything this waiver does NOT release: disputed claims, retention, or extras.
-                        Listed exceptions survive the waiver.
-                    </flux:description>
-                    <flux:error name="exceptions" />
-                </flux:field>
-
-                {{-- Counterparty --}}
-                <div class="border-t border-zinc-200 pt-6 dark:border-zinc-700">
-                    <flux:heading size="sm" class="mb-3">
+                {{-- Counterparty (and, on collect waivers, their signer) --}}
+                <div class="border-t border-border pt-5">
+                    <p class="text-[15px] font-semibold text-text-primary">
                         {{ $direction === 'provide' ? 'Who receives this waiver?' : 'Who is giving you this waiver?' }}
-                    </flux:heading>
+                    </p>
 
-                    <div class="space-y-3">
+                    <div class="mt-3 space-y-3">
                         <flux:field>
                             <flux:label>Contact</flux:label>
-                            <flux:select variant="combobox" clearable placeholder="Select a contact..." wire:model="contactId">
+                            <flux:select variant="combobox" clearable placeholder="Select a contact..." wire:model.live="contactId">
                                 @foreach ($contacts as $contact)
                                     <flux:select.option value="{{ $contact->id }}">{{ $contact->displayName() }}</flux:select.option>
                                 @endforeach
@@ -339,48 +347,99 @@
                                 </flux:button>
                             @endif
                         </div>
+
+                        @if ($direction === 'collect')
+                            {{-- The counterparty's person signs: prefilled from the contact. --}}
+                            <div class="rounded-xl border border-border bg-bg-light p-4">
+                                <p class="text-sm font-semibold text-text-primary">Who signs it?</p>
+                                <p class="mt-0.5 text-[13px] text-text-secondary">
+                                    We email the signature request to this person. Prefilled from the
+                                    contact — edit if someone else signs.
+                                </p>
+                                <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <flux:field>
+                                        <flux:label>Signer name *</flux:label>
+                                        <flux:input wire:model="signer_name" placeholder="Person at the vendor/sub who signs" />
+                                        <flux:error name="signer_name" />
+                                    </flux:field>
+
+                                    <flux:field>
+                                        <flux:label>Signer email *</flux:label>
+                                        <flux:input type="email" wire:model="signer_email" placeholder="Where the signature request goes" />
+                                        <flux:error name="signer_email" />
+                                    </flux:field>
+
+                                    <flux:field>
+                                        <flux:label>Signer title</flux:label>
+                                        <flux:input wire:model="signer_title" placeholder="e.g., Owner, Project Manager" />
+                                        <flux:error name="signer_title" />
+                                    </flux:field>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
-                {{-- Signer --}}
-                <div class="border-t border-zinc-200 pt-6 dark:border-zinc-700">
-                    <flux:heading size="sm" class="mb-3">Who signs the waiver?</flux:heading>
-
-                    @if ($direction === 'collect')
-                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <flux:field>
-                                <flux:label>Signer name *</flux:label>
-                                <flux:input wire:model="signer_name" placeholder="Person at the vendor/sub who signs" />
-                                <flux:error name="signer_name" />
-                            </flux:field>
-
-                            <flux:field>
-                                <flux:label>Signer email *</flux:label>
-                                <flux:input type="email" wire:model="signer_email" placeholder="Where the signature request goes" />
-                                <flux:error name="signer_email" />
-                            </flux:field>
-
-                            <flux:field>
-                                <flux:label>Signer title</flux:label>
-                                <flux:input wire:model="signer_title" placeholder="e.g., Owner, Project Manager" />
+                @if ($direction === 'provide')
+                    {{-- You sign your own provide waiver: nothing to collect beyond a title. --}}
+                    <div class="border-t border-border pt-5">
+                        <p class="text-[15px] font-semibold text-text-primary">Signature</p>
+                        <div class="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-bg-light p-4">
+                            <flux:icon name="user-circle" class="size-8 shrink-0 text-zinc-400" />
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-semibold text-text-primary">{{ auth()->user()->name }}</p>
+                                <p class="text-xs text-text-secondary">{{ auth()->user()->email }} &bull; You sign your own waiver</p>
+                            </div>
+                            <flux:field class="w-full sm:w-48 sm:shrink-0">
+                                <flux:input wire:model="signer_title" placeholder="Your title (optional)" />
                                 <flux:error name="signer_title" />
                             </flux:field>
                         </div>
-                    @else
-                        <div class="flex items-center gap-3 rounded-lg bg-zinc-50 p-4 dark:bg-zinc-800">
-                            <flux:icon name="user-circle" class="size-8 text-zinc-400" />
-                            <div class="flex-1">
-                                <p class="text-sm font-medium text-zinc-900 dark:text-white">{{ auth()->user()->name }}</p>
-                                <p class="text-xs text-zinc-500">{{ auth()->user()->email }} &bull; You sign your own waiver</p>
+                    </div>
+                @endif
+            </div>
+
+            {{-- Optional details: exceptions + (conditional-only) expected check.
+                 All safely skippable, so they live out of the main flow. --}}
+            <div class="-mx-6 -mb-6 mt-6 rounded-b-xl border-t border-border bg-bg-light px-6 py-1.5">
+                <flux:accordion>
+                    <flux:accordion.item>
+                        <flux:accordion.heading>
+                            <span class="text-sm font-semibold text-text-primary">Optional details</span>
+                            <span class="ml-2 text-[13px] font-normal text-zinc-400">Exceptions{{ $this->isConditionalKind() ? ' · expected check' : '' }} — fine to skip</span>
+                        </flux:accordion.heading>
+                        <flux:accordion.content>
+                            <div class="space-y-4 pb-4">
+                                <flux:field>
+                                    <flux:label>Exceptions</flux:label>
+                                    <flux:textarea wire:model="exceptions" rows="3" placeholder="e.g., disputed change order #4, retention, unbilled extras..." />
+                                    <flux:description>
+                                        Anything this waiver does NOT release: disputed claims, retention, or extras.
+                                        Listed exceptions survive the waiver.
+                                    </flux:description>
+                                    <flux:error name="exceptions" />
+                                </flux:field>
+
+                                @if ($this->isConditionalKind())
+                                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                        <flux:field>
+                                            <flux:label>Check from (maker)</flux:label>
+                                            <flux:input wire:model="check_maker" placeholder="Who the check is from" />
+                                            <flux:description>Conditional waivers can identify the expected payment.</flux:description>
+                                            <flux:error name="check_maker" />
+                                        </flux:field>
+
+                                        <flux:field>
+                                            <flux:label>Check number</flux:label>
+                                            <flux:input wire:model="check_number" placeholder="Optional" />
+                                            <flux:error name="check_number" />
+                                        </flux:field>
+                                    </div>
+                                @endif
                             </div>
-                        </div>
-                        <flux:field class="mt-3 max-w-xs">
-                            <flux:label>Your title</flux:label>
-                            <flux:input wire:model="signer_title" placeholder="e.g., Owner, President" />
-                            <flux:error name="signer_title" />
-                        </flux:field>
-                    @endif
-                </div>
+                        </flux:accordion.content>
+                    </flux:accordion.item>
+                </flux:accordion>
             </div>
 
         @elseif ($step === 5)

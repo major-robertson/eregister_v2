@@ -41,15 +41,17 @@
         </div>
     @endif
 
-    <div class="flex items-start justify-between">
-        <div>
+    {{-- Stacks on mobile so a long title/subtitle isn't squeezed next to the
+         actions; reverts to the side-by-side layout from the sm breakpoint up. --}}
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div class="min-w-0">
             <h1 class="text-2xl font-bold text-text-primary">{{ $title }}</h1>
             @if($subtitle)
-                <p class="mt-1 text-text-secondary">{{ $subtitle }}</p>
+                <p class="mt-1 text-sm text-text-secondary sm:text-base">{{ $subtitle }}</p>
             @endif
         </div>
         @isset($actions)
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3">
                 {{ $actions }}
             </div>
         @endisset

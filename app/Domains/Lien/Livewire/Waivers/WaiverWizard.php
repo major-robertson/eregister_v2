@@ -42,6 +42,12 @@ class WaiverWizard extends Component
 
     public int $totalSteps = 5;
 
+    // Deep-link locks: a project/kind handed in via the URL (the project page's
+    // waiver actions) fixes those steps, so the wizard skips them.
+    public bool $projectLocked = false;
+
+    public bool $kindLocked = false;
+
     // Step 1: Direction fork
     public string $direction = '';
 
@@ -49,12 +55,14 @@ class WaiverWizard extends Component
     #[Url('project')]
     public string $projectId = '';
 
+    // ?kind= deep link (the project page's four waiver-type cards) preseeds $kind.
+    #[Url('kind')]
+    public string $presetKind = '';
+
     // Step 3: Waiver type. Guided answers map onto the four canonical kinds.
     public string $paymentType = '';
 
     public string $paymentReceived = '';
-
-    public bool $showAllKinds = false;
 
     public string $kind = '';
 
@@ -116,6 +124,19 @@ class WaiverWizard extends Component
         if ($this->projectId !== '' && $this->selectedProject() === null) {
             $this->projectId = '';
         }
+
+        // A project handed in via ?project= (the project page's waiver actions)
+        // is fixed for the whole flow, so the project step is skipped.
+        $this->projectLocked = $this->projectId !== '';
+
+        // ?kind= (the four type cards) additionally preselects the waiver type.
+        // Only lock the type step when that kind actually resolved for this
+        // project's state; selectKind() no-ops on invalid/unavailable kinds, so
+        // a stale link just leaves the user on the guided selector.
+        if ($this->presetKind !== '' && $this->projectLocked) {
+            $this->selectKind($this->presetKind);
+            $this->kindLocked = $this->kind !== '';
+        }
     }
 
     // ------------------------------------------------------------------
@@ -126,24 +147,45 @@ class WaiverWizard extends Component
     {
         $this->validateStep();
 
-        if ($this->step < $this->totalSteps) {
-            $this->step++;
+        $next = $this->step;
+        do {
+            $next++;
+        } while ($next < $this->totalSteps && $this->stepIsSkipped($next));
+
+        $this->step = min($next, $this->totalSteps);
+
+        if ($this->step === 4) {
+            $this->seedCheckMaker();
         }
     }
 
     public function previousStep(): void
     {
-        if ($this->step > 1) {
-            $this->step--;
-        }
+        $prev = $this->step;
+        do {
+            $prev--;
+        } while ($prev > 1 && $this->stepIsSkipped($prev));
+
+        $this->step = max($prev, 1);
     }
 
     public function goToStep(int $step): void
     {
-        // Only allow going back to completed steps
-        if ($step < $this->step && $step >= 1) {
+        // Only allow jumping back to an already-completed, non-skipped step.
+        if ($step < $this->step && $step >= 1 && ! $this->stepIsSkipped($step)) {
             $this->step = $step;
         }
+    }
+
+    /**
+     * Steps the deep link already answered: project (2) when ?project= locked it
+     * and waiver type (3) when ?kind= locked it. Skipped in navigation and shown
+     * as complete in the progress rail.
+     */
+    public function stepIsSkipped(int $step): bool
+    {
+        return ($step === 2 && $this->projectLocked)
+            || ($step === 3 && $this->kindLocked);
     }
 
     protected function validateStep(): void
@@ -186,12 +228,14 @@ class WaiverWizard extends Component
      */
     private function getDetailsRules(): array
     {
-        // Blank amounts/dates are legally normal on these forms (several
-        // statutory forms are exchanged with blanks), so most fields stay
-        // nullable. The signer is the exception: collect-direction waivers
-        // are signed by the counterparty, so we need a name + email.
+        // The amount is required: every waiver here is tied to a specific
+        // payment (states like KY only honor partial waivers exchanged for
+        // payments actually made). Dates and check details stay nullable —
+        // several statutory forms are legitimately exchanged with those
+        // blank. The signer is the other exception: collect-direction
+        // waivers are signed by the counterparty, so we need a name + email.
         $rules = [
-            'amount' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
+            'amount' => ['required', 'numeric', 'min:0', 'max:99999999'],
             'invoice_number' => ['nullable', 'string', 'max:100'],
             'exceptions' => ['nullable', 'string', 'max:2000'],
             'contactId' => ['nullable', 'string'],
@@ -431,6 +475,52 @@ class WaiverWizard extends Component
         return LienContact::query()->find($this->contactId);
     }
 
+    /**
+     * Selecting a contact prefills what we can infer from it: on collect
+     * waivers the counterparty's person signs, so the signer fields fill from
+     * the contact (still editable — a different person at that company may
+     * sign); and on provide conditional waivers the counterparty is the payer,
+     * so it seeds the expected-check maker.
+     */
+    public function updatedContactId(): void
+    {
+        $contact = $this->selectedContact();
+
+        if ($contact === null) {
+            return;
+        }
+
+        if ($this->direction === WaiverDirection::Collect->value) {
+            if (filled($contact->contact_name)) {
+                $this->signer_name = $contact->contact_name;
+            }
+            if (filled($contact->email)) {
+                $this->signer_email = $contact->email;
+            }
+        }
+
+        $this->seedCheckMaker();
+    }
+
+    /**
+     * Conditional waivers can identify the expected check. Seed the maker with
+     * the payer when it's known: on collect waivers you are the payer; on
+     * provide waivers the counterparty pays, so it fills from the contact.
+     * Never overwrites something the user already typed.
+     */
+    private function seedCheckMaker(): void
+    {
+        if (! $this->isConditionalKind() || filled($this->check_maker)) {
+            return;
+        }
+
+        if ($this->direction === WaiverDirection::Collect->value) {
+            $this->check_maker = Auth::user()->currentBusiness()->name;
+        } elseif ($contact = $this->selectedContact()) {
+            $this->check_maker = $contact->company_name;
+        }
+    }
+
     public function openContactModal(): void
     {
         $this->resetContactForm();
@@ -500,6 +590,9 @@ class WaiverWizard extends Component
         ]);
 
         $this->contactId = (string) $contact->id;
+        // Direct property writes don't fire Livewire's updated hook; run the
+        // contact prefills (signer, check maker) explicitly.
+        $this->updatedContactId();
         $this->closeContactModal();
 
         Flux::toast(text: 'Contact added.', variant: 'success');

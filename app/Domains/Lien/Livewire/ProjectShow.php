@@ -6,11 +6,14 @@ use App\Domains\Lien\Engine\DeadlineCalculator;
 use App\Domains\Lien\Engine\StepStatusCalculator;
 use App\Domains\Lien\Enums\DeadlineStatus;
 use App\Domains\Lien\Enums\FilingStatus;
+use App\Domains\Lien\Enums\WaiverKind;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienProjectDeadline;
+use App\Domains\Lien\Models\LienWaiver;
 use App\Models\EmailSequence;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -89,15 +92,12 @@ class ProjectShow extends Component
     public function render(): View
     {
         $this->project->load([
-            'parties',
             'deadlines' => function ($query) {
                 $query->with(['documentType', 'rule', 'completedFiling', 'draftFiling'])
                     ->orderBy('document_type_id');
             },
             'filings' => function ($query) {
-                $query->with('documentType')
-                    ->latest()
-                    ->limit(10);
+                $query->with('documentType')->latest();
             },
         ]);
 
@@ -115,29 +115,88 @@ class ProjectShow extends Component
             fn ($step) => $step->status === DeadlineStatus::Missed
         );
 
-        // Find the next actionable deadline for the top banner
-        // Only show steps with known deadlines — "deadline unknown" is shown in the steps list instead
-        // Suppress when a required deadline has been missed (the card shows its own banner)
-        $nextDeadline = null;
-        if (! $hasAnyMissedDeadline) {
-            $nextDeadline = collect($steps)
-                ->filter(fn ($step) => in_array($step->status, [
-                    DeadlineStatus::NotStarted,
-                    DeadlineStatus::DueSoon,
-                    DeadlineStatus::InDraft,
-                    DeadlineStatus::AwaitingPayment,
-                ], true))
-                ->filter(fn ($step) => $step->isRequired() && $step->canStart && $step->deadlineDate !== null)
-                ->sortBy(fn ($step) => $step->deadlineDate)
-                ->first();
-        }
+        // Upcoming deadlines for the quiet right-rail summary: required steps
+        // with a known due date that aren't finished, soonest first.
+        $upcomingDeadlines = collect($steps)
+            ->filter(fn ($step) => $step->isRequired()
+                && $step->deadlineDate !== null
+                && ! in_array($step->status, [DeadlineStatus::Completed, DeadlineStatus::NotApplicable], true))
+            ->sortBy(fn ($step) => $step->deadlineDate)
+            ->values();
 
         return view('livewire.lien.project-show', [
-            'parties' => $this->project->parties,
             'steps' => $steps,
-            'filings' => $this->project->filings,
-            'nextDeadline' => $nextDeadline,
             'hasAnyMissedDeadline' => $hasAnyMissedDeadline,
+            'upcomingDeadlines' => $upcomingDeadlines,
+            'waiverTypeCards' => $this->waiverTypeCards(),
+            'documents' => $this->documents(),
+            'subtitle' => collect([$this->project->jobsiteAddressLine(), $this->project->jobsite_county])
+                ->filter()
+                ->implode(' · '),
         ])->layout('components.layouts.portal', ['title' => $this->project->name]);
+    }
+
+    /**
+     * The four canonical waiver types shown in the first-class Waivers card.
+     * Each deep-links into the wizard with this project and type preselected.
+     *
+     * @return array<int, array{title: string, description: string, url: string}>
+     */
+    private function waiverTypeCards(): array
+    {
+        $descriptions = [
+            WaiverKind::ConditionalProgress->value => 'Before a progress payment clears',
+            WaiverKind::UnconditionalProgress->value => 'After a progress payment clears',
+            WaiverKind::ConditionalFinal->value => 'Before the final payment clears',
+            WaiverKind::UnconditionalFinal->value => 'After the final payment clears',
+        ];
+
+        return collect(WaiverKind::cases())
+            ->map(fn (WaiverKind $kind) => [
+                'title' => $kind->shortLabel(),
+                'description' => $descriptions[$kind->value],
+                'url' => route('lien.waivers.create', [
+                    'project' => $this->project->public_id,
+                    'kind' => $kind->value,
+                ]),
+            ])
+            ->all();
+    }
+
+    /**
+     * This project's waivers and filings merged into a single newest-first
+     * list for the Documents card.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function documents(): Collection
+    {
+        $waivers = LienWaiver::query()
+            ->where('project_id', $this->project->id)
+            ->latest()
+            ->get()
+            ->map(fn (LienWaiver $waiver) => [
+                'sort' => $waiver->created_at,
+                'icon' => 'document-text',
+                'title' => $waiver->kind->shortLabel(),
+                'subtitle' => 'Waiver · '.$waiver->counterpartyDisplayName(),
+                'status_label' => $waiver->status->label(),
+                'status_color' => $waiver->status->color(),
+                'url' => route('lien.waivers.show', $waiver),
+            ]);
+
+        $filings = $this->project->filings->map(fn (LienFiling $filing) => [
+            'sort' => $filing->created_at,
+            'icon' => 'document',
+            'title' => $filing->documentType->name,
+            'subtitle' => 'Filing · '.$filing->created_at->eastern()->format('M j, Y'),
+            'status_label' => $filing->status->label(),
+            'status_color' => $filing->status->color(),
+            'url' => route('lien.filings.show', $filing),
+        ]);
+
+        return $waivers->concat($filings)
+            ->sortByDesc('sort')
+            ->values();
     }
 }

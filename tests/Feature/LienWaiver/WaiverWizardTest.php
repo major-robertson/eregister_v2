@@ -41,6 +41,10 @@ if (! function_exists('waiverWizardAtReview')) {
     /** Drive the wizard through steps 1-4 onto the review step. */
     function waiverWizardAtReview(LienProject $project, string $direction = 'provide', string $kind = 'conditional_progress', array $details = [])
     {
+        // The amount is required on the details step; default it so tests
+        // exercising other behavior still reach review.
+        $details = array_merge(['amount' => '1000.00'], $details);
+
         $component = Livewire::test(WaiverWizard::class)
             ->call('selectDirection', $direction)
             ->call('nextStep')
@@ -102,6 +106,11 @@ describe('step progression', function () {
             ->assertSet('kind', 'conditional_progress')
             ->call('nextStep')
             ->assertSet('step', 4)
+            // Step 4 blocks until a payment amount is entered.
+            ->call('nextStep')
+            ->assertHasErrors('amount')
+            ->assertSet('step', 4)
+            ->set('amount', '2500')
             ->call('nextStep')
             ->assertSet('step', 5)
             // Back navigation works; forward jumps via goToStep are blocked.
@@ -168,19 +177,6 @@ describe('step progression', function () {
 });
 
 describe('state rules on the type step', function () {
-    it('surfaces the Georgia ui_notes banners', function () {
-        $project = waiverWizardProject($this->business, 'GA');
-
-        Livewire::test(WaiverWizard::class)
-            ->call('selectDirection', 'provide')
-            ->call('nextStep')
-            ->set('projectId', $project->public_id)
-            ->call('nextStep')
-            ->assertSet('step', 3)
-            ->assertSee('conclusively becomes effective 90 days after its execution date')
-            ->assertSee('Affidavit of Nonpayment');
-    });
-
     it('shows Georgia disabled kinds greyed out with the state reason and refuses to select them', function () {
         $project = waiverWizardProject($this->business, 'GA');
 
@@ -197,14 +193,15 @@ describe('state rules on the type step', function () {
         expect($kinds['unconditional_final']['enabled'])->toBeFalse();
 
         $component
-            ->set('showAllKinds', true)
-            // Enabled statutory forms are shown by their Georgia titles...
-            ->assertSee('Waiver and Release of Lien and Payment Bond Rights Upon Interim Payment')
-            // ...and disabled kinds stay visible with the state's explanation.
+            // Disabled Georgia kinds stay visible in the always-shown form picker
+            // with the state's explanation...
             ->assertSee('Georgia has no unconditional waiver')
-            // Clicking a disabled kind is a no-op.
+            // ...and clicking one is a no-op...
             ->call('selectKind', 'unconditional_progress')
-            ->assertSet('kind', '');
+            ->assertSet('kind', '')
+            // ...while an enabled kind selects fine.
+            ->call('selectKind', 'conditional_progress')
+            ->assertSet('kind', 'conditional_progress');
     });
 
     it('maps the guided answers onto the four canonical kinds', function () {
@@ -254,6 +251,77 @@ describe('state rules on the type step', function () {
             ->assertSet('kind', 'unconditional_final')
             ->assertSet('paymentType', 'final')
             ->assertSet('paymentReceived', 'yes');
+    });
+});
+
+describe('details step prefills', function () {
+    it('prefills the signer from the selected contact and seeds the check maker with your business on collect waivers', function () {
+        $project = waiverWizardProject($this->business, 'TX');
+        $contact = LienContact::create([
+            'created_by_user_id' => $this->user->id,
+            'company_name' => 'Vendor Concrete LLC',
+            'contact_name' => 'Vera Vendor',
+            'email' => 'vera@vendor.test',
+        ]);
+
+        Livewire::test(WaiverWizard::class)
+            ->call('selectDirection', 'collect')
+            ->call('nextStep')
+            ->set('projectId', $project->public_id)
+            ->call('nextStep')
+            ->call('selectKind', 'conditional_progress')
+            ->call('nextStep')
+            // Arriving on details seeds the expected-check maker with the
+            // payer — you, on a collect waiver.
+            ->assertSet('check_maker', $this->business->name)
+            // Picking the contact seeds who signs (still editable).
+            ->set('contactId', (string) $contact->id)
+            ->assertSet('signer_name', 'Vera Vendor')
+            ->assertSet('signer_email', 'vera@vendor.test');
+    });
+
+    it('seeds the check maker from the counterparty on provide conditional waivers and leaves the signer alone', function () {
+        $project = waiverWizardProject($this->business, 'TX');
+        $contact = LienContact::create([
+            'created_by_user_id' => $this->user->id,
+            'company_name' => 'Big GC Inc',
+            'contact_name' => 'Gary GC',
+            'email' => 'gary@biggc.test',
+        ]);
+
+        Livewire::test(WaiverWizard::class)
+            ->call('selectDirection', 'provide')
+            ->call('nextStep')
+            ->set('projectId', $project->public_id)
+            ->call('nextStep')
+            ->call('selectKind', 'conditional_progress')
+            ->call('nextStep')
+            // Provide: the payer is the counterparty, unknown until picked.
+            ->assertSet('check_maker', null)
+            ->set('contactId', (string) $contact->id)
+            ->assertSet('check_maker', 'Big GC Inc')
+            // You sign your own provide waiver — the contact never becomes the signer.
+            ->assertSet('signer_name', null)
+            ->assertSet('signer_email', null);
+    });
+
+    it('never overwrites a check maker the user already typed', function () {
+        $project = waiverWizardProject($this->business, 'TX');
+        $contact = LienContact::create([
+            'created_by_user_id' => $this->user->id,
+            'company_name' => 'Big GC Inc',
+        ]);
+
+        Livewire::test(WaiverWizard::class)
+            ->call('selectDirection', 'provide')
+            ->call('nextStep')
+            ->set('projectId', $project->public_id)
+            ->call('nextStep')
+            ->call('selectKind', 'conditional_progress')
+            ->call('nextStep')
+            ->set('check_maker', 'Handwritten Payer LLC')
+            ->set('contactId', (string) $contact->id)
+            ->assertSet('check_maker', 'Handwritten Payer LLC');
     });
 });
 
@@ -431,5 +499,48 @@ describe('project deep link', function () {
         Livewire::withQueryParams(['project' => $incomplete->public_id])
             ->test(WaiverWizard::class)
             ->assertSet('projectId', '');
+    });
+
+    it('locks and skips the project and type steps when ?project= and ?kind= are both set', function () {
+        $project = waiverWizardProject($this->business, 'TX');
+
+        Livewire::withQueryParams(['project' => $project->public_id, 'kind' => 'conditional_progress'])
+            ->test(WaiverWizard::class)
+            ->assertSet('projectId', $project->public_id)
+            ->assertSet('kind', 'conditional_progress')
+            ->assertSet('projectLocked', true)
+            ->assertSet('kindLocked', true)
+            ->assertSet('step', 1)
+            ->call('selectDirection', 'provide')
+            ->call('nextStep')            // step 1 -> skips project (2) and type (3) -> details (4)
+            ->assertSet('step', 4)
+            ->call('previousStep')        // details (4) -> back past 3 and 2 -> direction (1)
+            ->assertSet('step', 1);
+    });
+
+    it('locks and skips only the project step for the guided (?project= only) entry', function () {
+        $project = waiverWizardProject($this->business, 'TX');
+
+        Livewire::withQueryParams(['project' => $project->public_id])
+            ->test(WaiverWizard::class)
+            ->assertSet('projectLocked', true)
+            ->assertSet('kindLocked', false)
+            ->call('selectDirection', 'provide')
+            ->call('nextStep')            // step 1 -> skips project (2) -> type step (3) with guided questions
+            ->assertSet('step', 3);
+    });
+
+    it('ignores a ?kind= that is unavailable in the project state and falls back to the type step', function () {
+        // Georgia has no unconditional waivers, so unconditional_progress can't lock.
+        $project = waiverWizardProject($this->business, 'GA');
+
+        Livewire::withQueryParams(['project' => $project->public_id, 'kind' => 'unconditional_progress'])
+            ->test(WaiverWizard::class)
+            ->assertSet('projectLocked', true)
+            ->assertSet('kindLocked', false)
+            ->assertSet('kind', '')
+            ->call('selectDirection', 'provide')
+            ->call('nextStep')            // skips project (locked) but not type -> step 3
+            ->assertSet('step', 3);
     });
 });

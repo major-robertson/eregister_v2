@@ -5,6 +5,12 @@
         <!-- Session Status -->
         <x-auth-session-status class="text-center" :status="session('status')" />
 
+        @if ($invitation ?? null)
+            <flux:callout color="blue" icon="user-plus">
+                {{ __("You've been invited to join :business — use this email address to accept the invitation.", ['business' => $invitation->business->name]) }}
+            </flux:callout>
+        @endif
+
         <form method="POST" action="{{ route('register.store') }}" class="flex flex-col gap-6">
             @csrf
             <!-- First Name -->
@@ -34,7 +40,7 @@
             <flux:input
                 name="email"
                 :label="__('Email address')"
-                :value="old('email')"
+                :value="old('email', ($invitation ?? null)?->email)"
                 type="email"
                 required
                 autocomplete="email"

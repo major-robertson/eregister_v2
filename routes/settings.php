@@ -27,4 +27,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 Route::middleware(['auth', 'business.current'])->group(function () {
     Route::livewire('settings/business', 'pages::settings.business')->name('business.edit');
+    Route::livewire('settings/team', 'pages::settings.team')->name('team.edit');
 });

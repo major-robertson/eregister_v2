@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Domains\Business\Models\BusinessInvitation;
 use App\Http\Middleware\ActivateMarketingLeadContext;
 use App\Http\Responses\LoginResponse;
 use App\Http\Responses\RegisterResponse;
@@ -70,10 +71,30 @@ class FortifyServiceProvider extends ServiceProvider
                 fn () => response('')
             );
 
-            return view('pages::auth.register');
+            return view('pages::auth.register', [
+                'invitation' => $this->pendingBusinessInvitation(),
+            ]);
         });
         Fortify::resetPasswordView(fn () => view('pages::auth.reset-password'));
         Fortify::requestPasswordResetLinkView(fn () => view('pages::auth.forgot-password'));
+    }
+
+    /**
+     * The business invitation the guest arrived from, if any — stashed in the
+     * session by the invitation landing page so registration can prefill the
+     * invited email and explain why they're here.
+     */
+    private function pendingBusinessInvitation(): ?BusinessInvitation
+    {
+        $id = session('pending_business_invitation_id');
+
+        if (! $id) {
+            return null;
+        }
+
+        $invitation = BusinessInvitation::with('business')->find($id);
+
+        return ($invitation && ! $invitation->isExpired()) ? $invitation : null;
     }
 
     /**

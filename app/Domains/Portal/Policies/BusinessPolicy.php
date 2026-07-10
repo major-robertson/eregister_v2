@@ -26,6 +26,16 @@ class BusinessPolicy
     }
 
     /**
+     * Determine if the user can invite and manage the business's members
+     */
+    public function manageMembers(User $user, Business $business): bool
+    {
+        $role = $user->businesses()->find($business->id)?->pivot->role;
+
+        return in_array($role, ['owner', 'admin']);
+    }
+
+    /**
      * Determine if the user can manage billing for the business
      */
     public function billing(User $user, Business $business): bool

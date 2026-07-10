@@ -7,8 +7,11 @@
                 <flux:navlist.item :href="route('two-factor.show')" wire:navigate>{{ __('Two-Factor Auth') }}</flux:navlist.item>
             @endif
             <flux:navlist.item :href="route('appearance.edit')" wire:navigate>{{ __('Appearance') }}</flux:navlist.item>
-            @if (auth()->user()->currentBusiness())
+            @if ($currentBusiness = auth()->user()->currentBusiness())
                 <flux:navlist.item :href="route('business.edit')" wire:navigate>{{ __('Business') }}</flux:navlist.item>
+                @can('manageMembers', $currentBusiness)
+                    <flux:navlist.item :href="route('team.edit')" wire:navigate>{{ __('Team') }}</flux:navlist.item>
+                @endcan
             @endif
         </flux:navlist>
     </div>

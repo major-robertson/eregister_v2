@@ -90,6 +90,11 @@ class Business extends Model implements HasMedia
         return $this->hasMany(BusinessEntitlement::class);
     }
 
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(BusinessInvitation::class);
+    }
+
     public function formApplications(): HasMany
     {
         return $this->hasMany(FormApplication::class);
@@ -228,7 +233,8 @@ class Business extends Model implements HasMedia
      */
     public function stripeEmail(): ?string
     {
-        return $this->users()->first()?->email;
+        return $this->users()->wherePivot('role', 'owner')->first()?->email
+            ?? $this->users()->first()?->email;
     }
 
     /**

@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Business\Http\Controllers\BusinessInvitationController;
 use App\Http\Controllers\EmailUnsubscribeController;
 use App\Http\Controllers\MarketingLandingController;
 use App\Http\Controllers\MarketingRedirectController;
@@ -103,5 +104,16 @@ Route::prefix('government')->name('government.')->group(function () {
 Route::get('/email/preferences/{user}', [EmailUnsubscribeController::class, 'preferences'])
     ->middleware('throttle:30,1')
     ->name('email.preferences');
+
+// Business team invitations. The GET is the emailed temporary signed link
+// (guests get bounced to register/login and back); the POST accept requires
+// auth + CSRF — the invitation-email match is enforced in the action.
+Route::get('/invitations/{invitation}', [BusinessInvitationController::class, 'show'])
+    ->middleware(['signed', 'throttle:30,1'])
+    ->name('invitations.accept');
+
+Route::post('/invitations/{invitation}', [BusinessInvitationController::class, 'accept'])
+    ->middleware(['auth', 'throttle:30,1'])
+    ->name('invitations.accept.store');
 
 require __DIR__.'/settings.php';

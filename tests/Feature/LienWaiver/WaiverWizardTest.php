@@ -37,6 +37,19 @@ if (! function_exists('waiverWizardSubscribe')) {
     }
 }
 
+if (! function_exists('waiverWizardCollectContact')) {
+    /** A contact with an email — collect waivers are signed by the contact. */
+    function waiverWizardCollectContact(User $user): LienContact
+    {
+        return LienContact::create([
+            'created_by_user_id' => $user->id,
+            'company_name' => 'Vendor Concrete LLC',
+            'contact_name' => 'Vera Vendor',
+            'email' => 'vera@vendor.test',
+        ]);
+    }
+}
+
 if (! function_exists('waiverWizardAtReview')) {
     /** Drive the wizard through steps 1-4 onto the review step. */
     function waiverWizardAtReview(LienProject $project, string $direction = 'provide', string $kind = 'conditional_progress', array $details = [])
@@ -142,8 +155,12 @@ describe('step progression', function () {
             ->assertSet('step', 2);
     });
 
-    it('requires a signer name and email on the details step for collect waivers', function () {
+    it('requires a contact with an email on the details step for collect waivers', function () {
         $project = waiverWizardProject($this->business);
+        $noEmail = LienContact::create([
+            'created_by_user_id' => $this->user->id,
+            'company_name' => 'No Email LLC',
+        ]);
 
         Livewire::test(WaiverWizard::class)
             ->call('selectDirection', 'collect')
@@ -153,8 +170,15 @@ describe('step progression', function () {
             ->call('selectKind', 'conditional_progress')
             ->call('nextStep')
             ->assertSet('step', 4)
+            ->set('amount', '1000')
+            // The contact signs collect waivers, so one must be picked...
             ->call('nextStep')
-            ->assertHasErrors(['signer_name', 'signer_email'])
+            ->assertHasErrors('contactId')
+            ->assertSet('step', 4)
+            // ...and it needs an email for the signature request to go to.
+            ->set('contactId', (string) $noEmail->id)
+            ->call('nextStep')
+            ->assertHasErrors('contactId')
             ->assertSet('step', 4);
     });
 
@@ -255,14 +279,8 @@ describe('state rules on the type step', function () {
 });
 
 describe('details step prefills', function () {
-    it('prefills the signer from the selected contact and seeds the check maker with your business on collect waivers', function () {
+    it('seeds the check maker with your business on collect waivers', function () {
         $project = waiverWizardProject($this->business, 'TX');
-        $contact = LienContact::create([
-            'created_by_user_id' => $this->user->id,
-            'company_name' => 'Vendor Concrete LLC',
-            'contact_name' => 'Vera Vendor',
-            'email' => 'vera@vendor.test',
-        ]);
 
         Livewire::test(WaiverWizard::class)
             ->call('selectDirection', 'collect')
@@ -273,14 +291,10 @@ describe('details step prefills', function () {
             ->call('nextStep')
             // Arriving on details seeds the expected-check maker with the
             // payer — you, on a collect waiver.
-            ->assertSet('check_maker', $this->business->name)
-            // Picking the contact seeds who signs (still editable).
-            ->set('contactId', (string) $contact->id)
-            ->assertSet('signer_name', 'Vera Vendor')
-            ->assertSet('signer_email', 'vera@vendor.test');
+            ->assertSet('check_maker', $this->business->name);
     });
 
-    it('seeds the check maker from the counterparty on provide conditional waivers and leaves the signer alone', function () {
+    it('seeds the check maker from the counterparty on provide conditional waivers', function () {
         $project = waiverWizardProject($this->business, 'TX');
         $contact = LienContact::create([
             'created_by_user_id' => $this->user->id,
@@ -299,10 +313,7 @@ describe('details step prefills', function () {
             // Provide: the payer is the counterparty, unknown until picked.
             ->assertSet('check_maker', null)
             ->set('contactId', (string) $contact->id)
-            ->assertSet('check_maker', 'Big GC Inc')
-            // You sign your own provide waiver — the contact never becomes the signer.
-            ->assertSet('signer_name', null)
-            ->assertSet('signer_email', null);
+            ->assertSet('check_maker', 'Big GC Inc');
     });
 
     it('never overwrites a check maker the user already typed', function () {
@@ -387,10 +398,10 @@ describe('save', function () {
 describe('save and send for signature', function () {
     it('gates send-for-signature behind the subscription with an upsell', function () {
         $project = waiverWizardProject($this->business, 'TX');
+        $contact = waiverWizardCollectContact($this->user);
 
         waiverWizardAtReview($project, 'collect', 'conditional_progress', [
-            'signer_name' => 'Vera Vendor',
-            'signer_email' => 'vera@vendor.test',
+            'contactId' => (string) $contact->id,
         ])->call('saveAndSend')
             ->assertSet('showUpsellModal', true)
             ->assertNoRedirect();
@@ -404,10 +415,10 @@ describe('save and send for signature', function () {
         waiverWizardSubscribe($this->business);
         $project = waiverWizardProject($this->business, 'TX');
 
+        $contact = waiverWizardCollectContact($this->user);
+
         $component = waiverWizardAtReview($project, 'collect', 'conditional_progress', [
-            'signer_name' => 'Vera Vendor',
-            'signer_email' => 'vera@vendor.test',
-            'signer_title' => 'Owner',
+            'contactId' => (string) $contact->id,
         ])->call('saveAndSend');
 
         $waiver = LienWaiver::firstOrFail();
@@ -432,9 +443,10 @@ describe('save and send for signature', function () {
         waiverWizardSubscribe($this->business);
         $project = waiverWizardProject($this->business, 'GA');
 
+        $contact = waiverWizardCollectContact($this->user);
+
         waiverWizardAtReview($project, 'collect', 'conditional_progress', [
-            'signer_name' => 'Vera Vendor',
-            'signer_email' => 'vera@vendor.test',
+            'contactId' => (string) $contact->id,
         ])->call('saveAndSend')
             ->assertHasErrors('kind')
             ->assertNoRedirect();

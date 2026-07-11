@@ -292,39 +292,41 @@
             </x-slot:header>
 
             <div class="space-y-6">
-                {{-- Payment --}}
+                {{-- Payment: one field per row --}}
                 <div>
                     <p class="mb-2.5 text-[15px] font-semibold text-text-primary">Payment</p>
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <flux:field>
-                            <flux:label>Payment amount ($) *</flux:label>
+                    <div class="space-y-4">
+                        <flux:field class="sm:max-w-sm">
+                            <flux:label>Payment amount ($)</flux:label>
                             <flux:input type="number" step="0.01" min="0" wire:model="amount" placeholder="0.00" />
-                            <flux:description>The payment this waiver covers.</flux:description>
                             <flux:error name="amount" />
                         </flux:field>
 
                         @unless ($this->isFinalKind())
-                            <flux:field>
+                            <flux:field class="sm:max-w-sm">
                                 <flux:label>Through date</flux:label>
                                 <flux:date-picker wire:model="through_date" />
-                                <flux:description>You waive rights for work/materials furnished through this date.</flux:description>
                                 <flux:error name="through_date" />
                             </flux:field>
                         @endunless
 
-                        <flux:field>
-                            <flux:label>Invoice number</flux:label>
-                            <flux:input wire:model="invoice_number" placeholder="Optional" />
+                        <flux:field class="sm:max-w-sm">
+                            <flux:label badge="Optional">Invoice / reference number</flux:label>
+                            <flux:input wire:model="invoice_number" />
                             <flux:error name="invoice_number" />
                         </flux:field>
                     </div>
                 </div>
 
-                {{-- Counterparty (and, on collect waivers, their signer) --}}
+                {{-- Counterparty. Signing needs no extra fields: you sign your own
+                     provide waivers, and on collect waivers the contact signs. --}}
                 <div class="border-t border-border pt-5">
                     <p class="text-[15px] font-semibold text-text-primary">
                         {{ $direction === 'provide' ? 'Who receives this waiver?' : 'Who is giving you this waiver?' }}
                     </p>
+                    @if ($direction === 'collect')
+                        <p class="mt-0.5 text-[13px] text-text-secondary">They sign it — we email the signature request to this contact.</p>
+                    @endif
 
                     <div class="mt-3 space-y-3">
                         <flux:field>
@@ -347,99 +349,56 @@
                                 </flux:button>
                             @endif
                         </div>
-
-                        @if ($direction === 'collect')
-                            {{-- The counterparty's person signs: prefilled from the contact. --}}
-                            <div class="rounded-xl border border-border bg-bg-light p-4">
-                                <p class="text-sm font-semibold text-text-primary">Who signs it?</p>
-                                <p class="mt-0.5 text-[13px] text-text-secondary">
-                                    We email the signature request to this person. Prefilled from the
-                                    contact — edit if someone else signs.
-                                </p>
-                                <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                    <flux:field>
-                                        <flux:label>Signer name *</flux:label>
-                                        <flux:input wire:model="signer_name" placeholder="Person at the vendor/sub who signs" />
-                                        <flux:error name="signer_name" />
-                                    </flux:field>
-
-                                    <flux:field>
-                                        <flux:label>Signer email *</flux:label>
-                                        <flux:input type="email" wire:model="signer_email" placeholder="Where the signature request goes" />
-                                        <flux:error name="signer_email" />
-                                    </flux:field>
-
-                                    <flux:field>
-                                        <flux:label>Signer title</flux:label>
-                                        <flux:input wire:model="signer_title" placeholder="e.g., Owner, Project Manager" />
-                                        <flux:error name="signer_title" />
-                                    </flux:field>
-                                </div>
-                            </div>
-                        @endif
                     </div>
                 </div>
 
                 @if ($direction === 'provide')
-                    {{-- You sign your own provide waiver: nothing to collect beyond a title. --}}
+                    {{-- You sign your own provide waiver. --}}
                     <div class="border-t border-border pt-5">
                         <p class="text-[15px] font-semibold text-text-primary">Signature</p>
-                        <div class="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-border bg-bg-light p-4">
+                        <div class="mt-3 flex items-center gap-3 rounded-xl border border-border bg-bg-light p-4">
                             <flux:icon name="user-circle" class="size-8 shrink-0 text-zinc-400" />
                             <div class="min-w-0 flex-1">
                                 <p class="text-sm font-semibold text-text-primary">{{ auth()->user()->name }}</p>
                                 <p class="text-xs text-text-secondary">{{ auth()->user()->email }} &bull; You sign your own waiver</p>
                             </div>
-                            <flux:field class="w-full sm:w-48 sm:shrink-0">
-                                <flux:input wire:model="signer_title" placeholder="Your title (optional)" />
-                                <flux:error name="signer_title" />
-                            </flux:field>
                         </div>
                     </div>
                 @endif
             </div>
 
             {{-- Optional details: exceptions + (conditional-only) expected check.
-                 All safely skippable, so they live out of the main flow. --}}
-            <div class="-mx-6 -mb-6 mt-6 rounded-b-xl border-t border-border bg-bg-light px-6 py-1.5">
-                <flux:accordion>
-                    <flux:accordion.item>
-                        <flux:accordion.heading>
-                            <span class="text-sm font-semibold text-text-primary">Optional details</span>
-                            <span class="ml-2 text-[13px] font-normal text-zinc-400">Exceptions{{ $this->isConditionalKind() ? ' · expected check' : '' }} — fine to skip</span>
-                        </flux:accordion.heading>
-                        <flux:accordion.content>
-                            <div class="space-y-4 pb-4">
-                                <flux:field>
-                                    <flux:label>Exceptions</flux:label>
-                                    <flux:textarea wire:model="exceptions" rows="3" placeholder="e.g., disputed change order #4, retention, unbilled extras..." />
-                                    <flux:description>
-                                        Anything this waiver does NOT release: disputed claims, retention, or extras.
-                                        Listed exceptions survive the waiver.
-                                    </flux:description>
-                                    <flux:error name="exceptions" />
-                                </flux:field>
+                 Safely skippable, so they live out of the main flow — but always visible. --}}
+            <div class="-mx-6 -mb-6 mt-6 rounded-b-xl border-t border-border bg-bg-light px-6 py-5">
+                <div class="mb-3.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                    <span class="text-xs font-bold uppercase tracking-wider text-text-secondary">Optional details</span>
+                    <span class="text-[13px] text-zinc-400">Fine to skip.</span>
+                </div>
+                <div class="space-y-4">
+                    <flux:field>
+                        <flux:label>Exceptions</flux:label>
+                        <flux:textarea wire:model="exceptions" rows="3" placeholder="e.g., disputed change order #4, retention, unbilled extras..." />
+                        <flux:description>
+                            Anything this waiver does NOT release: disputed claims, retention, or extras.
+                            Listed exceptions survive the waiver.
+                        </flux:description>
+                        <flux:error name="exceptions" />
+                    </flux:field>
 
-                                @if ($this->isConditionalKind())
-                                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                        <flux:field>
-                                            <flux:label>Check from (maker)</flux:label>
-                                            <flux:input wire:model="check_maker" placeholder="Who the check is from" />
-                                            <flux:description>Conditional waivers can identify the expected payment.</flux:description>
-                                            <flux:error name="check_maker" />
-                                        </flux:field>
+                    @if ($this->isConditionalKind())
+                        <flux:field class="sm:max-w-sm">
+                            <flux:label>Check from (maker)</flux:label>
+                            <flux:input wire:model="check_maker" placeholder="Who the check is from" />
+                            <flux:error name="check_maker" />
+                        </flux:field>
 
-                                        <flux:field>
-                                            <flux:label>Check number</flux:label>
-                                            <flux:input wire:model="check_number" placeholder="Optional" />
-                                            <flux:error name="check_number" />
-                                        </flux:field>
-                                    </div>
-                                @endif
-                            </div>
-                        </flux:accordion.content>
-                    </flux:accordion.item>
-                </flux:accordion>
+                        <flux:field class="sm:max-w-sm">
+                            <flux:label>Check number</flux:label>
+                            <flux:input wire:model="check_number" />
+                            <flux:error name="check_number" />
+                        </flux:field>
+                    @endif
+                </div>
             </div>
 
         @elseif ($step === 5)
@@ -472,7 +431,9 @@
                         {{ $this->selectedContact()?->displayName() ?? '-' }}
                     </x-ui.info-list.item>
                     <x-ui.info-list.item label="Signer">
-                        {{ $direction === 'provide' ? auth()->user()->name : $signer_name }}
+                        {{ $direction === 'provide'
+                            ? auth()->user()->name
+                            : ($this->selectedContact()?->contact_name ?: $this->selectedContact()?->company_name) }}
                     </x-ui.info-list.item>
                     @if ($this->isConditionalKind() && ($check_maker || $check_number))
                         <x-ui.info-list.item label="Check">

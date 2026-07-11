@@ -105,13 +105,6 @@ class WaiverWizard extends Component
 
     public ?string $contact_zip = null;
 
-    // Signer (collect direction only; provide waivers are signed by the user)
-    public ?string $signer_name = null;
-
-    public ?string $signer_email = null;
-
-    public ?string $signer_title = null;
-
     public bool $showUpsellModal = false;
 
     /** Which gate opened the upsell modal; drives its heading. */
@@ -207,6 +200,10 @@ class WaiverWizard extends Component
                 'kind' => 'That waiver type is not available in '.$this->stateName().'. Pick another type.',
             ]);
         }
+
+        if ($this->step === 4) {
+            $this->assertCollectContactSignable();
+        }
     }
 
     /**
@@ -232,8 +229,9 @@ class WaiverWizard extends Component
         // payment (states like KY only honor partial waivers exchanged for
         // payments actually made). Dates and check details stay nullable —
         // several statutory forms are legitimately exchanged with those
-        // blank. The signer is the other exception: collect-direction
-        // waivers are signed by the counterparty, so we need a name + email.
+        // blank. No separate signer fields: you sign your own provide
+        // waivers, and on collect waivers the contact signs (see
+        // assertCollectContactSignable for the email requirement).
         $rules = [
             'amount' => ['required', 'numeric', 'min:0', 'max:99999999'],
             'invoice_number' => ['nullable', 'string', 'max:100'],
@@ -250,15 +248,26 @@ class WaiverWizard extends Component
             $rules['check_number'] = ['nullable', 'string', 'max:100'];
         }
 
-        if ($this->direction === WaiverDirection::Collect->value) {
-            $rules['signer_name'] = ['required', 'string', 'max:255'];
-            $rules['signer_email'] = ['required', 'email', 'max:255'];
-            $rules['signer_title'] = ['nullable', 'string', 'max:255'];
-        } else {
-            $rules['signer_title'] = ['nullable', 'string', 'max:255'];
+        return $rules;
+    }
+
+    /**
+     * Collect waivers are signed by the counterparty, so the signature
+     * request needs somewhere to go: a selected contact with an email.
+     */
+    private function assertCollectContactSignable(): void
+    {
+        if ($this->direction !== WaiverDirection::Collect->value) {
+            return;
         }
 
-        return $rules;
+        $contact = $this->selectedContact();
+
+        if ($contact === null || blank($contact->email)) {
+            throw ValidationException::withMessages([
+                'contactId' => 'Choose a contact with an email address — the signature request is sent there.',
+            ]);
+        }
     }
 
     private function validateAllSteps(): void
@@ -280,6 +289,8 @@ class WaiverWizard extends Component
                 'kind' => 'That waiver type is not available in '.$this->stateName().'.',
             ]);
         }
+
+        $this->assertCollectContactSignable();
     }
 
     // ------------------------------------------------------------------
@@ -476,30 +487,14 @@ class WaiverWizard extends Component
     }
 
     /**
-     * Selecting a contact prefills what we can infer from it: on collect
-     * waivers the counterparty's person signs, so the signer fields fill from
-     * the contact (still editable — a different person at that company may
-     * sign); and on provide conditional waivers the counterparty is the payer,
-     * so it seeds the expected-check maker.
+     * On provide conditional waivers the counterparty is the payer, so
+     * selecting a contact seeds the expected-check maker.
      */
     public function updatedContactId(): void
     {
-        $contact = $this->selectedContact();
-
-        if ($contact === null) {
-            return;
+        if ($this->selectedContact() !== null) {
+            $this->seedCheckMaker();
         }
-
-        if ($this->direction === WaiverDirection::Collect->value) {
-            if (filled($contact->contact_name)) {
-                $this->signer_name = $contact->contact_name;
-            }
-            if (filled($contact->email)) {
-                $this->signer_email = $contact->email;
-            }
-        }
-
-        $this->seedCheckMaker();
     }
 
     /**
@@ -591,7 +586,7 @@ class WaiverWizard extends Component
 
         $this->contactId = (string) $contact->id;
         // Direct property writes don't fire Livewire's updated hook; run the
-        // contact prefills (signer, check maker) explicitly.
+        // contact prefill (check maker) explicitly.
         $this->updatedContactId();
         $this->closeContactModal();
 
@@ -757,10 +752,10 @@ class WaiverWizard extends Component
             'counterparty_email' => $contact?->email,
             'counterparty_phone' => $contact?->phone,
             // provide: the current user signs their own waiver. collect: the
-            // counterparty's signer, captured in step 4.
-            'signer_name' => $provide ? $user->name : $this->signer_name,
-            'signer_email' => $provide ? $user->email : $this->signer_email,
-            'signer_title' => $this->signer_title ?: null,
+            // contact signs (assertCollectContactSignable guarantees an email).
+            'signer_name' => $provide ? $user->name : ($contact?->contact_name ?: $contact?->company_name),
+            'signer_email' => $provide ? $user->email : $contact?->email,
+            'signer_title' => null,
         ];
     }
 

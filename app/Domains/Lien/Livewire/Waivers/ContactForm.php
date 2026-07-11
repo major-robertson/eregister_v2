@@ -19,7 +19,9 @@ class ContactForm extends Component
 
     public string $company_name = '';
 
-    public string $contact_name = '';
+    public string $first_name = '';
+
+    public string $last_name = '';
 
     public string $email = '';
 
@@ -39,8 +41,9 @@ class ContactForm extends Component
     {
         if ($contact?->exists) {
             $this->contact = $contact;
-            $this->company_name = $contact->company_name;
-            $this->contact_name = $contact->contact_name ?? '';
+            $this->company_name = $contact->company_name ?? '';
+            $this->first_name = $contact->first_name ?? '';
+            $this->last_name = $contact->last_name ?? '';
             $this->email = $contact->email ?? '';
             $this->phone = $contact->phone ?? '';
             $this->address_line1 = $contact->address_line1 ?? '';
@@ -53,9 +56,12 @@ class ContactForm extends Component
 
     public function save(): void
     {
+        // A contact needs a company OR a person's name — not both. No field is
+        // individually required; the error surfaces on the company field.
         $validated = $this->validate([
-            'company_name' => ['required', 'string', 'max:255'],
-            'contact_name' => ['nullable', 'string', 'max:255'],
+            'company_name' => ['nullable', 'required_without_all:first_name,last_name', 'string', 'max:255'],
+            'first_name' => ['nullable', 'string', 'max:255'],
+            'last_name' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
             'address_line1' => ['nullable', 'string', 'max:255'],
@@ -63,8 +69,13 @@ class ContactForm extends Component
             'city' => ['nullable', 'string', 'max:255'],
             'state' => ['nullable', 'string', 'size:2'],
             'postal_code' => ['nullable', 'string', 'max:10'],
+        ], [
+            'company_name.required_without_all' => 'Enter a company name or a first/last name.',
         ]);
 
+        // The form binds blank strings; store real nulls so a company-less or
+        // name-less contact reads cleanly.
+        $validated = array_map(fn ($value) => $value === '' ? null : $value, $validated);
         $validated['state'] = $validated['state'] ? strtoupper($validated['state']) : null;
 
         if ($this->contact) {

@@ -526,25 +526,33 @@
             <flux:heading>Add Contact</flux:heading>
 
             <form wire:submit="saveContact" class="space-y-4">
+                {{-- No field is individually required: a contact needs a company
+                     or a name. The "one of them" error surfaces on Company. --}}
                 <flux:field>
-                    <flux:label>Company *</flux:label>
+                    <flux:label>Company</flux:label>
                     <flux:input wire:model="contact_company" placeholder="ABC Construction" />
                     <flux:error name="contact_company" />
                 </flux:field>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid gap-4 sm:grid-cols-2">
                     <flux:field>
-                        <flux:label>Contact name</flux:label>
-                        <flux:input wire:model="contact_name" placeholder="John Smith" />
-                        <flux:error name="contact_name" />
+                        <flux:label>First name</flux:label>
+                        <flux:input wire:model="contact_first_name" placeholder="John" />
+                        <flux:error name="contact_first_name" />
                     </flux:field>
 
                     <flux:field>
-                        <flux:label>Email</flux:label>
-                        <flux:input type="email" wire:model="contact_email" />
-                        <flux:error name="contact_email" />
+                        <flux:label>Last name</flux:label>
+                        <flux:input wire:model="contact_last_name" placeholder="Smith" />
+                        <flux:error name="contact_last_name" />
                     </flux:field>
                 </div>
+
+                <flux:field>
+                    <flux:label>Email</flux:label>
+                    <flux:input type="email" wire:model="contact_email" placeholder="john@abcconstruction.com" />
+                    <flux:error name="contact_email" />
+                </flux:field>
 
                 <flux:field>
                     <flux:label>Phone</flux:label>
@@ -552,18 +560,21 @@
                     <flux:error name="contact_phone" />
                 </flux:field>
 
+                <flux:separator text="Mailing address (optional)" />
+
                 <flux:field>
-                    <flux:label>Address</flux:label>
-                    <flux:input wire:model="contact_address1" placeholder="Street address" />
+                    <flux:label>Street address</flux:label>
+                    <flux:input wire:model="contact_address1" placeholder="123 Main St" />
                     <flux:error name="contact_address1" />
                 </flux:field>
 
                 <flux:field>
+                    <flux:label>Address line 2</flux:label>
                     <flux:input wire:model="contact_address2" placeholder="Suite, unit, etc." />
                     <flux:error name="contact_address2" />
                 </flux:field>
 
-                <div class="grid grid-cols-3 gap-4">
+                <div class="grid gap-4 sm:grid-cols-3">
                     <flux:field>
                         <flux:label>City</flux:label>
                         <flux:input wire:model="contact_city" />

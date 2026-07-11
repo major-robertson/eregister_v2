@@ -25,7 +25,8 @@ class LienContact extends Model
         'business_id',
         'created_by_user_id',
         'company_name',
-        'contact_name',
+        'first_name',
+        'last_name',
         'email',
         'phone',
         'address_line1',
@@ -50,8 +51,27 @@ class LienContact extends Model
         return $this->hasMany(LienWaiver::class, 'lien_contact_id');
     }
 
+    /**
+     * The person's name, "First Last" — empty when this contact is a
+     * company-only entry.
+     */
+    public function personName(): string
+    {
+        return trim(implode(' ', array_filter([$this->first_name, $this->last_name])));
+    }
+
+    /**
+     * A contact carries a company, a person, or both. Show whichever exists,
+     * with the person in parens when both are present.
+     */
     public function displayName(): string
     {
-        return $this->company_name.($this->contact_name ? " ({$this->contact_name})" : '');
+        $person = $this->personName();
+
+        if ($this->company_name && $person !== '') {
+            return "{$this->company_name} ({$person})";
+        }
+
+        return $this->company_name ?: $person;
     }
 }

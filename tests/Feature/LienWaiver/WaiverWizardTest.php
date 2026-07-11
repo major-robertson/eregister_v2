@@ -44,7 +44,8 @@ if (! function_exists('waiverWizardCollectContact')) {
         return LienContact::create([
             'created_by_user_id' => $user->id,
             'company_name' => 'Vendor Concrete LLC',
-            'contact_name' => 'Vera Vendor',
+            'first_name' => 'Vera',
+            'last_name' => 'Vendor',
             'email' => 'vera@vendor.test',
         ]);
     }
@@ -299,7 +300,8 @@ describe('details step prefills', function () {
         $contact = LienContact::create([
             'created_by_user_id' => $this->user->id,
             'company_name' => 'Big GC Inc',
-            'contact_name' => 'Gary GC',
+            'first_name' => 'Gary',
+            'last_name' => 'GC',
             'email' => 'gary@biggc.test',
         ]);
 
@@ -469,11 +471,13 @@ describe('inline contact creation', function () {
             ->call('nextStep')
             ->call('openContactModal')
             ->assertSet('showContactModal', true)
-            // Company is required.
+            // Needs a company or a name — blank on both errors on company.
             ->call('saveContact')
             ->assertHasErrors('contact_company')
+            // A first name alone is enough; no company required.
+            ->set('contact_first_name', 'Vera')
+            ->set('contact_last_name', 'Vendor')
             ->set('contact_company', 'Vendor Concrete LLC')
-            ->set('contact_name', 'Vera Vendor')
             ->set('contact_email', 'vera@vendor.test')
             ->set('contact_state', 'tx')
             ->call('saveContact')

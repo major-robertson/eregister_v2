@@ -45,7 +45,8 @@ describe('contact directory', function () {
     it('creates a contact scoped to the current business', function () {
         Livewire::test(ContactForm::class)
             ->set('company_name', 'New Sub LLC')
-            ->set('contact_name', 'Pat Jones')
+            ->set('first_name', 'Pat')
+            ->set('last_name', 'Jones')
             ->set('email', 'pat@newsub.test')
             ->set('state', 'tx')
             ->call('save')
@@ -55,15 +56,26 @@ describe('contact directory', function () {
         $contact = LienContact::where('company_name', 'New Sub LLC')->firstOrFail();
         expect($contact->business_id)->toBe($this->business->id);
         expect($contact->created_by_user_id)->toBe(auth()->id());
+        expect($contact->first_name)->toBe('Pat');
+        expect($contact->last_name)->toBe('Jones');
         // State is normalized to uppercase.
         expect($contact->state)->toBe('TX');
     });
 
-    it('requires a company name', function () {
+    it('requires a company name or a person name, not both', function () {
+        // Nothing filled: errors on company.
         Livewire::test(ContactForm::class)
-            ->set('company_name', '')
             ->call('save')
-            ->assertHasErrors(['company_name' => 'required']);
+            ->assertHasErrors(['company_name' => 'required_without_all']);
+
+        // A first name alone is enough — no company required.
+        Livewire::test(ContactForm::class)
+            ->set('first_name', 'Solo')
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('lien.waivers.contacts.index'));
+
+        expect(LienContact::where('first_name', 'Solo')->value('company_name'))->toBeNull();
     });
 
     it('edits an existing contact', function () {

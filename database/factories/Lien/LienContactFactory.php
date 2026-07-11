@@ -18,7 +18,8 @@ class LienContactFactory extends Factory
         return [
             'business_id' => Business::factory(),
             'company_name' => fake()->company(),
-            'contact_name' => fake()->name(),
+            'first_name' => fake()->firstName(),
+            'last_name' => fake()->lastName(),
             'email' => fake()->safeEmail(),
             'phone' => fake()->phoneNumber(),
             'address_line1' => fake()->streetAddress(),

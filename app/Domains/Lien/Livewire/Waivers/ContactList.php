@@ -52,7 +52,8 @@ class ContactList extends Component
             ->withCount('waivers')
             ->when($this->search !== '', fn ($query) => $query->where(fn ($q) => $q
                 ->where('company_name', 'like', "%{$this->search}%")
-                ->orWhere('contact_name', 'like', "%{$this->search}%")
+                ->orWhere('first_name', 'like', "%{$this->search}%")
+                ->orWhere('last_name', 'like', "%{$this->search}%")
                 ->orWhere('email', 'like', "%{$this->search}%")
             ))
             ->orderBy('company_name')

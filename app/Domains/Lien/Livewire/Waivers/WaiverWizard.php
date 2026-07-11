@@ -89,7 +89,9 @@ class WaiverWizard extends Component
 
     public ?string $contact_company = null;
 
-    public ?string $contact_name = null;
+    public ?string $contact_first_name = null;
+
+    public ?string $contact_last_name = null;
 
     public ?string $contact_email = null;
 
@@ -544,8 +546,8 @@ class WaiverWizard extends Component
         }
 
         $this->resetContactForm();
-        $this->contact_company = $customer->company_name ?: $customer->name;
-        $this->contact_name = $customer->name;
+        $this->contact_company = $customer->company_name;
+        [$this->contact_first_name, $this->contact_last_name] = $this->splitName($customer->name);
         $this->contact_email = $customer->email;
         $this->contact_phone = $customer->phone;
         $this->contact_address1 = $customer->address1;
@@ -558,9 +560,12 @@ class WaiverWizard extends Component
 
     public function saveContact(): void
     {
+        // A contact needs a company OR a person's name — not both. No field is
+        // individually required; the error surfaces on the company field.
         $this->validate([
-            'contact_company' => ['required', 'string', 'max:255'],
-            'contact_name' => ['nullable', 'string', 'max:255'],
+            'contact_company' => ['nullable', 'required_without_all:contact_first_name,contact_last_name', 'string', 'max:255'],
+            'contact_first_name' => ['nullable', 'string', 'max:255'],
+            'contact_last_name' => ['nullable', 'string', 'max:255'],
             'contact_email' => ['nullable', 'email', 'max:255'],
             'contact_phone' => ['nullable', 'string', 'max:50'],
             'contact_address1' => ['nullable', 'string', 'max:255'],
@@ -568,13 +573,16 @@ class WaiverWizard extends Component
             'contact_city' => ['nullable', 'string', 'max:255'],
             'contact_state' => ['nullable', 'string', 'max:2'],
             'contact_zip' => ['nullable', 'string', 'max:10'],
+        ], [
+            'contact_company.required_without_all' => 'Enter a company name or a first/last name.',
         ]);
 
         // business_id auto-fills from the BelongsToBusiness creating hook.
         $contact = LienContact::create([
             'created_by_user_id' => Auth::id(),
             'company_name' => $this->contact_company,
-            'contact_name' => $this->contact_name,
+            'first_name' => $this->contact_first_name,
+            'last_name' => $this->contact_last_name,
             'email' => $this->contact_email,
             'phone' => $this->contact_phone,
             'address_line1' => $this->contact_address1,
@@ -596,7 +604,8 @@ class WaiverWizard extends Component
     private function resetContactForm(): void
     {
         $this->contact_company = null;
-        $this->contact_name = null;
+        $this->contact_first_name = null;
+        $this->contact_last_name = null;
         $this->contact_email = null;
         $this->contact_phone = null;
         $this->contact_address1 = null;
@@ -605,9 +614,28 @@ class WaiverWizard extends Component
         $this->contact_state = null;
         $this->contact_zip = null;
         $this->resetValidation([
-            'contact_company', 'contact_name', 'contact_email', 'contact_phone',
+            'contact_company', 'contact_first_name', 'contact_last_name', 'contact_email', 'contact_phone',
             'contact_address1', 'contact_address2', 'contact_city', 'contact_state', 'contact_zip',
         ]);
+    }
+
+    /**
+     * Split a full name into [first, last] on the first space. A single token
+     * becomes the first name; blank input yields [null, null].
+     *
+     * @return array{0: ?string, 1: ?string}
+     */
+    private function splitName(?string $name): array
+    {
+        $name = trim((string) $name);
+
+        if ($name === '') {
+            return [null, null];
+        }
+
+        $parts = preg_split('/\s+/', $name, 2);
+
+        return [$parts[0], $parts[1] ?? null];
     }
 
     // ------------------------------------------------------------------
@@ -748,12 +776,12 @@ class WaiverWizard extends Component
             'exceptions' => $this->exceptions ?: null,
             'lien_contact_id' => $contact?->id,
             'counterparty_company' => $contact?->company_name,
-            'counterparty_name' => $contact?->contact_name,
+            'counterparty_name' => ($contact && $contact->personName() !== '') ? $contact->personName() : null,
             'counterparty_email' => $contact?->email,
             'counterparty_phone' => $contact?->phone,
             // provide: the current user signs their own waiver. collect: the
             // contact signs (assertCollectContactSignable guarantees an email).
-            'signer_name' => $provide ? $user->name : ($contact?->contact_name ?: $contact?->company_name),
+            'signer_name' => $provide ? $user->name : (($contact && $contact->personName() !== '') ? $contact->personName() : $contact?->company_name),
             'signer_email' => $provide ? $user->email : $contact?->email,
             'signer_title' => null,
         ];

@@ -11,24 +11,32 @@
 
     <x-ui.card>
         <form wire:submit="save" class="space-y-4">
+            {{-- No field is individually required: a contact needs a company or a
+                 name. The "one of them" error surfaces on Company. --}}
             <flux:field>
-                <flux:label badge="Required">Company name</flux:label>
+                <flux:label>Company name</flux:label>
                 <flux:input wire:model="company_name" placeholder="Acme General Contractors LLC" />
                 <flux:error name="company_name" />
             </flux:field>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <flux:field>
-                    <flux:label>Contact name</flux:label>
-                    <flux:input wire:model="contact_name" placeholder="Pat Jones" />
-                    <flux:error name="contact_name" />
+                    <flux:label>First name</flux:label>
+                    <flux:input wire:model="first_name" placeholder="Pat" />
+                    <flux:error name="first_name" />
                 </flux:field>
                 <flux:field>
-                    <flux:label>Email</flux:label>
-                    <flux:input type="email" wire:model="email" placeholder="pat@acmegc.com" />
-                    <flux:error name="email" />
+                    <flux:label>Last name</flux:label>
+                    <flux:input wire:model="last_name" placeholder="Jones" />
+                    <flux:error name="last_name" />
                 </flux:field>
             </div>
+
+            <flux:field>
+                <flux:label>Email</flux:label>
+                <flux:input type="email" wire:model="email" placeholder="pat@acmegc.com" />
+                <flux:error name="email" />
+            </flux:field>
 
             <flux:field>
                 <flux:label>Phone</flux:label>

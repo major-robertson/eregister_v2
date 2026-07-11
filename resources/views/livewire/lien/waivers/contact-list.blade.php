@@ -47,9 +47,9 @@
                     @foreach ($contacts as $contact)
                         <flux:table.row wire:key="contact-{{ $contact->id }}">
                             <flux:table.cell class="font-medium text-text-primary">
-                                {{ $contact->company_name }}
+                                {{ $contact->company_name ?: '—' }}
                             </flux:table.cell>
-                            <flux:table.cell>{{ $contact->contact_name }}</flux:table.cell>
+                            <flux:table.cell>{{ $contact->personName() ?: '—' }}</flux:table.cell>
                             <flux:table.cell>{{ $contact->email }}</flux:table.cell>
                             <flux:table.cell>
                                 {{ trim(collect([$contact->city, $contact->state])->filter()->implode(', ')) }}

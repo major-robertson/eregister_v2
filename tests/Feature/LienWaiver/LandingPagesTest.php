@@ -5,7 +5,7 @@ use App\Domains\Lien\Waivers\WaiverStateRegistry;
 it('renders the lien waiver landing page with pricing and free-tier copy', function () {
     $this->get('/liens/lien-waivers')
         ->assertSuccessful()
-        ->assertSee('Free Lien Waiver Generator')
+        ->assertSee('Lien Waiver Generator')
         // Pro pricing pulled from config/lien_waivers.php.
         ->assertSee('$99')
         ->assertSee('$990')

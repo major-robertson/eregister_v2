@@ -45,6 +45,139 @@
     </div>
 
     {{-- Step Content --}}
+    @if ($step === 4)
+        {{-- Step 4: Details. Rendered as stacked cards (Form-UX handoff) instead
+             of the wizard shell's single card. --}}
+        <div class="space-y-4">
+            {{-- Payment --}}
+            <section class="rounded-2xl border border-border bg-white p-6 shadow-xs">
+                <h2 class="text-base font-bold text-text-primary">Payment covered by this waiver</h2>
+                <p class="mt-0.5 text-sm text-text-secondary">The amount and period this waiver releases.</p>
+
+                <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <flux:field>
+                        <flux:label>Payment amount</flux:label>
+                        <flux:input.group>
+                            <flux:input.group.prefix>$</flux:input.group.prefix>
+                            <flux:input type="number" step="0.01" min="0" wire:model="amount" placeholder="0.00" />
+                        </flux:input.group>
+                        <flux:error name="amount" />
+                    </flux:field>
+
+                    @unless ($this->isFinalKind())
+                        <flux:field>
+                            <flux:label>Paid through</flux:label>
+                            <flux:date-picker wire:model="through_date" />
+                            <flux:error name="through_date" />
+                        </flux:field>
+                    @endunless
+                </div>
+                @unless ($this->isFinalKind())
+                    <p class="mt-2 text-[13px] text-zinc-400">Everything paid up to this date is released by the waiver.</p>
+                @endunless
+
+                <flux:field class="mt-4">
+                    <flux:label>Invoice or reference # <span class="font-normal text-zinc-400">(optional)</span></flux:label>
+                    <flux:input wire:model="invoice_number" placeholder="e.g. INV-2041" />
+                    <flux:error name="invoice_number" />
+                </flux:field>
+            </section>
+
+            {{-- Counterparty: contact picker (they sign collect waivers) --}}
+            <section class="rounded-2xl border border-border bg-white p-6 shadow-xs">
+                @if ($direction === 'collect')
+                    <h2 class="text-base font-bold text-text-primary">Who signs this waiver?</h2>
+                    <p class="mt-0.5 text-sm text-text-secondary">We'll email them a signature request.</p>
+                @else
+                    <h2 class="text-base font-bold text-text-primary">Who receives this waiver?</h2>
+                @endif
+
+                <div class="mt-4 space-y-2">
+                    <flux:select variant="combobox" clearable placeholder="Select a contact..." wire:model.live="contactId">
+                        @foreach ($contacts as $contactOption)
+                            <flux:select.option value="{{ $contactOption->id }}">{{ $contactOption->displayName() }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                    <flux:error name="contactId" />
+
+                    @php $selectedContactModel = $contactId !== '' ? $this->selectedContact() : null; @endphp
+                    @if ($direction === 'collect' && $selectedContactModel && blank($selectedContactModel->email))
+                        {{-- Missing email blocks collect waivers; fix it in place. --}}
+                        <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50/70 px-3.5 py-2.5">
+                            <p class="text-[13px] text-amber-800">This contact has no email address — we need one to send the signature request.</p>
+                            <flux:button wire:click="editSelectedContact" size="sm" variant="primary">Add email</flux:button>
+                        </div>
+                    @elseif ($selectedContactModel)
+                        <flux:button wire:click="editSelectedContact" size="sm" variant="ghost" icon="pencil-square">
+                            Edit contact
+                        </flux:button>
+                    @endif
+
+                    <button
+                        type="button"
+                        wire:click="openContactModal"
+                        class="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 p-3 text-sm font-semibold text-primary transition hover:border-primary hover:bg-primary/5"
+                    >
+                        <span class="text-lg leading-none">+</span> Add a new contact
+                    </button>
+                </div>
+            </section>
+
+            @if ($direction === 'provide')
+                {{-- You sign your own provide waiver. --}}
+                <section class="rounded-2xl border border-border bg-white p-6 shadow-xs">
+                    <h2 class="text-base font-bold text-text-primary">Signature</h2>
+                    <div class="mt-3 flex items-center gap-3 rounded-xl border border-border bg-bg-light p-4">
+                        <flux:icon name="user-circle" class="size-8 shrink-0 text-zinc-400" />
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-semibold text-text-primary">{{ auth()->user()->name }}</p>
+                            <p class="text-xs text-text-secondary">{{ auth()->user()->email }} &bull; You sign your own waiver</p>
+                        </div>
+                    </div>
+                </section>
+            @endif
+
+            {{-- Optional details: pre-closed disclosure --}}
+            <section class="rounded-2xl border border-border bg-white px-6 py-1.5 shadow-xs">
+                <flux:accordion>
+                    <flux:accordion.item>
+                        <flux:accordion.heading>
+                            <span class="flex flex-col py-1 text-left">
+                                <span class="text-[15px] font-bold text-text-primary">Optional details</span>
+                                <span class="mt-0.5 text-[13px] font-normal text-text-secondary">Exceptions{{ $this->isConditionalKind() ? ', check info' : '' }} — fine to skip</span>
+                            </span>
+                        </flux:accordion.heading>
+                        <flux:accordion.content>
+                            <div class="space-y-4 border-t border-border pt-4 pb-4">
+                                <flux:field>
+                                    <flux:label>Exceptions — anything this waiver does <span class="underline">not</span> release</flux:label>
+                                    <flux:textarea wire:model="exceptions" rows="3" placeholder="e.g. disputed change order #4, retention, unbilled extras" />
+                                    <flux:description>Listed exceptions survive the waiver.</flux:description>
+                                    <flux:error name="exceptions" />
+                                </flux:field>
+
+                                @if ($this->isConditionalKind())
+                                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                        <flux:field>
+                                            <flux:label>Check from (maker)</flux:label>
+                                            <flux:input wire:model="check_maker" placeholder="Who the check is from" />
+                                            <flux:error name="check_maker" />
+                                        </flux:field>
+
+                                        <flux:field>
+                                            <flux:label>Check number</flux:label>
+                                            <flux:input wire:model="check_number" placeholder="e.g. 1204" />
+                                            <flux:error name="check_number" />
+                                        </flux:field>
+                                    </div>
+                                @endif
+                            </div>
+                        </flux:accordion.content>
+                    </flux:accordion.item>
+                </flux:accordion>
+            </section>
+        </div>
+    @else
     <x-ui.card>
         @if ($step === 1)
             {{-- Step 1: Direction fork --}}
@@ -113,6 +246,13 @@
                         </flux:select>
                         <flux:error name="projectId" />
                     </flux:field>
+
+                    {{-- Leaves the wizard (project creation is its own flow); only
+                         the direction choice is lost at this step. --}}
+                    <a href="{{ route('lien.projects.create') }}" wire:navigate
+                        class="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 p-3 text-sm font-semibold text-primary transition hover:border-primary hover:bg-primary/5">
+                        <span class="text-lg leading-none">+</span> Add a new project
+                    </a>
 
                     @if ($project)
                         <flux:callout color="blue" icon="map-pin">
@@ -282,125 +422,6 @@
                 </div>
             </div>
 
-        @elseif ($step === 4)
-            {{-- Step 4: Details --}}
-            <x-slot:header>
-                <div>
-                    <h2 class="text-lg font-bold text-text-primary">Waiver details</h2>
-                    <p class="mt-1 text-sm text-text-secondary">The payment this waiver covers, and who's involved.</p>
-                </div>
-            </x-slot:header>
-
-            <div class="space-y-6">
-                {{-- Payment: one field per row --}}
-                <div>
-                    <p class="mb-2.5 text-[15px] font-semibold text-text-primary">Payment</p>
-                    <div class="space-y-4">
-                        <flux:field class="sm:max-w-sm">
-                            <flux:label>Payment amount ($)</flux:label>
-                            <flux:input type="number" step="0.01" min="0" wire:model="amount" placeholder="0.00" />
-                            <flux:error name="amount" />
-                        </flux:field>
-
-                        @unless ($this->isFinalKind())
-                            <flux:field class="sm:max-w-sm">
-                                <flux:label>Through date</flux:label>
-                                <flux:date-picker wire:model="through_date" />
-                                <flux:error name="through_date" />
-                            </flux:field>
-                        @endunless
-
-                        <flux:field class="sm:max-w-sm">
-                            <flux:label badge="Optional">Invoice / reference number</flux:label>
-                            <flux:input wire:model="invoice_number" />
-                            <flux:error name="invoice_number" />
-                        </flux:field>
-                    </div>
-                </div>
-
-                {{-- Counterparty. Signing needs no extra fields: you sign your own
-                     provide waivers, and on collect waivers the contact signs. --}}
-                <div class="border-t border-border pt-5">
-                    <p class="text-[15px] font-semibold text-text-primary">
-                        {{ $direction === 'provide' ? 'Who receives this waiver?' : 'Who is giving you this waiver?' }}
-                    </p>
-                    @if ($direction === 'collect')
-                        <p class="mt-0.5 text-[13px] text-text-secondary">They sign it — we email the signature request to this contact.</p>
-                    @endif
-
-                    <div class="mt-3 space-y-3">
-                        <flux:field>
-                            <flux:label>Contact</flux:label>
-                            <flux:select variant="combobox" clearable placeholder="Select a contact..." wire:model.live="contactId">
-                                @foreach ($contacts as $contact)
-                                    <flux:select.option value="{{ $contact->id }}">{{ $contact->displayName() }}</flux:select.option>
-                                @endforeach
-                            </flux:select>
-                            <flux:error name="contactId" />
-                        </flux:field>
-
-                        <div class="flex flex-wrap gap-2">
-                            <flux:button wire:click="openContactModal" size="sm" variant="ghost" icon="plus">
-                                Add new contact
-                            </flux:button>
-                            @if ($direction === 'provide')
-                                <flux:button wire:click="useProjectCustomer" size="sm" variant="ghost" icon="user">
-                                    Use project customer
-                                </flux:button>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-
-                @if ($direction === 'provide')
-                    {{-- You sign your own provide waiver. --}}
-                    <div class="border-t border-border pt-5">
-                        <p class="text-[15px] font-semibold text-text-primary">Signature</p>
-                        <div class="mt-3 flex items-center gap-3 rounded-xl border border-border bg-bg-light p-4">
-                            <flux:icon name="user-circle" class="size-8 shrink-0 text-zinc-400" />
-                            <div class="min-w-0 flex-1">
-                                <p class="text-sm font-semibold text-text-primary">{{ auth()->user()->name }}</p>
-                                <p class="text-xs text-text-secondary">{{ auth()->user()->email }} &bull; You sign your own waiver</p>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-            </div>
-
-            {{-- Optional details: exceptions + (conditional-only) expected check.
-                 Safely skippable, so they live out of the main flow — but always visible. --}}
-            <div class="-mx-6 -mb-6 mt-6 rounded-b-xl border-t border-border bg-bg-light px-6 py-5">
-                <div class="mb-3.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-                    <span class="text-xs font-bold uppercase tracking-wider text-text-secondary">Optional details</span>
-                    <span class="text-[13px] text-zinc-400">Fine to skip.</span>
-                </div>
-                <div class="space-y-4">
-                    <flux:field>
-                        <flux:label>Exceptions</flux:label>
-                        <flux:textarea wire:model="exceptions" rows="3" placeholder="e.g., disputed change order #4, retention, unbilled extras..." />
-                        <flux:description>
-                            Anything this waiver does NOT release: disputed claims, retention, or extras.
-                            Listed exceptions survive the waiver.
-                        </flux:description>
-                        <flux:error name="exceptions" />
-                    </flux:field>
-
-                    @if ($this->isConditionalKind())
-                        <flux:field class="sm:max-w-sm">
-                            <flux:label>Check from (maker)</flux:label>
-                            <flux:input wire:model="check_maker" placeholder="Who the check is from" />
-                            <flux:error name="check_maker" />
-                        </flux:field>
-
-                        <flux:field class="sm:max-w-sm">
-                            <flux:label>Check number</flux:label>
-                            <flux:input wire:model="check_number" />
-                            <flux:error name="check_number" />
-                        </flux:field>
-                    @endif
-                </div>
-            </div>
-
         @elseif ($step === 5)
             {{-- Step 5: Review & actions --}}
             <x-slot:header>Review your waiver</x-slot:header>
@@ -495,6 +516,7 @@
             </div>
         @endif
     </x-ui.card>
+    @endif
 
     {{-- Navigation --}}
     <div class="flex justify-between">
@@ -513,17 +535,17 @@
         <div>
             @if ($step < $totalSteps)
                 <flux:button wire:click="nextStep" wire:loading.attr="disabled" variant="primary" icon-trailing="arrow-right">
-                    <span wire:loading.remove wire:target="nextStep">Continue</span>
+                    <span wire:loading.remove wire:target="nextStep">{{ $step === 4 ? 'Continue to review' : 'Continue' }}</span>
                     <span wire:loading wire:target="nextStep">Checking...</span>
                 </flux:button>
             @endif
         </div>
     </div>
 
-    {{-- Add-contact modal --}}
+    {{-- Add/edit-contact modal --}}
     <flux:modal wire:model="showContactModal" class="max-w-lg">
         <div class="space-y-4">
-            <flux:heading>Add Contact</flux:heading>
+            <flux:heading>{{ $editingContactId ? 'Edit Contact' : 'Add Contact' }}</flux:heading>
 
             <form wire:submit="saveContact" class="space-y-4">
                 {{-- No field is individually required: a contact needs a company
@@ -603,7 +625,7 @@
                         Cancel
                     </flux:button>
                     <flux:button type="submit" variant="primary">
-                        Add Contact
+                        {{ $editingContactId ? 'Save changes' : 'Add Contact' }}
                     </flux:button>
                 </div>
             </form>

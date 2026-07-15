@@ -87,6 +87,9 @@ class WaiverWizard extends Component
 
     public bool $showContactModal = false;
 
+    /** When set, the contact modal edits this contact instead of creating one. */
+    public ?int $editingContactId = null;
+
     public ?string $contact_company = null;
 
     public ?string $contact_first_name = null;
@@ -524,38 +527,38 @@ class WaiverWizard extends Component
         $this->showContactModal = true;
     }
 
-    public function closeContactModal(): void
-    {
-        $this->showContactModal = false;
-        $this->resetContactForm();
-    }
-
     /**
-     * Quick-fill the new-contact modal from the project's customer party:
-     * on provide-direction waivers the counterparty is almost always the
-     * customer who hired you.
+     * Edit the currently selected contact in the modal — mainly so a missing
+     * email (which blocks collect waivers) can be fixed without leaving the
+     * wizard and losing its state.
      */
-    public function useProjectCustomer(): void
+    public function editSelectedContact(): void
     {
-        $customer = $this->selectedProject()?->customerParty();
+        $contact = $this->selectedContact();
 
-        if ($customer === null) {
-            Flux::toast(text: 'This project has no customer party yet. Add one on the project page first.', variant: 'warning');
-
+        if ($contact === null) {
             return;
         }
 
         $this->resetContactForm();
-        $this->contact_company = $customer->company_name;
-        [$this->contact_first_name, $this->contact_last_name] = $this->splitName($customer->name);
-        $this->contact_email = $customer->email;
-        $this->contact_phone = $customer->phone;
-        $this->contact_address1 = $customer->address1;
-        $this->contact_address2 = $customer->address2;
-        $this->contact_city = $customer->city;
-        $this->contact_state = $customer->state;
-        $this->contact_zip = $customer->zip;
+        $this->editingContactId = $contact->id;
+        $this->contact_company = $contact->company_name;
+        $this->contact_first_name = $contact->first_name;
+        $this->contact_last_name = $contact->last_name;
+        $this->contact_email = $contact->email;
+        $this->contact_phone = $contact->phone;
+        $this->contact_address1 = $contact->address_line1;
+        $this->contact_address2 = $contact->address_line2;
+        $this->contact_city = $contact->city;
+        $this->contact_state = $contact->state;
+        $this->contact_zip = $contact->postal_code;
         $this->showContactModal = true;
+    }
+
+    public function closeContactModal(): void
+    {
+        $this->showContactModal = false;
+        $this->resetContactForm();
     }
 
     public function saveContact(): void
@@ -577,9 +580,9 @@ class WaiverWizard extends Component
             'contact_company.required_without_all' => 'Enter a company name or a first/last name.',
         ]);
 
-        // business_id auto-fills from the BelongsToBusiness creating hook.
-        $contact = LienContact::create([
-            'created_by_user_id' => Auth::id(),
+        // Blank inputs become real nulls so company-less/name-less contacts
+        // read cleanly.
+        $attributes = array_map(fn ($value) => $value === '' ? null : $value, [
             'company_name' => $this->contact_company,
             'first_name' => $this->contact_first_name,
             'last_name' => $this->contact_last_name,
@@ -592,17 +595,32 @@ class WaiverWizard extends Component
             'postal_code' => $this->contact_zip,
         ]);
 
+        if ($this->editingContactId !== null) {
+            // The global business scope keeps this tenant-safe.
+            $contact = LienContact::query()->findOrFail($this->editingContactId);
+            $contact->update($attributes);
+
+            Flux::toast(text: 'Contact updated.', variant: 'success');
+        } else {
+            // business_id auto-fills from the BelongsToBusiness creating hook.
+            $contact = LienContact::create([
+                ...$attributes,
+                'created_by_user_id' => Auth::id(),
+            ]);
+
+            Flux::toast(text: 'Contact added.', variant: 'success');
+        }
+
         $this->contactId = (string) $contact->id;
         // Direct property writes don't fire Livewire's updated hook; run the
         // contact prefill (check maker) explicitly.
         $this->updatedContactId();
         $this->closeContactModal();
-
-        Flux::toast(text: 'Contact added.', variant: 'success');
     }
 
     private function resetContactForm(): void
     {
+        $this->editingContactId = null;
         $this->contact_company = null;
         $this->contact_first_name = null;
         $this->contact_last_name = null;
@@ -619,24 +637,6 @@ class WaiverWizard extends Component
         ]);
     }
 
-    /**
-     * Split a full name into [first, last] on the first space. A single token
-     * becomes the first name; blank input yields [null, null].
-     *
-     * @return array{0: ?string, 1: ?string}
-     */
-    private function splitName(?string $name): array
-    {
-        $name = trim((string) $name);
-
-        if ($name === '') {
-            return [null, null];
-        }
-
-        $parts = preg_split('/\s+/', $name, 2);
-
-        return [$parts[0], $parts[1] ?? null];
-    }
 
     // ------------------------------------------------------------------
     // Step 5: actions

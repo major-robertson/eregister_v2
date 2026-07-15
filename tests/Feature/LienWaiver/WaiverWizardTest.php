@@ -494,6 +494,48 @@ describe('inline contact creation', function () {
     });
 });
 
+describe('inline contact editing', function () {
+    it('edits the selected contact in place to add the missing email a collect waiver needs', function () {
+        $project = waiverWizardProject($this->business, 'TX');
+        $noEmail = LienContact::create([
+            'created_by_user_id' => $this->user->id,
+            'company_name' => 'No Email LLC',
+        ]);
+
+        Livewire::test(WaiverWizard::class)
+            ->call('selectDirection', 'collect')
+            ->call('nextStep')
+            ->set('projectId', $project->public_id)
+            ->call('nextStep')
+            ->call('selectKind', 'conditional_progress')
+            ->call('nextStep')
+            ->set('amount', '1000')
+            ->set('contactId', (string) $noEmail->id)
+            // The inline warning points at the fix...
+            ->assertSee('This contact has no email address')
+            // ...and continuing is still blocked.
+            ->call('nextStep')
+            ->assertHasErrors('contactId')
+            ->assertSet('step', 4)
+            // Edit in place: the modal opens prefilled with the contact.
+            ->call('editSelectedContact')
+            ->assertSet('showContactModal', true)
+            ->assertSet('editingContactId', $noEmail->id)
+            ->assertSet('contact_company', 'No Email LLC')
+            ->set('contact_email', 'fixed@noemail.test')
+            ->call('saveContact')
+            ->assertHasNoErrors()
+            ->assertSet('showContactModal', false)
+            // Still the same selected contact — updated, not duplicated.
+            ->assertSet('contactId', (string) $noEmail->id)
+            ->call('nextStep')
+            ->assertSet('step', 5);
+
+        expect($noEmail->fresh()->email)->toBe('fixed@noemail.test');
+        expect(LienContact::count())->toBe(1);
+    });
+});
+
 describe('project deep link', function () {
     it('preselects the project from the ?project= URL parameter', function () {
         $project = waiverWizardProject($this->business, 'TX');

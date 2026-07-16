@@ -55,9 +55,12 @@ if (! function_exists('waiverWizardAtReview')) {
     /** Drive the wizard through steps 1-4 onto the review step. */
     function waiverWizardAtReview(LienProject $project, string $direction = 'provide', string $kind = 'conditional_progress', array $details = [])
     {
-        // The amount is required on the details step; default it so tests
-        // exercising other behavior still reach review.
-        $details = array_merge(['amount' => '1000.00'], $details);
+        // Amount and through date are required on the details step; default
+        // them so tests exercising other behavior still reach review.
+        $details = array_merge([
+            'amount' => '1000.00',
+            'through_date' => now()->format('Y-m-d'),
+        ], $details);
 
         $component = Livewire::test(WaiverWizard::class)
             ->call('selectDirection', $direction)
@@ -120,11 +123,12 @@ describe('step progression', function () {
             ->assertSet('kind', 'conditional_progress')
             ->call('nextStep')
             ->assertSet('step', 4)
-            // Step 4 blocks until a payment amount is entered.
+            // Step 4 blocks until the amount and through date are entered.
             ->call('nextStep')
-            ->assertHasErrors('amount')
+            ->assertHasErrors(['amount', 'through_date'])
             ->assertSet('step', 4)
             ->set('amount', '2500')
+            ->set('through_date', now()->format('Y-m-d'))
             ->call('nextStep')
             ->assertSet('step', 5)
             // Back navigation works; forward jumps via goToStep are blocked.
@@ -172,6 +176,7 @@ describe('step progression', function () {
             ->call('nextStep')
             ->assertSet('step', 4)
             ->set('amount', '1000')
+            ->set('through_date', now()->format('Y-m-d'))
             // The contact signs collect waivers, so one must be picked...
             ->call('nextStep')
             ->assertHasErrors('contactId')
@@ -276,65 +281,6 @@ describe('state rules on the type step', function () {
             ->assertSet('kind', 'unconditional_final')
             ->assertSet('paymentType', 'final')
             ->assertSet('paymentReceived', 'yes');
-    });
-});
-
-describe('details step prefills', function () {
-    it('seeds the check maker with your business on collect waivers', function () {
-        $project = waiverWizardProject($this->business, 'TX');
-
-        Livewire::test(WaiverWizard::class)
-            ->call('selectDirection', 'collect')
-            ->call('nextStep')
-            ->set('projectId', $project->public_id)
-            ->call('nextStep')
-            ->call('selectKind', 'conditional_progress')
-            ->call('nextStep')
-            // Arriving on details seeds the expected-check maker with the
-            // payer — you, on a collect waiver.
-            ->assertSet('check_maker', $this->business->name);
-    });
-
-    it('seeds the check maker from the counterparty on provide conditional waivers', function () {
-        $project = waiverWizardProject($this->business, 'TX');
-        $contact = LienContact::create([
-            'created_by_user_id' => $this->user->id,
-            'company_name' => 'Big GC Inc',
-            'first_name' => 'Gary',
-            'last_name' => 'GC',
-            'email' => 'gary@biggc.test',
-        ]);
-
-        Livewire::test(WaiverWizard::class)
-            ->call('selectDirection', 'provide')
-            ->call('nextStep')
-            ->set('projectId', $project->public_id)
-            ->call('nextStep')
-            ->call('selectKind', 'conditional_progress')
-            ->call('nextStep')
-            // Provide: the payer is the counterparty, unknown until picked.
-            ->assertSet('check_maker', null)
-            ->set('contactId', (string) $contact->id)
-            ->assertSet('check_maker', 'Big GC Inc');
-    });
-
-    it('never overwrites a check maker the user already typed', function () {
-        $project = waiverWizardProject($this->business, 'TX');
-        $contact = LienContact::create([
-            'created_by_user_id' => $this->user->id,
-            'company_name' => 'Big GC Inc',
-        ]);
-
-        Livewire::test(WaiverWizard::class)
-            ->call('selectDirection', 'provide')
-            ->call('nextStep')
-            ->set('projectId', $project->public_id)
-            ->call('nextStep')
-            ->call('selectKind', 'conditional_progress')
-            ->call('nextStep')
-            ->set('check_maker', 'Handwritten Payer LLC')
-            ->set('contactId', (string) $contact->id)
-            ->assertSet('check_maker', 'Handwritten Payer LLC');
     });
 });
 
@@ -510,6 +456,7 @@ describe('inline contact editing', function () {
             ->call('selectKind', 'conditional_progress')
             ->call('nextStep')
             ->set('amount', '1000')
+            ->set('through_date', now()->format('Y-m-d'))
             ->set('contactId', (string) $noEmail->id)
             // The inline warning points at the fix...
             ->assertSee('This contact has no email address')

@@ -29,7 +29,9 @@
     <meta charset="utf-8">
     <title>{{ $waiver['form']['title'] }}</title>
     <style>
-        @page { margin: 0.9in; }
+        {{-- The redesigned generic family targets a single page, so it runs
+             tighter margins; statutory bodies keep the original 0.9in. --}}
+        @page { margin: {{ str_contains($waiver['form']['template'], '.generic-') ? '0.45in 0.75in' : '0.9in' }}; }
         body { font-family: 'DejaVu Sans', Helvetica, sans-serif; font-size: 10pt; line-height: 1.45; color: #000; }
         p { margin: 0 0 9px 0; }
 
@@ -80,6 +82,33 @@
         .esign-cert-foot { margin-top: 16px; font-size: 8pt; color: #666; line-height: 1.4; }
 
         .waiver-foot { margin-top: 18px; font-size: 7.5pt; color: #666; }
+
+        /* ============ Redesigned generic (house-form) family ============
+           Serif single-page layout: left-aligned two-line title with reserved
+           logo space, labeled underline fields, operative text that references
+           the fields ("Amount stated above") so long values never reflow it.
+           Title is 12pt so the unconditional caution notice stays >= the
+           largest type on the page. Statutory bodies keep the classes above. */
+        .gw { font-family: 'DejaVu Serif', Georgia, serif; font-size: 9.25pt; line-height: 1.4; color: #1a1a1a; }
+        .gw-header { width: 100%; border-collapse: collapse; }
+        .gw-header td { vertical-align: top; }
+        .gw-title { font-size: 12pt; font-weight: bold; letter-spacing: 1px; line-height: 1.3; text-transform: uppercase; }
+        .gw-kind { font-size: 9.5pt; font-weight: bold; letter-spacing: 2.5px; margin-top: 2px; text-transform: uppercase; }
+        .gw-state { font-size: 9pt; font-style: italic; color: #444; margin-top: 3px; }
+        .gw-logo-space { width: 150px; height: 48px; }
+        .gw-rule { border-top: 2px solid #1a1a1a; margin: 6px 0 11px 0; }
+        .gw-fields { width: 100%; border-collapse: collapse; }
+        .gw-fields td { vertical-align: top; padding: 0 18px 7px 0; }
+        .gw-fields td.last { padding-right: 0; }
+        .gw-label { font-size: 7pt; letter-spacing: 1.5px; color: #555; text-transform: uppercase; margin-bottom: 2px; }
+        .gw-value { border-bottom: 1px solid #8a8a8a; font-size: 9.75pt; padding: 0 2px 2px 2px; min-height: 13px; }
+        .gw .waiver-body { margin-top: 5px; }
+        .gw .waiver-body p { text-align: justify; margin: 0 0 7px 0; }
+        .gw .waiver-notice { margin: 0 0 9px 0; padding: 5px 8px; line-height: 1.25; }
+        .gw .sig-table { margin-top: 12px; }
+        .gw .sig-table td { padding: 6px 24px 2px 0; }
+        .gw .sig-line { border-bottom: 1px solid #1a1a1a; height: 18px; }
+        .gw .sig-caption { font-size: 7pt; letter-spacing: 1.5px; color: #555; text-transform: uppercase; padding-top: 3px; }
     </style>
 </head>
 <body>

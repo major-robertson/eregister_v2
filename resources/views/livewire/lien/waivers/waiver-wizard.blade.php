@@ -65,15 +65,21 @@
                     </flux:field>
 
                     @unless ($this->isFinalKind())
+                        {{-- "Paid through" only reads right once money is in hand;
+                             conditional waivers haven't been paid yet. --}}
                         <flux:field>
-                            <flux:label>Paid through</flux:label>
+                            <flux:label>{{ $this->isConditionalKind() ? 'Through date' : 'Paid through' }}</flux:label>
                             <flux:date-picker wire:model="through_date" />
                             <flux:error name="through_date" />
                         </flux:field>
                     @endunless
                 </div>
                 @unless ($this->isFinalKind())
-                    <p class="mt-2 text-[13px] text-zinc-400">Everything paid up to this date is released by the waiver.</p>
+                    <p class="mt-2 text-[13px] text-zinc-400">
+                        {{ $this->isConditionalKind()
+                            ? 'The waiver covers work and materials furnished through this date once the payment clears.'
+                            : 'Everything paid up to this date is released by the waiver.' }}
+                    </p>
                 @endunless
 
                 <flux:field class="mt-4">

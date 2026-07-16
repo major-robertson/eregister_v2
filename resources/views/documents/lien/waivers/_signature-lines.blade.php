@@ -45,16 +45,6 @@
             <div class="sig-caption">Print Name</div>
         </td>
         <td>
-            @if (!empty($waiver['signer']['title']))
-                <div>{{ $waiver['signer']['title'] }}</div>
-            @else
-                <div class="sig-line">&nbsp;</div>
-            @endif
-            <div class="sig-caption">Title</div>
-        </td>
-    </tr>
-    <tr>
-        <td colspan="2">
             @if (!empty($waiver['signer']['company']))
                 <div>{{ $waiver['signer']['company'] }}</div>
             @else

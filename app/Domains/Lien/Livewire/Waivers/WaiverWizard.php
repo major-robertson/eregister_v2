@@ -151,10 +151,6 @@ class WaiverWizard extends Component
         } while ($next < $this->totalSteps && $this->stepIsSkipped($next));
 
         $this->step = min($next, $this->totalSteps);
-
-        if ($this->step === 4) {
-            $this->seedCheckMaker();
-        }
     }
 
     public function previousStep(): void
@@ -245,7 +241,9 @@ class WaiverWizard extends Component
         ];
 
         if (! $this->isFinalKind()) {
-            $rules['through_date'] = ['nullable', 'date'];
+            // Progress waivers are scoped by their through date; without one
+            // the release has no boundary, so it's required.
+            $rules['through_date'] = ['required', 'date'];
         }
 
         if ($this->isConditionalKind()) {
@@ -491,35 +489,6 @@ class WaiverWizard extends Component
         return LienContact::query()->find($this->contactId);
     }
 
-    /**
-     * On provide conditional waivers the counterparty is the payer, so
-     * selecting a contact seeds the expected-check maker.
-     */
-    public function updatedContactId(): void
-    {
-        if ($this->selectedContact() !== null) {
-            $this->seedCheckMaker();
-        }
-    }
-
-    /**
-     * Conditional waivers can identify the expected check. Seed the maker with
-     * the payer when it's known: on collect waivers you are the payer; on
-     * provide waivers the counterparty pays, so it fills from the contact.
-     * Never overwrites something the user already typed.
-     */
-    private function seedCheckMaker(): void
-    {
-        if (! $this->isConditionalKind() || filled($this->check_maker)) {
-            return;
-        }
-
-        if ($this->direction === WaiverDirection::Collect->value) {
-            $this->check_maker = Auth::user()->currentBusiness()->name;
-        } elseif ($contact = $this->selectedContact()) {
-            $this->check_maker = $contact->company_name;
-        }
-    }
 
     public function openContactModal(): void
     {
@@ -612,9 +581,6 @@ class WaiverWizard extends Component
         }
 
         $this->contactId = (string) $contact->id;
-        // Direct property writes don't fire Livewire's updated hook; run the
-        // contact prefill (check maker) explicitly.
-        $this->updatedContactId();
         $this->closeContactModal();
     }
 

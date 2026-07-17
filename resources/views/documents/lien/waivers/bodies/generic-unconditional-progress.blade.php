@@ -33,6 +33,7 @@
     @if (!empty($waiver['exceptions']))
         <p><strong>Additional exceptions:</strong> {{ $waiver['exceptions'] }}</p>
     @endif
+    @include('documents.lien.waivers._extra-clauses', ['waiver' => $waiver])
 </div>
 
 @include('documents.lien.waivers._signature-lines', ['waiver' => $waiver, 'esign' => $esign ?? null])

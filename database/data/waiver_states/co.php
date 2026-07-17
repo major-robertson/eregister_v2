@@ -26,6 +26,13 @@ return [
     'ui_notes' => [
         'C.R.S. § 38-22-119(2) requires every Colorado lien waiver to include a statement, in substance, that all debts owed to third parties relating to the goods or services covered by the waiver have been paid or will be timely paid, and Colorado is one of the only states where lien rights can be waived in advance, even in the construction contract itself, so review contract language carefully before signing.',
     ],
+    // The § 38-22-119(2) content mandate: every agreement waiving lien rights
+    // must contain this statement by the person waiving. "In substance" is the
+    // standard, so this house wording satisfies it; appended to all four
+    // generic waiver bodies.
+    'extra_clauses' => [
+        'The Claimant states that all debts owed to any third party by the Claimant relating to the goods or services covered by this waiver have been paid or will be timely paid (C.R.S. § 38-22-119(2)).',
+    ],
     'landing' => [
         'headline' => 'Colorado Lien Waivers: No Statutory Form, One Mandatory Statement',
         'summary' => 'Colorado does not prescribe a lien waiver form, so our general-purpose conditional and unconditional progress and final waiver forms apply, but C.R.S. § 38-22-119(2) requires every agreement waiving lien rights to include a statement, in substance, that all debts owed to third parties for the covered goods or services have been paid or will be timely paid. Colorado is also one of the only states that allows lien rights to be waived in advance, even in the construction contract before work begins, though a waiver binds only the parties to it and ambiguous waivers are construed in favor of preserving lien rights.',

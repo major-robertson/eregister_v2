@@ -26,6 +26,11 @@ namespace App\Domains\Lien\Waivers;
  *   'affidavit_of_nonpayment' => true,      // GA/MS preservation filing exists
  *   'advance_waiver_note' => '…',           // anti-waiver statute advisory
  *   'ui_notes' => ['…'],                    // banners shown in the wizard
+ *   'extra_clauses' => ['…'],               // state-mandated statements appended
+ *                                           // to the generic waiver bodies (CO's
+ *                                           // § 38-22-119(2) third-party-debts
+ *                                           // statement); statutory bodies ignore
+ *                                           // them — their text is fixed
  *   'kinds' => [
  *       'conditional_progress' => [
  *           'enabled' => true,
@@ -144,6 +149,7 @@ class WaiverStateRegistry
             'affidavit_of_nonpayment' => false,
             'advance_waiver_note' => null,
             'ui_notes' => [],
+            'extra_clauses' => [],
             'kinds' => $kinds,
             'landing' => [],
         ];

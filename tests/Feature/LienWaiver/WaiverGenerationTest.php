@@ -169,6 +169,61 @@ describe('WaiverGenerator payload', function () {
     });
 });
 
+describe('state-mandated extra clauses', function () {
+    // C.R.S. § 38-22-119(2) requires every Colorado agreement waiving lien
+    // rights to state, in substance, that all third-party debts relating to
+    // the covered goods or services have been paid or will be timely paid.
+    // Both PDF paths (free download and e-sign snapshot) render the shell from
+    // WaiverGenerator::data(), so asserting on that HTML covers both.
+    it('renders the CO third-party-debts statement in all four waiver kinds', function () {
+        $business = Business::factory()->create(['name' => 'Rocky Mountain Builders LLC']);
+        $project = LienProject::factory()->forBusiness($business)->inState('CO')->create();
+        $generator = app(WaiverGenerator::class);
+
+        foreach (WaiverKind::cases() as $kind) {
+            $waiver = LienWaiver::factory()->forProject($project)->create(['kind' => $kind]);
+            $payload = $generator->data($waiver);
+
+            // The clause is frozen into the payload, so e-sign snapshots
+            // carry it too.
+            expect($payload['form']['template'])->toStartWith('documents.lien.waivers.bodies.generic-');
+            expect($payload['form']['extra_clauses'])->toHaveCount(1);
+
+            $html = view('documents.lien.waivers.shell', ['waiver' => $payload])->render();
+            expect($html)
+                ->toContain('all debts owed to any third party by the Claimant')
+                ->toContain('have been paid or will be timely paid')
+                ->toContain('C.R.S. § 38-22-119(2)');
+        }
+    });
+
+    it('leaves other generic states on the unmodified house forms', function () {
+        $business = Business::factory()->create();
+        $project = LienProject::factory()->forBusiness($business)->inState('NM')->create();
+        $waiver = LienWaiver::factory()->forProject($project)->create(['kind' => WaiverKind::ConditionalProgress]);
+
+        $payload = app(WaiverGenerator::class)->data($waiver);
+        expect($payload['form']['extra_clauses'])->toBe([]);
+
+        $html = view('documents.lien.waivers.shell', ['waiver' => $payload])->render();
+        expect($html)->not->toContain('all debts owed to any third party');
+        expect($html)->not->toContain('38-22-119');
+    });
+
+    it('still renders snapshots frozen before the extra_clauses key existed', function () {
+        $business = Business::factory()->create();
+        $project = LienProject::factory()->forBusiness($business)->inState('CO')->create();
+        $waiver = LienWaiver::factory()->forProject($project)->create(['kind' => WaiverKind::UnconditionalFinal]);
+
+        $payload = app(WaiverGenerator::class)->data($waiver);
+        unset($payload['form']['extra_clauses']);
+
+        $html = view('documents.lien.waivers.shell', ['waiver' => $payload])->render();
+        expect($html)->toContain('Unconditional Waiver and Release of Lien');
+        expect($html)->not->toContain('38-22-119');
+    });
+});
+
 describe('real PDF render', function () {
     // The single DOMPDF render in this file; everything else stubs the PDF step.
     it('generates a real TX conditional progress PDF end to end', function () {

@@ -45,6 +45,7 @@ class WaiverFormResolver
             deemedEffectiveDays: $rules['deemed_effective_days'],
             statute: $rules['statute'],
             uiNotes: $rules['ui_notes'] ?? [],
+            extraClauses: $rules['extra_clauses'] ?? [],
         );
     }
 

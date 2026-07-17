@@ -25,5 +25,7 @@ final class ResolvedWaiverForm
         public readonly ?string $statute,
         /** @var list<string> */
         public readonly array $uiNotes = [],
+        /** @var list<string> */
+        public readonly array $extraClauses = [],
     ) {}
 }

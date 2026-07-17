@@ -36,6 +36,7 @@
                 This document does not cover, and the Claimant expressly reserves, the Exceptions noted above.
             @endif
         </p>
+        @include('documents.lien.waivers._extra-clauses', ['waiver' => $waiver])
     </div>
 
     @include('documents.lien.waivers._signature-lines', ['waiver' => $waiver, 'esign' => $esign ?? null])

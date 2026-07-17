@@ -6,7 +6,7 @@
     Body-partial contract. Partials receive:
       $waiver  the frozen render payload (see WaiverGenerator::data()):
                form.{title,kind,state,state_name,statute,notarization_required,
-               witness_required,deemed_effective_days}, date, claimant.{company,
+               witness_required,deemed_effective_days,extra_clauses}, date, claimant.{company,
                name,address_lines[]}, customer.{...}, owner.{...}, project.{name,
                job_number,address_line,county,legal_description,apn}, amount,
                through_date, invoice_number, check_maker, check_number,

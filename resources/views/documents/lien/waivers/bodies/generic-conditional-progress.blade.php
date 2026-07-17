@@ -45,6 +45,7 @@
             to the Claimant. This document is not effective until the payment identified above has actually
             been received.
         </p>
+        @include('documents.lien.waivers._extra-clauses', ['waiver' => $waiver])
     </div>
 
     @include('documents.lien.waivers._signature-lines', ['waiver' => $waiver, 'esign' => $esign ?? null])

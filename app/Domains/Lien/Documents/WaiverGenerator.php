@@ -102,6 +102,7 @@ class WaiverGenerator
                 'notarization_required' => $form->notarizationRequired,
                 'witness_required' => $form->witnessRequired,
                 'deemed_effective_days' => $form->deemedEffectiveDays,
+                'extra_clauses' => $form->extraClauses,
             ],
             'date' => now()->eastern()->format('F j, Y'),
             'claimant' => $claimant,

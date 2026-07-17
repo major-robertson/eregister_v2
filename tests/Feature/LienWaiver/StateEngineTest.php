@@ -34,10 +34,11 @@ describe('registry', function () {
                 'family', 'statute', 'compliance_standard', 'notarization_required',
                 'witness_required', 'esign_allowed', 'esign_disabled_reason',
                 'deemed_effective_days', 'affidavit_of_nonpayment',
-                'advance_waiver_note', 'ui_notes', 'kinds', 'landing',
+                'advance_waiver_note', 'ui_notes', 'extra_clauses', 'kinds', 'landing',
             ]);
             expect($rules['landing'])->toBeArray();
             expect($rules['ui_notes'])->toBeArray();
+            expect($rules['extra_clauses'])->toBeArray();
 
             // All four canonical kinds are always present (merge is per-kind).
             expect($rules['kinds'])->toHaveCount(4);
@@ -176,6 +177,23 @@ describe('registry', function () {
         }
     });
 
+    it('CO carries the § 38-22-119(2) third-party-debts clause and no other state injects extra clauses', function () {
+        $co = WaiverStateRegistry::for('CO');
+
+        expect($co['family'])->toBe('generic');
+        expect($co['extra_clauses'])->toHaveCount(1);
+        expect($co['extra_clauses'][0])
+            ->toContain('all debts owed to any third party')
+            ->toContain('paid or will be timely paid')
+            ->toContain('C.R.S. § 38-22-119(2)');
+
+        foreach (WaiverStateRegistry::all() as $code => $rules) {
+            if ($code !== 'CO') {
+                expect($rules['extra_clauses'])->toBe([]);
+            }
+        }
+    });
+
     it('MO keeps the generic house forms plus a residential swap on unconditional final only', function () {
         $rules = WaiverStateRegistry::for('MO');
 
@@ -233,10 +251,14 @@ describe('resolver', function () {
         expect($nv->template)->toBe('documents.lien.waivers.bodies.nv-unconditional-final');
         expect($nv->complianceStandard)->toBe('verbatim');
 
-        // A generic state falls through to the house forms.
+        // A generic state falls through to the house forms; CO's mandatory
+        // § 38-22-119(2) clause rides along, statutory states carry none.
         $co = $resolver->resolve('CO', WaiverKind::UnconditionalProgress);
         expect($co->template)->toBe('documents.lien.waivers.bodies.generic-unconditional-progress');
         expect($co->complianceStandard)->toBe('generic');
+        expect($co->extraClauses)->toHaveCount(1);
+        expect($co->extraClauses[0])->toContain('C.R.S. § 38-22-119(2)');
+        expect($tx->extraClauses)->toBe([]);
     });
 
     it('swaps in the MO residential statutory body only for residential unconditional final', function () {

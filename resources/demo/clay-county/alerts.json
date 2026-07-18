@@ -1,0 +1,18 @@
+[
+    {
+        "severity": "advisory",
+        "severityLabel": "Advisory",
+        "scope": "Boat ramps",
+        "title": "Crows Creek boat ramp lanes reduced",
+        "body": "Sample condition — Crows Creek boat ramp lanes reduced for maintenance through the weekend. Camp Branch and Little Platte ramps are fully open.",
+        "posted": "Jul 17, 7:00 AM"
+    },
+    {
+        "severity": "info",
+        "severityLabel": "Notice",
+        "scope": "Beaches",
+        "title": "Swim beach water quality clear",
+        "body": "Sample notice — the latest biweekly water samples at Camp Branch Beach and Little Platte Beach are within state swim standards.",
+        "posted": "Jul 15, 9:00 AM"
+    }
+]

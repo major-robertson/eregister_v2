@@ -1,0 +1,47 @@
+[
+    {
+        "question": "What are campground check-in and check-out times?",
+        "answer": "Monday through Saturday, check-in is 1:00 PM and check-out is 11:00 AM. On Sundays, check-in is 5:00 PM and check-out is 3:00 PM.",
+        "topic": "camping"
+    },
+    {
+        "question": "Is there a minimum stay for weekend camping?",
+        "answer": "Yes — weekend reservations require a two-night minimum. The maximum stay is 15 days within any 30-day period.",
+        "topic": "camping"
+    },
+    {
+        "question": "How many people and tents are allowed per campsite?",
+        "answer": "Up to six people per site, with two tents or one tent plus one camper. Quiet hours are 10:00 PM to 6:00 AM.",
+        "topic": "camping"
+    },
+    {
+        "question": "Can I bring my own firewood?",
+        "answer": "Firewood must be burned on site and should not be transported out of the park — this slows the spread of the Emerald Ash Borer.",
+        "topic": "camping"
+    },
+    {
+        "question": "Are pets allowed?",
+        "answer": "Pets are welcome on a 6-foot leash, with a maximum of two dogs per site. Pets are not allowed at the swim beaches. An off-leash dog park is located at Smithville Lake.",
+        "topic": "rules"
+    },
+    {
+        "question": "When are the swim beaches open?",
+        "answer": "Camp Branch Beach and Little Platte Beach are open to the public May 1 through September 15, from 8:30 AM to sunset. There is no lifeguard on duty. Glass, alcohol, and pets are not permitted on the beaches.",
+        "topic": "beaches"
+    },
+    {
+        "question": "How do I reserve a campsite or shelter?",
+        "answer": "Reservations are handled through the county's WebTrac system online, or by phone at 816-407-3400 (option 3). Walk-in sites are first-come, first-served.",
+        "topic": "reservations"
+    },
+    {
+        "question": "What payment types are accepted?",
+        "answer": "Cash, check, Mastercard, Visa, and Discover are accepted in the parks. Off-season, some areas use honor envelopes at self-pay stations.",
+        "topic": "reservations"
+    },
+    {
+        "question": "Are fireworks, golf carts, or ATVs allowed?",
+        "answer": "No — fireworks, golf carts, and ATVs are not permitted anywhere in Clay County parks.",
+        "topic": "rules"
+    }
+]

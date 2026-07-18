@@ -33,6 +33,13 @@ class WaiverFormResolver
             $requiresLegalDescription = (bool) ($entry['residential_requires_legal_description'] ?? $requiresLegalDescription);
         }
 
+        // Invariant: in-person execution (notary or witness) rules out
+        // e-signing, whatever the data file says — a stray esign_allowed flag
+        // must never light the send button in MS/WY/GA-style states.
+        $esignAllowed = (bool) $rules['esign_allowed']
+            && ! $rules['notarization_required']
+            && ! $rules['witness_required'];
+
         return new ResolvedWaiverForm(
             state: strtoupper($state),
             kind: $kind,
@@ -42,7 +49,7 @@ class WaiverFormResolver
             complianceStandard: $rules['compliance_standard'],
             notarizationRequired: (bool) $rules['notarization_required'],
             witnessRequired: (bool) $rules['witness_required'],
-            esignAllowed: (bool) $rules['esign_allowed'],
+            esignAllowed: $esignAllowed,
             esignDisabledReason: $rules['esign_disabled_reason'],
             deemedEffectiveDays: $rules['deemed_effective_days'],
             statute: $rules['statute'],

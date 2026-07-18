@@ -9,6 +9,7 @@ use App\Domains\Lien\Esign\Actions\SendWaiverForSignature;
 use App\Domains\Lien\Esign\Actions\VoidWaiverSignatureRequest;
 use App\Domains\Lien\Models\LienWaiver;
 use App\Domains\Lien\Waivers\Actions\GenerateWaiver;
+use App\Domains\Lien\Waivers\Actions\StoreSignedCopy;
 use App\Domains\Lien\Waivers\ResolvedWaiverForm;
 use App\Domains\Lien\Waivers\WaiverEntitlements;
 use App\Domains\Lien\Waivers\WaiverFormResolver;
@@ -116,27 +117,7 @@ class WaiverShow extends Component
             $this->waiver->refresh();
         }
 
-        $this->waiver->addMedia($this->signedFile->getRealPath())
-            ->usingFileName($this->signedFile->getClientOriginalName())
-            ->toMediaCollection('signed');
-
-        $signedAt = now();
-
-        // GA/MS: a signed waiver becomes conclusively effective N days after
-        // execution unless payment arrives or an Affidavit of Nonpayment is
-        // filed. The statutory countdown is a calendar-date rule, so anchor it
-        // on the Eastern date we display signed_at in (not raw UTC), or an
-        // evening-Eastern signing lands a day late.
-        $deemedDays = WaiverStateRegistry::for($this->waiver->state)['deemed_effective_days'];
-
-        $this->waiver->update([
-            'status' => WaiverStatus::Signed,
-            'signed_at' => $signedAt,
-            'sent_at' => $originalSentAt ?? $this->waiver->sent_at,
-            'deemed_effective_at' => $deemedDays !== null
-                ? $signedAt->copy()->eastern()->addDays($deemedDays)->toDateString()
-                : null,
-        ]);
+        app(StoreSignedCopy::class)->execute($this->waiver, $this->signedFile, $originalSentAt);
 
         $this->signedFile = null;
 

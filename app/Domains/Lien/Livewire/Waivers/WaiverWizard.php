@@ -13,6 +13,7 @@ use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienWaiver;
 use App\Domains\Lien\Waivers\Actions\GenerateWaiver;
+use App\Domains\Lien\Waivers\Actions\StoreSignedCopy;
 use App\Domains\Lien\Waivers\ResolvedWaiverForm;
 use App\Domains\Lien\Waivers\WaiverEntitlements;
 use App\Domains\Lien\Waivers\WaiverFormResolver;
@@ -26,6 +27,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -43,6 +45,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class WaiverWizard extends Component
 {
+    use WithFileUploads;
+
     public int $step = 1;
 
     public int $totalSteps = 5;
@@ -153,6 +157,9 @@ class WaiverWizard extends Component
      * actions operate on it, and re-entering review updates it in place.
      */
     public ?int $savedWaiverId = null;
+
+    /** Executed copy chosen on review — the paper/notary path. */
+    public $signedFile = null;
 
     public bool $showUpsellModal = false;
 
@@ -993,6 +1000,33 @@ class WaiverWizard extends Component
         } catch (EsignException $e) {
             session()->flash('esign_error', $e->getMessage());
         }
+
+        $this->redirect(route('lien.waivers.show', $waiver), navigate: true);
+    }
+
+    /**
+     * The paper path from review: upload the executed copy — required in
+     * notary/witness states where e-signing is unavailable, and available
+     * anywhere the counterparty signed a printout.
+     */
+    public function uploadSigned(StoreSignedCopy $store): void
+    {
+        $waiver = $this->savedWaiver();
+
+        if ($waiver === null) {
+            $this->upsellContext = 'save';
+            $this->showUpsellModal = true;
+
+            return;
+        }
+
+        $this->validate([
+            'signedFile' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
+        ]);
+
+        $store->execute($waiver, $this->signedFile);
+
+        Flux::toast(text: 'Signed copy uploaded.', variant: 'success');
 
         $this->redirect(route('lien.waivers.show', $waiver), navigate: true);
     }

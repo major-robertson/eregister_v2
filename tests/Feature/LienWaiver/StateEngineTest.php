@@ -329,3 +329,49 @@ describe('resolver', function () {
             ->toBe('Conditional Waiver and Release of Lien: Progress Payment');
     });
 });
+
+describe('in-person execution invariant', function () {
+    it('never resolves an e-signable form where a notary or witness is required', function () {
+        $inPersonStates = 0;
+
+        foreach (WaiverStateRegistry::all() as $state => $rules) {
+            if (! $rules['notarization_required'] && ! $rules['witness_required']) {
+                continue;
+            }
+
+            $inPersonStates++;
+
+            foreach ($rules['kinds'] as $kind => $entry) {
+                if (! ($entry['enabled'] ?? true)) {
+                    continue;
+                }
+
+                $form = app(WaiverFormResolver::class)->resolve($state, WaiverKind::from($kind));
+
+                expect($form->esignAllowed)->toBeFalse(
+                    "{$state} {$kind} requires in-person execution but resolved as e-signable."
+                );
+            }
+        }
+
+        // Guard against vacuity: MS + WY (notary) and GA (witness) exist.
+        expect($inPersonStates)->toBeGreaterThanOrEqual(3);
+    });
+
+    it('enforces the invariant even when a data file mistakenly allows e-sign', function () {
+        // Simulate a bad data file: notary required but esign_allowed left true.
+        // The resolver must still refuse to light the send button.
+        $reflection = new ReflectionClass(WaiverStateRegistry::class);
+        $cache = $reflection->getProperty('cache');
+        $broken = WaiverStateRegistry::for('MS');
+        $broken['esign_allowed'] = true;
+        $cache->setValue(null, array_merge($cache->getValue(), ['MS' => $broken]));
+
+        try {
+            $form = app(WaiverFormResolver::class)->resolve('MS', WaiverKind::ConditionalProgress);
+            expect($form->esignAllowed)->toBeFalse();
+        } finally {
+            WaiverStateRegistry::flush();
+        }
+    });
+});

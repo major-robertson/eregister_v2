@@ -742,3 +742,59 @@ describe('legal description requirement', function () {
             ->and($project->refresh()->legal_description)->toBe('Lot 12, Block 3, Sunset Hills Plat Two');
     });
 });
+
+describe('upload signed copy from review', function () {
+    it('stores the executed copy on the auto-saved waiver and marks it signed', function () {
+        $project = waiverWizardProject($this->business, 'TX');
+
+        $component = waiverWizardAtReview($project, 'provide', 'conditional_progress');
+
+        $waiver = LienWaiver::firstOrFail();
+
+        $component->set('signedFile', Illuminate\Http\UploadedFile::fake()->createWithContent('signed-waiver.pdf', '%PDF-1.4 wet signed'))
+            ->call('uploadSigned')
+            ->assertRedirect(route('lien.waivers.show', $waiver));
+
+        $waiver->refresh();
+        expect($waiver->status)->toBe(WaiverStatus::Signed);
+        expect($waiver->signed_at)->not->toBeNull();
+        expect($waiver->getFirstMedia('signed'))->not->toBeNull();
+    });
+
+    it('is the execution path in a notary state: send is refused, upload succeeds', function () {
+        Mail::fake();
+        $project = waiverWizardProject($this->business, 'MS');
+        $contact = waiverWizardCollectContact($this->user);
+
+        $component = waiverWizardAtReview($project, 'collect', 'conditional_progress', [
+            'contactId' => (string) $contact->id,
+        ]);
+
+        // Mississippi's statutory forms are sworn before a notary: no e-sign.
+        $component->call('saveAndSend')
+            ->assertHasErrors('kind')
+            ->assertNoRedirect();
+        Mail::assertNothingQueued();
+
+        // The paper path works instead.
+        $waiver = LienWaiver::firstOrFail();
+        $component->set('signedFile', Illuminate\Http\UploadedFile::fake()->createWithContent('notarized.pdf', '%PDF-1.4 notarized'))
+            ->call('uploadSigned')
+            ->assertRedirect(route('lien.waivers.show', $waiver));
+
+        expect($waiver->refresh()->status)->toBe(WaiverStatus::Signed);
+        expect($waiver->getFirstMedia('signed'))->not->toBeNull();
+    });
+
+    it('pitches the upgrade instead when the free allowance ran out', function () {
+        $project = waiverWizardProject($this->business, 'TX');
+        LienWaiver::factory()->count(3)->forProject($project)->create();
+
+        waiverWizardAtReview($project)
+            ->call('uploadSigned')
+            ->assertSet('showUpsellModal', true)
+            ->assertNoRedirect();
+
+        expect(LienWaiver::count())->toBe(3);
+    });
+});

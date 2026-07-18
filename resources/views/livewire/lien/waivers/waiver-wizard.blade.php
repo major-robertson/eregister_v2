@@ -583,6 +583,34 @@
                         @endif
                     </div>
 
+                    {{-- Paper path: the only execution route in notary/witness
+                         states, and available anywhere a printout was signed. --}}
+                    <div class="border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                        <form wire:submit="uploadSigned">
+                            <flux:field>
+                                <flux:label>
+                                    Already signed{{ $form?->notarizationRequired ? ' and notarized' : ($form?->witnessRequired ? ' with a witness' : '') }} on paper?
+                                </flux:label>
+                                <flux:file-upload wire:model="signedFile" accept=".pdf,.jpg,.jpeg,.png">
+                                    <flux:file-upload.dropzone
+                                        inline
+                                        heading="Upload the signed waiver"
+                                        text="PDF, JPG, or PNG"
+                                        with-progress
+                                    />
+                                </flux:file-upload>
+                                <flux:description>Stores the executed copy on the project and marks the waiver signed.</flux:description>
+                                <flux:error name="signedFile" />
+                            </flux:field>
+                            @if ($signedFile)
+                                <flux:text class="mt-2 text-sm">{{ $signedFile->getClientOriginalName() }}</flux:text>
+                                <flux:button type="submit" size="sm" variant="primary" class="mt-2">
+                                    Upload signed copy
+                                </flux:button>
+                            @endif
+                        </form>
+                    </div>
+
                     @if (! $hasPaidAccess)
                         <p class="text-center text-xs text-zinc-500">
                             {{ $remainingFreeSaves }} of {{ $freeSavesLimit }} free waivers left this month.

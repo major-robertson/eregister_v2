@@ -91,39 +91,30 @@ use App\Domains\Lien\Enums\WaiverStatus;
                     </flux:callout>
                 @endif
 
-                {{-- Upload signed copy (paid: storing a signed copy is a tracked feature) --}}
+                {{-- Upload signed copy: every tier — the paper path is the only
+                     execution route in notary/witness states. --}}
                 <div class="border-t border-zinc-200 pt-4 dark:border-zinc-700">
-                    @if ($hasPaidAccess)
-                        <form wire:submit="uploadSigned">
-                            <flux:field>
-                                <flux:label>Upload signed copy</flux:label>
-                                <flux:file-upload wire:model="signedFile" accept=".pdf,.jpg,.jpeg,.png">
-                                    <flux:file-upload.dropzone
-                                        inline
-                                        heading="Drop the signed waiver here or click to browse"
-                                        text="PDF, JPG, or PNG"
-                                        with-progress
-                                    />
-                                </flux:file-upload>
-                                <flux:description>Marks the waiver as signed and stores the executed copy.</flux:description>
-                                <flux:error name="signedFile" />
-                            </flux:field>
-                            @if ($signedFile)
-                                <flux:text class="mt-2 text-sm">{{ $signedFile->getClientOriginalName() }}</flux:text>
-                                <flux:button type="submit" size="sm" variant="primary" class="mt-2">
-                                    Upload signed copy
-                                </flux:button>
-                            @endif
-                        </form>
-                    @else
-                        <flux:callout icon="lock-closed">
-                            <flux:callout.heading>Store the signed copy</flux:callout.heading>
-                            <flux:callout.text>
-                                Upgrade to store executed waivers in the portal with a tamper-evident audit trail.
-                            </flux:callout.text>
-                            <flux:callout.link href="#" wire:click.prevent="$set('showUpsellModal', true)">See what's included</flux:callout.link>
-                        </flux:callout>
-                    @endif
+                    <form wire:submit="uploadSigned">
+                        <flux:field>
+                            <flux:label>Upload signed copy</flux:label>
+                            <flux:file-upload wire:model="signedFile" accept=".pdf,.jpg,.jpeg,.png">
+                                <flux:file-upload.dropzone
+                                    inline
+                                    heading="Drop the signed waiver here or click to browse"
+                                    text="PDF, JPG, or PNG"
+                                    with-progress
+                                />
+                            </flux:file-upload>
+                            <flux:description>Marks the waiver as signed and stores the executed copy.</flux:description>
+                            <flux:error name="signedFile" />
+                        </flux:field>
+                        @if ($signedFile)
+                            <flux:text class="mt-2 text-sm">{{ $signedFile->getClientOriginalName() }}</flux:text>
+                            <flux:button type="submit" size="sm" variant="primary" class="mt-2">
+                                Upload signed copy
+                            </flux:button>
+                        @endif
+                    </form>
                 </div>
 
             @elseif ($waiver->status === WaiverStatus::AwaitingSignature)
@@ -147,31 +138,29 @@ use App\Domains\Lien\Enums\WaiverStatus;
                     </flux:button>
                 </div>
 
-                {{-- Signed outside the e-sign flow? Upload it and the request can be voided after. --}}
-                @if ($hasPaidAccess)
-                    <div class="border-t border-zinc-200 pt-4 dark:border-zinc-700">
-                        <form wire:submit="uploadSigned">
-                            <flux:field>
-                                <flux:label>Upload signed copy</flux:label>
-                                <flux:file-upload wire:model="signedFile" accept=".pdf,.jpg,.jpeg,.png">
-                                    <flux:file-upload.dropzone
-                                        inline
-                                        heading="Signed on paper instead? Upload it here"
-                                        text="PDF, JPG, or PNG"
-                                        with-progress
-                                    />
-                                </flux:file-upload>
-                                <flux:error name="signedFile" />
-                            </flux:field>
-                            @if ($signedFile)
-                                <flux:text class="mt-2 text-sm">{{ $signedFile->getClientOriginalName() }}</flux:text>
-                                <flux:button type="submit" size="sm" variant="primary" class="mt-2">
-                                    Upload signed copy
-                                </flux:button>
-                            @endif
-                        </form>
-                    </div>
-                @endif
+                {{-- Signed outside the e-sign flow? Upload it and the request is voided. --}}
+                <div class="border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                    <form wire:submit="uploadSigned">
+                        <flux:field>
+                            <flux:label>Upload signed copy</flux:label>
+                            <flux:file-upload wire:model="signedFile" accept=".pdf,.jpg,.jpeg,.png">
+                                <flux:file-upload.dropzone
+                                    inline
+                                    heading="Signed on paper instead? Upload it here"
+                                    text="PDF, JPG, or PNG"
+                                    with-progress
+                                />
+                            </flux:file-upload>
+                            <flux:error name="signedFile" />
+                        </flux:field>
+                        @if ($signedFile)
+                            <flux:text class="mt-2 text-sm">{{ $signedFile->getClientOriginalName() }}</flux:text>
+                            <flux:button type="submit" size="sm" variant="primary" class="mt-2">
+                                Upload signed copy
+                            </flux:button>
+                        @endif
+                    </form>
+                </div>
 
             @elseif ($waiver->status === WaiverStatus::Signed)
                 <div class="flex flex-wrap items-center gap-3">

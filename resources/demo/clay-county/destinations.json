@@ -1,0 +1,369 @@
+[
+    {
+        "slug": "smithville-lake",
+        "name": "Smithville Lake",
+        "type": "lake",
+        "typeLabel": "Lake & recreation",
+        "historic": false,
+        "summary": "Boating, fishing, two swim beaches, three marinas, and 752 campsites — the heart of Clay County recreation.",
+        "image": "boating-pontoon.webp",
+        "imageAlt": "A pontoon boat crossing open water at Smithville Lake",
+        "address": "17201 Paradesian, Smithville, MO 64089",
+        "phone": "816-407-3400",
+        "area": "Smithville Lake",
+        "activities": [
+            "Camping",
+            "Boating",
+            "Fishing",
+            "Swimming",
+            "Trails",
+            "Golf",
+            "Disc golf",
+            "Equestrian",
+            "Playgrounds",
+            "Dog park"
+        ],
+        "amenities": [
+            "752 campsites",
+            "3 marinas",
+            "2 swim beaches",
+            "5 boat ramps",
+            "38-hole golf complex",
+            "Nature center"
+        ],
+        "accessibility": [
+            "ADA fishing dock"
+        ],
+        "url": "/clay-demo/destinations/smithville-lake",
+        "map": {
+            "x": 30,
+            "y": 24
+        }
+    },
+    {
+        "slug": "little-platte-park",
+        "name": "Little Platte Park",
+        "type": "park",
+        "typeLabel": "Park",
+        "historic": false,
+        "summary": "West-side home of Little Platte Beach, Paradise Pointe Marina and Golf Complex, and three disc golf courses.",
+        "image": "marina-sunrise.webp",
+        "imageAlt": "Sailboats moored in morning mist at sunrise near Paradise Pointe",
+        "address": "Off NE 180th St, Smithville, MO 64089",
+        "phone": "816-407-3400",
+        "area": "Smithville Lake",
+        "activities": [
+            "Swimming",
+            "Boating",
+            "Golf",
+            "Disc golf",
+            "Trails",
+            "Camping"
+        ],
+        "amenities": [
+            "Little Platte Beach",
+            "Paradise Pointe Marina",
+            "Golf complex",
+            "3 disc golf courses"
+        ],
+        "accessibility": [],
+        "url": null,
+        "map": {
+            "x": 18,
+            "y": 36
+        }
+    },
+    {
+        "slug": "camp-branch-beach",
+        "name": "Camp Branch Beach",
+        "type": "beach",
+        "typeLabel": "Beach",
+        "historic": false,
+        "summary": "East-side swim beach in Camp Branch Park, near the main park office, marina, and boat launch.",
+        "image": "beach-camp-branch.webp",
+        "imageAlt": "The sandy swim beach at Camp Branch on Smithville Lake",
+        "address": "Camp Branch Park, Smithville, MO 64089",
+        "phone": "816-407-3400",
+        "area": "Smithville Lake",
+        "activities": [
+            "Swimming",
+            "Picnicking",
+            "Trails"
+        ],
+        "amenities": [
+            "Showers",
+            "Changing rooms",
+            "Restrooms",
+            "Drinking fountain"
+        ],
+        "accessibility": [],
+        "seasonNote": "Open May 1 – Sep 15, 8:30 AM to sunset. No lifeguard on duty.",
+        "url": null,
+        "map": {
+            "x": 40,
+            "y": 30
+        }
+    },
+    {
+        "slug": "nature-center",
+        "name": "Smithville Lake Nature Center",
+        "type": "nature",
+        "typeLabel": "Nature center",
+        "historic": false,
+        "summary": "Hands-on wildlife exhibits and year-round naturalist programs beside the park office at Camp Branch.",
+        "image": "nature-center.webp",
+        "imageAlt": "Exhibits inside the Smithville Lake Nature Center",
+        "address": "17201 Paradesian, Smithville, MO 64089",
+        "phone": "816-407-3400",
+        "area": "Smithville Lake",
+        "activities": [
+            "Nature programs",
+            "Exhibits",
+            "Field trips"
+        ],
+        "amenities": [
+            "Indoor exhibits",
+            "Program space",
+            "Restrooms"
+        ],
+        "accessibility": [],
+        "url": null,
+        "map": {
+            "x": 44,
+            "y": 22
+        }
+    },
+    {
+        "slug": "rocky-hollow-park",
+        "name": "Rocky Hollow Park",
+        "type": "park",
+        "typeLabel": "Park",
+        "historic": false,
+        "summary": "A quiet county park on an old quarry site about six miles east of Kearney — fishing, ball fields, and a primitive trail.",
+        "image": "rocky-hollow.webp",
+        "imageAlt": "The lake and wooded shoreline at Rocky Hollow Park",
+        "address": "6 miles east of Kearney, MO",
+        "phone": "816-407-3400",
+        "area": "Kearney",
+        "activities": [
+            "Fishing",
+            "Boating",
+            "Baseball",
+            "Hiking",
+            "Picnicking"
+        ],
+        "amenities": [
+            "Two baseball fields",
+            "Primitive hiking trail",
+            "Picnic shelter",
+            "Restrooms"
+        ],
+        "accessibility": [],
+        "amenityNote": "Non-gas engine boating only.",
+        "url": null,
+        "map": {
+            "x": 78,
+            "y": 52
+        }
+    },
+    {
+        "slug": "tryst-falls-park",
+        "name": "Tryst Falls Park",
+        "type": "park",
+        "typeLabel": "Park",
+        "historic": false,
+        "summary": "A day-use park around one of the area's only natural waterfalls, about 5.5 miles east of Kearney.",
+        "image": "tryst-falls.webp",
+        "imageAlt": "Water spilling over the limestone ledge at Tryst Falls",
+        "address": "5.5 miles east of Kearney, MO on Hwy 92",
+        "phone": "816-407-3400",
+        "area": "Kearney",
+        "activities": [
+            "Picnicking",
+            "Disc golf",
+            "Playground",
+            "Corn hole"
+        ],
+        "amenities": [
+            "Waterfall",
+            "4 picnic shelters",
+            "Playground",
+            "Disc golf",
+            "Restrooms"
+        ],
+        "accessibility": [],
+        "url": null,
+        "map": {
+            "x": 72,
+            "y": 42
+        }
+    },
+    {
+        "slug": "claybrook-park",
+        "name": "Claybrook Park",
+        "type": "park",
+        "typeLabel": "Park",
+        "historic": false,
+        "summary": "An 18-acre day-use park in Kearney with a picnic shelter and open green space.",
+        "image": null,
+        "imageAlt": "Claybrook Park (photo pending from parks staff)",
+        "address": "Kearney, MO 64060",
+        "phone": "816-407-3400",
+        "area": "Kearney",
+        "activities": [
+            "Picnicking"
+        ],
+        "amenities": [
+            "Picnic shelter",
+            "Restrooms"
+        ],
+        "accessibility": [],
+        "url": null,
+        "map": {
+            "x": 58,
+            "y": 58
+        }
+    },
+    {
+        "slug": "jesse-james-birthplace",
+        "name": "Jesse James Birthplace",
+        "type": "historic",
+        "typeLabel": "Historic site",
+        "historic": true,
+        "summary": "The James family farm in Kearney, home to the world's largest collection of James family artifacts.",
+        "image": "james-farm-house.webp",
+        "imageAlt": "The white farmhouse at the Jesse James Birthplace behind a split-rail fence",
+        "address": "21216 James Farm Rd, Kearney, MO 64060",
+        "phone": "816-736-8500",
+        "area": "Kearney",
+        "activities": [
+            "Museum",
+            "Guided tours",
+            "Special events"
+        ],
+        "amenities": [
+            "Museum & film",
+            "Farmhouse tour",
+            "Gift shop"
+        ],
+        "accessibility": [
+            "Paved trail to the farmhouse"
+        ],
+        "url": "/clay-demo/historic-sites/jesse-james-birthplace",
+        "map": {
+            "x": 62,
+            "y": 48
+        }
+    },
+    {
+        "slug": "jesse-james-bank-museum",
+        "name": "Jesse James Bank Museum",
+        "type": "historic",
+        "typeLabel": "Historic site",
+        "historic": true,
+        "summary": "Site of the nation's first successful daylight peacetime bank robbery, preserved as it looked in 1866.",
+        "image": "jj-bank-museum.webp",
+        "imageAlt": "The brick Jesse James Bank Museum building on Liberty's historic square",
+        "address": "103 N Water St, Liberty, MO 64068",
+        "phone": "816-736-8510",
+        "area": "Liberty",
+        "activities": [
+            "Museum",
+            "Guided tours"
+        ],
+        "amenities": [
+            "1866 bank interior",
+            "Gift shop"
+        ],
+        "accessibility": [],
+        "url": "/clay-demo/historic-sites#jesse-james-bank-museum",
+        "map": {
+            "x": 52,
+            "y": 80
+        }
+    },
+    {
+        "slug": "mt-gilead-church",
+        "name": "Mt. Gilead Church",
+        "type": "historic",
+        "typeLabel": "Historic site",
+        "historic": true,
+        "summary": "An 1870s country church that hosts weddings, reunions, showers, and small gatherings by reservation.",
+        "image": "mt-gilead-church.webp",
+        "imageAlt": "The white historic Mt. Gilead Church near Kearney",
+        "address": "15918 Plattsburg Rd, Kearney, MO 64060",
+        "phone": "816-736-8500",
+        "area": "Kearney",
+        "activities": [
+            "Event venue",
+            "Weddings",
+            "Special events"
+        ],
+        "amenities": [
+            "Historic sanctuary",
+            "Grounds"
+        ],
+        "accessibility": [],
+        "url": "/clay-demo/historic-sites#mt-gilead-church",
+        "map": {
+            "x": 54,
+            "y": 50
+        }
+    },
+    {
+        "slug": "mt-gilead-school",
+        "name": "Mt. Gilead School",
+        "type": "historic",
+        "typeLabel": "Historic site",
+        "historic": true,
+        "summary": "Step into an 1880s school day — McGuffey's readers, slates, and a teacher in period costume.",
+        "image": "mt-gilead-school.webp",
+        "imageAlt": "The white one-room Mt. Gilead School with its front porch and flag",
+        "address": "15918 Plattsburg Rd, Kearney, MO 64060",
+        "phone": "816-736-8500",
+        "area": "Kearney",
+        "activities": [
+            "School programs",
+            "Field trips",
+            "Special events"
+        ],
+        "amenities": [
+            "One-room schoolhouse",
+            "4-hour program",
+            "Up to 30 participants"
+        ],
+        "accessibility": [],
+        "url": "/clay-demo/historic-sites#mt-gilead-school",
+        "map": {
+            "x": 48,
+            "y": 54
+        }
+    },
+    {
+        "slug": "pharis-farm",
+        "name": "Pharis Farm",
+        "type": "historic",
+        "typeLabel": "Historic site",
+        "historic": true,
+        "summary": "Donald Pharis's 1927 farmstead east of Liberty — a working monument to soil conservation, open during special events.",
+        "image": "pharis-farm.webp",
+        "imageAlt": "The brick farmhouse at Pharis Farm framed by autumn trees",
+        "address": "20611 EE Highway, Liberty, MO 64068",
+        "phone": "816-736-8500",
+        "area": "Liberty",
+        "activities": [
+            "Special events",
+            "Living history"
+        ],
+        "amenities": [
+            "1927 farmstead",
+            "Event grounds"
+        ],
+        "accessibility": [],
+        "url": "/clay-demo/historic-sites#pharis-farm",
+        "map": {
+            "x": 64,
+            "y": 74
+        }
+    }
+]

@@ -1,0 +1,148 @@
+/*
+ * Clay County Parks demo (RFP 78-26 concept) — base styles.
+ *
+ * Loaded only by resources/views/demo/clay/layout.blade.php, alongside the
+ * app Tailwind build. Utilities in the views use literal design-token values
+ * from the handoff package (design-tokens.css); this file carries the pieces
+ * utilities can't: fonts, focus rings, reduced motion, and small primitives.
+ */
+
+.cc-demo {
+    font-family: 'Public Sans', system-ui, -apple-system, sans-serif;
+    color: #232a2e;
+    background: #faf7f0;
+    -webkit-font-smoothing: antialiased;
+}
+
+.cc-serif {
+    font-family: 'Source Serif 4', Georgia, serif;
+}
+
+/* Focus — visible 2px ring, offset 2, per accessibility notes. Yellow on dark surfaces. */
+.cc-demo :focus-visible {
+    outline: 2px solid #0e5a73;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.cc-on-dark :focus-visible,
+.cc-demo .cc-on-dark :focus-visible {
+    outline-color: #e7c55c;
+}
+
+/* Skip link — first element in DOM, visible on focus */
+.cc-skip-link {
+    position: absolute;
+    left: -9999px;
+    z-index: 100;
+    background: #0b3a4e;
+    color: #faf7f0;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 12px 20px;
+    border-radius: 0 0 8px 0;
+}
+
+.cc-skip-link:focus {
+    left: 0;
+    top: 0;
+}
+
+/* Native accordions — hide the default marker, rotate our chevron */
+.cc-demo details summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.cc-demo details summary::-webkit-details-marker {
+    display: none;
+}
+
+.cc-demo details[open] .cc-chevron {
+    transform: rotate(180deg);
+}
+
+.cc-chevron {
+    transition: transform 0.18s ease;
+}
+
+/* Horizontal card rails on mobile */
+.cc-scrollbar-none {
+    scrollbar-width: none;
+}
+
+.cc-scrollbar-none::-webkit-scrollbar {
+    display: none;
+}
+
+/* Restrained transitions (150–200ms ease per design system) */
+.cc-hoverable {
+    transition:
+        box-shadow 0.18s ease,
+        border-color 0.18s ease,
+        background-color 0.18s ease,
+        color 0.18s ease;
+}
+
+/* Entry animations for modals, drawers, and sheets. Applied as classes on
+   the x-show panel: the animation replays each time display flips on. */
+@keyframes cc-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(4px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes cc-slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(24px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes cc-slide-in-right {
+    from {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.cc-anim-fade {
+    animation: cc-fade-in 0.18s ease;
+}
+
+.cc-anim-up {
+    animation: cc-slide-up 0.25s ease;
+}
+
+.cc-anim-right {
+    animation: cc-slide-in-right 0.25s ease;
+}
+
+/* Reduced motion: keep opacity fades, kill movement */
+@media (prefers-reduced-motion: reduce) {
+    .cc-demo *,
+    .cc-demo *::before,
+    .cc-demo *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+html {
+    scroll-behavior: smooth;
+}

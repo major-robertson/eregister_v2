@@ -23,6 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
             // MDCPS demo sandbox (isolated, front-end-only proof-of-concept)
             Route::middleware('web')->group(base_path('routes/mdcps_demo.php'));
 
+            // Clay County parks demo sandbox (isolated, front-end-only proof-of-concept)
+            Route::middleware('web')->group(base_path('routes/clay_demo.php'));
+
             // API routes (no session, no CSRF)
             Route::prefix('api')->group(base_path('routes/api.php'));
         },

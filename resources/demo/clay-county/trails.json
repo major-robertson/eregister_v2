@@ -1,0 +1,205 @@
+[
+    {
+        "slug": "little-platte-north",
+        "name": "Little Platte North Trail",
+        "distance": "2.5 mi",
+        "distanceMiles": 2.5,
+        "activity": "walk-bike",
+        "activityLabel": "Walk & bike",
+        "surface": "Paved asphalt",
+        "difficulty": "easy",
+        "difficultyLabel": "Easy",
+        "accessible": true,
+        "status": "open",
+        "statusNote": "Dry, good footing",
+        "description": "A 10-foot-wide paved trail on the lake's west side, running from the Little Platte Trailhead at 188th St. to Hwy W. Level grades and open lake views most of the way.",
+        "trailhead": "Little Platte Trailhead, 188th St.",
+        "segments": [],
+        "image": "trail-little-platte-north.webp",
+        "imageAlt": "Trail marker sign for the Little Platte North Trail",
+        "map": {
+            "x": 21,
+            "y": 17
+        },
+        "sampleFields": [
+            "difficulty",
+            "accessible",
+            "status"
+        ]
+    },
+    {
+        "slug": "crows-creek",
+        "name": "Crows Creek Trail System",
+        "distance": "8.9 mi",
+        "distanceMiles": 8.9,
+        "activity": "walk-bike",
+        "activityLabel": "Walk & bike",
+        "surface": "Paved asphalt",
+        "difficulty": "moderate",
+        "difficultyLabel": "Moderate",
+        "accessible": false,
+        "status": "open",
+        "statusNote": "Clear end to end",
+        "description": "Two connected paved trails on the northeast shore: the Anita B. Gorman Trail (1.9 miles) and the longer Cabin Fever Trail (7.0 miles) for a bigger day out.",
+        "trailhead": "Crows Creek boat launch",
+        "segments": [
+            {
+                "name": "Anita B. Gorman Trail",
+                "distance": "1.9 mi"
+            },
+            {
+                "name": "Cabin Fever Trail",
+                "distance": "7.0 mi"
+            }
+        ],
+        "image": "trail-crows-creek.webp",
+        "imageAlt": "Trail marker sign for the Crows Creek Trail System",
+        "map": {
+            "x": 58,
+            "y": 12
+        },
+        "sampleFields": [
+            "difficulty",
+            "status"
+        ]
+    },
+    {
+        "slug": "smoke-davey",
+        "name": "Smoke & Davey Trail System",
+        "distance": "4.8 mi",
+        "distanceMiles": 4.8,
+        "activity": "mtb",
+        "activityLabel": "Mountain bike",
+        "surface": "Natural single-track",
+        "difficulty": "challenging",
+        "difficultyLabel": "Challenging",
+        "accessible": false,
+        "status": "open",
+        "statusNote": "Riding fast and dry",
+        "description": "Purpose-built single-track in three loops — Backbone (2.7 miles), Whispering Pine (1.4 miles), and Copperhead Ridge (0.7 miles). Part of 11.5 miles of mountain-bike trail at the lake.",
+        "trailhead": "Smoke & Davey trailhead, east side",
+        "segments": [
+            {
+                "name": "Backbone",
+                "distance": "2.7 mi"
+            },
+            {
+                "name": "Whispering Pine",
+                "distance": "1.4 mi"
+            },
+            {
+                "name": "Copperhead Ridge",
+                "distance": "0.7 mi"
+            }
+        ],
+        "image": "trail-smoke-davey.webp",
+        "imageAlt": "Trail marker sign for the Smoke and Davey Trail System",
+        "map": {
+            "x": 63,
+            "y": 29
+        },
+        "sampleFields": [
+            "difficulty",
+            "status"
+        ]
+    },
+    {
+        "slug": "little-platte-south",
+        "name": "Little Platte South Trail",
+        "distance": "5.5 mi",
+        "distanceMiles": 5.5,
+        "activity": "walk-bike",
+        "activityLabel": "Walk & bike",
+        "surface": "Paved asphalt",
+        "difficulty": "moderate",
+        "difficultyLabel": "Moderate",
+        "accessible": false,
+        "status": "open",
+        "statusNote": "Clear end to end",
+        "description": "Paved lakeside miles beginning at the Little Platte Trailhead by Paradise Pointe Marina — an out-and-back with marina, cove, and golf-course scenery.",
+        "trailhead": "Paradise Pointe Marina",
+        "segments": [],
+        "image": "trail-little-platte-south.webp",
+        "imageAlt": "Trail marker sign for the Little Platte South Trail",
+        "map": {
+            "x": 17,
+            "y": 54
+        },
+        "sampleFields": [
+            "difficulty",
+            "status"
+        ]
+    },
+    {
+        "slug": "westward-trailways",
+        "name": "Westward Trailways",
+        "distance": "26 mi",
+        "distanceMiles": 26,
+        "activity": "equestrian",
+        "activityLabel": "Equestrian",
+        "surface": "Natural",
+        "difficulty": "moderate",
+        "difficultyLabel": "Moderate",
+        "accessible": false,
+        "status": "caution",
+        "statusNote": "Sample: soft ground after rain",
+        "description": "26 miles of horse and primitive hiking trails across the southeast side of the lake — the backbone of the lake's 32-mile equestrian network, with an equestrian camp nearby.",
+        "trailhead": "Equestrian camping area, southeast side",
+        "segments": [],
+        "image": "trail-westward.webp",
+        "imageAlt": "Trail marker sign for the Westward Trailways",
+        "map": {
+            "x": 67,
+            "y": 72
+        },
+        "sampleFields": [
+            "difficulty",
+            "status"
+        ]
+    },
+    {
+        "slug": "camp-branch",
+        "name": "Camp Branch Trail System",
+        "distance": "11 mi",
+        "distanceMiles": 11,
+        "activity": "walk-bike",
+        "activityLabel": "Walk & bike",
+        "surface": "Paved asphalt",
+        "difficulty": "easy",
+        "difficultyLabel": "Easy",
+        "accessible": true,
+        "status": "open",
+        "statusNote": "Dry, good footing",
+        "description": "Four connected trails on the east shore — Bonebender (6.0 miles), Campground Trail (3.0 miles), Eagle's View (1.5 miles), and Owl Creek (0.5 miles). Bonebender links the campground to Camp Branch Beach.",
+        "trailhead": "Camp Branch Park, near the park office",
+        "segments": [
+            {
+                "name": "Bonebender",
+                "distance": "6.0 mi"
+            },
+            {
+                "name": "Campground Trail",
+                "distance": "3.0 mi"
+            },
+            {
+                "name": "Eagle's View Trail",
+                "distance": "1.5 mi"
+            },
+            {
+                "name": "Owl Creek Trail",
+                "distance": "0.5 mi"
+            }
+        ],
+        "image": "trail-camp-branch.webp",
+        "imageAlt": "Trail marker sign for the Camp Branch Trail System",
+        "map": {
+            "x": 29,
+            "y": 82
+        },
+        "sampleFields": [
+            "difficulty",
+            "accessible",
+            "status"
+        ]
+    }
+]

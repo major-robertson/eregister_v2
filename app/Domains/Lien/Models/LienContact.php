@@ -33,6 +33,7 @@ class LienContact extends Model
         'address_line2',
         'city',
         'state',
+        'county',
         'postal_code',
     ];
 

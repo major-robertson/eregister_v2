@@ -33,6 +33,8 @@ class PartyManager extends Component
 
     public ?string $state = null;
 
+    public ?string $county = null;
+
     public ?string $zip = null;
 
     public ?string $email = null;
@@ -54,6 +56,7 @@ class PartyManager extends Component
             'address2' => ['nullable', 'string', 'max:255'],
             'city' => ['required', 'string', 'max:255'],
             'state' => ['required', 'string', 'max:2'],
+            'county' => ['nullable', 'string', 'max:255'],
             'zip' => ['required', 'string', 'max:10'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
@@ -87,6 +90,7 @@ class PartyManager extends Component
             $this->address2 = $party->address2;
             $this->city = $party->city;
             $this->state = $party->state;
+            $this->county = $party->county;
             $this->zip = $party->zip;
             $this->email = $party->email;
             $this->phone = $party->phone;
@@ -113,6 +117,7 @@ class PartyManager extends Component
             'address2' => $this->address2,
             'city' => $this->city,
             'state' => $this->state ? strtoupper($this->state) : null,
+            'county' => $this->county,
             'zip' => $this->zip,
             'email' => $this->email,
             'phone' => $this->phone,
@@ -164,10 +169,26 @@ class PartyManager extends Component
         $this->address2 = null;
         $this->city = null;
         $this->state = null;
+        $this->county = null;
         $this->zip = null;
         $this->email = null;
         $this->phone = null;
         $this->resetValidation();
+    }
+
+    /**
+     * Google Places pick for the party modal's street-address input
+     * (see livewire.lien._places-autocomplete).
+     *
+     * @param  array<string, mixed>  $addressData
+     */
+    public function updateAddressFromAutocomplete(array $addressData): void
+    {
+        $this->address1 = $addressData['line1'] ?? null;
+        $this->city = $addressData['city'] ?? null;
+        $this->state = $addressData['state'] ?? null;
+        $this->county = $addressData['county'] ?? null;
+        $this->zip = $addressData['zip'] ?? null;
     }
 
     #[On('party-saved')]

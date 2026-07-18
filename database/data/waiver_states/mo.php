@@ -48,6 +48,12 @@ return [
         'unconditional_final' => [
             'residential_template' => 'documents.lien.waivers.bodies.mo-unconditional-final-residential',
             'residential_title' => 'Unconditional Final Lien Waiver for Residential Real Property',
+            // The statutory form's property blank reads "(Provide legal
+            // description of the Property)", and § 429.016 uses "legal
+            // description" as a term of art throughout (subsecs. 8, 11(3),
+            // 17(2)(c)) — a street address alone does not track the form. The
+            // address still prints as "commonly known as".
+            'residential_requires_legal_description' => true,
         ],
     ],
     'landing' => [

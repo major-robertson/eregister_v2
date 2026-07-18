@@ -84,7 +84,8 @@
 
                 <flux:field>
                     <flux:label>Address *</flux:label>
-                    <flux:input wire:model="address1" placeholder="Street address" />
+                    <flux:input wire:model="address1" placeholder="Start typing to search..."
+                        autocomplete="off" data-places-autocomplete data-places-method="updateAddressFromAutocomplete" />
                     <flux:error name="address1" />
                 </flux:field>
 
@@ -117,6 +118,12 @@
                     </flux:field>
                 </div>
 
+                <flux:field>
+                    <flux:label>County</flux:label>
+                    <flux:input wire:model="county" placeholder="Fills in from the address" />
+                    <flux:error name="county" />
+                </flux:field>
+
                 <div class="grid grid-cols-2 gap-4">
                     <flux:field>
                         <flux:label>Email</flux:label>
@@ -142,4 +149,6 @@
             </form>
         </div>
     </flux:modal>
+
+    @include('livewire.lien._places-autocomplete')
 </div>

@@ -25,10 +25,12 @@ class WaiverFormResolver
 
         $template = $entry['template'];
         $title = $entry['title'];
+        $requiresLegalDescription = (bool) ($entry['requires_legal_description'] ?? false);
 
         if ($propertyClass === 'residential' && ! empty($entry['residential_template'])) {
             $template = $entry['residential_template'];
             $title = $entry['residential_title'] ?? $title;
+            $requiresLegalDescription = (bool) ($entry['residential_requires_legal_description'] ?? $requiresLegalDescription);
         }
 
         return new ResolvedWaiverForm(
@@ -46,6 +48,7 @@ class WaiverFormResolver
             statute: $rules['statute'],
             uiNotes: $rules['ui_notes'] ?? [],
             extraClauses: $rules['extra_clauses'] ?? [],
+            requiresLegalDescription: $requiresLegalDescription,
         );
     }
 

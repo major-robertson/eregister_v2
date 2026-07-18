@@ -48,6 +48,7 @@ class LienWaiver extends Model implements HasMedia
         'check_maker',
         'check_number',
         'exceptions',
+        'legal_description',
         'lien_contact_id',
         'counterparty_company',
         'counterparty_name',

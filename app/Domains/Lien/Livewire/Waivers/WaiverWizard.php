@@ -9,6 +9,7 @@ use App\Domains\Lien\Enums\WaiverKind;
 use App\Domains\Lien\Enums\WaiverStatus;
 use App\Domains\Lien\Esign\Actions\SendWaiverForSignature;
 use App\Domains\Lien\Models\LienContact;
+use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienWaiver;
 use App\Domains\Lien\Waivers\Actions\GenerateWaiver;
@@ -82,6 +83,13 @@ class WaiverWizard extends Component
 
     public ?string $exceptions = null;
 
+    /**
+     * Collected only when the resolved form is invalid without a formal legal
+     * description (MO's residential unconditional final, § 429.016.27);
+     * prefilled from the project and hidden for every other form.
+     */
+    public ?string $legal_description = null;
+
     // Counterparty
     public string $contactId = '';
 
@@ -108,7 +116,31 @@ class WaiverWizard extends Component
 
     public ?string $contact_state = null;
 
+    public ?string $contact_county = null;
+
     public ?string $contact_zip = null;
+
+    // Owner modal: adds the project's missing owner party without leaving the
+    // wizard. Every waiver requires an owner (the forms identify who owns the
+    // property), but only the name is required here — PartyManager still
+    // demands the full mailing address when a lien filing needs it.
+    public bool $showOwnerModal = false;
+
+    public ?string $owner_name = null;
+
+    public ?string $owner_company = null;
+
+    public ?string $owner_address1 = null;
+
+    public ?string $owner_address2 = null;
+
+    public ?string $owner_city = null;
+
+    public ?string $owner_state = null;
+
+    public ?string $owner_county = null;
+
+    public ?string $owner_zip = null;
 
     public bool $showUpsellModal = false;
 
@@ -151,6 +183,12 @@ class WaiverWizard extends Component
         } while ($next < $this->totalSteps && $this->stepIsSkipped($next));
 
         $this->step = min($next, $this->totalSteps);
+
+        // Arriving at the details step: seed the legal description from the
+        // project so MO residential users start from what's already on file.
+        if ($this->step === 4 && blank($this->legal_description)) {
+            $this->legal_description = $this->selectedProject()?->legal_description;
+        }
     }
 
     public function previousStep(): void
@@ -203,6 +241,7 @@ class WaiverWizard extends Component
         }
 
         if ($this->step === 4) {
+            $this->assertProjectHasOwner();
             $this->assertCollectContactSignable();
         }
     }
@@ -232,12 +271,19 @@ class WaiverWizard extends Component
         // several statutory forms are legitimately exchanged with those
         // blank. No separate signer fields: you sign your own provide
         // waivers, and on collect waivers the contact signs (see
-        // assertCollectContactSignable for the email requirement).
+        // assertCollectContactSignable for the email requirement). The
+        // contact is required in both directions so the form's customer
+        // blank (provide) or claimant identity (collect) is never empty.
         $rules = [
             'amount' => ['required', 'numeric', 'min:0', 'max:99999999'],
             'invoice_number' => ['nullable', 'string', 'max:100'],
             'exceptions' => ['nullable', 'string', 'max:2000'],
-            'contactId' => ['nullable', 'string'],
+            'contactId' => ['required', 'string'],
+            // Only MO's residential unconditional final form demands a formal
+            // legal description — a street address doesn't track that form.
+            'legal_description' => $this->resolvedForm()?->requiresLegalDescription
+                ? ['required', 'string', 'max:2000']
+                : ['nullable', 'string', 'max:2000'],
         ];
 
         if (! $this->isFinalKind()) {
@@ -252,6 +298,34 @@ class WaiverWizard extends Component
         }
 
         return $rules;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function messages(): array
+    {
+        return [
+            'contactId.required' => $this->direction === WaiverDirection::Collect->value
+                ? 'Select or add the contact giving you this waiver.'
+                : 'Select or add the contact who receives this waiver — their name prints in the form\'s customer blank.',
+            'legal_description.required' => 'This form is only valid with the property\'s legal description — a street address alone doesn\'t satisfy it.',
+        ];
+    }
+
+    /**
+     * Every waiver form identifies the property owner, so a waiver can't be
+     * generated until the project has an owner party.
+     */
+    private function assertProjectHasOwner(): void
+    {
+        if ($this->selectedProject()?->ownerParty() !== null) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'owner' => 'Add the property owner — the waiver form identifies who owns the property.',
+        ]);
     }
 
     /**
@@ -293,6 +367,7 @@ class WaiverWizard extends Component
             ]);
         }
 
+        $this->assertProjectHasOwner();
         $this->assertCollectContactSignable();
     }
 
@@ -316,11 +391,13 @@ class WaiverWizard extends Component
     public function updatedProjectId(): void
     {
         // The state drives which forms exist, so a project switch resets the
-        // type selection.
+        // type selection — and the legal description, which belongs to the
+        // previous project's property (re-seeded when step 4 is reached).
         $this->kind = '';
         $this->paymentType = '';
         $this->paymentReceived = '';
         $this->redirectNotice = null;
+        $this->legal_description = null;
     }
 
     public function selectedProject(): ?LienProject
@@ -520,6 +597,7 @@ class WaiverWizard extends Component
         $this->contact_address2 = $contact->address_line2;
         $this->contact_city = $contact->city;
         $this->contact_state = $contact->state;
+        $this->contact_county = $contact->county;
         $this->contact_zip = $contact->postal_code;
         $this->showContactModal = true;
     }
@@ -544,6 +622,7 @@ class WaiverWizard extends Component
             'contact_address2' => ['nullable', 'string', 'max:255'],
             'contact_city' => ['nullable', 'string', 'max:255'],
             'contact_state' => ['nullable', 'string', 'max:2'],
+            'contact_county' => ['nullable', 'string', 'max:255'],
             'contact_zip' => ['nullable', 'string', 'max:10'],
         ], [
             'contact_company.required_without_all' => 'Enter a company name or a first/last name.',
@@ -561,6 +640,7 @@ class WaiverWizard extends Component
             'address_line2' => $this->contact_address2,
             'city' => $this->contact_city,
             'state' => $this->contact_state ? strtoupper($this->contact_state) : null,
+            'county' => $this->contact_county,
             'postal_code' => $this->contact_zip,
         ]);
 
@@ -596,11 +676,114 @@ class WaiverWizard extends Component
         $this->contact_address2 = null;
         $this->contact_city = null;
         $this->contact_state = null;
+        $this->contact_county = null;
         $this->contact_zip = null;
         $this->resetValidation([
             'contact_company', 'contact_first_name', 'contact_last_name', 'contact_email', 'contact_phone',
-            'contact_address1', 'contact_address2', 'contact_city', 'contact_state', 'contact_zip',
+            'contact_address1', 'contact_address2', 'contact_city', 'contact_state', 'contact_county', 'contact_zip',
         ]);
+    }
+
+    /**
+     * Google Places pick for the contact modal's street-address input
+     * (see livewire.lien._places-autocomplete).
+     *
+     * @param  array<string, mixed>  $addressData
+     */
+    public function updateContactAddressFromAutocomplete(array $addressData): void
+    {
+        $this->contact_address1 = $addressData['line1'] ?? null;
+        $this->contact_city = $addressData['city'] ?? null;
+        $this->contact_state = $addressData['state'] ?? null;
+        $this->contact_county = $addressData['county'] ?? null;
+        $this->contact_zip = $addressData['zip'] ?? null;
+    }
+
+    // ------------------------------------------------------------------
+    // Step 4: property owner
+    // ------------------------------------------------------------------
+
+    public function openOwnerModal(): void
+    {
+        $this->resetOwnerForm();
+        $this->showOwnerModal = true;
+    }
+
+    public function closeOwnerModal(): void
+    {
+        $this->showOwnerModal = false;
+        $this->resetOwnerForm();
+    }
+
+    public function saveOwner(): void
+    {
+        $project = $this->selectedProject();
+
+        if ($project === null) {
+            return;
+        }
+
+        $this->validate([
+            'owner_name' => ['required', 'string', 'max:255'],
+            'owner_company' => ['nullable', 'string', 'max:255'],
+            'owner_address1' => ['nullable', 'string', 'max:255'],
+            'owner_address2' => ['nullable', 'string', 'max:255'],
+            'owner_city' => ['nullable', 'string', 'max:255'],
+            'owner_state' => ['nullable', 'string', 'max:2'],
+            'owner_county' => ['nullable', 'string', 'max:255'],
+            'owner_zip' => ['nullable', 'string', 'max:10'],
+        ], attributes: [
+            'owner_name' => 'owner name',
+        ]);
+
+        LienParty::create(array_map(fn ($value) => $value === '' ? null : $value, [
+            'business_id' => $project->business_id,
+            'project_id' => $project->id,
+            'role' => 'owner',
+            'name' => $this->owner_name,
+            'company_name' => $this->owner_company,
+            'address1' => $this->owner_address1,
+            'address2' => $this->owner_address2,
+            'city' => $this->owner_city,
+            'state' => $this->owner_state ? strtoupper($this->owner_state) : null,
+            'county' => $this->owner_county,
+            'zip' => $this->owner_zip,
+        ]));
+
+        Flux::toast(text: 'Property owner added to the project.', variant: 'success');
+
+        $this->resetValidation(['owner']);
+        $this->closeOwnerModal();
+    }
+
+    private function resetOwnerForm(): void
+    {
+        $this->owner_name = null;
+        $this->owner_company = null;
+        $this->owner_address1 = null;
+        $this->owner_address2 = null;
+        $this->owner_city = null;
+        $this->owner_state = null;
+        $this->owner_county = null;
+        $this->owner_zip = null;
+        $this->resetValidation([
+            'owner_name', 'owner_company', 'owner_address1', 'owner_address2',
+            'owner_city', 'owner_state', 'owner_county', 'owner_zip',
+        ]);
+    }
+
+    /**
+     * Google Places pick for the owner modal's street-address input.
+     *
+     * @param  array<string, mixed>  $addressData
+     */
+    public function updateOwnerAddressFromAutocomplete(array $addressData): void
+    {
+        $this->owner_address1 = $addressData['line1'] ?? null;
+        $this->owner_city = $addressData['city'] ?? null;
+        $this->owner_state = $addressData['state'] ?? null;
+        $this->owner_county = $addressData['county'] ?? null;
+        $this->owner_zip = $addressData['zip'] ?? null;
     }
 
 
@@ -664,6 +847,8 @@ class WaiverWizard extends Component
             optional($lock)->release();
         }
 
+        $this->syncProjectLegalDescription();
+
         $waiver = $generate->execute($waiver);
 
         Flux::toast(text: 'Waiver saved to project.', variant: 'success');
@@ -699,6 +884,7 @@ class WaiverWizard extends Component
         }
 
         $waiver = LienWaiver::create($this->waiverAttributes());
+        $this->syncProjectLegalDescription();
         $waiver = $generate->execute($waiver);
 
         try {
@@ -740,6 +926,7 @@ class WaiverWizard extends Component
             'check_maker' => $this->isConditionalKind() ? ($this->check_maker ?: null) : null,
             'check_number' => $this->isConditionalKind() ? ($this->check_number ?: null) : null,
             'exceptions' => $this->exceptions ?: null,
+            'legal_description' => $this->legal_description ?: null,
             'lien_contact_id' => $contact?->id,
             'counterparty_company' => $contact?->company_name,
             'counterparty_name' => ($contact && $contact->personName() !== '') ? $contact->personName() : null,
@@ -751,6 +938,20 @@ class WaiverWizard extends Component
             'signer_email' => $provide ? $user->email : $contact?->email,
             'signer_title' => null,
         ];
+    }
+
+    /**
+     * A legal description typed in the wizard is worth keeping on the project
+     * too — the next waiver (and the lien filing flow) prefills from it.
+     * Never overwrites a value the project already has.
+     */
+    private function syncProjectLegalDescription(): void
+    {
+        $project = $this->selectedProject();
+
+        if ($project !== null && filled($this->legal_description) && blank($project->legal_description)) {
+            $project->update(['legal_description' => $this->legal_description]);
+        }
     }
 
     private function buildUnsavedWaiver(): LienWaiver

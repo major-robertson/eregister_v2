@@ -35,6 +35,8 @@ class ContactForm extends Component
 
     public string $state = '';
 
+    public string $county = '';
+
     public string $postal_code = '';
 
     public function mount(?LienContact $contact = null): void
@@ -50,6 +52,7 @@ class ContactForm extends Component
             $this->address_line2 = $contact->address_line2 ?? '';
             $this->city = $contact->city ?? '';
             $this->state = $contact->state ?? '';
+            $this->county = $contact->county ?? '';
             $this->postal_code = $contact->postal_code ?? '';
         }
     }
@@ -68,6 +71,7 @@ class ContactForm extends Component
             'address_line2' => ['nullable', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
             'state' => ['nullable', 'string', 'size:2'],
+            'county' => ['nullable', 'string', 'max:255'],
             'postal_code' => ['nullable', 'string', 'max:10'],
         ], [
             'company_name.required_without_all' => 'Enter a company name or a first/last name.',
@@ -94,6 +98,21 @@ class ContactForm extends Component
 
         session()->flash('success', 'Contact added.');
         $this->redirect(route('lien.waivers.contacts.index'), navigate: true);
+    }
+
+    /**
+     * Google Places pick for the street-address input
+     * (see livewire.lien._places-autocomplete).
+     *
+     * @param  array<string, mixed>  $addressData
+     */
+    public function updateAddressFromAutocomplete(array $addressData): void
+    {
+        $this->address_line1 = $addressData['line1'] ?? '';
+        $this->city = $addressData['city'] ?? '';
+        $this->state = $addressData['state'] ?? '';
+        $this->county = $addressData['county'] ?? '';
+        $this->postal_code = $addressData['zip'] ?? '';
     }
 
     public function render(): View

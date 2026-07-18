@@ -89,6 +89,60 @@
                 </flux:field>
             </section>
 
+            {{-- Legal description: only when the state's statutory form is
+                 invalid without one (MO residential unconditional final). --}}
+            @if ($form?->requiresLegalDescription)
+                <section class="rounded-2xl border border-border bg-white p-6 shadow-xs">
+                    <h2 class="text-base font-bold text-text-primary">Property legal description</h2>
+                    <p class="mt-0.5 text-sm text-text-secondary">
+                        This form ({{ $form->statute }}) is only valid with the property's legal
+                        description — a street address alone doesn't satisfy it.
+                    </p>
+
+                    <flux:field class="mt-4">
+                        <flux:textarea wire:model="legal_description" rows="3"
+                            placeholder="e.g. Lot 12, Block 3, Sunset Hills Plat Two, recorded in Plat Book 44, Page 7" />
+                        <flux:description>
+                            Copy it from the deed, title commitment, or county parcel records. The street
+                            address still prints separately as "commonly known as."
+                        </flux:description>
+                        <flux:error name="legal_description" />
+                    </flux:field>
+                </section>
+            @endif
+
+            {{-- Property owner: every waiver form identifies who owns the
+                 property, so the project must carry an owner party. --}}
+            <section class="rounded-2xl border border-border bg-white p-6 shadow-xs">
+                <h2 class="text-base font-bold text-text-primary">Property owner</h2>
+                <p class="mt-0.5 text-sm text-text-secondary">Who owns the property this waiver covers.</p>
+
+                @php $ownerParty = $project?->ownerParty(); @endphp
+                <div class="mt-4 space-y-2">
+                    @if ($ownerParty)
+                        <div class="flex items-center gap-3 rounded-xl border border-border bg-bg-light p-4">
+                            <flux:icon name="home-modern" class="size-6 shrink-0 text-zinc-400" />
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-semibold text-text-primary">{{ $ownerParty->displayName() }}</p>
+                                @if ($ownerParty->addressLine() !== '')
+                                    <p class="text-xs text-text-secondary">{{ $ownerParty->addressLine() }}</p>
+                                @endif
+                            </div>
+                            <span class="shrink-0 text-xs text-zinc-400">Edit on the project page</span>
+                        </div>
+                    @else
+                        <button
+                            type="button"
+                            wire:click="openOwnerModal"
+                            class="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 p-3 text-sm font-semibold text-primary transition hover:border-primary hover:bg-primary/5"
+                        >
+                            <span class="text-lg leading-none">+</span> Add the property owner
+                        </button>
+                    @endif
+                    <flux:error name="owner" />
+                </div>
+            </section>
+
             {{-- Counterparty: contact picker (they sign collect waivers) --}}
             <section class="rounded-2xl border border-border bg-white p-6 shadow-xs">
                 @if ($direction === 'collect')
@@ -454,6 +508,14 @@
                             {{ $through_date ? \Illuminate\Support\Carbon::parse($through_date)->format('M j, Y') : '-' }}
                         </x-ui.info-list.item>
                     @endunless
+                    <x-ui.info-list.item label="Property owner">
+                        {{ $project?->ownerParty()?->displayName() ?? '-' }}
+                    </x-ui.info-list.item>
+                    @if ($form?->requiresLegalDescription)
+                        <x-ui.info-list.item label="Legal description">
+                            {{ $legal_description ?: '-' }}
+                        </x-ui.info-list.item>
+                    @endif
                     <x-ui.info-list.item label="Counterparty">
                         {{ $this->selectedContact()?->displayName() ?? '-' }}
                     </x-ui.info-list.item>
@@ -592,7 +654,8 @@
 
                 <flux:field>
                     <flux:label>Street address</flux:label>
-                    <flux:input wire:model="contact_address1" placeholder="123 Main St" />
+                    <flux:input wire:model="contact_address1" placeholder="Start typing to search..."
+                        autocomplete="off" data-places-autocomplete data-places-method="updateContactAddressFromAutocomplete" />
                     <flux:error name="contact_address1" />
                 </flux:field>
 
@@ -626,6 +689,12 @@
                     </flux:field>
                 </div>
 
+                <flux:field>
+                    <flux:label>County</flux:label>
+                    <flux:input wire:model="contact_county" placeholder="Fills in from the address" />
+                    <flux:error name="contact_county" />
+                </flux:field>
+
                 <div class="flex justify-end gap-3 pt-4">
                     <flux:button type="button" wire:click="closeContactModal" variant="ghost">
                         Cancel
@@ -638,8 +707,86 @@
         </div>
     </flux:modal>
 
+    {{-- Add-owner modal: fills the project's missing owner party in place.
+         Only the name is required; the address autofills via Google Places. --}}
+    <flux:modal wire:model="showOwnerModal" class="max-w-lg">
+        <div class="space-y-4">
+            <flux:heading>Add Property Owner</flux:heading>
+
+            <form wire:submit="saveOwner" class="space-y-4">
+                <flux:field>
+                    <flux:label>Owner name *</flux:label>
+                    <flux:input wire:model="owner_name" placeholder="Person or entity that owns the property" />
+                    <flux:error name="owner_name" />
+                </flux:field>
+
+                <flux:field>
+                    <flux:label>Company</flux:label>
+                    <flux:input wire:model="owner_company" placeholder="Optional — e.g. Sunset Development LLC" />
+                    <flux:error name="owner_company" />
+                </flux:field>
+
+                <flux:separator text="Mailing address (optional)" />
+
+                <flux:field>
+                    <flux:label>Street address</flux:label>
+                    <flux:input wire:model="owner_address1" placeholder="Start typing to search..."
+                        autocomplete="off" data-places-autocomplete data-places-method="updateOwnerAddressFromAutocomplete" />
+                    <flux:error name="owner_address1" />
+                </flux:field>
+
+                <flux:field>
+                    <flux:label>Address line 2</flux:label>
+                    <flux:input wire:model="owner_address2" placeholder="Suite, unit, etc." />
+                    <flux:error name="owner_address2" />
+                </flux:field>
+
+                <div class="grid gap-4 sm:grid-cols-3">
+                    <flux:field>
+                        <flux:label>City</flux:label>
+                        <flux:input wire:model="owner_city" />
+                        <flux:error name="owner_city" />
+                    </flux:field>
+
+                    <flux:field>
+                        <flux:label>State</flux:label>
+                        <flux:select variant="combobox" clearable placeholder="Select..." wire:model="owner_state">
+                            @foreach (config('states') as $code => $name)
+                                <flux:select.option value="{{ $code }}">{{ $name }}</flux:select.option>
+                            @endforeach
+                        </flux:select>
+                        <flux:error name="owner_state" />
+                    </flux:field>
+
+                    <flux:field>
+                        <flux:label>ZIP</flux:label>
+                        <flux:input wire:model="owner_zip" />
+                        <flux:error name="owner_zip" />
+                    </flux:field>
+                </div>
+
+                <flux:field>
+                    <flux:label>County</flux:label>
+                    <flux:input wire:model="owner_county" placeholder="Fills in from the address" />
+                    <flux:error name="owner_county" />
+                </flux:field>
+
+                <div class="flex justify-end gap-3 pt-4">
+                    <flux:button type="button" wire:click="closeOwnerModal" variant="ghost">
+                        Cancel
+                    </flux:button>
+                    <flux:button type="submit" variant="primary">
+                        Add Owner
+                    </flux:button>
+                </div>
+            </form>
+        </div>
+    </flux:modal>
+
     {{-- Upsell modal (save limit hit / e-sign gated) --}}
     <flux:modal wire:model="showUpsellModal" class="max-w-md">
         <x-lien.waiver-upsell :heading="$upsellContext === 'esign' ? 'E-sign requires Waiver Pro' : 'You\'ve used all your free saves this month'" />
     </flux:modal>
+
+    @include('livewire.lien._places-autocomplete')
 </div>

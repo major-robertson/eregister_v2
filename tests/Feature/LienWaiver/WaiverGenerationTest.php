@@ -5,6 +5,7 @@ use App\Domains\Lien\Documents\WaiverGenerator;
 use App\Domains\Lien\Enums\WaiverDirection;
 use App\Domains\Lien\Enums\WaiverKind;
 use App\Domains\Lien\Enums\WaiverStatus;
+use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienWaiver;
 use App\Domains\Lien\Waivers\Actions\GenerateWaiver;
@@ -237,5 +238,62 @@ describe('real PDF render', function () {
         $bytes = Storage::disk('s3')->get($media->getPathRelativeToRoot());
         expect(str_starts_with($bytes, '%PDF'))->toBeTrue();
         expect(strlen($bytes))->toBeGreaterThan(1_000);
+    });
+});
+
+describe('owner and legal description', function () {
+    it('prints the property owner on the generic waiver bodies', function () {
+        $business = Business::factory()->create();
+        $project = LienProject::factory()->forBusiness($business)->inState('NM')->create();
+        LienParty::factory()->forProject($project)->asOwner()->create([
+            'name' => 'Olive Owner',
+            'company_name' => 'Owner Holdings LLC',
+        ]);
+
+        foreach (WaiverKind::cases() as $kind) {
+            $waiver = LienWaiver::factory()->forProject($project)->create(['kind' => $kind]);
+            $html = view('documents.lien.waivers.shell', [
+                'waiver' => app(WaiverGenerator::class)->data($waiver),
+            ])->render();
+
+            expect($html)->toContain('Property Owner')->toContain('Owner Holdings LLC');
+        }
+    });
+
+    it('does not add an owner line to statutory bodies whose prescribed text has none (NV verbatim)', function () {
+        $business = Business::factory()->create();
+        $project = LienProject::factory()->forBusiness($business)->inState('NV')->create();
+        LienParty::factory()->forProject($project)->asOwner()->create([
+            'name' => 'Olive Owner',
+            'company_name' => 'Owner Holdings LLC',
+        ]);
+        $waiver = LienWaiver::factory()->forProject($project)->create(['kind' => WaiverKind::ConditionalProgress]);
+
+        $html = view('documents.lien.waivers.shell', [
+            'waiver' => app(WaiverGenerator::class)->data($waiver),
+        ])->render();
+
+        expect($html)->not->toContain('Owner Holdings LLC');
+    });
+
+    it('prefers the waiver snapshot legal description over the project value on the MO residential form', function () {
+        $business = Business::factory()->create();
+        $project = LienProject::factory()->forBusiness($business)->inState('MO')->create([
+            'property_class' => 'residential',
+            'legal_description' => 'STALE PROJECT DESCRIPTION',
+        ]);
+        $waiver = LienWaiver::factory()->forProject($project)->create([
+            'kind' => WaiverKind::UnconditionalFinal,
+            'legal_description' => 'Lot 12, Block 3, Sunset Hills Plat Two',
+        ]);
+
+        $payload = app(WaiverGenerator::class)->data($waiver);
+
+        expect($payload['form']['template'])->toBe('documents.lien.waivers.bodies.mo-unconditional-final-residential');
+        expect($payload['project']['legal_description'])->toBe('Lot 12, Block 3, Sunset Hills Plat Two');
+
+        $html = view('documents.lien.waivers.shell', ['waiver' => $payload])->render();
+        expect($html)->toContain('Lot 12, Block 3, Sunset Hills Plat Two')
+            ->toContain('Title or Position');
     });
 });

@@ -4,6 +4,7 @@ use App\Domains\Business\Models\Business;
 use App\Domains\Lien\Enums\WaiverStatus;
 use App\Domains\Lien\Livewire\Waivers\WaiverWizard;
 use App\Domains\Lien\Models\LienContact;
+use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienWaiver;
 use App\Domains\Lien\Waivers\WaiverEntitlements;
@@ -14,12 +15,25 @@ use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 if (! function_exists('waiverWizardProject')) {
-    /** A wizard-complete project; the waiver wizard only accepts those. */
-    function waiverWizardProject(Business $business, string $state = 'TX'): LienProject
+    /**
+     * A wizard-complete project with an owner party; the wizard only accepts
+     * completed projects and blocks the details step until the project has a
+     * property owner (every waiver form identifies the owner).
+     */
+    function waiverWizardProject(Business $business, string $state = 'TX', bool $withOwner = true): LienProject
     {
-        return LienProject::factory()->forBusiness($business)->inState($state)->create([
+        $project = LienProject::factory()->forBusiness($business)->inState($state)->create([
             'wizard_completed_at' => now(),
         ]);
+
+        if ($withOwner) {
+            LienParty::factory()->forProject($project)->asOwner()->create([
+                'name' => 'Olive Owner',
+                'company_name' => 'Owner Holdings LLC',
+            ]);
+        }
+
+        return $project;
     }
 }
 
@@ -55,12 +69,22 @@ if (! function_exists('waiverWizardAtReview')) {
     /** Drive the wizard through steps 1-4 onto the review step. */
     function waiverWizardAtReview(LienProject $project, string $direction = 'provide', string $kind = 'conditional_progress', array $details = [])
     {
-        // Amount and through date are required on the details step; default
-        // them so tests exercising other behavior still reach review.
+        // Amount, through date, and a counterparty contact are required on
+        // the details step; default them so tests exercising other behavior
+        // still reach review.
         $details = array_merge([
             'amount' => '1000.00',
             'through_date' => now()->format('Y-m-d'),
         ], $details);
+
+        if (! array_key_exists('contactId', $details)) {
+            $contact = LienContact::create([
+                'created_by_user_id' => auth()->id(),
+                'company_name' => 'Counterparty Builders LLC',
+                'email' => 'counterparty@builders.test',
+            ]);
+            $details['contactId'] = (string) $contact->id;
+        }
 
         $component = Livewire::test(WaiverWizard::class)
             ->call('selectDirection', $direction)
@@ -123,12 +147,16 @@ describe('step progression', function () {
             ->assertSet('kind', 'conditional_progress')
             ->call('nextStep')
             ->assertSet('step', 4)
-            // Step 4 blocks until the amount and through date are entered.
+            // Step 4 blocks until the amount, through date, and contact are entered.
             ->call('nextStep')
-            ->assertHasErrors(['amount', 'through_date'])
+            ->assertHasErrors(['amount', 'through_date', 'contactId'])
             ->assertSet('step', 4)
             ->set('amount', '2500')
             ->set('through_date', now()->format('Y-m-d'))
+            ->set('contactId', (string) LienContact::create([
+                'created_by_user_id' => $this->user->id,
+                'company_name' => 'Stepwise Counterparty LLC',
+            ])->id)
             ->call('nextStep')
             ->assertSet('step', 5)
             // Back navigation works; forward jumps via goToStep are blocked.
@@ -547,5 +575,119 @@ describe('project deep link', function () {
             ->call('selectDirection', 'provide')
             ->call('nextStep')            // skips project (locked) but not type -> step 3
             ->assertSet('step', 3);
+    });
+});
+
+describe('property owner requirement', function () {
+    it('blocks the details step until the project has an owner party', function () {
+        $project = waiverWizardProject($this->business, 'TX', withOwner: false);
+        $contact = waiverWizardCollectContact($this->user);
+
+        Livewire::test(WaiverWizard::class)
+            ->call('selectDirection', 'provide')
+            ->call('nextStep')
+            ->set('projectId', $project->public_id)
+            ->call('nextStep')
+            ->call('selectKind', 'conditional_progress')
+            ->call('nextStep')
+            ->assertSet('step', 4)
+            ->set('amount', '1000')
+            ->set('through_date', now()->format('Y-m-d'))
+            ->set('contactId', (string) $contact->id)
+            ->call('nextStep')
+            ->assertHasErrors('owner')
+            ->assertSet('step', 4);
+    });
+
+    it('adds the owner party from the inline modal and unblocks the step', function () {
+        $project = waiverWizardProject($this->business, 'TX', withOwner: false);
+        $contact = waiverWizardCollectContact($this->user);
+
+        $component = Livewire::test(WaiverWizard::class)
+            ->call('selectDirection', 'provide')
+            ->call('nextStep')
+            ->set('projectId', $project->public_id)
+            ->call('nextStep')
+            ->call('selectKind', 'conditional_progress')
+            ->call('nextStep')
+            ->set('amount', '1000')
+            ->set('through_date', now()->format('Y-m-d'))
+            ->set('contactId', (string) $contact->id)
+            ->call('openOwnerModal')
+            // The owner needs at least a name.
+            ->call('saveOwner')
+            ->assertHasErrors('owner_name')
+            ->set('owner_name', 'Olive Owner')
+            ->set('owner_company', 'Sunset Development LLC')
+            ->set('owner_city', 'Austin')
+            ->set('owner_state', 'tx')
+            ->call('saveOwner')
+            ->assertHasNoErrors('owner_name')
+            ->assertSet('showOwnerModal', false);
+
+        $owner = $project->refresh()->ownerParty();
+        expect($owner)->not->toBeNull()
+            ->and($owner->name)->toBe('Olive Owner')
+            ->and($owner->company_name)->toBe('Sunset Development LLC')
+            ->and($owner->state)->toBe('TX');
+
+        $component->call('nextStep')->assertSet('step', 5);
+    });
+});
+
+describe('legal description requirement', function () {
+    it('requires a legal description only for the MO residential unconditional final form', function () {
+        $residential = waiverWizardProject($this->business, 'MO');
+        $residential->update(['property_class' => 'residential', 'legal_description' => null]);
+        $contact = waiverWizardCollectContact($this->user);
+
+        Livewire::test(WaiverWizard::class)
+            ->call('selectDirection', 'provide')
+            ->call('nextStep')
+            ->set('projectId', $residential->public_id)
+            ->call('nextStep')
+            ->call('selectKind', 'unconditional_final')
+            ->call('nextStep')
+            ->assertSet('step', 4)
+            ->set('amount', '5000')
+            ->set('contactId', (string) $contact->id)
+            ->call('nextStep')
+            ->assertHasErrors('legal_description')
+            ->assertSet('step', 4)
+            ->set('legal_description', 'Lot 12, Block 3, Sunset Hills Plat Two, Plat Book 44, Page 7')
+            ->call('nextStep')
+            ->assertSet('step', 5);
+    });
+
+    it('does not require a legal description for MO commercial or other statutory states', function () {
+        $commercial = waiverWizardProject($this->business, 'MO');
+        $commercial->update(['property_class' => 'commercial', 'legal_description' => null]);
+        $contact = waiverWizardCollectContact($this->user);
+
+        Livewire::test(WaiverWizard::class)
+            ->call('selectDirection', 'provide')
+            ->call('nextStep')
+            ->set('projectId', $commercial->public_id)
+            ->call('nextStep')
+            ->call('selectKind', 'unconditional_final')
+            ->call('nextStep')
+            ->set('amount', '5000')
+            ->set('contactId', (string) $contact->id)
+            ->call('nextStep')
+            ->assertHasNoErrors('legal_description')
+            ->assertSet('step', 5);
+    });
+
+    it('stores the legal description on the waiver and backfills a project without one', function () {
+        $project = waiverWizardProject($this->business, 'MO');
+        $project->update(['property_class' => 'residential', 'legal_description' => null]);
+
+        waiverWizardAtReview($project, 'provide', 'unconditional_final', [
+            'legal_description' => 'Lot 12, Block 3, Sunset Hills Plat Two',
+        ])->call('save');
+
+        $waiver = LienWaiver::query()->latest('id')->first();
+        expect($waiver->legal_description)->toBe('Lot 12, Block 3, Sunset Hills Plat Two')
+            ->and($project->refresh()->legal_description)->toBe('Lot 12, Block 3, Sunset Hills Plat Two');
     });
 });

@@ -55,7 +55,14 @@
 
 @include('documents.lien.waivers._signature-lines', ['waiver' => $waiver, 'esign' => $esign ?? null])
 
+{{-- § 429.016.27: the signer's name, title or position, address, and phone
+     must be typed or legibly printed at the signature block; the title line
+     stays blank for the signer to complete when we don't have one. --}}
 <table class="waiver-fields" style="margin-top: 12px;">
+    <tr>
+        <td class="label">Title or Position:</td>
+        <td class="value">{{ $waiver['signer']['title'] ?? '' }}&nbsp;</td>
+    </tr>
     <tr>
         <td class="label">Address:</td>
         <td class="value">{{ $claimantAddress }}&nbsp;</td>

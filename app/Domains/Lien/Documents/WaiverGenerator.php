@@ -120,7 +120,9 @@ class WaiverGenerator
                 'city' => $project?->jobsite_city,
                 'state' => $project?->jobsite_state,
                 'zip' => $project?->jobsite_zip,
-                'legal_description' => $project?->legal_description,
+                // The waiver's own value wins: MO's residential statutory form
+                // collects it per-waiver; the project's value is the fallback.
+                'legal_description' => ($waiver->legal_description ?: null) ?? $project?->legal_description,
                 'apn' => $project?->apn,
             ],
             // Number only: the "$" is fixed text in the form templates.

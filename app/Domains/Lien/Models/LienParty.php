@@ -4,6 +4,7 @@ namespace App\Domains\Lien\Models;
 
 use App\Domains\Business\Concerns\BelongsToBusiness;
 use App\Domains\Lien\Enums\PartyRole;
+use Database\Factories\Lien\LienPartyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,6 +23,7 @@ class LienParty extends Model
         'address2',
         'city',
         'state',
+        'county',
         'zip',
         'email',
         'phone',
@@ -32,6 +34,11 @@ class LienParty extends Model
         return [
             'role' => PartyRole::class,
         ];
+    }
+
+    protected static function newFactory(): LienPartyFactory
+    {
+        return LienPartyFactory::new();
     }
 
     public function project(): BelongsTo
@@ -102,6 +109,7 @@ class LienParty extends Model
             'address2' => $this->address2,
             'city' => $this->city,
             'state' => $this->state,
+            'county' => $this->county,
             'zip' => $this->zip,
             'email' => $this->email,
             'phone' => $this->phone,

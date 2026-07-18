@@ -27,5 +27,7 @@ final class ResolvedWaiverForm
         public readonly array $uiNotes = [],
         /** @var list<string> */
         public readonly array $extraClauses = [],
+        /** True when the form is invalid without a formal legal description (MO § 429.016.27). */
+        public readonly bool $requiresLegalDescription = false,
     ) {}
 }

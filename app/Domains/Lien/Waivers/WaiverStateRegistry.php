@@ -41,6 +41,9 @@ namespace App\Domains\Lien\Waivers;
  *           'redirect_kind' => null,        // kind the UI should steer to instead
  *           'residential_template' => null, // MO: statutory body when property is residential
  *           'residential_title' => null,
+ *           'requires_legal_description' => false, // form invalid without a formal legal
+ *                                                  // description (street address insufficient)
+ *           'residential_requires_legal_description' => null, // override when the residential body is used
  *       ],
  *       …one entry per canonical kind…
  *   ],
@@ -132,6 +135,8 @@ class WaiverStateRegistry
                 'redirect_kind' => null,
                 'residential_template' => null,
                 'residential_title' => null,
+                'requires_legal_description' => false,
+                'residential_requires_legal_description' => null,
             ];
         }
 

@@ -48,7 +48,8 @@
 
             <flux:field>
                 <flux:label>Street address</flux:label>
-                <flux:input wire:model="address_line1" placeholder="123 Main St" />
+                <flux:input wire:model="address_line1" placeholder="Start typing to search..."
+                    autocomplete="off" data-places-autocomplete data-places-method="updateAddressFromAutocomplete" />
                 <flux:error name="address_line1" />
             </flux:field>
 
@@ -82,6 +83,12 @@
                 </div>
             </div>
 
+            <flux:field>
+                <flux:label>County</flux:label>
+                <flux:input wire:model="county" placeholder="Fills in from the address" />
+                <flux:error name="county" />
+            </flux:field>
+
             <div class="flex items-center justify-end gap-3 pt-2">
                 <flux:button href="{{ route('lien.waivers.contacts.index') }}" variant="ghost" wire:navigate>Cancel</flux:button>
                 <flux:button type="submit" variant="primary">
@@ -90,4 +97,6 @@
             </div>
         </form>
     </x-ui.card>
+
+    @include('livewire.lien._places-autocomplete')
 </div>

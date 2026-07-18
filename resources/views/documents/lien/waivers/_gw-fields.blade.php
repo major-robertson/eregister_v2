@@ -38,6 +38,12 @@
         </td>
     </tr>
     <tr>
+        <td colspan="2" class="last">
+            <div class="gw-label">Property Owner</div>
+            <div class="gw-value">{{ $waiver['owner']['company'] ?? ($waiver['owner']['name'] ?? '') }}&nbsp;</div>
+        </td>
+    </tr>
+    <tr>
         @if ($showThrough ?? true)
             <td style="width: 50%;">
                 <div class="gw-label">Amount</div>

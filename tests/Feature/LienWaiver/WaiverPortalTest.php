@@ -79,11 +79,11 @@ describe('dashboard', function () {
         LienWaiver::factory()->count(2)->forProject($project)->create();
 
         $unsubscribed = Livewire::test(WaiverDashboard::class)
-            ->assertSee('2 of 4 free saves used this month');
+            ->assertSee('2 of 3 free saves used this month');
 
         expect($unsubscribed->viewData('hasPaidAccess'))->toBeFalse();
         expect($unsubscribed->viewData('savedThisMonth'))->toBe(2);
-        expect($unsubscribed->viewData('freeSavesLimit'))->toBe(4);
+        expect($unsubscribed->viewData('freeSavesLimit'))->toBe(3);
 
         waiverPortalSubscribe($this->business);
 
@@ -189,8 +189,9 @@ describe('signed copy upload', function () {
         expect($waiver->deemed_effective_at)->toBeNull();
     });
 
-    it('gates signed-copy storage behind a subscription for free-tier businesses', function () {
-        // No subscription: storing a signed copy is a paid feature.
+    it('lets a free-tier business store a signed copy: e-sign features are included on every tier', function () {
+        // No subscription needed — the free tier is limited only by its
+        // monthly save allowance, which this already-saved waiver consumed.
         $project = waiverPortalProject($this->business, 'TX');
         $waiver = LienWaiver::factory()->forProject($project)->generated()->create();
 
@@ -198,11 +199,11 @@ describe('signed copy upload', function () {
             ->set('signedFile', UploadedFile::fake()->createWithContent('signed-waiver.pdf', '%PDF-1.4 fake'))
             ->call('uploadSigned');
 
-        expect($component->get('showUpsellModal'))->toBeTrue();
+        expect($component->get('showUpsellModal'))->toBeFalse();
 
         $waiver->refresh();
-        expect($waiver->status)->toBe(WaiverStatus::Generated);
-        expect($waiver->getFirstMedia('signed'))->toBeNull();
+        expect($waiver->status)->toBe(WaiverStatus::Signed);
+        expect($waiver->getFirstMedia('signed'))->not->toBeNull();
     });
 
     it('rejects an upload while the waiver is still a draft', function () {

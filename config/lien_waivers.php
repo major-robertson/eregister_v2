@@ -33,13 +33,14 @@ return [
     | Free tier
     |--------------------------------------------------------------------------
     |
-    | Generating + downloading a waiver PDF is always free (no watermark).
-    | Saving waivers to a project is metered on the free tier; e-signature
-    | send/collect, automated reminders, and signed-copy storage require the
-    | subscription.
+    | The free tier gets the full product — download, e-signature
+    | send/collect, reminders, signed-copy storage — for up to this many
+    | waivers per calendar month (each waiver auto-saves when the wizard
+    | reaches review, which is what consumes a slot). The subscription
+    | removes the monthly cap.
     |
     */
-    'free_saved_waivers_per_month' => 4,
+    'free_saved_waivers_per_month' => 3,
 
     /*
     |--------------------------------------------------------------------------

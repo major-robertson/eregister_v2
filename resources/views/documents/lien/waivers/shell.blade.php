@@ -55,7 +55,9 @@
         /* Signature area */
         .sig-table { border-collapse: collapse; width: 100%; margin-top: 22px; }
         .sig-table td { padding: 12px 18px 2px 0; vertical-align: bottom; }
-        .sig-line { border-bottom: 1px solid #000; height: 30px; }
+        /* line-height matches height so printed values (name, company, date)
+           sit down on the rule instead of floating at the top of the box. */
+        .sig-line { border-bottom: 1px solid #000; height: 30px; line-height: 30px; }
         .sig-caption { font-size: 8pt; color: #333; padding-top: 2px; }
 
         .esign-signature-name { font-family: 'DejaVu Serif', serif; font-style: italic; font-size: 12pt; color: #1a1a1a; }
@@ -107,7 +109,7 @@
         .gw .waiver-notice { margin: 0 0 9px 0; padding: 5px 8px; line-height: 1.25; }
         .gw .sig-table { margin-top: 12px; }
         .gw .sig-table td { padding: 6px 24px 2px 0; }
-        .gw .sig-line { border-bottom: 1px solid #1a1a1a; height: 18px; }
+        .gw .sig-line { border-bottom: 1px solid #1a1a1a; height: 18px; line-height: 18px; }
         .gw .sig-caption { font-size: 7pt; letter-spacing: 1.5px; color: #555; text-transform: uppercase; padding-top: 3px; }
     </style>
 </head>

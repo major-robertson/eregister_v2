@@ -88,8 +88,9 @@ class WaiverShow extends Component
      */
     public function uploadSigned(VoidWaiverSignatureRequest $void): void
     {
-        // Storing a signed copy in the portal is a paid feature (free tier is
-        // generate + download only), so gate it like sendForSignature.
+        // E-sign features are included on every tier (the free tier is only
+        // limited by its monthly save allowance, consumed when the waiver was
+        // saved); the gate stays as a single switch should that ever change.
         if (! WaiverEntitlements::canUseEsign(Auth::user()->currentBusiness())) {
             $this->showUpsellModal = true;
 

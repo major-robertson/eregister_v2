@@ -59,7 +59,9 @@
                         <flux:label>Payment amount</flux:label>
                         <flux:input.group>
                             <flux:input.group.prefix>$</flux:input.group.prefix>
-                            <flux:input type="number" step="0.01" min="0" wire:model="amount" placeholder="0.00" />
+                            {{-- Text (not number) so the value can carry thousands
+                                 separators; updatedAmount() reformats on blur. --}}
+                            <flux:input type="text" inputmode="decimal" wire:model.blur="amount" placeholder="0.00" />
                         </flux:input.group>
                         <flux:error name="amount" />
                     </flux:field>
@@ -128,7 +130,9 @@
                                     <p class="text-xs text-text-secondary">{{ $ownerParty->addressLine() }}</p>
                                 @endif
                             </div>
-                            <span class="shrink-0 text-xs text-zinc-400">Edit on the project page</span>
+                            <flux:button wire:click="editOwner" size="sm" variant="ghost" icon="pencil-square" class="shrink-0">
+                                Edit
+                            </flux:button>
                         </div>
                     @else
                         <button
@@ -501,7 +505,7 @@
                         {{ $project ? (\App\Domains\Lien\Waivers\WaiverStateRegistry::STATE_NAMES[$project->jobsite_state] ?? $project->jobsite_state) : '-' }}
                     </x-ui.info-list.item>
                     <x-ui.info-list.item label="Amount">
-                        {{ $amount !== null && $amount !== '' ? '$'.number_format((float) $amount, 2) : '-' }}
+                        {{ $this->amountFloat() !== null ? '$'.number_format($this->amountFloat(), 2) : '-' }}
                     </x-ui.info-list.item>
                     @unless ($this->isFinalKind())
                         <x-ui.info-list.item label="Through date">
@@ -538,48 +542,52 @@
 
                 <flux:error name="kind" />
 
+                {{-- Reaching review auto-saved the waiver as a draft (unless
+                     the free allowance ran out); actions work on that draft. --}}
+                @if ($savedWaiverId !== null)
+                    <div class="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50/70 px-3.5 py-2.5">
+                        <flux:icon name="check-circle" class="size-4 shrink-0 text-green-600" />
+                        <p class="text-[13px] text-green-800">Saved to the project as a draft — download it or send it for signature below.</p>
+                    </div>
+                @else
+                    <div class="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/70 px-3.5 py-2.5">
+                        <flux:icon name="exclamation-triangle" class="size-4 shrink-0 text-amber-600" />
+                        <p class="text-[13px] text-amber-800">
+                            You've used all {{ $freeSavesLimit }} free waivers this month, so this draft
+                            isn't saved. Upgrade to download or send it.
+                        </p>
+                    </div>
+                @endif
+
                 <div class="space-y-3 border-t border-zinc-200 pt-6 dark:border-zinc-700">
-                    {{-- Free: stream without saving --}}
                     <div>
                         <flux:button wire:click="downloadPdf" wire:loading.attr="disabled" variant="outline" icon="arrow-down-tray" class="w-full">
                             <span wire:loading.remove wire:target="downloadPdf">Download PDF</span>
                             <span wire:loading wire:target="downloadPdf">Building PDF...</span>
                         </flux:button>
-                        <p class="mt-1 text-center text-xs text-zinc-500">Always free. Nothing is saved to your account.</p>
                     </div>
 
-                    {{-- Metered: save + generate --}}
-                    <div>
-                        <flux:button wire:click="save" wire:loading.attr="disabled" variant="primary" icon="folder-plus" class="w-full">
-                            <span wire:loading.remove wire:target="save">Save to project</span>
-                            <span wire:loading wire:target="save">Saving...</span>
-                        </flux:button>
-                        @if (! $hasPaidAccess)
-                            <p class="mt-1 text-center text-xs text-zinc-500">
-                                {{ $remainingFreeSaves }} of {{ $freeSavesLimit }} free saves left this month.
-                            </p>
-                        @endif
-                    </div>
-
-                    {{-- Paid: save + e-sign --}}
                     <div>
                         @if ($form && ! $form->esignAllowed)
                             <flux:button variant="filled" icon="paper-airplane" class="w-full" disabled>
-                                Save &amp; send for signature
+                                Send for signature
                             </flux:button>
                             <p class="mt-1 text-center text-xs text-zinc-500">
                                 {{ $form->esignDisabledReason ?? 'This state requires in-person execution, so e-signing is unavailable. Use Download, sign on paper, then upload the signed copy.' }}
                             </p>
                         @else
                             <flux:button wire:click="saveAndSend" wire:loading.attr="disabled" variant="filled" icon="paper-airplane" class="w-full">
-                                <span wire:loading.remove wire:target="saveAndSend">Save &amp; send for signature</span>
+                                <span wire:loading.remove wire:target="saveAndSend">Send for signature</span>
                                 <span wire:loading wire:target="saveAndSend">Sending...</span>
                             </flux:button>
-                            @if (! $canEsign)
-                                <p class="mt-1 text-center text-xs text-zinc-500">Requires Waiver Pro. We'll show you what's included.</p>
-                            @endif
                         @endif
                     </div>
+
+                    @if (! $hasPaidAccess)
+                        <p class="text-center text-xs text-zinc-500">
+                            {{ $remainingFreeSaves }} of {{ $freeSavesLimit }} free waivers left this month.
+                        </p>
+                    @endif
                 </div>
             </div>
         @endif
@@ -707,23 +715,18 @@
         </div>
     </flux:modal>
 
-    {{-- Add-owner modal: fills the project's missing owner party in place.
-         Only the name is required; the address autofills via Google Places. --}}
+    {{-- Add/edit-owner modal: manages the project's owner party in place.
+         Only the name is required (a person or an entity goes in the same
+         blank); the address autofills via Google Places. --}}
     <flux:modal wire:model="showOwnerModal" class="max-w-lg">
         <div class="space-y-4">
-            <flux:heading>Add Property Owner</flux:heading>
+            <flux:heading>{{ $editingOwnerPartyId ? 'Edit Property Owner' : 'Add Property Owner' }}</flux:heading>
 
             <form wire:submit="saveOwner" class="space-y-4">
                 <flux:field>
                     <flux:label>Owner name *</flux:label>
                     <flux:input wire:model="owner_name" placeholder="Person or entity that owns the property" />
                     <flux:error name="owner_name" />
-                </flux:field>
-
-                <flux:field>
-                    <flux:label>Company</flux:label>
-                    <flux:input wire:model="owner_company" placeholder="Optional — e.g. Sunset Development LLC" />
-                    <flux:error name="owner_company" />
                 </flux:field>
 
                 <flux:separator text="Mailing address (optional)" />
@@ -776,7 +779,7 @@
                         Cancel
                     </flux:button>
                     <flux:button type="submit" variant="primary">
-                        Add Owner
+                        {{ $editingOwnerPartyId ? 'Save changes' : 'Add Owner' }}
                     </flux:button>
                 </div>
             </form>

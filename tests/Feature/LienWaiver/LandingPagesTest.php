@@ -9,8 +9,8 @@ it('renders the lien waiver landing page with pricing and free-tier copy', funct
         // Pro pricing pulled from config/lien_waivers.php.
         ->assertSee('$99')
         ->assertSee('$990')
-        // Free-tier save allowance pulled from config.
-        ->assertSee('Save 4 waivers per month')
+        // Free-tier allowance pulled from config.
+        ->assertSee('3 waivers per month')
         // The 50-state directory grid is present.
         ->assertSee('Lien waiver forms by state')
         ->assertSee('Alabama')

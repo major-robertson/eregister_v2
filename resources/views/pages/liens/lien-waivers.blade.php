@@ -157,7 +157,7 @@
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div class="text-center">
             <h2 class="text-3xl font-bold text-zinc-900">Simple pricing</h2>
-            <p class="mx-auto mt-4 max-w-2xl text-lg text-zinc-600">Generating and downloading lien waivers is free. Upgrade when you want e-signatures, reminders, and unlimited storage doing the follow-up for you. See the <a href="{{ route('liens.lien-waivers.pricing') }}" class="font-medium text-amber-600 underline hover:text-amber-700">full pricing breakdown</a>.</p>
+            <p class="mx-auto mt-4 max-w-2xl text-lg text-zinc-600">The free plan is the full product — download, e-signatures, reminders, signed-copy storage — for {{ $freeSaves }} waivers a month. Upgrade when you need unlimited. See the <a href="{{ route('liens.lien-waivers.pricing') }}" class="font-medium text-amber-600 underline hover:text-amber-700">full pricing breakdown</a>.</p>
         </div>
         <div class="mx-auto mt-12 grid max-w-4xl gap-8 lg:grid-cols-2">
             {{-- Free --}}
@@ -169,9 +169,9 @@
                 </div>
                 <p class="mt-3 text-sm text-zinc-600">Everything you need to generate a correct waiver and get it out the door.</p>
                 <ul class="mt-6 flex-1 space-y-3 text-zinc-600">
-                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Unlimited waiver generation &amp; downloads, no watermark</li>
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> {{ $freeSaves }} waivers per month with every Pro feature, no watermark</li>
                     <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Correct forms for all 50 states, statutory text included</li>
-                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Save {{ $freeSaves }} waivers per month to your projects</li>
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> E-signature send &amp; collect, reminders, signed-copy storage</li>
                     <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Free project &amp; deadline tracking</li>
                 </ul>
                 <a href="{{ route('register') }}" class="mt-8 inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-6 py-3 font-semibold text-zinc-900 transition hover:border-zinc-400">
@@ -189,10 +189,9 @@
                 <p class="mt-3 text-sm text-zinc-600">Or ${{ $yearlyPrice }}/year, 2 months free. For teams exchanging waivers on every draw.</p>
                 <ul class="mt-6 flex-1 space-y-3 text-zinc-600">
                     <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Everything in Free</li>
-                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Unlimited saved waivers</li>
-                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> E-signature send &amp; collect</li>
-                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Automatic signature reminders</li>
-                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Signed-copy storage with tamper-evident audit certificate</li>
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Unlimited waivers every month, no cap</li>
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> One flat price for your whole team</li>
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> No per-waiver or per-signature charges</li>
                 </ul>
                 <a href="{{ route('register') }}" class="group mt-8 inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-zinc-800">
                     Start with Pro

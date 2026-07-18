@@ -8,11 +8,11 @@ namespace App\Domains\Lien\Enums;
  */
 enum WaiverDirection: string
 {
+    /** "I need waivers from people I'm paying": a vendor/sub signs at the user's request. Listed first in the wizard. */
+    case Collect = 'collect';
+
     /** "I'm being asked for a waiver to get paid": the user signs their own waiver. */
     case Provide = 'provide';
-
-    /** "I need waivers from people I'm paying": a vendor/sub signs at the user's request. */
-    case Collect = 'collect';
 
     public function label(): string
     {

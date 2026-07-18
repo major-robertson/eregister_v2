@@ -31,8 +31,12 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 /**
  * Five-step waiver builder: direction fork, project pick, guided type
  * selector (with a power-user grid of the state's statutory forms), details,
- * then review with three exits: free download (never persisted), save to
- * project (metered on the free tier), or save + send for e-signature (paid).
+ * then review. Reaching review auto-saves the waiver as a draft (metered on
+ * the free tier — going back and forth updates the same draft rather than
+ * consuming another slot), and the review actions — download or send for
+ * e-signature — operate on that saved draft. When the free allowance is
+ * exhausted the review still renders but nothing persists, and both actions
+ * open the upgrade modal instead.
  *
  * The waiver's state is frozen from the project's jobsite_state at save so a
  * later project edit can't silently change which state's form it claims to be.
@@ -120,15 +124,17 @@ class WaiverWizard extends Component
 
     public ?string $contact_zip = null;
 
-    // Owner modal: adds the project's missing owner party without leaving the
-    // wizard. Every waiver requires an owner (the forms identify who owns the
-    // property), but only the name is required here — PartyManager still
-    // demands the full mailing address when a lien filing needs it.
+    // Owner modal: adds or edits the project's owner party without leaving
+    // the wizard. Every waiver requires an owner (the forms identify who owns
+    // the property), but only the name is required here — PartyManager still
+    // demands the full mailing address when a lien filing needs it. One name
+    // field only: an entity owner's name goes in the same blank.
     public bool $showOwnerModal = false;
 
-    public ?string $owner_name = null;
+    /** When set, the owner modal edits this party instead of creating one. */
+    public ?int $editingOwnerPartyId = null;
 
-    public ?string $owner_company = null;
+    public ?string $owner_name = null;
 
     public ?string $owner_address1 = null;
 
@@ -141,6 +147,12 @@ class WaiverWizard extends Component
     public ?string $owner_county = null;
 
     public ?string $owner_zip = null;
+
+    /**
+     * The draft auto-saved when the user reached the review step; review
+     * actions operate on it, and re-entering review updates it in place.
+     */
+    public ?int $savedWaiverId = null;
 
     public bool $showUpsellModal = false;
 
@@ -188,6 +200,12 @@ class WaiverWizard extends Component
         // project so MO residential users start from what's already on file.
         if ($this->step === 4 && blank($this->legal_description)) {
             $this->legal_description = $this->selectedProject()?->legal_description;
+        }
+
+        // Arriving at review: the waiver saves itself (or updates the draft
+        // from a previous visit). No separate save button.
+        if ($this->step === 5) {
+            $this->autoSave();
         }
     }
 
@@ -275,7 +293,19 @@ class WaiverWizard extends Component
         // contact is required in both directions so the form's customer
         // blank (provide) or claimant identity (collect) is never empty.
         $rules = [
-            'amount' => ['required', 'numeric', 'min:0', 'max:99999999'],
+            // The input shows thousands separators, so validate the
+            // de-formatted value instead of using the bare numeric rule.
+            'amount' => ['required', function (string $attribute, mixed $value, \Closure $fail): void {
+                $raw = str_replace([',', '$', ' '], '', (string) $value);
+
+                if (! is_numeric($raw)) {
+                    $fail('Enter the payment amount as a number.');
+                } elseif ((float) $raw < 0) {
+                    $fail('The amount can\'t be negative.');
+                } elseif ((float) $raw > 99999999) {
+                    $fail('The amount is too large.');
+                }
+            }],
             'invoice_number' => ['nullable', 'string', 'max:100'],
             'exceptions' => ['nullable', 'string', 'max:2000'],
             'contactId' => ['required', 'string'],
@@ -543,6 +573,24 @@ class WaiverWizard extends Component
         }
     }
 
+    /** Reformat the amount with thousands separators as soon as it's entered. */
+    public function updatedAmount(): void
+    {
+        $raw = str_replace([',', '$', ' '], '', (string) $this->amount);
+
+        if ($raw !== '' && is_numeric($raw)) {
+            $this->amount = number_format((float) $raw, 2);
+        }
+    }
+
+    /** The amount as a float, tolerant of the display formatting; null when blank/invalid. */
+    public function amountFloat(): ?float
+    {
+        $raw = str_replace([',', '$', ' '], '', (string) $this->amount);
+
+        return $raw !== '' && is_numeric($raw) ? (float) $raw : null;
+    }
+
     public function isFinalKind(): bool
     {
         return WaiverKind::tryFrom($this->kind)?->isFinal() ?? false;
@@ -709,6 +757,27 @@ class WaiverWizard extends Component
         $this->showOwnerModal = true;
     }
 
+    /** Edit the project's existing owner party in place, prefilled. */
+    public function editOwner(): void
+    {
+        $owner = $this->selectedProject()?->ownerParty();
+
+        if ($owner === null) {
+            return;
+        }
+
+        $this->resetOwnerForm();
+        $this->editingOwnerPartyId = $owner->id;
+        $this->owner_name = $owner->company_name ?: $owner->name;
+        $this->owner_address1 = $owner->address1;
+        $this->owner_address2 = $owner->address2;
+        $this->owner_city = $owner->city;
+        $this->owner_state = $owner->state;
+        $this->owner_county = $owner->county;
+        $this->owner_zip = $owner->zip;
+        $this->showOwnerModal = true;
+    }
+
     public function closeOwnerModal(): void
     {
         $this->showOwnerModal = false;
@@ -725,7 +794,6 @@ class WaiverWizard extends Component
 
         $this->validate([
             'owner_name' => ['required', 'string', 'max:255'],
-            'owner_company' => ['nullable', 'string', 'max:255'],
             'owner_address1' => ['nullable', 'string', 'max:255'],
             'owner_address2' => ['nullable', 'string', 'max:255'],
             'owner_city' => ['nullable', 'string', 'max:255'],
@@ -736,21 +804,33 @@ class WaiverWizard extends Component
             'owner_name' => 'owner name',
         ]);
 
-        LienParty::create(array_map(fn ($value) => $value === '' ? null : $value, [
-            'business_id' => $project->business_id,
-            'project_id' => $project->id,
-            'role' => 'owner',
+        $attributes = array_map(fn ($value) => $value === '' ? null : $value, [
             'name' => $this->owner_name,
-            'company_name' => $this->owner_company,
             'address1' => $this->owner_address1,
             'address2' => $this->owner_address2,
             'city' => $this->owner_city,
             'state' => $this->owner_state ? strtoupper($this->owner_state) : null,
             'county' => $this->owner_county,
             'zip' => $this->owner_zip,
-        ]));
+        ]);
 
-        Flux::toast(text: 'Property owner added to the project.', variant: 'success');
+        if ($this->editingOwnerPartyId !== null) {
+            $owner = $project->parties()->findOrFail($this->editingOwnerPartyId);
+            // The single name field replaces whichever field was displayed;
+            // clear company_name so the edited name is what prints.
+            $owner->update([...$attributes, 'company_name' => null]);
+
+            Flux::toast(text: 'Property owner updated.', variant: 'success');
+        } else {
+            LienParty::create([
+                ...$attributes,
+                'business_id' => $project->business_id,
+                'project_id' => $project->id,
+                'role' => 'owner',
+            ]);
+
+            Flux::toast(text: 'Property owner added to the project.', variant: 'success');
+        }
 
         $this->resetValidation(['owner']);
         $this->closeOwnerModal();
@@ -758,8 +838,8 @@ class WaiverWizard extends Component
 
     private function resetOwnerForm(): void
     {
+        $this->editingOwnerPartyId = null;
         $this->owner_name = null;
-        $this->owner_company = null;
         $this->owner_address1 = null;
         $this->owner_address2 = null;
         $this->owner_city = null;
@@ -767,7 +847,7 @@ class WaiverWizard extends Component
         $this->owner_county = null;
         $this->owner_zip = null;
         $this->resetValidation([
-            'owner_name', 'owner_company', 'owner_address1', 'owner_address2',
+            'owner_name', 'owner_address1', 'owner_address2',
             'owner_city', 'owner_state', 'owner_county', 'owner_zip',
         ]);
     }
@@ -788,18 +868,80 @@ class WaiverWizard extends Component
 
 
     // ------------------------------------------------------------------
-    // Step 5: actions
+    // Step 5: auto-save + actions
     // ------------------------------------------------------------------
 
     /**
-     * Free path: render straight from wizard state and stream; the waiver is
-     * never persisted, so downloads don't touch the free-save meter.
+     * The draft persisted when review was reached; null when the free
+     * allowance was exhausted (or the row has since moved past Draft).
      */
+    public function savedWaiver(): ?LienWaiver
+    {
+        if ($this->savedWaiverId === null) {
+            return null;
+        }
+
+        return LienWaiver::query()->find($this->savedWaiverId);
+    }
+
+    /**
+     * Reaching review saves the waiver as a draft and generates its PDF.
+     * Re-entering review after edits updates the same draft (one meter slot
+     * per wizard run, not per visit). Over the free limit nothing persists —
+     * review still renders, and the actions pitch the upgrade instead.
+     */
+    private function autoSave(): void
+    {
+        $business = Auth::user()->currentBusiness();
+
+        $existing = $this->savedWaiver();
+
+        // Auto-save leaves the row Generated (PDF built); anything past that
+        // (sent, signed, voided) is no longer this wizard run's to edit.
+        if ($existing !== null && in_array($existing->status, [WaiverStatus::Draft, WaiverStatus::Generated], true)) {
+            $existing->update($this->waiverAttributes());
+            $this->syncProjectLegalDescription();
+            app(GenerateWaiver::class)->execute($existing);
+
+            return;
+        }
+
+        $this->savedWaiverId = null;
+
+        // The free-tier cap is a check-then-create, so serialize it per
+        // business: two tabs must not both slip past the monthly limit.
+        $lock = Cache::lock("waiver-save-{$business->id}", 10);
+
+        try {
+            $lock->block(5);
+
+            if (! WaiverEntitlements::canSaveWaiver($business)) {
+                return;
+            }
+
+            $waiver = LienWaiver::create($this->waiverAttributes());
+        } finally {
+            optional($lock)->release();
+        }
+
+        $this->savedWaiverId = $waiver->id;
+        $this->syncProjectLegalDescription();
+        app(GenerateWaiver::class)->execute($waiver);
+    }
+
+    /** Stream the saved draft's PDF; over the free limit, pitch the upgrade. */
     public function downloadPdf(WaiverGenerator $generator): ?StreamedResponse
     {
         $this->validateAllSteps();
 
-        $waiver = $this->buildUnsavedWaiver();
+        $waiver = $this->savedWaiver();
+
+        if ($waiver === null) {
+            $this->upsellContext = 'save';
+            $this->showUpsellModal = true;
+
+            return null;
+        }
 
         try {
             $bytes = $generator->render($waiver)->generatePdfContent();
@@ -817,61 +959,14 @@ class WaiverWizard extends Component
     }
 
     /**
-     * Metered path: persist the waiver + generate its PDF. Free tier gets
-     * four saves per calendar month; over the limit we pitch the upgrade
-     * instead of failing.
+     * Send the saved draft for e-signature — available on every tier; the
+     * free tier's only limit is the monthly save allowance, which was already
+     * enforced at auto-save. When the send fails (esign policy, missing
+     * signer email, ...) the waiver is already saved; surface the message on
+     * the show page instead of losing work.
      */
-    public function save(GenerateWaiver $generate): void
+    public function saveAndSend(SendWaiverForSignature $send): void
     {
-        $this->validateAllSteps();
-
-        $business = Auth::user()->currentBusiness();
-
-        // The free-tier cap is a check-then-create, so serialize it per business:
-        // two tabs (or a double-submit) must not both slip past the 4/month
-        // limit. The lock is short; block briefly rather than racing.
-        $lock = Cache::lock("waiver-save-{$business->id}", 10);
-
-        try {
-            $lock->block(5);
-
-            if (! WaiverEntitlements::canSaveWaiver($business)) {
-                $this->upsellContext = 'save';
-                $this->showUpsellModal = true;
-
-                return;
-            }
-
-            $waiver = LienWaiver::create($this->waiverAttributes());
-        } finally {
-            optional($lock)->release();
-        }
-
-        $this->syncProjectLegalDescription();
-
-        $waiver = $generate->execute($waiver);
-
-        Flux::toast(text: 'Waiver saved to project.', variant: 'success');
-
-        $this->redirect(route('lien.waivers.show', $waiver), navigate: true);
-    }
-
-    /**
-     * Paid path: persist, generate, then send for e-signature. When the send
-     * fails (esign policy, missing signer email, ...) the waiver is already
-     * saved; surface the message on the show page instead of losing work.
-     */
-    public function saveAndSend(GenerateWaiver $generate, SendWaiverForSignature $send): void
-    {
-        $business = Auth::user()->currentBusiness();
-
-        if (! WaiverEntitlements::canUseEsign($business)) {
-            $this->upsellContext = 'esign';
-            $this->showUpsellModal = true;
-
-            return;
-        }
-
         $this->validateAllSteps();
 
         $form = $this->resolvedForm();
@@ -883,9 +978,14 @@ class WaiverWizard extends Component
             return;
         }
 
-        $waiver = LienWaiver::create($this->waiverAttributes());
-        $this->syncProjectLegalDescription();
-        $waiver = $generate->execute($waiver);
+        $waiver = $this->savedWaiver();
+
+        if ($waiver === null) {
+            $this->upsellContext = 'save';
+            $this->showUpsellModal = true;
+
+            return;
+        }
 
         try {
             $send->execute($waiver, Auth::user());
@@ -898,8 +998,8 @@ class WaiverWizard extends Component
     }
 
     /**
-     * Shared attribute payload for both the persisted row and the free
-     * download's throwaway instance. State is snapshotted from the project.
+     * Attribute payload for the auto-saved draft (create and update alike).
+     * State is snapshotted from the project.
      *
      * @return array<string, mixed>
      */
@@ -918,8 +1018,8 @@ class WaiverWizard extends Component
             'kind' => $this->kind,
             'status' => WaiverStatus::Draft,
             'state' => strtoupper($project->jobsite_state),
-            'amount_cents' => $this->amount !== null && $this->amount !== ''
-                ? (int) round(((float) $this->amount) * 100)
+            'amount_cents' => $this->amountFloat() !== null
+                ? (int) round($this->amountFloat() * 100)
                 : null,
             'through_date' => $this->isFinalKind() ? null : ($this->through_date ?: null),
             'invoice_number' => $this->invoice_number ?: null,
@@ -952,15 +1052,6 @@ class WaiverWizard extends Component
         if ($project !== null && filled($this->legal_description) && blank($project->legal_description)) {
             $project->update(['legal_description' => $this->legal_description]);
         }
-    }
-
-    private function buildUnsavedWaiver(): LienWaiver
-    {
-        $waiver = new LienWaiver($this->waiverAttributes());
-        $waiver->setRelation('project', $this->selectedProject());
-        $waiver->setRelation('contact', $this->selectedContact());
-
-        return $waiver;
     }
 
     // ------------------------------------------------------------------

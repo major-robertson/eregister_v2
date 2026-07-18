@@ -312,19 +312,19 @@ describe('state rules on the type step', function () {
     });
 });
 
-describe('save', function () {
-    it('persists the waiver with the state snapshotted from the project and a generated PDF', function () {
+describe('auto-save at review', function () {
+    it('persists the waiver on reaching review with the state snapshotted and a generated PDF', function () {
         $project = waiverWizardProject($this->business, 'TX');
 
         $component = waiverWizardAtReview($project, 'provide', 'conditional_progress', [
             'amount' => '1500.50',
             'through_date' => now()->subDays(10)->format('Y-m-d'),
             'invoice_number' => 'INV-42',
-        ])->call('save');
+        ]);
 
+        // No save button: reaching review is the save.
         $waiver = LienWaiver::firstOrFail();
-
-        $component->assertRedirect(route('lien.waivers.show', $waiver));
+        $component->assertSet('savedWaiverId', $waiver->id);
 
         expect($waiver->business_id)->toBe($this->business->id);
         expect($waiver->project_id)->toBe($project->id);
@@ -346,21 +346,62 @@ describe('save', function () {
         expect($waiver->refresh()->state)->toBe('TX');
     });
 
-    it('blocks the save over the monthly free limit and pitches the upgrade instead', function () {
+    it('updates the same draft when review is re-entered after edits, consuming one slot not two', function () {
         $project = waiverWizardProject($this->business, 'TX');
-        LienWaiver::factory()->count(4)->forProject($project)->create();
 
-        waiverWizardAtReview($project)
-            ->call('save')
+        $component = waiverWizardAtReview($project, 'provide', 'conditional_progress', [
+            'amount' => '1000.00',
+        ]);
+
+        expect(LienWaiver::count())->toBe(1);
+        $waiverId = LienWaiver::firstOrFail()->id;
+
+        // Back to details, change the amount, return to review.
+        $component->call('previousStep')
+            ->assertSet('step', 4)
+            ->set('amount', '2,500.00')
+            ->call('nextStep')
+            ->assertSet('step', 5)
+            ->assertSet('savedWaiverId', $waiverId);
+
+        expect(LienWaiver::count())->toBe(1);
+        expect(LienWaiver::firstOrFail()->amount_cents)->toBe(250000);
+    });
+
+    it('reformats the amount with thousands separators and still parses it for the save', function () {
+        $project = waiverWizardProject($this->business, 'TX');
+
+        waiverWizardAtReview($project, 'provide', 'conditional_progress', [
+            'amount' => '60000',
+        ])->assertSet('amount', '60,000.00');
+
+        expect(LienWaiver::firstOrFail()->amount_cents)->toBe(6000000);
+    });
+
+    it('stops persisting over the monthly free limit and pitches the upgrade at the actions', function () {
+        $project = waiverWizardProject($this->business, 'TX');
+        LienWaiver::factory()->count(3)->forProject($project)->create();
+
+        $component = waiverWizardAtReview($project)
+            ->assertSet('savedWaiverId', null);
+
+        // Review renders, but nothing new was persisted.
+        expect(LienWaiver::count())->toBe(3);
+
+        $component->call('downloadPdf')
+            ->assertSet('showUpsellModal', true);
+
+        $component->set('showUpsellModal', false)
+            ->call('saveAndSend')
             ->assertSet('showUpsellModal', true)
             ->assertNoRedirect();
 
-        expect(LienWaiver::count())->toBe(4);
+        expect(LienWaiver::count())->toBe(3);
     });
 
     it('still counts voided/trashed saves against the free meter and lifts it for subscribers', function () {
         $project = waiverWizardProject($this->business, 'TX');
-        LienWaiver::factory()->count(4)->forProject($project)->create();
+        LienWaiver::factory()->count(3)->forProject($project)->create();
 
         // A deleted waiver already consumed its slot this month.
         LienWaiver::first()->delete();
@@ -371,24 +412,9 @@ describe('save', function () {
     });
 });
 
-describe('save and send for signature', function () {
-    it('gates send-for-signature behind the subscription with an upsell', function () {
-        $project = waiverWizardProject($this->business, 'TX');
-        $contact = waiverWizardCollectContact($this->user);
-
-        waiverWizardAtReview($project, 'collect', 'conditional_progress', [
-            'contactId' => (string) $contact->id,
-        ])->call('saveAndSend')
-            ->assertSet('showUpsellModal', true)
-            ->assertNoRedirect();
-
-        // Nothing was saved; the gate fires before persisting.
-        expect(LienWaiver::count())->toBe(0);
-    });
-
-    it('sends a subscribed collect waiver: generates, opens a guest signature request, and emails the signer', function () {
+describe('send for signature', function () {
+    it('sends a free-tier collect waiver: e-sign is included in the free allowance', function () {
         Mail::fake();
-        waiverWizardSubscribe($this->business);
         $project = waiverWizardProject($this->business, 'TX');
 
         $contact = waiverWizardCollectContact($this->user);
@@ -414,9 +440,8 @@ describe('save and send for signature', function () {
         Mail::assertQueued(WaiverSignatureInvitation::class, fn ($mail) => $mail->hasTo('vera@vendor.test'));
     });
 
-    it('refuses to e-sign in a paper-execution state even when subscribed', function () {
+    it('refuses to e-sign in a paper-execution state; the draft stays saved for download', function () {
         Mail::fake();
-        waiverWizardSubscribe($this->business);
         $project = waiverWizardProject($this->business, 'GA');
 
         $contact = waiverWizardCollectContact($this->user);
@@ -427,7 +452,9 @@ describe('save and send for signature', function () {
             ->assertHasErrors('kind')
             ->assertNoRedirect();
 
-        expect(LienWaiver::count())->toBe(0);
+        // The auto-saved draft survives; only the send was refused.
+        expect(LienWaiver::count())->toBe(1);
+        expect(LienWaiver::firstOrFail()->status)->toBe(WaiverStatus::Generated);
         Mail::assertNothingQueued();
     });
 });
@@ -614,11 +641,10 @@ describe('property owner requirement', function () {
             ->set('through_date', now()->format('Y-m-d'))
             ->set('contactId', (string) $contact->id)
             ->call('openOwnerModal')
-            // The owner needs at least a name.
+            // The owner needs at least a name (person or entity, one field).
             ->call('saveOwner')
             ->assertHasErrors('owner_name')
-            ->set('owner_name', 'Olive Owner')
-            ->set('owner_company', 'Sunset Development LLC')
+            ->set('owner_name', 'Sunset Development LLC')
             ->set('owner_city', 'Austin')
             ->set('owner_state', 'tx')
             ->call('saveOwner')
@@ -627,11 +653,35 @@ describe('property owner requirement', function () {
 
         $owner = $project->refresh()->ownerParty();
         expect($owner)->not->toBeNull()
-            ->and($owner->name)->toBe('Olive Owner')
-            ->and($owner->company_name)->toBe('Sunset Development LLC')
+            ->and($owner->name)->toBe('Sunset Development LLC')
             ->and($owner->state)->toBe('TX');
 
         $component->call('nextStep')->assertSet('step', 5);
+    });
+
+    it('edits the existing owner party from the wizard, prefilled', function () {
+        $project = waiverWizardProject($this->business, 'TX');
+
+        $component = Livewire::test(WaiverWizard::class)
+            ->call('selectDirection', 'provide')
+            ->call('nextStep')
+            ->set('projectId', $project->public_id)
+            ->call('nextStep')
+            ->call('selectKind', 'conditional_progress')
+            ->call('nextStep')
+            ->call('editOwner')
+            // Prefilled from the existing party (displayName: company first).
+            ->assertSet('showOwnerModal', true)
+            ->assertSet('owner_name', 'Owner Holdings LLC')
+            ->set('owner_name', 'New Owner LLC')
+            ->call('saveOwner')
+            ->assertSet('showOwnerModal', false);
+
+        $owner = $project->refresh()->ownerParty();
+        expect($project->parties()->where('role', 'owner')->count())->toBe(1)
+            ->and($owner->name)->toBe('New Owner LLC')
+            ->and($owner->company_name)->toBeNull()
+            ->and($owner->displayName())->toBe('New Owner LLC');
     });
 });
 
@@ -682,9 +732,10 @@ describe('legal description requirement', function () {
         $project = waiverWizardProject($this->business, 'MO');
         $project->update(['property_class' => 'residential', 'legal_description' => null]);
 
+        // Reaching review auto-saves; no explicit save call.
         waiverWizardAtReview($project, 'provide', 'unconditional_final', [
             'legal_description' => 'Lot 12, Block 3, Sunset Hills Plat Two',
-        ])->call('save');
+        ]);
 
         $waiver = LienWaiver::query()->latest('id')->first();
         expect($waiver->legal_description)->toBe('Lot 12, Block 3, Sunset Hills Plat Two')

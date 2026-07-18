@@ -25,8 +25,10 @@
             <div class="sig-caption">Claimant's Signature</div>
         </td>
         <td style="width: 45%;">
+            {{-- Values render on a full-width ruled line so filled cells
+                 match the blank ones (and the labeled field rows above). --}}
             @if (($esign ?? null) !== null)
-                <div>{{ $esign['signed_at_eastern'] }}</div>
+                <div class="sig-line">{{ $esign['signed_at_eastern'] }}</div>
             @else
                 <div class="sig-line">&nbsp;</div>
             @endif
@@ -36,9 +38,9 @@
     <tr>
         <td>
             @if (($esign ?? null) !== null)
-                <div>{{ $esign['name'] }}</div>
+                <div class="sig-line">{{ $esign['name'] }}</div>
             @elseif (!empty($waiver['signer']['name']))
-                <div>{{ $waiver['signer']['name'] }}</div>
+                <div class="sig-line">{{ $waiver['signer']['name'] }}</div>
             @else
                 <div class="sig-line">&nbsp;</div>
             @endif
@@ -46,7 +48,7 @@
         </td>
         <td>
             @if (!empty($waiver['signer']['company']))
-                <div>{{ $waiver['signer']['company'] }}</div>
+                <div class="sig-line">{{ $waiver['signer']['company'] }}</div>
             @else
                 <div class="sig-line">&nbsp;</div>
             @endif

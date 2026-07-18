@@ -542,18 +542,18 @@
 
                 <flux:error name="kind" />
 
-                {{-- Reaching review auto-saved the waiver as a draft (unless
-                     the free allowance ran out); actions work on that draft. --}}
+                {{-- Reaching review auto-saved the waiver (unless the free
+                     allowance ran out); actions work on that saved waiver. --}}
                 @if ($savedWaiverId !== null)
                     <div class="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50/70 px-3.5 py-2.5">
                         <flux:icon name="check-circle" class="size-4 shrink-0 text-green-600" />
-                        <p class="text-[13px] text-green-800">Saved to the project as a draft — download it or send it for signature below.</p>
+                        <p class="text-[13px] text-green-800">Saved to the project — download it or send it for signature below.</p>
                     </div>
                 @else
                     <div class="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/70 px-3.5 py-2.5">
                         <flux:icon name="exclamation-triangle" class="size-4 shrink-0 text-amber-600" />
                         <p class="text-[13px] text-amber-800">
-                            You've used all {{ $freeSavesLimit }} free waivers this month, so this draft
+                            You've used all {{ $freeSavesLimit }} free waivers this month, so this one
                             isn't saved. Upgrade to download or send it.
                         </p>
                     </div>
@@ -569,14 +569,14 @@
 
                     <div>
                         @if ($form && ! $form->esignAllowed)
-                            <flux:button variant="filled" icon="paper-airplane" class="w-full" disabled>
+                            <flux:button variant="primary" icon="paper-airplane" class="w-full" disabled>
                                 Send for signature
                             </flux:button>
                             <p class="mt-1 text-center text-xs text-zinc-500">
                                 {{ $form->esignDisabledReason ?? 'This state requires in-person execution, so e-signing is unavailable. Use Download, sign on paper, then upload the signed copy.' }}
                             </p>
                         @else
-                            <flux:button wire:click="saveAndSend" wire:loading.attr="disabled" variant="filled" icon="paper-airplane" class="w-full">
+                            <flux:button wire:click="saveAndSend" wire:loading.attr="disabled" variant="primary" icon="paper-airplane" class="w-full">
                                 <span wire:loading.remove wire:target="saveAndSend">Send for signature</span>
                                 <span wire:loading wire:target="saveAndSend">Sending...</span>
                             </flux:button>

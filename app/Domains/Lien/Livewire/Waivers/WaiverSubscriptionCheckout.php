@@ -137,8 +137,9 @@ class WaiverSubscriptionCheckout extends Component
 
         if (! $recurringPriceId) {
             throw new \RuntimeException(
-                'Lien waiver Stripe price is not configured for interval "'.$this->interval.'". Set the '.
-                'STRIPE_PRICE_LIEN_WAIVER_MONTHLY / STRIPE_PRICE_LIEN_WAIVER_YEARLY (and *_LIVE) env values.'
+                'Lien waiver Stripe price is not configured for interval "'.$this->interval.'". '.
+                'Check the '.($this->interval === 'year' ? 'yearly' : 'monthly').' lien_waiver row in the '.
+                'prices table (seeded by LienWaiverPriceSeeder) has a Stripe price id for this environment.'
             );
         }
 

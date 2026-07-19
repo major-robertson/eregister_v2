@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
             PriceSeeder::class,
             FormationFeeSeeder::class,
             ResaleCertPriceSeeder::class,
+            LienWaiverPriceSeeder::class,
         ]);
 
         // Resale certificate reference data

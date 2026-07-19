@@ -8,24 +8,18 @@ return [
     |--------------------------------------------------------------------------
     |
     | Lien waivers are a Cashier subscription on the Business (like resale
-    | certs): $99/mo or $990/yr, no pay-per-waiver. Price rows live in the
-    | prices table under product_family "lien" / product_key "lien_waiver"
-    | with variant_key "monthly" / "yearly".
+    | certs): $99/mo or $990/yr, no pay-per-waiver. The Stripe recurring
+    | Price IDs live in the prices table (seeded by LienWaiverPriceSeeder)
+    | under product_family "lien" / product_key "lien_waiver" with
+    | variant_key "monthly" / "yearly" — never in env. Only the display
+    | amounts are mirrored here for the pricing/upsell copy.
     |
     */
     'subscription_type' => 'lien_waiver',
 
     'prices' => [
-        'monthly' => [
-            'amount_cents' => 9900,
-            'stripe_price_id_test' => env('STRIPE_PRICE_LIEN_WAIVER_MONTHLY'),
-            'stripe_price_id_live' => env('STRIPE_PRICE_LIEN_WAIVER_MONTHLY_LIVE'),
-        ],
-        'yearly' => [
-            'amount_cents' => 99000,
-            'stripe_price_id_test' => env('STRIPE_PRICE_LIEN_WAIVER_YEARLY'),
-            'stripe_price_id_live' => env('STRIPE_PRICE_LIEN_WAIVER_YEARLY_LIVE'),
-        ],
+        'monthly' => ['amount_cents' => 9900],
+        'yearly' => ['amount_cents' => 99000],
     ],
 
     /*

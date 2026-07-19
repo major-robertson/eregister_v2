@@ -22,16 +22,23 @@ if (! function_exists('waiverPortalProject')) {
 }
 
 if (! function_exists('waiverPortalSubscribe')) {
-    /** Give the business an active Waiver Pro subscription (stub row, no Stripe). */
-    function waiverPortalSubscribe(Business $business): void
+    /**
+     * Give the business an active Waiver Pro subscription (stub row, no
+     * Stripe) with seats assigned to the given members.
+     */
+    function waiverPortalSubscribe(Business $business, User ...$seatHolders): void
     {
         $business->subscriptions()->create([
             'type' => config('lien_waivers.subscription_type'),
             'stripe_id' => 'stub_'.uniqid(),
             'stripe_status' => 'active',
             'stripe_price' => 'stub_price',
-            'quantity' => 1,
+            'quantity' => max(1, count($seatHolders)),
         ]);
+
+        foreach ($seatHolders as $seatHolder) {
+            $business->users()->updateExistingPivot($seatHolder->id, ['lien_waiver_seat_at' => now()]);
+        }
     }
 }
 
@@ -85,7 +92,7 @@ describe('dashboard', function () {
         expect($unsubscribed->viewData('savedThisMonth'))->toBe(2);
         expect($unsubscribed->viewData('freeSavesLimit'))->toBe(3);
 
-        waiverPortalSubscribe($this->business);
+        waiverPortalSubscribe($this->business, $this->user);
 
         $subscribed = Livewire::test(WaiverDashboard::class)
             ->assertDontSee('free saves used this month');

@@ -70,7 +70,7 @@
         </div>
     </div>
 
-    {{-- Free-tier meter --}}
+    {{-- Free-tier meter / seat status --}}
     @if (! $hasPaidAccess)
         <x-ui.card class="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-900/20">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -82,7 +82,12 @@
                         </span>
                     </div>
                     <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                        Downloads are always free and unlimited. Upgrade for unlimited saves, e-sign, reminders, and signed storage.
+                        @if ($businessSubscribed)
+                            Your team has Lien Waiver Pro, but you don't have a seat yet —
+                            {{ $canManageSeats ? 'assign yourself one to go unlimited.' : 'ask an owner or admin to assign you one.' }}
+                        @else
+                            Every free waiver includes downloads, e-sign, and signed storage. Upgrade for unlimited waivers per seat.
+                        @endif
                     </p>
                     <div class="mt-3 h-2 w-full max-w-xs overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
                         <div class="h-full rounded-full bg-blue-600"
@@ -90,12 +95,18 @@
                     </div>
                 </div>
                 <div class="flex shrink-0 items-center gap-2">
-                    <flux:modal.trigger name="waiver-upsell">
-                        <flux:button variant="ghost" size="sm">See what's included</flux:button>
-                    </flux:modal.trigger>
-                    <flux:button href="{{ route('lien.waivers.subscribe') }}" variant="primary">
-                        Upgrade
-                    </flux:button>
+                    @if ($businessSubscribed && $canManageSeats)
+                        <flux:button href="{{ route('lien.waivers.seats') }}" variant="primary">
+                            Manage seats
+                        </flux:button>
+                    @elseif (! $businessSubscribed)
+                        <flux:modal.trigger name="waiver-upsell">
+                            <flux:button variant="ghost" size="sm">See what's included</flux:button>
+                        </flux:modal.trigger>
+                        <flux:button href="{{ route('lien.waivers.subscribe') }}" variant="primary">
+                            Upgrade
+                        </flux:button>
+                    @endif
                 </div>
             </div>
         </x-ui.card>
@@ -103,6 +114,12 @@
         <flux:modal name="waiver-upsell" class="max-w-md">
             <x-lien.waiver-upsell heading="Upgrade to Waiver Pro" />
         </flux:modal>
+    @elseif ($canManageSeats)
+        <div class="flex justify-end">
+            <flux:button href="{{ route('lien.waivers.seats') }}" variant="ghost" size="sm" icon="users">
+                Manage seats
+            </flux:button>
+        </div>
     @endif
 
     {{-- Deemed-effective countdown (GA/MS) --}}

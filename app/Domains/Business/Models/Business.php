@@ -81,7 +81,7 @@ class Business extends Model implements HasMedia
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)
-            ->withPivot('role')
+            ->withPivot('role', 'lien_waiver_seat_at')
             ->withTimestamps();
     }
 

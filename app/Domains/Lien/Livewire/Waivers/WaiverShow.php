@@ -170,7 +170,7 @@ class WaiverShow extends Component
             'form' => $form,
             'latestRequest' => $latestRequest,
             'activeRequest' => $activeRequest,
-            'hasPaidAccess' => WaiverEntitlements::hasPaidAccess(Auth::user()->currentBusiness()),
+            'hasPaidAccess' => WaiverEntitlements::hasPaidAccess(Auth::user()->currentBusiness(), Auth::user()),
             'hasGeneratedPdf' => $this->waiver->getFirstMedia('generated') !== null,
             'hasSignedCopy' => $signedMedia !== null,
             'timeline' => $this->buildTimeline($latestRequest !== null ? $latestRequest->events()->with('actor:id,name')->get() : collect()),

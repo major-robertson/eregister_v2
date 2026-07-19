@@ -3,6 +3,7 @@
 namespace App\Domains\Lien\Waivers\Services;
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Lien\Waivers\WaiverSeats;
 use App\Enums\PaymentStatus;
 use App\Mail\PaymentReceipt;
 use App\Models\Payment;
@@ -59,12 +60,12 @@ class WaiverPaymentService
 
             $queueConversion = true;
 
-            // subscribed('lien_waiver') is the access gate, so the local row
-            // must exist the moment payment lands (Cashier's own webhook
-            // auto-sync is not registered in this app). The payment's price
-            // relation carries the chosen interval, so its Stripe price is
-            // the correct one; never hardcode monthly or yearly here.
-            $this->recordSubscription($payment->business, $payment->stripe_subscription_id, $payment->price);
+            // The subscription + seat assignments are the access gate, so the
+            // local rows must exist the moment payment lands (Cashier's own
+            // webhook auto-sync is not registered in this app). The payment's
+            // price relation carries the chosen interval, so its Stripe price
+            // is the correct one; never hardcode monthly or yearly here.
+            $this->recordSubscription($payment);
 
             if ($flagForReview) {
                 Log::info('Lien waiver subscription payment succeeded but flagged for review', [
@@ -105,21 +106,32 @@ class WaiverPaymentService
         });
     }
 
-    private function recordSubscription(Business $business, ?string $subscriptionId, ?Price $price): void
+    private function recordSubscription(Payment $payment): void
     {
-        if (! $subscriptionId) {
+        if (! $payment->stripe_subscription_id) {
             return;
         }
 
+        $business = $payment->business;
+        $seatUserIds = array_map('intval', $payment->meta['seat_user_ids'] ?? []);
+
+        // Pre-seat payments (or a stripped meta) still activate one seat for
+        // the business's first member rather than a subscription nobody holds.
+        if ($seatUserIds === []) {
+            $seatUserIds = array_filter([$business->users()->first()?->id]);
+        }
+
         $business->subscriptions()->updateOrCreate(
-            ['stripe_id' => $subscriptionId],
+            ['stripe_id' => $payment->stripe_subscription_id],
             [
                 'type' => config('lien_waivers.subscription_type'),
                 'stripe_status' => 'active',
-                'stripe_price' => $price?->stripePriceId(),
-                'quantity' => 1,
+                'stripe_price' => $payment->price?->stripePriceId(),
+                'quantity' => max(1, count($seatUserIds)),
             ]
         );
+
+        app(WaiverSeats::class)->assignPurchased($business, $seatUserIds);
     }
 
     /**

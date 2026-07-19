@@ -9,16 +9,16 @@
     <div>
         <flux:heading size="lg">{{ $heading }}</flux:heading>
         <flux:text class="mt-1 text-sm text-zinc-500">
-            Generating and downloading waivers is always free. Upgrade to run the whole exchange in one place.
+            The free tier is the full product for {{ config('lien_waivers.free_saved_waivers_per_month') }} waivers a month. Pro seats remove the cap.
         </flux:text>
     </div>
 
     <ul class="space-y-2">
         @foreach ([
-            'Unlimited saved waivers on every project',
-            'E-sign — send waivers and collect signatures',
-            'Automatic signer reminders until it\'s signed',
-            'Signed-copy storage with a full audit trail',
+            'Unlimited waivers for every seat holder',
+            'Cover any mix of your team — one subscription, per-seat pricing',
+            'Add or remove seats anytime, prorated automatically',
+            'No per-waiver or per-signature charges',
         ] as $feature)
             <li class="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
                 <flux:icon name="check-circle" class="mt-0.5 size-4 shrink-0 text-green-600 dark:text-green-400" />
@@ -28,7 +28,7 @@
     </ul>
 
     <p class="text-sm font-medium text-zinc-900 dark:text-white">
-        {{ $monthly }}/month or {{ $yearly }}/year <span class="font-normal text-zinc-500">(2 months free)</span>
+        {{ $monthly }}/month or {{ $yearly }}/year per seat <span class="font-normal text-zinc-500">(2 months free)</span>
     </p>
 
     <flux:button href="{{ route('lien.waivers.subscribe') }}" variant="primary" class="w-full">

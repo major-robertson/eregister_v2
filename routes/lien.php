@@ -19,6 +19,7 @@ use App\Domains\Lien\Livewire\Waivers\ContactForm;
 use App\Domains\Lien\Livewire\Waivers\ContactList;
 use App\Domains\Lien\Livewire\Waivers\WaiverDashboard;
 use App\Domains\Lien\Livewire\Waivers\WaiverList;
+use App\Domains\Lien\Livewire\Waivers\WaiverSeatManager;
 use App\Domains\Lien\Livewire\Waivers\WaiverShow;
 use App\Domains\Lien\Livewire\Waivers\WaiverSubscriptionCheckout;
 use App\Domains\Lien\Livewire\Waivers\WaiverWizard;
@@ -71,6 +72,7 @@ Route::middleware(['auth', 'business.current', 'business.complete', 'lien.onboar
         Route::get('/waivers/all', WaiverList::class)->name('lien.waivers.list');
         Route::get('/waivers/new', WaiverWizard::class)->name('lien.waivers.create');
         Route::get('/waivers/subscribe', WaiverSubscriptionCheckout::class)->name('lien.waivers.subscribe');
+        Route::get('/waivers/seats', WaiverSeatManager::class)->name('lien.waivers.seats');
         Route::get('/waivers/payment-confirmation', [WaiverPaymentController::class, 'confirmation'])
             ->name('lien.waivers.payment-confirmation');
 

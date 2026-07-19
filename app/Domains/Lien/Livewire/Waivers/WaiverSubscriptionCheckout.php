@@ -4,6 +4,8 @@ namespace App\Domains\Lien\Livewire\Waivers;
 
 use App\Domains\Business\Models\Business;
 use App\Domains\Lien\Waivers\Services\WaiverPaymentService;
+use App\Domains\Lien\Waivers\WaiverEntitlements;
+use App\Domains\Lien\Waivers\WaiverSeats;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Models\Price;
@@ -15,13 +17,17 @@ use Livewire\Component;
 use Stripe\StripeClient;
 
 /**
- * Lien waiver subscription checkout: $99/mo or $990/yr (two months free),
- * embedded on-page card entry. Uses Stripe's embedded-subscription pattern
- * (create with payment_behavior=default_incomplete, confirm the first
- * invoice's PaymentIntent in-page), mirroring the resale-cert checkout plus
- * a monthly/yearly toggle. The toggle is a full redirect back to this route
- * with ?interval=. The PaymentIntent is bound to one price at creation, so
- * switching intervals must re-run mount and initialize a fresh one.
+ * Lien waiver subscription checkout: $99/mo or $990/yr (two months free)
+ * PER SEAT, embedded on-page card entry. Two phases: pick which members get
+ * seats (owners/admins see the whole team; members buy their own seat), then
+ * pay — Stripe's embedded-subscription pattern (create with
+ * payment_behavior=default_incomplete, quantity = seats, confirm the first
+ * invoice's PaymentIntent in-page). The interval toggle is a full redirect
+ * back to this route with ?interval=: the PaymentIntent is bound to one
+ * price at creation, so switching intervals must re-run mount.
+ *
+ * The chosen members ride along in payments.meta so the success path
+ * (webhook or confirmation page) can assign the seats.
  */
 class WaiverSubscriptionCheckout extends Component
 {
@@ -30,7 +36,17 @@ class WaiverSubscriptionCheckout extends Component
     #[Url]
     public string $interval = 'monthly';
 
+    /** Per-seat price for the chosen interval. */
+    public int $unitAmountCents = 0;
+
+    /** Total charged: unit x seats. */
     public int $amountCents = 0;
+
+    /** @var list<int> Member ids receiving a seat. */
+    public array $seatUserIds = [];
+
+    /** Owners/admins pick seats for the whole team; members buy their own. */
+    public bool $canPickSeats = false;
 
     public string $paymentIntentId = '';
 
@@ -50,9 +66,14 @@ class WaiverSubscriptionCheckout extends Component
             return;
         }
 
-        // Already subscribed (browser back button, double click); nothing to buy.
+        // Already subscribed (browser back button, double click); seats are
+        // managed — and grown — from the seat manager, not a second checkout.
         if ($business->subscribed(config('lien_waivers.subscription_type'))) {
-            $this->redirect(route('lien.waivers.index'));
+            $this->redirect(
+                WaiverEntitlements::canManageSeats($business, Auth::user())
+                    ? route('lien.waivers.seats')
+                    : route('lien.waivers.index')
+            );
 
             return;
         }
@@ -62,11 +83,35 @@ class WaiverSubscriptionCheckout extends Component
         }
 
         $this->business = $business;
-        $price = $paymentService->price($this->interval);
-        $this->amountCents = $price->amount_cents
-            ?? config("lien_waivers.prices.{$this->interval}.amount_cents");
+        $this->canPickSeats = WaiverEntitlements::canManageSeats($business, Auth::user());
+        $this->seatUserIds = [Auth::id()];
 
-        $this->initializePayment($paymentService, $price);
+        $price = $paymentService->price($this->interval);
+        $this->unitAmountCents = $price->amount_cents
+            ?? config("lien_waivers.prices.{$this->interval}.amount_cents");
+        $this->amountCents = $this->unitAmountCents;
+    }
+
+    /** Phase 2: lock the seat selection and initialize the Stripe payment. */
+    public function proceedToPayment(WaiverPaymentService $paymentService): void
+    {
+        $memberIds = $this->business->users()->pluck('users.id')->map(fn ($id) => (int) $id)->all();
+
+        // Members without seat-management rights buy exactly their own seat.
+        $selected = $this->canPickSeats
+            ? array_values(array_intersect(array_map('intval', $this->seatUserIds), $memberIds))
+            : [Auth::id()];
+
+        if ($selected === []) {
+            $this->addError('seatUserIds', 'Pick at least one team member to cover.');
+
+            return;
+        }
+
+        $this->seatUserIds = $selected;
+        $this->amountCents = $this->unitAmountCents * count($selected);
+
+        $this->initializePayment($paymentService, $paymentService->price($this->interval));
     }
 
     protected function initializePayment(WaiverPaymentService $paymentService, Price $price): void
@@ -85,15 +130,22 @@ class WaiverSubscriptionCheckout extends Component
             // payment on the business morph, so it could resume a pending
             // resale-cert subscription checkout (or this product's other
             // billing interval, whose Stripe subscription is bound to the
-            // wrong price). Scope the retry lookup to this exact price row.
+            // wrong price). Scope the retry lookup to this exact price row —
+            // and this exact total, since the seat count fixes the Stripe
+            // subscription's quantity at creation.
             $payment = Payment::whereMorphedTo('purchasable', $this->business)
                 ->where('price_id', $price->id)
+                ->where('amount_cents', $this->amountCents)
                 ->whereIn('status', [PaymentStatus::Initiated, PaymentStatus::RequiresPaymentMethod])
                 ->lockForUpdate()
                 ->latest()
                 ->first();
 
-            if (! $payment) {
+            if ($payment) {
+                // Same seat count, possibly different members: the success
+                // path assigns from meta, so refresh the selection.
+                $payment->update(['meta' => $this->paymentMeta()]);
+            } else {
                 $payment = Payment::create([
                     'purchasable_type' => $this->business->getMorphClass(),
                     'purchasable_id' => $this->business->id,
@@ -105,6 +157,7 @@ class WaiverSubscriptionCheckout extends Component
                     'provider' => 'stripe',
                     'billing_type' => 'subscription',
                     'livemode' => Payment::isLiveMode(),
+                    'meta' => $this->paymentMeta(),
                 ]);
             }
 
@@ -145,7 +198,7 @@ class WaiverSubscriptionCheckout extends Component
 
         $subscription = $stripe->subscriptions->create([
             'customer' => $this->business->stripeId(),
-            'items' => [['price' => $recurringPriceId]],
+            'items' => [['price' => $recurringPriceId, 'quantity' => count($this->seatUserIds)]],
             'payment_behavior' => 'default_incomplete',
             'payment_settings' => ['save_default_payment_method' => 'on_subscription'],
             'expand' => ['latest_invoice.confirmation_secret'],
@@ -190,6 +243,17 @@ class WaiverSubscriptionCheckout extends Component
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    protected function paymentMeta(): array
+    {
+        return [
+            'seat_user_ids' => $this->seatUserIds,
+            'seats' => count($this->seatUserIds),
+        ];
+    }
+
+    /**
      * Keyless local-dev path: record a succeeded payment + a stub
      * subscription without touching Stripe.
      */
@@ -208,6 +272,7 @@ class WaiverSubscriptionCheckout extends Component
                 'billing_type' => 'subscription',
                 'livemode' => false,
                 'paid_at' => now(),
+                'meta' => $this->paymentMeta(),
             ]);
 
             if (! $this->business->subscribed(config('lien_waivers.subscription_type'))) {
@@ -216,9 +281,11 @@ class WaiverSubscriptionCheckout extends Component
                     'stripe_id' => 'stub_'.uniqid(),
                     'stripe_status' => 'active',
                     'stripe_price' => $price->stripePriceId() ?? 'stub_price',
-                    'quantity' => 1,
+                    'quantity' => count($this->seatUserIds),
                 ]);
             }
+
+            app(WaiverSeats::class)->assignPurchased($this->business, $this->seatUserIds);
         });
 
         session()->flash('success', 'Your subscription is now active.');
@@ -228,8 +295,17 @@ class WaiverSubscriptionCheckout extends Component
 
     public function render(): View
     {
+        $members = $this->canPickSeats
+            ? $this->business->users()->orderBy('first_name')->orderBy('last_name')->get()
+            : collect();
+
+        $selectedCount = max(1, count($this->seatUserIds));
+
         return view('livewire.lien.waivers.subscription-checkout', [
-            'amountFormatted' => '$'.number_format($this->amountCents / 100, 2),
+            'members' => $members,
+            'selectedCount' => $selectedCount,
+            'unitFormatted' => '$'.number_format($this->unitAmountCents / 100, 2),
+            'amountFormatted' => '$'.number_format(($this->isReady ? $this->amountCents : $this->unitAmountCents * $selectedCount) / 100, 2),
             'perLabel' => $this->interval === 'yearly' ? 'yr' : 'mo',
             'returnUrl' => route('lien.waivers.payment-confirmation'),
         ])->layout('layouts.minimal', ['title' => 'Subscribe']);

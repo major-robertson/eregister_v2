@@ -38,16 +38,23 @@ if (! function_exists('waiverWizardProject')) {
 }
 
 if (! function_exists('waiverWizardSubscribe')) {
-    /** Give the business an active Waiver Pro subscription (stub row, no Stripe). */
-    function waiverWizardSubscribe(Business $business): void
+    /**
+     * Give the business an active Waiver Pro subscription (stub row, no
+     * Stripe) with seats assigned to the given members.
+     */
+    function waiverWizardSubscribe(Business $business, User ...$seatHolders): void
     {
         $business->subscriptions()->create([
             'type' => config('lien_waivers.subscription_type'),
             'stripe_id' => 'stub_'.uniqid(),
             'stripe_status' => 'active',
             'stripe_price' => 'stub_price',
-            'quantity' => 1,
+            'quantity' => max(1, count($seatHolders)),
         ]);
+
+        foreach ($seatHolders as $seatHolder) {
+            $business->users()->updateExistingPivot($seatHolder->id, ['lien_waiver_seat_at' => now()]);
+        }
     }
 }
 
@@ -405,10 +412,10 @@ describe('auto-save at review', function () {
 
         // A deleted waiver already consumed its slot this month.
         LienWaiver::first()->delete();
-        expect(WaiverEntitlements::canSaveWaiver($this->business))->toBeFalse();
+        expect(WaiverEntitlements::canSaveWaiver($this->business, $this->user))->toBeFalse();
 
-        waiverWizardSubscribe($this->business);
-        expect(WaiverEntitlements::canSaveWaiver($this->business->refresh()))->toBeTrue();
+        waiverWizardSubscribe($this->business, $this->user);
+        expect(WaiverEntitlements::canSaveWaiver($this->business->refresh(), $this->user))->toBeTrue();
     });
 });
 

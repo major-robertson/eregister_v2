@@ -554,7 +554,10 @@
                         <flux:icon name="exclamation-triangle" class="size-4 shrink-0 text-amber-600" />
                         <p class="text-[13px] text-amber-800">
                             You've used all {{ $freeSavesLimit }} free waivers this month, so this one
-                            isn't saved. Upgrade to download or send it.
+                            isn't saved.
+                            {{ $businessSubscribed
+                                ? ($canManageSeats ? 'Assign yourself a seat to go unlimited.' : 'Ask an owner or admin for a seat to go unlimited.')
+                                : 'Upgrade to download or send it.' }}
                         </p>
                     </div>
                 @endif
@@ -815,9 +818,34 @@
         </div>
     </flux:modal>
 
-    {{-- Upsell modal (save limit hit / e-sign gated) --}}
+    {{-- Upsell modal (save limit hit): a seatless member of a subscribed
+         business needs a seat, not a second subscription. --}}
     <flux:modal wire:model="showUpsellModal" class="max-w-md">
-        <x-lien.waiver-upsell :heading="$upsellContext === 'esign' ? 'E-sign requires Waiver Pro' : 'You\'ve used all your free saves this month'" />
+        @if ($businessSubscribed && ! $hasPaidAccess)
+            <div class="space-y-4">
+                <div>
+                    <flux:heading size="lg">Your team has Lien Waiver Pro</flux:heading>
+                    <flux:text class="mt-1 text-sm text-zinc-500">
+                        The free allowance is used up and you don't have a seat yet. Seat holders
+                        get unlimited waivers.
+                    </flux:text>
+                </div>
+                @if ($canManageSeats)
+                    <flux:button href="{{ route('lien.waivers.seats') }}" variant="primary" class="w-full">
+                        Manage seats
+                    </flux:button>
+                @else
+                    <flux:callout icon="user-plus">
+                        <flux:callout.text>
+                            Ask an owner or admin of your business to assign you a seat — it only
+                            takes a click and is prorated automatically.
+                        </flux:callout.text>
+                    </flux:callout>
+                @endif
+            </div>
+        @else
+            <x-lien.waiver-upsell heading="You've used all your free waivers this month" />
+        @endif
     </flux:modal>
 
     @include('livewire.lien._places-autocomplete')

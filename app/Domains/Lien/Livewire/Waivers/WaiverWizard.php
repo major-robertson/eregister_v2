@@ -922,7 +922,7 @@ class WaiverWizard extends Component
         try {
             $lock->block(5);
 
-            if (! WaiverEntitlements::canSaveWaiver($business)) {
+            if (! WaiverEntitlements::canSaveWaiver($business, Auth::user())) {
                 return;
             }
 
@@ -1115,11 +1115,15 @@ class WaiverWizard extends Component
             'stateRules' => $this->stateRules(),
             'kinds' => $this->availableKinds(),
             'form' => $this->resolvedForm(),
-            'canSave' => WaiverEntitlements::canSaveWaiver($business),
+            'canSave' => WaiverEntitlements::canSaveWaiver($business, Auth::user()),
             'canEsign' => WaiverEntitlements::canUseEsign($business),
-            'hasPaidAccess' => WaiverEntitlements::hasPaidAccess($business),
+            'hasPaidAccess' => WaiverEntitlements::hasPaidAccess($business, Auth::user()),
             'remainingFreeSaves' => WaiverEntitlements::remainingFreeSaves($business),
             'freeSavesLimit' => WaiverEntitlements::freeSavesLimit(),
+            // Seat-aware upsell: a seatless member of a subscribed business
+            // needs a seat, not a second subscription.
+            'businessSubscribed' => WaiverEntitlements::isSubscribed($business),
+            'canManageSeats' => WaiverEntitlements::canManageSeats($business, Auth::user()),
             'stepTitles' => [
                 1 => 'Direction',
                 2 => 'Project',

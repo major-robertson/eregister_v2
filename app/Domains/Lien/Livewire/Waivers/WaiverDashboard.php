@@ -70,7 +70,9 @@ class WaiverDashboard extends Component
             'tracksDeemedEffective' => $tracksDeemedEffective,
             'deemedEffectiveSoon' => $deemedEffectiveSoon,
             'recentWaivers' => $recentWaivers,
-            'hasPaidAccess' => WaiverEntitlements::hasPaidAccess($business),
+            'hasPaidAccess' => WaiverEntitlements::hasPaidAccess($business, Auth::user()),
+            'businessSubscribed' => WaiverEntitlements::isSubscribed($business),
+            'canManageSeats' => WaiverEntitlements::canManageSeats($business, Auth::user()),
             'savedThisMonth' => WaiverEntitlements::savedThisMonth($business),
             'freeSavesLimit' => WaiverEntitlements::freeSavesLimit(),
         ])->layout('components.layouts.portal', ['title' => 'Lien Waivers']);

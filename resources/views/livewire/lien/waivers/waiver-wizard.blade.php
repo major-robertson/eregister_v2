@@ -597,6 +597,7 @@
                                         heading="Upload the signed waiver"
                                         text="PDF, JPG, or PNG"
                                         with-progress
+                                        class="cursor-pointer [&_*]:cursor-pointer! hover:border-zinc-300 hover:bg-zinc-100 dark:hover:border-white/20 dark:hover:bg-white/15"
                                     />
                                 </flux:file-upload>
                                 <flux:description>Stores the executed copy on the project and marks the waiver signed.</flux:description>

@@ -53,11 +53,12 @@
         .waiver-section-label { font-weight: bold; margin: 12px 0 4px 0; }
 
         /* Signature area */
-        .sig-table { border-collapse: collapse; width: 100%; margin-top: 22px; }
+        .sig-table { border-collapse: collapse; width: 100%; margin-top: 32px; }
         .sig-table td { padding: 12px 18px 2px 0; vertical-align: bottom; }
-        /* line-height matches height so printed values (name, company, date)
-           sit down on the rule instead of floating at the top of the box. */
-        .sig-line { border-bottom: 1px solid #000; height: 30px; line-height: 30px; }
+        /* height + padding-bottom = 30px to the rule. Printed values (name,
+           company, date) ride 3px above the border, hovering like the labeled
+           field rows above; blank lines keep the same wet-sign height. */
+        .sig-line { border-bottom: 1px solid #000; height: 27px; line-height: 27px; padding-bottom: 3px; }
         .sig-caption { font-size: 8pt; color: #333; padding-top: 2px; }
 
         .esign-signature-name { font-family: 'DejaVu Serif', serif; font-style: italic; font-size: 12pt; color: #1a1a1a; }
@@ -66,7 +67,7 @@
 
         /* Notary / witness blocks (print execution) */
         .execution-block { border: 1px solid #000; padding: 10px 12px; margin-top: 18px; font-size: 9.5pt; }
-        .execution-block .sig-line { height: 26px; }
+        .execution-block .sig-line { height: 23px; line-height: 23px; }
 
         /* Certificate of Completion (signed output only) */
         .esign-cert { page-break-before: always; font-size: 9.5pt; }
@@ -107,9 +108,9 @@
         .gw .waiver-body { margin-top: 5px; }
         .gw .waiver-body p { text-align: justify; margin: 0 0 7px 0; }
         .gw .waiver-notice { margin: 0 0 9px 0; padding: 5px 8px; line-height: 1.25; }
-        .gw .sig-table { margin-top: 12px; }
+        .gw .sig-table { margin-top: 22px; }
         .gw .sig-table td { padding: 6px 24px 2px 0; }
-        .gw .sig-line { border-bottom: 1px solid #1a1a1a; height: 18px; line-height: 18px; }
+        .gw .sig-line { border-bottom: 1px solid #1a1a1a; height: 15px; line-height: 15px; padding-bottom: 3px; }
         .gw .sig-caption { font-size: 7pt; letter-spacing: 1.5px; color: #555; text-transform: uppercase; padding-top: 3px; }
     </style>
 </head>

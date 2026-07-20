@@ -78,14 +78,61 @@ class WaiverSeatManager extends Component
         Flux::toast(text: "Seat removed from {$member->name} — the unused time credits your next invoice.", variant: 'success');
     }
 
+    /** Move a seat between members: nothing billed, the seat changes hands. */
+    public function reassign(int $fromUserId, int $toUserId): void
+    {
+        abort_unless(WaiverEntitlements::canManageSeats($this->business, Auth::user()), 403);
+
+        $from = $this->business->users()->wherePivot('user_id', $fromUserId)->first();
+        $to = $this->business->users()->wherePivot('user_id', $toUserId)->first();
+
+        if ($from === null || $to === null) {
+            return;
+        }
+
+        try {
+            app(WaiverSeats::class)->reassign($this->business, $from, $to);
+        } catch (\InvalidArgumentException $e) {
+            Flux::toast(text: $e->getMessage(), variant: 'warning');
+
+            return;
+        }
+
+        Flux::toast(text: "Seat moved from {$from->name} to {$to->name} — nothing extra is billed.", variant: 'success');
+    }
+
+    /** Cancel at period end: seats keep working until the paid time runs out. */
+    public function cancelSubscription(): void
+    {
+        abort_unless(WaiverEntitlements::canManageBilling($this->business, Auth::user()), 403);
+
+        app(WaiverSeats::class)->cancel($this->business);
+
+        Flux::toast(text: 'Subscription cancelled — seats keep working until the end of the period you already paid for.', variant: 'success');
+    }
+
+    public function resumeSubscription(): void
+    {
+        abort_unless(WaiverEntitlements::canManageBilling($this->business, Auth::user()), 403);
+
+        app(WaiverSeats::class)->resume($this->business);
+
+        Flux::toast(text: 'Subscription resumed — it will renew as usual.', variant: 'success');
+    }
+
     public function render(): View
     {
         $members = $this->business->users()->orderBy('first_name')->orderBy('last_name')->get();
+        $subscription = WaiverEntitlements::subscription($this->business);
 
         return view('livewire.lien.waivers.waiver-seat-manager', [
             'members' => $members,
             'seatLimit' => WaiverEntitlements::seatLimit($this->business),
             'assignedSeats' => WaiverEntitlements::assignedSeats($this->business),
+            'seatlessMembers' => $members->filter(fn ($member) => $member->pivot->lien_waiver_seat_at === null),
+            'onGracePeriod' => $subscription?->onGracePeriod() ?? false,
+            'endsAt' => $subscription?->ends_at,
+            'canManageBilling' => WaiverEntitlements::canManageBilling($this->business, Auth::user()),
         ])->layout('components.layouts.portal', ['title' => 'Lien Waiver Seats']);
     }
 }

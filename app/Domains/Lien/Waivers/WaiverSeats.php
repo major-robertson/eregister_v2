@@ -4,6 +4,7 @@ namespace App\Domains\Lien\Waivers;
 
 use App\Domains\Business\Models\Business;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Cashier\Subscription;
 
@@ -54,6 +55,71 @@ class WaiverSeats
         $business->users()->updateExistingPivot($user->id, ['lien_waiver_seat_at' => null]);
 
         $this->syncQuantity($business);
+    }
+
+    /**
+     * Move a seat between members directly — no quantity change, so nothing
+     * is billed or credited: the seat simply changes hands.
+     */
+    public function reassign(Business $business, User $from, User $to): void
+    {
+        if (! $business->users()->wherePivot('user_id', $to->id)->exists()) {
+            throw new \InvalidArgumentException('User is not a member of this business.');
+        }
+
+        if (! WaiverEntitlements::hasSeat($business, $from)) {
+            throw new \InvalidArgumentException('That member has no seat to reassign.');
+        }
+
+        if (WaiverEntitlements::hasSeat($business, $to)) {
+            throw new \InvalidArgumentException('That member already has a seat.');
+        }
+
+        DB::transaction(function () use ($business, $from, $to): void {
+            $business->users()->updateExistingPivot($from->id, ['lien_waiver_seat_at' => null]);
+            $business->users()->updateExistingPivot($to->id, ['lien_waiver_seat_at' => now()]);
+        });
+    }
+
+    /**
+     * Cancel at period end (Stripe's grace period): every seat keeps working
+     * until the paid-for time runs out, then access lapses. Seat assignments
+     * are kept so resuming restores everyone.
+     */
+    public function cancel(Business $business): void
+    {
+        $subscription = WaiverEntitlements::subscription($business);
+
+        if ($subscription === null || $subscription->onGracePeriod()) {
+            return;
+        }
+
+        if ($this->isStub($subscription)) {
+            // Emulate the grace period locally: active until a month out.
+            $subscription->update(['ends_at' => now()->addMonth()]);
+
+            return;
+        }
+
+        $subscription->cancel();
+    }
+
+    /** Undo a pending cancellation while the grace period is still running. */
+    public function resume(Business $business): void
+    {
+        $subscription = WaiverEntitlements::subscription($business);
+
+        if ($subscription === null || ! $subscription->onGracePeriod()) {
+            return;
+        }
+
+        if ($this->isStub($subscription)) {
+            $subscription->update(['ends_at' => null]);
+
+            return;
+        }
+
+        $subscription->resume();
     }
 
     /**

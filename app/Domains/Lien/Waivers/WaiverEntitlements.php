@@ -74,6 +74,12 @@ class WaiverEntitlements
         return in_array($role, ['owner', 'admin'], true);
     }
 
+    /** Cancelling or resuming the subscription is owner-only (mirrors BusinessPolicy::billing). */
+    public static function canManageBilling(Business $business, User $user): bool
+    {
+        return $user->businesses()->find($business->id)?->pivot->role === 'owner';
+    }
+
     /**
      * Saved waivers this calendar month (voided ones still count: the save
      * consumed the slot; see LienWaiver::savedThisMonthFor). Business-wide —

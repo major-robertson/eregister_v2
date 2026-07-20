@@ -179,3 +179,79 @@ describe('per-seat checkout (stub, keyless)', function () {
             ->assertRedirect(route('lien.waivers.seats'));
     });
 });
+
+describe('reassign, cancel, resume', function () {
+    it('reassigns a seat to another member without changing quantity or billing', function () {
+        waiverSeatsSubscribe($this->business, $this->owner);
+
+        app(WaiverSeats::class)->reassign($this->business, $this->owner, $this->member);
+
+        expect(WaiverEntitlements::hasSeat($this->business, $this->owner))->toBeFalse();
+        expect(WaiverEntitlements::hasSeat($this->business, $this->member))->toBeTrue();
+        expect(WaiverEntitlements::seatLimit($this->business->refresh()))->toBe(1);
+        expect(WaiverEntitlements::assignedSeats($this->business))->toBe(1);
+    });
+
+    it('refuses to reassign to a member who already holds a seat', function () {
+        waiverSeatsSubscribe($this->business, $this->owner, $this->member);
+
+        expect(fn () => app(WaiverSeats::class)->reassign($this->business, $this->owner, $this->member))
+            ->toThrow(InvalidArgumentException::class);
+    });
+
+    it('reassigns from the seat manager page', function () {
+        waiverSeatsSubscribe($this->business, $this->owner);
+
+        Livewire::test(WaiverSeatManager::class)
+            ->call('reassign', $this->owner->id, $this->member->id);
+
+        expect(WaiverEntitlements::hasSeat($this->business, $this->member))->toBeTrue();
+        expect(WaiverEntitlements::hasSeat($this->business, $this->owner))->toBeFalse();
+    });
+
+    it('cancelling enters a grace period where seats keep working; resume undoes it', function () {
+        waiverSeatsSubscribe($this->business, $this->owner);
+
+        Livewire::test(WaiverSeatManager::class)->call('cancelSubscription');
+
+        $subscription = $this->business->refresh()->subscription(config('lien_waivers.subscription_type'));
+        expect($subscription->onGracePeriod())->toBeTrue();
+        // Paid access continues through the grace period.
+        expect(WaiverEntitlements::hasPaidAccess($this->business, $this->owner))->toBeTrue();
+
+        Livewire::test(WaiverSeatManager::class)->call('resumeSubscription');
+
+        expect($this->business->refresh()->subscription(config('lien_waivers.subscription_type'))->onGracePeriod())->toBeFalse();
+        expect(WaiverEntitlements::hasPaidAccess($this->business, $this->owner))->toBeTrue();
+    });
+
+    it('drops everyone to the free tier once the grace period lapses, keeping seat flags for a resubscribe', function () {
+        waiverSeatsSubscribe($this->business, $this->owner);
+
+        app(WaiverSeats::class)->cancel($this->business);
+        $this->travelTo(now()->addMonths(2));
+
+        expect(WaiverEntitlements::isSubscribed($this->business->refresh()))->toBeFalse();
+        expect(WaiverEntitlements::hasPaidAccess($this->business, $this->owner))->toBeFalse();
+        // The assignment survives, so a resubscribe restores the same people.
+        expect(WaiverEntitlements::hasSeat($this->business, $this->owner))->toBeTrue();
+    });
+
+    it('lets admins manage seats but reserves cancel/resume for owners', function () {
+        waiverSeatsSubscribe($this->business, $this->owner);
+        $admin = User::factory()->create();
+        $this->business->users()->attach($admin, ['role' => 'admin']);
+
+        expect(WaiverEntitlements::canManageSeats($this->business, $admin))->toBeTrue();
+        expect(WaiverEntitlements::canManageBilling($this->business, $admin))->toBeFalse();
+        expect(WaiverEntitlements::canManageBilling($this->business, $this->owner))->toBeTrue();
+
+        $this->actingAs($admin);
+
+        Livewire::test(WaiverSeatManager::class)
+            ->call('cancelSubscription')
+            ->assertStatus(403);
+
+        expect($this->business->refresh()->subscription(config('lien_waivers.subscription_type'))->onGracePeriod())->toBeFalse();
+    });
+});

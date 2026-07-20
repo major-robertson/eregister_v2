@@ -8,6 +8,19 @@
         </x-slot:breadcrumbs>
     </x-ui.page-header>
 
+    @if ($onGracePeriod)
+        <flux:callout color="amber" icon="clock">
+            <flux:callout.heading>Subscription ends {{ $endsAt?->format('M j, Y') }}</flux:callout.heading>
+            <flux:callout.text>
+                Cancellation is scheduled — every seat keeps working until then, and nothing further
+                is billed.{{ $canManageBilling ? ' Changed your mind?' : '' }}
+            </flux:callout.text>
+            @if ($canManageBilling)
+                <flux:callout.link href="#" wire:click.prevent="resumeSubscription">Resume subscription</flux:callout.link>
+            @endif
+        </flux:callout>
+    @endif
+
     <x-ui.card>
         <x-slot:header>
             <div class="flex flex-wrap items-center justify-between gap-2">
@@ -31,7 +44,26 @@
                         <p class="truncate text-xs text-text-secondary">{{ $member->email }} &bull; {{ ucfirst($member->pivot->role) }}</p>
                     </div>
                     @if ($hasSeat)
-                        <flux:button wire:click="release({{ $member->id }})" wire:loading.attr="disabled" size="sm" variant="ghost">
+                        @if ($seatlessMembers->isNotEmpty())
+                            {{-- Reassign moves the seat without touching the bill. --}}
+                            <flux:dropdown>
+                                <flux:button size="sm" variant="ghost" icon-trailing="chevron-down">Reassign</flux:button>
+                                <flux:menu>
+                                    @foreach ($seatlessMembers as $target)
+                                        <flux:menu.item wire:click="reassign({{ $member->id }}, {{ $target->id }})">
+                                            To {{ $target->name }}
+                                        </flux:menu.item>
+                                    @endforeach
+                                </flux:menu>
+                            </flux:dropdown>
+                        @endif
+                        <flux:button
+                            wire:click="release({{ $member->id }})"
+                            wire:confirm="Remove {{ $member->name }}'s seat? The unused time credits your next invoice."
+                            wire:loading.attr="disabled"
+                            size="sm"
+                            variant="ghost"
+                        >
                             Remove seat
                         </flux:button>
                     @else
@@ -45,8 +77,30 @@
 
         <p class="mt-4 text-xs text-zinc-500">
             Adding a seat bills the prorated difference to your card on file; removing one credits the
-            unused time to your next invoice. To drop the last seat, cancel the subscription from your
-            billing settings. Team members are managed on your business settings page.
+            unused time to your next invoice; reassigning moves a seat without billing anything. Team
+            members are managed on your business settings page.
         </p>
     </x-ui.card>
+
+    @if ($canManageBilling && ! $onGracePeriod)
+        <x-ui.card class="border-red-100">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-sm font-bold text-text-primary">Cancel subscription</h3>
+                    <p class="mt-0.5 text-sm text-text-secondary">
+                        Seats keep working until the end of the period you've paid for; nothing further is billed.
+                    </p>
+                </div>
+                <flux:button
+                    wire:click="cancelSubscription"
+                    wire:confirm="Cancel the Lien Waiver Pro subscription? All seats keep working until the paid period ends, then everyone moves to the free tier."
+                    wire:loading.attr="disabled"
+                    variant="danger"
+                    size="sm"
+                >
+                    Cancel subscription
+                </flux:button>
+            </div>
+        </x-ui.card>
+    @endif
 </div>

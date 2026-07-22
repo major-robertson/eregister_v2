@@ -91,17 +91,23 @@ describe('seats service', function () {
 });
 
 describe('seat manager', function () {
-    it('lets an owner assign and release seats from the page', function () {
+    it('lets an owner confirm then assign and release seats from the page', function () {
         waiverSeatsSubscribe($this->business, $this->owner);
 
+        // Assign is confirmed through the pricing modal.
         Livewire::test(WaiverSeatManager::class)
-            ->call('assign', $this->member->id);
+            ->call('confirmAssign', $this->member->id)
+            ->assertSet('assignUserId', $this->member->id)
+            ->call('assign')
+            ->assertSet('assignUserId', null);
 
         expect(WaiverEntitlements::hasSeat($this->business, $this->member))->toBeTrue();
         expect(WaiverEntitlements::seatLimit($this->business->refresh()))->toBe(2);
 
         Livewire::test(WaiverSeatManager::class)
-            ->call('release', $this->member->id);
+            ->call('confirmRelease', $this->member->id)
+            ->assertSet('releaseUserId', $this->member->id)
+            ->call('release');
 
         expect(WaiverEntitlements::hasSeat($this->business, $this->member))->toBeFalse();
         expect(WaiverEntitlements::seatLimit($this->business->refresh()))->toBe(1);
@@ -111,16 +117,54 @@ describe('seat manager', function () {
         waiverSeatsSubscribe($this->business, $this->owner);
 
         Livewire::test(WaiverSeatManager::class)
-            ->call('release', $this->owner->id);
+            ->call('confirmRelease', $this->owner->id)
+            ->call('release');
 
         expect(WaiverEntitlements::hasSeat($this->business, $this->owner))->toBeTrue();
     });
 
-    it('is off-limits to plain members', function () {
+    it('lets a plain member manage only their own seat', function () {
         waiverSeatsSubscribe($this->business, $this->owner);
         $this->actingAs($this->member);
 
-        $this->get(route('lien.waivers.seats'))->assertForbidden();
+        // The page loads for a member (they can self-serve).
+        $this->get(route('lien.waivers.seats'))->assertOk();
+
+        // A member can add their own seat...
+        Livewire::test(WaiverSeatManager::class)
+            ->call('confirmAssign', $this->member->id)
+            ->assertSet('assignUserId', $this->member->id)
+            ->call('assign');
+        expect(WaiverEntitlements::hasSeat($this->business, $this->member))->toBeTrue();
+
+        // ...and remove it...
+        Livewire::test(WaiverSeatManager::class)
+            ->call('confirmRelease', $this->member->id)
+            ->call('release');
+        expect(WaiverEntitlements::hasSeat($this->business, $this->member))->toBeFalse();
+
+        // ...but cannot touch the owner's seat.
+        Livewire::test(WaiverSeatManager::class)
+            ->call('confirmRelease', $this->owner->id)
+            ->assertSet('releaseUserId', null)
+            ->call('confirmAssign', $this->owner->id)
+            ->assertSet('assignUserId', null);
+        expect(WaiverEntitlements::hasSeat($this->business, $this->owner))->toBeTrue();
+    });
+
+    it('forbids a member from reassigning or cancelling', function () {
+        waiverSeatsSubscribe($this->business, $this->owner);
+        $this->actingAs($this->member);
+
+        Livewire::test(WaiverSeatManager::class)
+            ->call('reassign', $this->owner->id, $this->member->id)
+            ->assertStatus(403);
+
+        Livewire::test(WaiverSeatManager::class)
+            ->call('cancelSubscription')
+            ->assertStatus(403);
+
+        expect($this->business->refresh()->subscription(config('lien_waivers.subscription_type'))->onGracePeriod())->toBeFalse();
     });
 
     it('sends an unsubscribed owner to checkout instead', function () {
@@ -237,22 +281,39 @@ describe('reassign, cancel, resume', function () {
         expect(WaiverEntitlements::hasSeat($this->business, $this->owner))->toBeTrue();
     });
 
-    it('lets admins manage seats but reserves cancel/resume for owners', function () {
+    it('lets an admin manage seats and cancel, but a plain member neither', function () {
         waiverSeatsSubscribe($this->business, $this->owner);
         $admin = User::factory()->create();
         $this->business->users()->attach($admin, ['role' => 'admin']);
 
+        // Admins can manage the whole team's seats and the subscription.
         expect(WaiverEntitlements::canManageSeats($this->business, $admin))->toBeTrue();
-        expect(WaiverEntitlements::canManageBilling($this->business, $admin))->toBeFalse();
-        expect(WaiverEntitlements::canManageBilling($this->business, $this->owner))->toBeTrue();
+        expect(WaiverEntitlements::canManageBilling($this->business, $admin))->toBeTrue();
+        // A plain member can do neither at the team level.
+        expect(WaiverEntitlements::canManageSeats($this->business, $this->member))->toBeFalse();
+        expect(WaiverEntitlements::canManageBilling($this->business, $this->member))->toBeFalse();
+        // But a member may manage their own seat.
+        expect(WaiverEntitlements::canManageSeatFor($this->business, $this->member, $this->member))->toBeTrue();
+        expect(WaiverEntitlements::canManageSeatFor($this->business, $this->member, $this->owner))->toBeFalse();
+        expect(WaiverEntitlements::canManageSeatFor($this->business, $admin, $this->member))->toBeTrue();
 
         $this->actingAs($admin);
 
-        Livewire::test(WaiverSeatManager::class)
-            ->call('cancelSubscription')
-            ->assertStatus(403);
+        Livewire::test(WaiverSeatManager::class)->call('cancelSubscription');
 
-        expect($this->business->refresh()->subscription(config('lien_waivers.subscription_type'))->onGracePeriod())->toBeFalse();
+        expect($this->business->refresh()->subscription(config('lien_waivers.subscription_type'))->onGracePeriod())->toBeTrue();
+    });
+
+    it('exposes the per-seat price for the confirm dialog', function () {
+        waiverSeatsSubscribe($this->business, $this->owner);
+
+        $price = WaiverEntitlements::perSeatPrice($this->business);
+
+        // Stub subscriptions fall back to the monthly catalog price.
+        expect($price['amount_cents'])->toBe(9900);
+        expect($price['interval'])->toBe('month');
+        expect($price['formatted'])->toBe('$99');
+        expect($price['per_label'])->toBe('mo');
     });
 });
 

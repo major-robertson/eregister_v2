@@ -66,7 +66,11 @@ class WaiverEntitlements
         return static::isSubscribed($business) && static::hasSeat($business, $user);
     }
 
-    /** Owners and admins manage seats (mirrors BusinessPolicy::manageMembers). */
+    /**
+     * Owners and admins manage the whole team's seats (assign/remove anyone,
+     * reassign). Members can only manage their own seat — see canManageSeatFor.
+     * Mirrors BusinessPolicy::manageMembers.
+     */
     public static function canManageSeats(Business $business, User $user): bool
     {
         $role = $user->businesses()->find($business->id)?->pivot->role;
@@ -74,10 +78,50 @@ class WaiverEntitlements
         return in_array($role, ['owner', 'admin'], true);
     }
 
-    /** Cancelling or resuming the subscription is owner-only (mirrors BusinessPolicy::billing). */
+    /**
+     * Whether $user may add/remove the seat of $target: owners and admins for
+     * anyone, everyone else only for themselves.
+     */
+    public static function canManageSeatFor(Business $business, User $user, User $target): bool
+    {
+        return $user->id === $target->id || static::canManageSeats($business, $user);
+    }
+
+    /** Cancelling/resuming the whole subscription is an owner/admin action. */
     public static function canManageBilling(Business $business, User $user): bool
     {
-        return $user->businesses()->find($business->id)?->pivot->role === 'owner';
+        return static::canManageSeats($business, $user);
+    }
+
+    /**
+     * The per-seat price of the active subscription (for confirm dialogs),
+     * resolved from the subscription's Stripe price; falls back to the monthly
+     * catalog price for stubs or an unmatched price.
+     *
+     * @return array{amount_cents: int, interval: string, per_label: string, formatted: string}
+     */
+    public static function perSeatPrice(Business $business): array
+    {
+        $priceId = static::subscription($business)?->stripe_price;
+
+        $prices = \App\Models\Price::query()
+            ->where('product_family', 'lien')
+            ->where('product_key', 'lien_waiver')
+            ->where('billing_type', 'subscription')
+            ->get();
+
+        $match = $prices->first(fn ($price) => $price->stripePriceId() === $priceId)
+            ?? $prices->firstWhere('interval', 'month');
+
+        $cents = (int) ($match->amount_cents ?? config('lien_waivers.prices.monthly.amount_cents'));
+        $interval = $match->interval ?? 'month';
+
+        return [
+            'amount_cents' => $cents,
+            'interval' => $interval,
+            'per_label' => $interval === 'year' ? 'yr' : 'mo',
+            'formatted' => '$'.number_format($cents / 100),
+        ];
     }
 
     /**

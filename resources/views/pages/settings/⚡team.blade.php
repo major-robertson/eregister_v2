@@ -219,6 +219,23 @@ new #[Title('Team')] class extends Component {
                 </flux:table>
             </div>
 
+            @if (\App\Domains\Lien\Waivers\WaiverEntitlements::isSubscribed($this->business))
+                <flux:separator />
+
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <flux:heading size="sm">{{ __('Lien Waiver seats') }}</flux:heading>
+                        <flux:text class="mt-1 text-sm text-zinc-500">
+                            {{ \App\Domains\Lien\Waivers\WaiverEntitlements::assignedSeats($this->business) }}
+                            of your team hold a paid seat. Assign, remove, or reassign seats and manage the subscription.
+                        </flux:text>
+                    </div>
+                    <flux:button href="{{ route('lien.waivers.seats') }}" variant="ghost" icon="ticket" wire:navigate>
+                        {{ __('Manage seats') }}
+                    </flux:button>
+                </div>
+            @endif
+
             @if ($this->pendingInvitations()->isNotEmpty())
                 <div class="space-y-3">
                     <flux:heading size="sm">{{ __('Pending invitations') }}</flux:heading>

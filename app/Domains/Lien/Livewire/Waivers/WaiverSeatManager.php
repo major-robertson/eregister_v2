@@ -5,21 +5,33 @@ namespace App\Domains\Lien\Livewire\Waivers;
 use App\Domains\Business\Models\Business;
 use App\Domains\Lien\Waivers\WaiverEntitlements;
 use App\Domains\Lien\Waivers\WaiverSeats;
+use App\Models\User;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 /**
- * Seat management for the per-seat lien waiver subscription. Owners and
- * admins toggle seats for team members; every change syncs the Stripe
- * subscription quantity with proration (a new seat is charged pro rata
- * immediately, a released seat credits the next invoice). Quantity always
- * equals assigned seats — there is no spare-seat pool.
+ * Seat management for the per-seat lien waiver subscription.
+ *
+ * Owners and admins manage the whole team's seats (assign/remove anyone,
+ * reassign) and the subscription itself (cancel/resume). Any other member can
+ * add or remove only their OWN seat. Every quantity change syncs the Stripe
+ * subscription with proration; quantity always equals assigned seats.
+ *
+ * Assign, remove, and cancel are confirmed through modals (the assign modal
+ * spells out the prorated per-seat charge) rather than native prompts.
  */
 class WaiverSeatManager extends Component
 {
     public Business $business;
+
+    /** Pending confirmations (the modal targets), null when closed. */
+    public ?int $assignUserId = null;
+
+    public ?int $releaseUserId = null;
+
+    public bool $showCancelModal = false;
 
     public function mount(): void
     {
@@ -31,8 +43,10 @@ class WaiverSeatManager extends Component
             return;
         }
 
-        abort_unless(WaiverEntitlements::canManageSeats($business, Auth::user()), 403);
+        abort_unless($business->users()->wherePivot('user_id', Auth::id())->exists(), 403);
 
+        // No subscription yet: buying a seat is the checkout's job. Members
+        // land there too — the checkout lets them buy their own seat.
         if (! WaiverEntitlements::isSubscribed($business)) {
             $this->redirect(route('lien.waivers.subscribe'));
 
@@ -42,28 +56,61 @@ class WaiverSeatManager extends Component
         $this->business = $business;
     }
 
-    public function assign(int $userId): void
+    private function member(int $userId): ?User
     {
-        abort_unless(WaiverEntitlements::canManageSeats($this->business, Auth::user()), 403);
+        return $this->business->users()->wherePivot('user_id', $userId)->first();
+    }
 
-        $member = $this->business->users()->wherePivot('user_id', $userId)->first();
+    // ------------------------------------------------------------------
+    // Assign (confirmed, with pricing)
+    // ------------------------------------------------------------------
 
-        if ($member === null) {
+    public function confirmAssign(int $userId): void
+    {
+        $member = $this->member($userId);
+
+        if ($member && WaiverEntitlements::canManageSeatFor($this->business, Auth::user(), $member)) {
+            $this->assignUserId = $userId;
+        }
+    }
+
+    public function assign(): void
+    {
+        $member = $this->assignUserId ? $this->member($this->assignUserId) : null;
+        $this->assignUserId = null;
+
+        if ($member === null || ! WaiverEntitlements::canManageSeatFor($this->business, Auth::user(), $member)) {
+            abort_unless($member === null, 403);
+
             return;
         }
 
         app(WaiverSeats::class)->assign($this->business, $member);
 
-        Flux::toast(text: "Seat assigned to {$member->name} — the added seat is prorated on your next invoice.", variant: 'success');
+        Flux::toast(text: "Seat added for {$member->name} — prorated on your next invoice.", variant: 'success');
     }
 
-    public function release(int $userId): void
+    // ------------------------------------------------------------------
+    // Remove (confirmed)
+    // ------------------------------------------------------------------
+
+    public function confirmRelease(int $userId): void
     {
-        abort_unless(WaiverEntitlements::canManageSeats($this->business, Auth::user()), 403);
+        $member = $this->member($userId);
 
-        $member = $this->business->users()->wherePivot('user_id', $userId)->first();
+        if ($member && WaiverEntitlements::canManageSeatFor($this->business, Auth::user(), $member)) {
+            $this->releaseUserId = $userId;
+        }
+    }
 
-        if ($member === null) {
+    public function release(): void
+    {
+        $member = $this->releaseUserId ? $this->member($this->releaseUserId) : null;
+        $this->releaseUserId = null;
+
+        if ($member === null || ! WaiverEntitlements::canManageSeatFor($this->business, Auth::user(), $member)) {
+            abort_unless($member === null, 403);
+
             return;
         }
 
@@ -78,13 +125,16 @@ class WaiverSeatManager extends Component
         Flux::toast(text: "Seat removed from {$member->name} — the unused time credits your next invoice.", variant: 'success');
     }
 
-    /** Move a seat between members: nothing billed, the seat changes hands. */
+    // ------------------------------------------------------------------
+    // Reassign (admin/owner only — moves a seat, nothing billed)
+    // ------------------------------------------------------------------
+
     public function reassign(int $fromUserId, int $toUserId): void
     {
         abort_unless(WaiverEntitlements::canManageSeats($this->business, Auth::user()), 403);
 
-        $from = $this->business->users()->wherePivot('user_id', $fromUserId)->first();
-        $to = $this->business->users()->wherePivot('user_id', $toUserId)->first();
+        $from = $this->member($fromUserId);
+        $to = $this->member($toUserId);
 
         if ($from === null || $to === null) {
             return;
@@ -101,9 +151,14 @@ class WaiverSeatManager extends Component
         Flux::toast(text: "Seat moved from {$from->name} to {$to->name} — nothing extra is billed.", variant: 'success');
     }
 
-    /** Cancel at period end: seats keep working until the paid time runs out. */
+    // ------------------------------------------------------------------
+    // Cancel / resume (admin/owner only)
+    // ------------------------------------------------------------------
+
     public function cancelSubscription(): void
     {
+        $this->showCancelModal = false;
+
         abort_unless(WaiverEntitlements::canManageBilling($this->business, Auth::user()), 403);
 
         app(WaiverSeats::class)->cancel($this->business);
@@ -124,15 +179,19 @@ class WaiverSeatManager extends Component
     {
         $members = $this->business->users()->orderBy('first_name')->orderBy('last_name')->get();
         $subscription = WaiverEntitlements::subscription($this->business);
+        $canManageSeats = WaiverEntitlements::canManageSeats($this->business, Auth::user());
 
         return view('livewire.lien.waivers.waiver-seat-manager', [
             'members' => $members,
-            'seatLimit' => WaiverEntitlements::seatLimit($this->business),
             'assignedSeats' => WaiverEntitlements::assignedSeats($this->business),
             'seatlessMembers' => $members->filter(fn ($member) => $member->pivot->lien_waiver_seat_at === null),
             'onGracePeriod' => $subscription?->onGracePeriod() ?? false,
             'endsAt' => $subscription?->ends_at,
+            'canManageSeats' => $canManageSeats,
             'canManageBilling' => WaiverEntitlements::canManageBilling($this->business, Auth::user()),
+            'perSeatPrice' => WaiverEntitlements::perSeatPrice($this->business),
+            'assignTarget' => $this->assignUserId ? $members->firstWhere('id', $this->assignUserId) : null,
+            'releaseTarget' => $this->releaseUserId ? $members->firstWhere('id', $this->releaseUserId) : null,
         ])->layout('components.layouts.portal', ['title' => 'Lien Waiver Seats']);
     }
 }

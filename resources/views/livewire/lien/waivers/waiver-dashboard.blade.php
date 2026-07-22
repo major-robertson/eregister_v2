@@ -83,8 +83,7 @@
                     </div>
                     <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
                         @if ($businessSubscribed)
-                            Your team has Lien Waiver Pro, but you don't have a seat yet —
-                            {{ $canManageSeats ? 'assign yourself one to go unlimited.' : 'ask an owner or admin to assign you one.' }}
+                            Your team has Lien Waiver Pro, but you don't have a seat yet — grab one to go unlimited.
                         @else
                             Every free waiver includes downloads, e-sign, and signed storage. Upgrade for unlimited waivers per seat.
                         @endif
@@ -95,11 +94,12 @@
                     </div>
                 </div>
                 <div class="flex shrink-0 items-center gap-2">
-                    @if ($businessSubscribed && $canManageSeats)
+                    @if ($businessSubscribed)
+                        {{-- Members self-serve their own seat on the seat page. --}}
                         <flux:button href="{{ route('lien.waivers.seats') }}" variant="primary">
-                            Manage seats
+                            Get a seat
                         </flux:button>
-                    @elseif (! $businessSubscribed)
+                    @else
                         <flux:modal.trigger name="waiver-upsell">
                             <flux:button variant="ghost" size="sm">See what's included</flux:button>
                         </flux:modal.trigger>
@@ -114,10 +114,10 @@
         <flux:modal name="waiver-upsell" class="max-w-md">
             <x-lien.waiver-upsell heading="Upgrade to Waiver Pro" />
         </flux:modal>
-    @elseif ($canManageSeats)
+    @elseif ($businessSubscribed)
         <div class="flex justify-end">
             <flux:button href="{{ route('lien.waivers.seats') }}" variant="ghost" size="sm" icon="users">
-                Manage seats
+                {{ $canManageSeats ? 'Manage seats' : 'Manage my seat' }}
             </flux:button>
         </div>
     @endif

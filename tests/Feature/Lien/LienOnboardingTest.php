@@ -128,7 +128,7 @@ it('can view profile complete page', function () {
 it('profile complete page redirects to project creation', function () {
     Livewire::test(LienProfileComplete::class)
         ->assertSee('Great, your profile has now been set up.')
-        ->assertSee("Let's add the project you need to track or file a lien on.", escape: false)
+        ->assertSee("Let's add your first project", escape: false)
         ->call('proceed')
         ->assertRedirect(route('lien.projects.create'));
 });

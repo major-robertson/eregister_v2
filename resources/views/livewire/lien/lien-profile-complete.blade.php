@@ -12,7 +12,7 @@
         Great, your profile has now been set up.
     </h1>
     <p class="mt-4 text-lg text-text-secondary">
-        Let's add the project you need to track or file a lien on.
+        Let's add your first project — the job you need to track deadlines, send lien waivers, or file a lien on.
     </p>
 </div>
 

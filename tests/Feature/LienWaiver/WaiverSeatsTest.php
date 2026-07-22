@@ -178,11 +178,22 @@ describe('per-seat checkout (stub, keyless)', function () {
         config(['cashier.secret' => '']);
     });
 
-    it('activates the selected seats and sets the subscription quantity', function () {
+    it('confirming the selection reloads with ?seats=, and that mount activates them', function () {
+        // Phase 1: pick seats; continue is a FULL redirect (the Stripe element
+        // must initialize at first paint, so payment is set up during mount).
         Livewire::test(WaiverSubscriptionCheckout::class)
             ->assertSet('canPickSeats', true)
             ->set('seatUserIds', [$this->owner->id, $this->member->id])
             ->call('proceedToPayment')
+            ->assertRedirect(route('lien.waivers.subscribe', [
+                'interval' => 'monthly',
+                'seats' => $this->owner->id.','.$this->member->id,
+            ]));
+
+        // Phase 2: arriving with ?seats= initializes payment in mount (stub
+        // path completes immediately).
+        Livewire::withQueryParams(['interval' => 'monthly', 'seats' => $this->owner->id.','.$this->member->id])
+            ->test(WaiverSubscriptionCheckout::class)
             ->assertRedirect(route('lien.waivers.payment-confirmation'));
 
         $subscription = WaiverEntitlements::subscription($this->business->refresh());
@@ -192,13 +203,12 @@ describe('per-seat checkout (stub, keyless)', function () {
         expect(WaiverEntitlements::hasPaidAccess($this->business, $this->member))->toBeTrue();
     });
 
-    it('lets a plain member buy exactly their own seat, whatever they select', function () {
+    it('lets a plain member buy exactly their own seat, whatever ?seats= claims', function () {
         $this->actingAs($this->member);
 
-        Livewire::test(WaiverSubscriptionCheckout::class)
+        Livewire::withQueryParams(['interval' => 'monthly', 'seats' => $this->owner->id.','.$this->member->id])
+            ->test(WaiverSubscriptionCheckout::class)
             ->assertSet('canPickSeats', false)
-            ->set('seatUserIds', [$this->owner->id, $this->member->id])
-            ->call('proceedToPayment')
             ->assertRedirect(route('lien.waivers.payment-confirmation'));
 
         $subscription = WaiverEntitlements::subscription($this->business->refresh());

@@ -36,6 +36,16 @@ class WaiverSubscriptionCheckout extends Component
     #[Url]
     public string $interval = 'monthly';
 
+    /**
+     * Comma-separated member ids from the ?seats= handoff. Like the interval
+     * toggle, confirming the seat selection is a FULL redirect back here: the
+     * Stripe payment element captures its client secret at first paint
+     * (Alpine x-data args in an inline script), so it cannot be morphed in
+     * later — payment must be initialized during mount.
+     */
+    #[Url]
+    public string $seats = '';
+
     /** Per-seat price for the chosen interval. */
     public int $unitAmountCents = 0;
 
@@ -90,17 +100,49 @@ class WaiverSubscriptionCheckout extends Component
         $this->unitAmountCents = $price->amount_cents
             ?? config("lien_waivers.prices.{$this->interval}.amount_cents");
         $this->amountCents = $this->unitAmountCents;
+
+        // A confirmed ?seats= selection means phase 2: initialize the payment
+        // NOW so the Stripe element renders ready on this first paint.
+        $selected = $this->validSelection();
+
+        if ($this->seats !== '' && $selected !== []) {
+            $this->seatUserIds = $selected;
+            $this->amountCents = $this->unitAmountCents * count($selected);
+            $this->initializePayment($paymentService, $price);
+        }
     }
 
-    /** Phase 2: lock the seat selection and initialize the Stripe payment. */
-    public function proceedToPayment(WaiverPaymentService $paymentService): void
+    /**
+     * The ?seats= (or picked) selection filtered to real members; members
+     * without seat-management rights buy exactly their own seat.
+     *
+     * @return list<int>
+     */
+    private function validSelection(): array
     {
+        if (! $this->canPickSeats) {
+            return [Auth::id()];
+        }
+
+        $requested = $this->seats !== ''
+            ? array_map('intval', explode(',', $this->seats))
+            : array_map('intval', $this->seatUserIds);
+
         $memberIds = $this->business->users()->pluck('users.id')->map(fn ($id) => (int) $id)->all();
 
-        // Members without seat-management rights buy exactly their own seat.
-        $selected = $this->canPickSeats
-            ? array_values(array_intersect(array_map('intval', $this->seatUserIds), $memberIds))
-            : [Auth::id()];
+        return array_values(array_intersect($requested, $memberIds));
+    }
+
+    /**
+     * Phase 1 -> 2: lock the seat selection and reload with ?seats= so mount
+     * initializes the payment (full redirect — see the $seats docblock).
+     */
+    public function proceedToPayment(): void
+    {
+        // The live checkbox state is authoritative here, not a stale ?seats=.
+        $this->seats = '';
+
+        $selected = $this->validSelection();
 
         if ($selected === []) {
             $this->addError('seatUserIds', 'Pick at least one team member to cover.');
@@ -108,10 +150,10 @@ class WaiverSubscriptionCheckout extends Component
             return;
         }
 
-        $this->seatUserIds = $selected;
-        $this->amountCents = $this->unitAmountCents * count($selected);
-
-        $this->initializePayment($paymentService, $paymentService->price($this->interval));
+        $this->redirect(route('lien.waivers.subscribe', [
+            'interval' => $this->interval,
+            'seats' => implode(',', $selected),
+        ]));
     }
 
     protected function initializePayment(WaiverPaymentService $paymentService, Price $price): void

@@ -184,13 +184,13 @@
                 <h3 class="text-lg font-semibold text-zinc-900">Pro</h3>
                 <div class="mt-4 flex items-baseline gap-1">
                     <span class="text-5xl font-bold tracking-tight text-zinc-900">${{ $monthlyPrice }}</span>
-                    <span class="text-zinc-500">/month</span>
+                    <span class="text-zinc-500">/person/month</span>
                 </div>
-                <p class="mt-3 text-sm text-zinc-600">Or ${{ $yearlyPrice }}/year, 2 months free. For teams exchanging waivers on every draw.</p>
+                <p class="mt-3 text-sm text-zinc-600">Or ${{ $yearlyPrice }}/person/year, 2 months free. Add a seat for each teammate who needs unlimited waivers.</p>
                 <ul class="mt-6 flex-1 space-y-3 text-zinc-600">
                     <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Everything in Free</li>
                     <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Unlimited waivers every month, no cap</li>
-                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> One flat price for your whole team</li>
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Per-seat pricing — pay only for teammates who need it</li>
                     <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> No per-waiver or per-signature charges</li>
                 </ul>
                 <a href="{{ route('register') }}" class="group mt-8 inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-zinc-800">

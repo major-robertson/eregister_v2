@@ -4,7 +4,7 @@
 
 @section('meta')
 <link rel="canonical" href="{{ route('liens.lien-waivers.pricing') }}" />
-<meta name="description" content="Lien waiver pricing: generate and download waivers for all 50 states free. Upgrade for e-signature, automatic reminders, and signed-copy storage at $99/month or $990/year.">
+<meta name="description" content="Lien waiver pricing: generate and download waivers for all 50 states free. Upgrade for e-signature, automatic reminders, and signed-copy storage at $99 per person/month or $990 per person/year.">
 @endsection
 
 @php
@@ -42,7 +42,7 @@
 <section class="bg-white py-24">
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div class="text-center">
-            <h2 class="text-3xl font-bold text-zinc-900">Two plans, one flat price to upgrade</h2>
+            <h2 class="text-3xl font-bold text-zinc-900">Two plans, simple per-person pricing</h2>
             <p class="mx-auto mt-4 max-w-2xl text-lg text-zinc-600">No per-waiver fees and no hourly billing. Start free and upgrade to Pro whenever you're ready to automate.</p>
         </div>
         <div class="mx-auto mt-12 grid max-w-4xl gap-8 lg:grid-cols-2">
@@ -70,13 +70,13 @@
                 <h3 class="text-lg font-semibold text-zinc-900">Pro</h3>
                 <div class="mt-4 flex items-baseline gap-1">
                     <span class="text-5xl font-bold tracking-tight text-zinc-900">${{ $monthlyPrice }}</span>
-                    <span class="text-zinc-500">/month</span>
+                    <span class="text-zinc-500">/person/month</span>
                 </div>
-                <p class="mt-3 text-sm text-zinc-600">Or ${{ $yearlyPrice }}/year, two months free. For teams exchanging waivers on every draw.</p>
+                <p class="mt-3 text-sm text-zinc-600">Or ${{ $yearlyPrice }}/person/year, two months free. Add a seat for each teammate who needs unlimited waivers.</p>
                 <ul class="mt-6 flex-1 space-y-3 text-zinc-600">
                     <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Everything in Free</li>
                     <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Unlimited waivers every month, no cap</li>
-                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> One flat price for your whole team</li>
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Per-seat pricing — pay only for teammates who need it</li>
                     <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> No per-waiver or per-signature charges</li>
                 </ul>
                 <a href="{{ route('register') }}" class="group mt-8 inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-zinc-800">
@@ -87,7 +87,7 @@
                 </a>
             </div>
         </div>
-        <p class="mx-auto mt-8 max-w-2xl text-center text-sm text-zinc-500">Pro is a single flat subscription for your whole team, with no per-waiver or per-signature charges. Cancel anytime.</p>
+        <p class="mx-auto mt-8 max-w-2xl text-center text-sm text-zinc-500">Pro is billed per person — one subscription for your business, with a seat for each teammate who needs unlimited waivers. Add or remove seats anytime, prorated. No per-waiver or per-signature charges.</p>
     </div>
 </section>
 
@@ -132,7 +132,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </summary>
-                <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">No. Pro is one flat ${{ $monthlyPrice }}/month (or ${{ $yearlyPrice }}/year) for your whole team, with unlimited waivers, unlimited e-signature requests, and unlimited storage. There are no per-document or per-signature fees to worry about.</div>
+                <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">No. Pro is ${{ $monthlyPrice }}/person/month (or ${{ $yearlyPrice }}/person/year) — one seat per teammate who needs it, each with unlimited waivers, unlimited e-signature requests, and unlimited storage. There are no per-document or per-signature fees to worry about.</div>
             </details>
             <details class="group rounded-xl border border-zinc-200 bg-white">
                 <summary class="flex cursor-pointer items-center justify-between p-5 font-medium text-zinc-900 [&::-webkit-details-marker]:hidden">
@@ -141,7 +141,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </summary>
-                <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">The annual plan is ${{ $yearlyPrice }}/year, which works out to two months free compared with paying monthly. You can switch between monthly and annual at checkout.</div>
+                <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">The annual plan is ${{ $yearlyPrice }}/person/year, which works out to two months free per seat compared with paying monthly. You can switch between monthly and annual at checkout.</div>
             </details>
             <details class="group rounded-xl border border-zinc-200 bg-white">
                 <summary class="flex cursor-pointer items-center justify-between p-5 font-medium text-zinc-900 [&::-webkit-details-marker]:hidden">

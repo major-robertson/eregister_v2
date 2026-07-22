@@ -1,5 +1,14 @@
 @if (($trackConversion ?? false) && $payment)
     @push('scripts')
+    <!-- Google Ads Conversion Tracking (annual subscription) -->
+    <script data-navigate-once>
+        gtag('event', 'conversion', {
+            send_to: "AW-984288380/_vCOCIitwbgZEPyYrNUD",
+            value: {{ number_format($payment->amount_cents / 100, 2, '.', '') }},
+            currency: "USD",
+            transaction_id: "{{ $payment->id }}"
+        });
+    </script>
     <!-- Reddit Pixel Conversion (annual subscription) -->
     <script data-navigate-once>
         rdt('track', 'Purchase', {

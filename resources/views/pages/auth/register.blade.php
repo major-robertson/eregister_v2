@@ -36,11 +36,13 @@
                 :placeholder="__('Last name')"
             />
 
-            <!-- Email Address -->
+            <!-- Email Address: prefilled from a team invitation or the
+                 ?email= handoff (e.g. the guest signer's create-account CTA,
+                 which claims their signed documents by matching email). -->
             <flux:input
                 name="email"
                 :label="__('Email address')"
-                :value="old('email', ($invitation ?? null)?->email)"
+                :value="old('email', ($invitation ?? null)?->email ?? request('email'))"
                 type="email"
                 required
                 autocomplete="email"

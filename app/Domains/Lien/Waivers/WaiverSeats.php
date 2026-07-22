@@ -4,8 +4,10 @@ namespace App\Domains\Lien\Waivers;
 
 use App\Domains\Business\Models\Business;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Laravel\Cashier\Cashier;
 use Laravel\Cashier\Subscription;
 
 /**
@@ -101,7 +103,22 @@ class WaiverSeats
             return;
         }
 
-        $subscription->cancel();
+        // Raw Stripe, not Cashier's cancel(): our subscriptions are
+        // Business-owned, and Cashier's owner relationship doesn't resolve to
+        // Business, so cancel() blows up on owner->stripe(). Flag the Stripe
+        // subscription to cancel at period end and mirror that end locally so
+        // onGracePeriod()/valid() report the grace window.
+        $stripeSubscription = $this->pushStripeCancelFlag($subscription, true);
+
+        // cancel_at is set when cancel_at_period_end flips true; recent Stripe
+        // API versions moved current_period_end onto the item, so fall back
+        // through both before defaulting to a month out.
+        $endsAt = $stripeSubscription->cancel_at
+            ?? ($stripeSubscription->items->data[0]->current_period_end ?? null);
+
+        $subscription->update([
+            'ends_at' => $endsAt ? Carbon::createFromTimestamp($endsAt) : now()->addMonth(),
+        ]);
     }
 
     /** Undo a pending cancellation while the grace period is still running. */
@@ -119,7 +136,17 @@ class WaiverSeats
             return;
         }
 
-        $subscription->resume();
+        $this->pushStripeCancelFlag($subscription, false);
+
+        $subscription->update(['ends_at' => null]);
+    }
+
+    /** Set cancel_at_period_end on the Stripe subscription (overridable seam). */
+    protected function pushStripeCancelFlag(Subscription $subscription, bool $cancelAtPeriodEnd): \Stripe\Subscription
+    {
+        return Cashier::stripe()->subscriptions->update($subscription->stripe_id, [
+            'cancel_at_period_end' => $cancelAtPeriodEnd,
+        ]);
     }
 
     /**
@@ -149,16 +176,40 @@ class WaiverSeats
 
         $quantity = max(1, WaiverEntitlements::assignedSeats($business));
 
+        if ((int) $subscription->quantity === $quantity) {
+            return;
+        }
+
         if ($this->isStub($subscription)) {
             $subscription->update(['quantity' => $quantity]);
 
             return;
         }
 
-        if ((int) $subscription->quantity !== $quantity) {
-            // Cashier prorates by default and syncs the local quantity column.
-            $subscription->updateQuantity($quantity);
-        }
+        $this->pushStripeQuantity($subscription, $quantity);
+
+        $subscription->update(['quantity' => $quantity]);
+    }
+
+    /**
+     * Set the subscription item's quantity directly via the Stripe API,
+     * prorating. The subscription is created via the raw Stripe API (not
+     * Cashier's newSubscription), so Cashier's item bookkeeping is incomplete
+     * and its updateQuantity() throws "stripe() on null" — never route seat
+     * changes back through it.
+     */
+    protected function pushStripeQuantity(Subscription $subscription, int $quantity): void
+    {
+        $stripe = Cashier::stripe();
+        $stripeSubscription = $stripe->subscriptions->retrieve($subscription->stripe_id, [
+            'expand' => ['items'],
+        ]);
+        $itemId = $stripeSubscription->items->data[0]->id;
+
+        $stripe->subscriptions->update($subscription->stripe_id, [
+            'items' => [['id' => $itemId, 'quantity' => $quantity]],
+            'proration_behavior' => 'create_prorations',
+        ]);
     }
 
     private function isStub(Subscription $subscription): bool

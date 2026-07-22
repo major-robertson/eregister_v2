@@ -255,3 +255,106 @@ describe('reassign, cancel, resume', function () {
         expect($this->business->refresh()->subscription(config('lien_waivers.subscription_type'))->onGracePeriod())->toBeFalse();
     });
 });
+
+describe('stripe quantity sync (non-stub)', function () {
+    it('syncs a real subscription quantity via the Stripe API, not Cashier updateQuantity', function () {
+        // A real (non-stub) subscription, as the checkout creates it: quantity
+        // starts at 2, both members seated.
+        $this->business->subscriptions()->create([
+            'type' => config('lien_waivers.subscription_type'),
+            'stripe_id' => 'sub_fake123',
+            'stripe_status' => 'active',
+            'stripe_price' => 'price_fake',
+            'quantity' => 2,
+        ]);
+        $this->business->users()->updateExistingPivot($this->owner->id, ['lien_waiver_seat_at' => now()]);
+        $this->business->users()->updateExistingPivot($this->member->id, ['lien_waiver_seat_at' => now()]);
+
+        // Spy on the Stripe seam: releasing a seat must push quantity 1
+        // through pushStripeQuantity (the raw API), never Cashier's broken
+        // updateQuantity(). Binding a partial mock guards the regression.
+        $seats = Mockery::mock(WaiverSeats::class)->makePartial()->shouldAllowMockingProtectedMethods();
+        $seats->shouldReceive('pushStripeQuantity')
+            ->once()
+            ->with(Mockery::type(Laravel\Cashier\Subscription::class), 1);
+
+        $seats->release($this->business, $this->member);
+
+        // Local column mirrors the new quantity and the seat is gone.
+        expect(WaiverEntitlements::assignedSeats($this->business))->toBe(1);
+        expect((int) WaiverEntitlements::subscription($this->business->refresh())->quantity)->toBe(1);
+        expect(WaiverEntitlements::hasSeat($this->business, $this->member))->toBeFalse();
+    });
+
+    it('does not touch Stripe when the quantity is unchanged (reassign)', function () {
+        $this->business->subscriptions()->create([
+            'type' => config('lien_waivers.subscription_type'),
+            'stripe_id' => 'sub_fake456',
+            'stripe_status' => 'active',
+            'stripe_price' => 'price_fake',
+            'quantity' => 1,
+        ]);
+        $this->business->users()->updateExistingPivot($this->owner->id, ['lien_waiver_seat_at' => now()]);
+
+        $seats = Mockery::mock(WaiverSeats::class)->makePartial()->shouldAllowMockingProtectedMethods();
+        $seats->shouldNotReceive('pushStripeQuantity');
+
+        // Reassign moves the seat: count stays 1, so no Stripe call at all.
+        $seats->reassign($this->business, $this->owner, $this->member);
+
+        expect(WaiverEntitlements::hasSeat($this->business, $this->member))->toBeTrue();
+        expect(WaiverEntitlements::hasSeat($this->business, $this->owner))->toBeFalse();
+    });
+});
+
+describe('cancel/resume (non-stub)', function () {
+    it('cancels a real subscription via the Stripe cancel flag, not Cashier cancel()', function () {
+        $this->business->subscriptions()->create([
+            'type' => config('lien_waivers.subscription_type'),
+            'stripe_id' => 'sub_fakeCancel',
+            'stripe_status' => 'active',
+            'stripe_price' => 'price_fake',
+            'quantity' => 1,
+        ]);
+        $this->business->users()->updateExistingPivot($this->owner->id, ['lien_waiver_seat_at' => now()]);
+
+        $endsAt = now()->addDays(20)->getTimestamp();
+        $stripeSub = Stripe\Subscription::constructFrom(['cancel_at' => $endsAt]);
+
+        $seats = Mockery::mock(WaiverSeats::class)->makePartial()->shouldAllowMockingProtectedMethods();
+        $seats->shouldReceive('pushStripeCancelFlag')->once()
+            ->with(Mockery::type(Laravel\Cashier\Subscription::class), true)
+            ->andReturn($stripeSub);
+
+        $seats->cancel($this->business);
+
+        $sub = WaiverEntitlements::subscription($this->business->refresh());
+        expect($sub->onGracePeriod())->toBeTrue();
+        expect($sub->ends_at->getTimestamp())->toBe($endsAt);
+        // Access continues through the grace period.
+        expect(WaiverEntitlements::hasPaidAccess($this->business, $this->owner))->toBeTrue();
+    });
+
+    it('resumes a grace-period subscription via the Stripe flag and clears ends_at', function () {
+        $this->business->subscriptions()->create([
+            'type' => config('lien_waivers.subscription_type'),
+            'stripe_id' => 'sub_fakeResume',
+            'stripe_status' => 'active',
+            'stripe_price' => 'price_fake',
+            'quantity' => 1,
+            'ends_at' => now()->addDays(10),
+        ]);
+        $this->business->users()->updateExistingPivot($this->owner->id, ['lien_waiver_seat_at' => now()]);
+
+        $seats = Mockery::mock(WaiverSeats::class)->makePartial()->shouldAllowMockingProtectedMethods();
+        $seats->shouldReceive('pushStripeCancelFlag')->once()
+            ->with(Mockery::type(Laravel\Cashier\Subscription::class), false)
+            ->andReturn(Stripe\Subscription::constructFrom([]));
+
+        $seats->resume($this->business);
+
+        $sub = $this->business->refresh()->subscription(config('lien_waivers.subscription_type'));
+        expect($sub->ends_at)->toBeNull();
+        expect($sub->onGracePeriod())->toBeFalse();
+    });
+});

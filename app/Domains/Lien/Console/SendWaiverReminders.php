@@ -34,6 +34,9 @@ class SendWaiverReminders extends Command
             ->where('document_signing_policy_key', LienWaiverSignable::DOCUMENT_TYPE)
             ->where('status', SignatureRequestStatus::AwaitingSignature)
             ->whereNotNull('invited_at')
+            // A bounced invitation means the address is dead: Postmark will
+            // 406 every reminder too. The owner is prompted to fix & re-send.
+            ->whereNull('invitation_bounced_at')
             ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', Carbon::now()))
             ->get();
 

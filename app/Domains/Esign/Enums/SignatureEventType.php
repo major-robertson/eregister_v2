@@ -11,6 +11,8 @@ enum SignatureEventType: string
     case DocumentCreated = 'document_created';
     case DocumentLocked = 'document_locked';
     case SignerInvited = 'signer_invited';
+    // The invitation email hard-bounced or was spam-flagged (via Postmark).
+    case InvitationBounced = 'invitation_bounced';
     case SignerOpened = 'signer_opened';
     // Guest signers only: control of the invited email proven via one-time code.
     case SignerIdentityVerified = 'signer_identity_verified';
@@ -32,6 +34,7 @@ enum SignatureEventType: string
             self::DocumentCreated => 'Document created',
             self::DocumentLocked => 'Document locked',
             self::SignerInvited => 'Signer invited',
+            self::InvitationBounced => 'Invitation email bounced',
             self::SignerOpened => 'Signer opened',
             self::SignerIdentityVerified => 'Signer identity verified',
             self::GuestCodeSent => 'Verification code sent',

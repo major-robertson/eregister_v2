@@ -118,14 +118,25 @@ use App\Domains\Lien\Enums\WaiverStatus;
                 </div>
 
             @elseif ($waiver->status === WaiverStatus::AwaitingSignature)
-                <flux:callout color="amber" icon="clock">
-                    <flux:callout.heading>Waiting on the signer</flux:callout.heading>
-                    <flux:callout.text>
-                        Sent {{ $waiver->sent_at?->eastern()->format('M j, Y g:i A') }} ET to
-                        {{ $activeRequest?->signer_email_snapshot ?? $waiver->signer_email ?? 'the signer' }}.
-                        We'll remind them automatically until it's signed.
-                    </flux:callout.text>
-                </flux:callout>
+                @if ($activeRequest?->invitation_bounced_at !== null)
+                    <flux:callout color="red" icon="exclamation-triangle">
+                        <flux:callout.heading>The invitation couldn't be delivered</flux:callout.heading>
+                        <flux:callout.text>
+                            Email to {{ $activeRequest->signer_email_snapshot }} is bouncing — the signer
+                            never received the invitation, and reminders are paused. Void this request,
+                            correct the counterparty's email address, and send it again.
+                        </flux:callout.text>
+                    </flux:callout>
+                @else
+                    <flux:callout color="amber" icon="clock">
+                        <flux:callout.heading>Waiting on the signer</flux:callout.heading>
+                        <flux:callout.text>
+                            Sent {{ $waiver->sent_at?->eastern()->format('M j, Y g:i A') }} ET to
+                            {{ $activeRequest?->signer_email_snapshot ?? $waiver->signer_email ?? 'the signer' }}.
+                            We'll remind them automatically until it's signed.
+                        </flux:callout.text>
+                    </flux:callout>
+                @endif
 
                 <div class="flex flex-wrap items-center gap-3">
                     @if ($hasGeneratedPdf)

@@ -115,4 +115,21 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Blocked Recipient Domains
+    |--------------------------------------------------------------------------
+    |
+    | Recipients on these domains are stripped from every outgoing message
+    | (see AppServiceProvider::configureMailGuard). test.test is the domain
+    | used for test accounts in this app -- it does not resolve, so mail to
+    | it can only ever hard-bounce and pollute Postmark's suppression list.
+    |
+    */
+
+    'blocked_recipient_domains' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('MAIL_BLOCKED_RECIPIENT_DOMAINS', 'test.test'))
+    ))),
+
 ];

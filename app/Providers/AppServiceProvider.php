@@ -18,15 +18,20 @@ use App\Support\Email\RecordEmailBounce;
 use App\Support\Workspaces\WorkspaceRegistry;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Livewire;
+use Symfony\Component\Mime\Address;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -71,6 +76,78 @@ class AppServiceProvider extends ServiceProvider
         $this->configureLivewire();
         $this->configureTunnelScheme();
         $this->configureBounceCapture();
+        $this->configureMailGuard();
+    }
+
+    /**
+     * Strips recipients on blocked domains from every outgoing message, and
+     * cancels the send outright when nothing deliverable is left.
+     *
+     * test.test is the domain used for test accounts. It doesn't resolve, so
+     * every send to it hard-bounces, which lands the address on Postmark's
+     * suppression list and (since the bounce webhook) would flag the test
+     * account and pause its sequences. Blocking at the transport boundary
+     * covers every mailable and notification without per-call-site checks.
+     *
+     * Returning false from a MessageSending listener halts the send: the
+     * Mailer dispatches this event via `until()` and skips delivery on false.
+     */
+    protected function configureMailGuard(): void
+    {
+        Event::listen(function (MessageSending $event): ?bool {
+            $blocked = config('mail.blocked_recipient_domains', []);
+
+            if ($blocked === []) {
+                return null;
+            }
+
+            $message = $event->message;
+            $removed = [];
+
+            foreach (['To', 'Cc', 'Bcc'] as $header) {
+                $addresses = match ($header) {
+                    'To' => $message->getTo(),
+                    'Cc' => $message->getCc(),
+                    'Bcc' => $message->getBcc(),
+                };
+
+                $keep = array_values(array_filter($addresses, function (Address $address) use ($blocked, &$removed): bool {
+                    $domain = Str::lower(Str::afterLast($address->getAddress(), '@'));
+
+                    if (in_array($domain, $blocked, true)) {
+                        $removed[] = $address->getAddress();
+
+                        return false;
+                    }
+
+                    return true;
+                }));
+
+                if (count($keep) !== count($addresses)) {
+                    match ($header) {
+                        'To' => $message->to(...$keep),
+                        'Cc' => $message->cc(...$keep),
+                        'Bcc' => $message->bcc(...$keep),
+                    };
+                }
+            }
+
+            if ($removed === []) {
+                return null;
+            }
+
+            $deliverable = $message->getTo() !== [] || $message->getCc() !== [] || $message->getBcc() !== [];
+
+            Log::info('Mail guard: dropped blocked recipients', [
+                'removed' => $removed,
+                'subject' => $message->getSubject(),
+                'cancelled' => ! $deliverable,
+            ]);
+
+            // Symfony rejects a message with no recipients, so a message that
+            // was ONLY addressed to blocked domains has to be cancelled.
+            return $deliverable ? null : false;
+        });
     }
 
     /**

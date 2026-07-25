@@ -1,6 +1,10 @@
 <?php
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Esign\Actions\AppendSignatureEvent;
+use App\Domains\Esign\Enums\SignatureEventType;
+use App\Domains\Esign\Enums\SignatureRequestStatus;
+use App\Domains\Esign\Models\SignatureRequest;
 use App\Domains\Lien\Enums\WaiverStatus;
 use App\Domains\Lien\Livewire\Waivers\WaiverDashboard;
 use App\Domains\Lien\Livewire\Waivers\WaiverList;
@@ -297,5 +301,39 @@ describe('waiver show page', function () {
         $this->get(route('lien.waivers.show', $waiver))
             ->assertSuccessful()
             ->assertDontSee('Becomes conclusively effective');
+    });
+
+    it('renders the audit timeline of a waiver that has a signature request', function () {
+        $project = waiverPortalProject($this->business, 'TX');
+        $waiver = LienWaiver::factory()->forProject($project)->collect()->create([
+            'status' => WaiverStatus::AwaitingSignature,
+            'sent_at' => now(),
+        ]);
+
+        $request = SignatureRequest::create([
+            'signable_type' => 'lien_waiver',
+            'signable_id' => $waiver->id,
+            'business_id' => $waiver->business_id,
+            'signer_user_id' => null,
+            'document_signing_policy_key' => 'lien_waiver',
+            'status' => SignatureRequestStatus::AwaitingSignature,
+            'signer_name_snapshot' => $waiver->counterparty_name,
+            'signer_email_snapshot' => $waiver->counterparty_email,
+            'invited_at' => now(),
+            'expires_at' => now()->addDays(14),
+        ]);
+
+        app(AppendSignatureEvent::class)->execute(
+            request: $request,
+            type: SignatureEventType::SignerInvited,
+            actorType: 'user',
+            actorUserId: $this->user->id,
+            ip: '203.0.113.9',
+        );
+
+        $this->get(route('lien.waivers.show', $waiver))
+            ->assertSuccessful()
+            ->assertSee(SignatureEventType::SignerInvited->label())
+            ->assertSee('203.0.113.9');
     });
 });

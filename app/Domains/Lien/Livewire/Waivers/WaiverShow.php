@@ -173,7 +173,7 @@ class WaiverShow extends Component
             'hasPaidAccess' => WaiverEntitlements::hasPaidAccess(Auth::user()->currentBusiness(), Auth::user()),
             'hasGeneratedPdf' => $this->waiver->getFirstMedia('generated') !== null,
             'hasSignedCopy' => $signedMedia !== null,
-            'timeline' => $this->buildTimeline($latestRequest !== null ? $latestRequest->events()->with('actor:id,name')->get() : collect()),
+            'timeline' => $this->buildTimeline($latestRequest !== null ? $latestRequest->events()->get() : collect()),
             'kindShortLabel' => $this->waiver->kind instanceof WaiverKind ? $this->waiver->kind->shortLabel() : (string) $this->waiver->kind,
         ])->layout('components.layouts.portal', ['title' => $formTitle]);
     }

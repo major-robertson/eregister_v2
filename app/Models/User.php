@@ -71,9 +71,22 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'unsubscribed_from_all_emails_at' => 'datetime',
+            'email_bounced_at' => 'datetime',
             'password' => 'hashed',
             'attributed_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // A bounce flag belongs to the address, not the person: switching to
+        // a new email gets them a clean slate (and the portal banner clears).
+        static::updating(function (User $user): void {
+            if ($user->isDirty('email')) {
+                $user->email_bounced_at = null;
+                $user->email_bounce_reason = null;
+            }
+        });
     }
 
     /**

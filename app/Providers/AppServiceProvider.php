@@ -14,12 +14,15 @@ use App\Domains\Lien\Policies\LienFilingPolicy;
 use App\Domains\Lien\Policies\LienProjectPolicy;
 use App\Domains\Portal\Policies\BusinessPolicy;
 use App\Domains\Portal\Policies\FormApplicationPolicy;
+use App\Support\Email\RecordEmailBounce;
 use App\Support\Workspaces\WorkspaceRegistry;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -67,6 +70,37 @@ class AppServiceProvider extends ServiceProvider
         $this->configurePolicies();
         $this->configureLivewire();
         $this->configureTunnelScheme();
+        $this->configureBounceCapture();
+    }
+
+    /**
+     * Fallback behind the Postmark webhook: when a queued mailable dies on
+     * Postmark's "inactive recipient" 406 (the address is on their
+     * suppression list), flag the user so we stop sending and the portal
+     * prompts them to update their email. The retry that produced the failed
+     * job is already lost; this stops the next one from being queued at all.
+     */
+    protected function configureBounceCapture(): void
+    {
+        Queue::failing(function (JobFailed $event): void {
+            $matched = preg_match(
+                '/Found inactive addresses:\s*(.+?)(?:\.\s+Inactive|\s*\(code|$)/',
+                $event->exception->getMessage(),
+                $matches,
+            );
+
+            if ($matched !== 1) {
+                return;
+            }
+
+            foreach (array_map('trim', explode(',', $matches[1])) as $email) {
+                $email = rtrim($email, '.');
+
+                if (filter_var($email, FILTER_VALIDATE_EMAIL) !== false) {
+                    RecordEmailBounce::record($email, 'postmark_inactive');
+                }
+            }
+        });
     }
 
     /**

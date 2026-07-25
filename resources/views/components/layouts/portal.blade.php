@@ -169,6 +169,13 @@
         </flux:header>
 
         <flux:main>
+            @if (auth()->user()->email_bounced_at !== null)
+                <flux:callout color="red" icon="exclamation-triangle" class="mb-6">
+                    {{ __("We can't deliver email to :email — messages are bouncing, so receipts, reminders, and signature requests aren't reaching you.", ['email' => auth()->user()->email]) }}
+                    <flux:link :href="route('profile.edit')" wire:navigate>{{ __('Update your email address') }}</flux:link>
+                </flux:callout>
+            @endif
+
             {{ $slot }}
         </flux:main>
 

@@ -44,6 +44,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'webhooks/stripe',
             'webhooks/postgrid',
+            'webhooks/postmark',
         ]);
 
         $middleware->alias([

@@ -5,6 +5,7 @@ use App\Http\Controllers\EmailUnsubscribeController;
 use App\Http\Controllers\MarketingLandingController;
 use App\Http\Controllers\MarketingRedirectController;
 use App\Http\Controllers\PostGridWebhookController;
+use App\Http\Controllers\PostmarkWebhookController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
@@ -16,6 +17,11 @@ Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle'])
 // PostGrid webhook (no auth, CSRF excluded in bootstrap/app.php)
 Route::post('/webhooks/postgrid', [PostGridWebhookController::class, 'handle'])
     ->name('webhooks.postgrid');
+
+// Postmark delivery events: hard bounces / spam complaints flag the user's
+// email as undeliverable (no auth, CSRF excluded in bootstrap/app.php)
+Route::post('/webhooks/postmark', [PostmarkWebhookController::class, 'handle'])
+    ->name('webhooks.postmark');
 
 // Marketing redirects (banner ads, partnerships)
 Route::get('/r/{slug}', [MarketingRedirectController::class, 'handle'])

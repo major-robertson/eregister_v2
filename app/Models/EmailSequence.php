@@ -114,6 +114,12 @@ class EmailSequence extends Model
 
     public function shouldSuppress(): ?string
     {
+        // Postmark suppresses hard-bounced / spam-flagged addresses and 406s
+        // every send, so queueing mail to them just manufactures failed jobs.
+        if ($this->user?->email_bounced_at !== null) {
+            return 'email_bounced';
+        }
+
         if ($this->trigger_status) {
             return $this->shouldSuppressTriggered();
         }

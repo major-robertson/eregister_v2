@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Domains\Lien\Waivers\WaiverStateRegistry;
 use Illuminate\Http\Response;
 use Spatie\Sitemap\Sitemap;
 use Spatie\Sitemap\Tags\Url;
@@ -39,6 +40,9 @@ class SitemapController extends Controller
             ['path' => '/liens/lien-release',            'changefreq' => 'monthly', 'priority' => '0.7'],
             ['path' => '/liens/payment-demand-letter',   'changefreq' => 'monthly', 'priority' => '0.7'],
 
+            ['path' => '/liens/lien-waivers',            'changefreq' => 'monthly', 'priority' => '0.8'],
+            ['path' => '/liens/lien-waivers/pricing',    'changefreq' => 'monthly', 'priority' => '0.7'],
+
             ['path' => '/government',                          'changefreq' => 'monthly', 'priority' => '0.8'],
             ['path' => '/government/website-redesign',         'changefreq' => 'monthly', 'priority' => '0.7'],
             ['path' => '/government/accessibility',            'changefreq' => 'monthly', 'priority' => '0.7'],
@@ -49,6 +53,10 @@ class SitemapController extends Controller
             ['path' => '/government/integrations',             'changefreq' => 'monthly', 'priority' => '0.7'],
             ['path' => '/government/implementation',           'changefreq' => 'monthly', 'priority' => '0.7'],
         ];
+
+        foreach (array_keys(WaiverStateRegistry::STATE_NAMES) as $code) {
+            $pages[] = ['path' => '/liens/lien-waivers/'.strtolower($code), 'changefreq' => 'monthly', 'priority' => '0.6'];
+        }
 
         return array_map(fn (array $page) => [
             'loc' => url($page['path']),

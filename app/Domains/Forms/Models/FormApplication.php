@@ -5,6 +5,7 @@ namespace App\Domains\Forms\Models;
 use App\Domains\Business\Models\Business;
 use App\Models\Payment;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +16,51 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
 class FormApplication extends Model
 {
     use HasFactory;
+
+    /**
+     * Every column except the two unbounded JSON blobs. An all-states
+     * application's definition_snapshot runs to ~2 MB, and MySQL refuses
+     * to filesort rows that don't fit in sort_buffer_size (error 1038
+     * "Out of sort memory") — so any `SELECT * ... ORDER BY` list query
+     * that touches such a row 500s. Sorted list queries must go through
+     * scopeForList() so those columns never enter the sort.
+     *
+     * @var list<string>
+     */
+    public const LIST_COLUMNS = [
+        'id',
+        'business_id',
+        'form_type',
+        'definition_version',
+        'selected_states',
+        'status',
+        'current_phase',
+        'current_step_key',
+        'current_state_index',
+        'core_data_hash',
+        'created_by_user_id',
+        'paid_at',
+        'submitted_at',
+        'locked_at',
+        'stripe_checkout_session_id',
+        'stripe_payment_intent_id',
+        'stripe_subscription_id',
+        'created_at',
+        'updated_at',
+    ];
+
+    /**
+     * Slim select for dashboards, list rows, and draft lookups — anything
+     * that sorts form_applications rows. Excludes definition_snapshot and
+     * core_data (see LIST_COLUMNS).
+     */
+    public function scopeForList(Builder $query): Builder
+    {
+        return $query->select(array_map(
+            fn (string $column): string => $this->qualifyColumn($column),
+            self::LIST_COLUMNS,
+        ));
+    }
 
     protected $fillable = [
         'business_id',

@@ -72,6 +72,7 @@ class BusinessOverview extends Component
             ->paginate(15, pageName: 'payments');
 
         $formApplications = FormApplication::query()
+            ->forList()
             ->where('business_id', $this->business->id)
             ->with('states')
             ->latest()

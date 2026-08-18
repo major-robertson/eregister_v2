@@ -58,6 +58,7 @@ class Dashboard extends Component
     public function formations(): Collection
     {
         return FormApplication::query()
+            ->forList()
             ->with('states')
             ->where('business_id', $this->business->id)
             ->whereIn('form_type', $this->workspace->formTypes)

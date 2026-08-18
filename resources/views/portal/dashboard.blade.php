@@ -75,7 +75,7 @@
         <section class="mb-12">
             <h2 class="mb-6 text-lg font-semibold text-text-primary">Recent Applications</h2>
             @php
-                $applications = $business->formApplications()->latest()->limit(5)->get();
+                $applications = $business->formApplications()->forList()->latest()->limit(5)->get();
             @endphp
 
             @if($applications->count() > 0)

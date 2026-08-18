@@ -61,6 +61,7 @@ class Dashboard extends Component
     public function registrations(): Collection
     {
         return SalesTaxRegistration::query()
+            ->forList()
             ->with('states')
             ->where('business_id', $this->business->id)
             ->latest()

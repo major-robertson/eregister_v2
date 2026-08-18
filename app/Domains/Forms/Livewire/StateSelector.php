@@ -88,8 +88,10 @@ class StateSelector extends Component
             ->values()
             ->toArray();
 
-        // Check for existing unpaid/draft application
-        $this->existingDraft = FormApplication::where('business_id', $business->id)
+        // Check for existing unpaid/draft application. forList() keeps the
+        // multi-MB snapshot columns out of the ORDER BY (error 1038).
+        $this->existingDraft = FormApplication::forList()
+            ->where('business_id', $business->id)
             ->where('form_type', $formType)
             ->whereNull('paid_at')
             ->where('status', 'draft')

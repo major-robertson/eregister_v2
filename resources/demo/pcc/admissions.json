@@ -1,0 +1,68 @@
+{
+    "freshman": {
+        "label": "First-Time Student",
+        "intro": "Fresh out of high school (or finishing your equivalency)? Here's your six-step path from application to your first class.",
+        "fit": [
+            "You're a graduating high school senior",
+            "You're attending college for the first time",
+            "You've earned PCC credits through Career & College Promise"
+        ],
+        "steps": [
+            { "title": "Apply to PCC — it's free", "desc": "Complete the online application through CFNC and the NC Residency Determination Service. It takes about 20 minutes and there's no application fee." },
+            { "title": "Complete the FAFSA", "desc": "File the FAFSA and add PCC as a recipient. Most PCC students qualify for grants or scholarships — many attend tuition-free." },
+            { "title": "Send your transcripts", "desc": "Have your high school (or GED/HiSET) transcript sent to Admissions & Records. Unofficial copies can get you started." },
+            { "title": "Complete placement", "desc": "Most students place using their high school GPA — no test needed. Otherwise, the free RISE assessment is available on campus." },
+            { "title": "Attend New Student Orientation", "desc": "Meet your advisor, tour campus, set up your myPittCC account and learn how registration works." },
+            { "title": "Register for classes", "desc": "Work with your advisor in the Central Advising Center to build a schedule that fits your goals — and your life." }
+        ]
+    },
+    "transfer": {
+        "label": "Transfer Student",
+        "intro": "Coming from another college? We'll evaluate your credits so you don't repeat what you've already earned.",
+        "fit": [
+            "You've attended another college or university since high school",
+            "You're returning to PCC after time away",
+            "You want prior credits evaluated so nothing is wasted"
+        ],
+        "steps": [
+            { "title": "Apply to PCC — it's free", "desc": "Complete the online application and NC residency determination. No application fee, no test scores." },
+            { "title": "Send all college transcripts", "desc": "Request official transcripts from every college you've attended. Our team evaluates them for transfer credit." },
+            { "title": "Complete the FAFSA", "desc": "Financial aid follows you — add PCC as a recipient so your aid is ready when you are." },
+            { "title": "Review your credit evaluation", "desc": "Admissions & Records maps your prior credits to your PCC program so your path to finishing is clear." },
+            { "title": "Meet your advisor and register", "desc": "Your advisor builds a plan from where your credits leave off — no wasted courses, no wasted money." }
+        ]
+    },
+    "adult": {
+        "label": "Adult Learner",
+        "intro": "Whether it's been two years or twenty, PCC is built for students balancing work, family and school.",
+        "fit": [
+            "You've been out of school for a while and want a fresh start",
+            "You're balancing work or family alongside school",
+            "You need a credential that pays off quickly"
+        ],
+        "steps": [
+            { "title": "Talk with us first (optional, encouraged)", "desc": "Not sure where to start? Connect with an advisor about career goals, short-term credentials and flexible formats before you apply." },
+            { "title": "Apply to PCC — it's free", "desc": "The online application takes about 20 minutes. Need your high school equivalency first? Our free Transitional Studies programs can get you there." },
+            { "title": "Complete the FAFSA and explore workforce scholarships", "desc": "Adult learners often qualify for aid they don't expect — including state scholarships that cover short-term workforce training." },
+            { "title": "Get credit for what you already know", "desc": "Work experience, military training and prior credentials may count toward your program through credit for prior learning." },
+            { "title": "Pick a format that fits your life", "desc": "Evening, online, hybrid and 8-week options let you keep working while you learn. Your advisor helps you build it." },
+            { "title": "Register and start", "desc": "Late-start classes begin several times each semester — you rarely have to wait long to begin." }
+        ]
+    },
+    "highschool": {
+        "label": "High School Student",
+        "intro": "Earn college credit — tuition-free — while you're still in high school through Career & College Promise.",
+        "fit": [
+            "You're a North Carolina high school junior or senior",
+            "You have roughly a 2.8 unweighted GPA",
+            "You want tuition-free college credit before graduation"
+        ],
+        "steps": [
+            { "title": "Talk to your school counselor", "desc": "Your counselor confirms your eligibility (typically an unweighted 2.8 GPA) and helps you choose a pathway." },
+            { "title": "Choose your pathway", "desc": "Pick a college transfer pathway toward a bachelor's degree, or a career & technical pathway toward a credential." },
+            { "title": "Apply through Career & College Promise", "desc": "Complete the CCP application with your counselor's sign-off. Tuition is waived for eligible students." },
+            { "title": "Register with your PCC liaison", "desc": "Our high school programs team schedules your classes around your school day." },
+            { "title": "Start earning college credit", "desc": "Credits count toward high school graduation and your future degree at the same time." }
+        ]
+    }
+}

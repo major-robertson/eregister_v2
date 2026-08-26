@@ -26,6 +26,9 @@ return Application::configure(basePath: dirname(__DIR__))
             // Clay County parks demo sandbox (isolated, front-end-only proof-of-concept)
             Route::middleware('web')->group(base_path('routes/clay_demo.php'));
 
+            // Pitt Community College demo sandbox (isolated, front-end-only proof-of-concept)
+            Route::middleware('web')->group(base_path('routes/pcc_demo.php'));
+
             // API routes (no session, no CSRF)
             Route::prefix('api')->group(base_path('routes/api.php'));
         },

@@ -1,0 +1,8 @@
+[
+    { "name": "Arts & Sciences", "hint": "University transfer & more" },
+    { "name": "Business, Technology & Law", "hint": "Business, IT, legal careers" },
+    { "name": "Construction & Industrial Technology", "hint": "Skilled trades in demand" },
+    { "name": "Health Sciences", "hint": "Nursing, imaging, dental & EMS" },
+    { "name": "Teaching & Learning", "hint": "Education careers" },
+    { "name": "Continuing Education", "hint": "Short-term workforce training" }
+]

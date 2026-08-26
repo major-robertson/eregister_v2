@@ -1,0 +1,194 @@
+{
+    "defaults": {
+        "award": "A.A.S. Degree",
+        "format": "On campus",
+        "length": "2 years or less",
+        "cost": "$76/credit",
+        "costNote": "Estimated in-state tuition & fees. Most PCC students qualify for aid — many attend tuition-free.",
+        "contact": "Admissions & Records",
+        "eligible": [
+            "High school diploma or high school equivalency (GED/HiSET)",
+            "Free application to PCC — no test scores required to apply",
+            "Placement based on high school GPA or RISE assessment"
+        ],
+        "deadlines": [
+            { "label": "Fall semester starts", "date": "Aug 18" },
+            { "label": "Spring semester starts", "date": "Jan 8" },
+            { "label": "FAFSA priority date", "date": "Jun 1" }
+        ],
+        "support": [
+            "Central Advising Center — a dedicated advisor from day one",
+            "Free tutoring through the Tutorial and Academic Success Center (TASC)",
+            "Career Services: resumes, interviews and job placement",
+            "Accessibility Services and counseling support"
+        ],
+        "next": [
+            "Apply to PCC online — free, about 20 minutes.",
+            "Complete the FAFSA to unlock grants and scholarships.",
+            "Meet your advisor and register for classes."
+        ]
+    },
+    "programs": [
+        {
+            "slug": "welding-technology",
+            "name": "Welding Technology",
+            "division": "Construction & Industrial Technology",
+            "award": "A.A.S. · Diploma · Certificate",
+            "blurb": "Hands-on training in cutting and welding processes used across construction, energy and advanced manufacturing.",
+            "what": "The Welding Technology program builds real shop skills in SMAW, GTAW, MIG and pipe welding, plus blueprint reading and metallurgy. Graduates leave ready for high-demand fabrication and construction careers across eastern North Carolina — employers regularly recruit straight from our shop.",
+            "contact": "Program Director, Welding Technology",
+            "next": [
+                "Apply to PCC online — free, about 20 minutes.",
+                "Complete the FAFSA — welding students often qualify for workforce scholarships.",
+                "Tour the welding shop and meet your advisor."
+            ]
+        },
+        {
+            "slug": "associate-in-arts",
+            "name": "Associate in Arts (University Transfer)",
+            "division": "Arts & Sciences",
+            "award": "A.A. Degree",
+            "format": "On campus · Online",
+            "blurb": "Complete your first two years at PCC, then transfer seamlessly to a four-year university.",
+            "what": "The Associate in Arts is a university-transfer degree covering the first two years of a bachelor's program. Under North Carolina's Comprehensive Articulation Agreement, your credits transfer to any UNC System university — at a fraction of the cost."
+        },
+        {
+            "slug": "associate-in-science",
+            "name": "Associate in Science (University Transfer)",
+            "division": "Arts & Sciences",
+            "award": "A.S. Degree",
+            "format": "On campus · Online",
+            "blurb": "A STEM-focused transfer path toward engineering, science and health-related bachelor's degrees.",
+            "what": "The Associate in Science emphasizes math and lab science coursework that transfers to UNC System universities, positioning you for majors like engineering, biology, chemistry and pre-health tracks."
+        },
+        {
+            "slug": "nursing",
+            "name": "Associate Degree Nursing (ADN)",
+            "division": "Health Sciences",
+            "blurb": "Become a registered nurse in five semesters through clinical rotations with regional health partners.",
+            "what": "PCC's ADN program prepares you to sit for the NCLEX-RN and enter practice as a registered nurse. You'll train in simulation labs and complete clinical rotations with hospitals and providers across the region.",
+            "eligible": [
+                "High school diploma or equivalency with required coursework",
+                "Competitive admission — points-based selection each spring",
+                "Prerequisite courses in anatomy & physiology"
+            ],
+            "contact": "Health Sciences Admissions"
+        },
+        {
+            "slug": "dental-hygiene",
+            "name": "Dental Hygiene",
+            "division": "Health Sciences",
+            "blurb": "Clinical training in preventive oral health care, delivered in PCC's on-campus dental clinic.",
+            "what": "Students train in a fully equipped on-campus clinic serving real patients, graduating eligible for national board examination and state licensure as dental hygienists.",
+            "eligible": [
+                "High school diploma or equivalency with required coursework",
+                "Competitive admission — application window each spring",
+                "Observation hours in a dental setting"
+            ],
+            "contact": "Health Sciences Admissions"
+        },
+        {
+            "slug": "radiography",
+            "name": "Radiography",
+            "division": "Health Sciences",
+            "blurb": "Learn diagnostic imaging with clinical experience in hospitals across eastern North Carolina.",
+            "what": "The Radiography program combines imaging science coursework with extensive hospital-based clinical education, preparing graduates for ARRT certification.",
+            "eligible": [
+                "High school diploma or equivalency with required coursework",
+                "Competitive admission — points-based selection",
+                "Prerequisite science coursework"
+            ],
+            "contact": "Health Sciences Admissions"
+        },
+        {
+            "slug": "emergency-medical-science",
+            "name": "Emergency Medical Science",
+            "division": "Health Sciences",
+            "award": "A.A.S. Degree · Certificate",
+            "blurb": "Train as a paramedic with field and clinical experience alongside regional EMS agencies.",
+            "what": "From EMT fundamentals through paramedic-level care, this program pairs classroom instruction with ambulance and emergency-department rotations."
+        },
+        {
+            "slug": "business-administration",
+            "name": "Business Administration",
+            "division": "Business, Technology & Law",
+            "award": "A.A.S. Degree · Certificate",
+            "format": "On campus · Online",
+            "blurb": "Practical management, marketing and operations skills for running or growing a business.",
+            "what": "Business Administration covers accounting, management, marketing and business law — flexible enough to finish fully online while you work."
+        },
+        {
+            "slug": "information-technology",
+            "name": "Information Technology",
+            "division": "Business, Technology & Law",
+            "award": "A.A.S. Degree · Certificate",
+            "format": "On campus · Online",
+            "blurb": "Networking, cybersecurity and support tracks aligned to industry certifications.",
+            "what": "The IT program offers concentrations in networking, cybersecurity and technical support, mapped to certifications employers ask for — CompTIA, Cisco and more."
+        },
+        {
+            "slug": "paralegal-technology",
+            "name": "Paralegal Technology",
+            "division": "Business, Technology & Law",
+            "blurb": "Prepare for work in law offices, courts and government agencies as a qualified paralegal.",
+            "what": "Learn legal research, drafting and case management from practicing attorneys, preparing for the NC State Bar paralegal certification exam."
+        },
+        {
+            "slug": "criminal-justice",
+            "name": "Criminal Justice Technology",
+            "division": "Business, Technology & Law",
+            "format": "On campus · Online",
+            "blurb": "A foundation for careers in law enforcement, corrections and public safety.",
+            "what": "Coursework spans criminal law, investigations, ethics and corrections — a strong foundation for public-safety careers or transfer to a four-year criminal justice program."
+        },
+        {
+            "slug": "electrical-systems",
+            "name": "Electrical Systems Technology",
+            "division": "Construction & Industrial Technology",
+            "award": "A.A.S. · Diploma · Certificate",
+            "blurb": "Wiring, motors and controls — skills that took a PCC student to the SkillsUSA national podium.",
+            "what": "Train on residential, commercial and industrial electrical systems, including motor controls and programmable logic controllers. PCC students compete — and medal — at SkillsUSA nationals."
+        },
+        {
+            "slug": "hvac",
+            "name": "Air Conditioning, Heating & Refrigeration",
+            "division": "Construction & Industrial Technology",
+            "award": "Diploma · Certificate",
+            "blurb": "Install, service and maintain the systems every building in the region depends on.",
+            "what": "Hands-on HVAC training covering installation, diagnostics, refrigerants and energy-efficient systems, with EPA 608 certification preparation built in."
+        },
+        {
+            "slug": "early-childhood",
+            "name": "Early Childhood Education",
+            "division": "Teaching & Learning",
+            "award": "A.A.S. Degree · Certificate",
+            "format": "On campus · Online",
+            "blurb": "Start a career shaping young learners in child care, pre-K and early education settings.",
+            "what": "Prepare to work with children from birth through age eight, with pathways toward NC birth-through-kindergarten licensure and transfer options."
+        },
+        {
+            "slug": "truck-driver-training",
+            "name": "Truck Driver Training (CDL)",
+            "division": "Continuing Education",
+            "award": "Short-term workforce credential",
+            "length": "8 weeks",
+            "cost": "Under $2,000",
+            "costNote": "Short-term workforce training. State scholarships can cover most or all of the cost.",
+            "blurb": "Earn your Class A CDL in weeks and step into a high-demand driving career.",
+            "what": "An intensive behind-the-wheel program preparing you for the Class A CDL exam, with employer connections for immediate placement.",
+            "contact": "Continuing Education"
+        },
+        {
+            "slug": "nurse-aide",
+            "name": "Nurse Aide I",
+            "division": "Continuing Education",
+            "award": "Short-term workforce credential",
+            "length": "1 semester",
+            "cost": "Under $500",
+            "costNote": "Short-term workforce training. State scholarships can cover most or all of the cost.",
+            "blurb": "A fast, affordable first step into health care — and a springboard toward nursing.",
+            "what": "Train for state listing as a Nurse Aide I in a single semester, with clinical experience in local care facilities. Many students continue into PCC's nursing programs.",
+            "contact": "Continuing Education"
+        }
+    ]
+}

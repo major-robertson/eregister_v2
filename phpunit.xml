@@ -30,6 +30,11 @@
         <env name="DB_DATABASE" value="eregister_test_v2" force="true"/>
         <env name="DB_USERNAME" value="root" force="true"/>
         <env name="DB_PASSWORD" value="" force="true"/>
+        <!-- Keep tests off real S3 even when .env has live AWS keys: un-faked s3 calls hit a dead local endpoint and fail, as in CI. Use Storage::fake('s3'). -->
+        <env name="AWS_ENDPOINT" value="http://127.0.0.1:1" force="true"/>
+        <!-- Path-style keeps the bucket out of the hostname (no DNS lookup). "(true)" because PHPUnit turns "true" into "1", which the AWS SDK rejects. -->
+        <env name="AWS_USE_PATH_STYLE_ENDPOINT" value="(true)" force="true"/>
+        <env name="FILESYSTEM_DISK" value="local" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="RESALE_CERT_DISK" value="local"/>

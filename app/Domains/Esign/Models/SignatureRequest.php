@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 /**
@@ -150,6 +151,18 @@ class SignatureRequest extends Model
     public function isExpired(): bool
     {
         return $this->expires_at !== null && $this->expires_at->isPast();
+    }
+
+    /**
+     * A signed link to the signing landing, valid until the request's own
+     * expiry, so a link handed out (or re-sent) never outlives the session.
+     */
+    public function signingUrl(): string
+    {
+        $expiresAt = $this->expires_at
+            ?? now()->addDays((int) config('esign.signing.invitation_link_ttl_days', 14));
+
+        return URL::temporarySignedRoute('esign.sign', $expiresAt, ['request' => $this->public_id]);
     }
 
     public function scopeActive(Builder $query): Builder

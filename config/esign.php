@@ -54,6 +54,9 @@ return [
         'intent' => 'I have reviewed the demand letters listed below. By clicking Sign All Demand Letters, I intend to electronically sign each listed letter.',
         // How long the emailed signing link stays valid.
         'invitation_link_ttl_days' => 14,
+        // Minimum gap between emails to a signer (the invitation or an admin
+        // reminder), so a double-click or two admins can't stack sends.
+        'reminder_cooldown_minutes' => 10,
     ],
 
     /*

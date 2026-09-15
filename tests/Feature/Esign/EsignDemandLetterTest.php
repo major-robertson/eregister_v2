@@ -13,6 +13,7 @@ use App\Domains\Lien\Admin\Livewire\LienFilingDetail;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Enums\PartyRole;
 use App\Domains\Lien\Esign\Actions\SendDemandLetterForSignature;
+use App\Domains\Lien\Esign\Actions\SendDemandLetterReminder;
 use App\Domains\Lien\Livewire\FilingShow;
 use App\Domains\Lien\Models\LienDocumentType;
 use App\Domains\Lien\Models\LienFiling;
@@ -20,6 +21,7 @@ use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
 use App\Mail\FilingActionReminder;
 use App\Mail\SignerInvitation;
+use App\Mail\SignerReminder;
 use App\Models\EmailSequence;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -476,5 +478,133 @@ describe('customer surfacing', function () {
 
         Livewire::test(FilingShow::class, ['filing' => $filing->fresh()])
             ->assertSee('Review &amp; Sign', false);
+    });
+});
+
+describe('signer reminders + signing link', function () {
+    it('re-emails the signer with a renewed link and records the reminder', function () {
+        Mail::fake();
+        $request = esignSendFor(esignDemandFiling());
+        $originalExpiry = $request->expires_at;
+
+        // Past the original 14-day window: the reminder must still carry a live link.
+        $this->travel(15)->days();
+
+        app(SendDemandLetterReminder::class)->execute($request->signable->fresh(), esignAdmin());
+
+        $request->refresh();
+        expect($request->isExpired())->toBeFalse();
+        expect($request->expires_at->greaterThan($originalExpiry))->toBeTrue();
+
+        $mail = Mail::queued(SignerReminder::class)->sole();
+        expect($mail->hasTo($request->signer_email_snapshot))->toBeTrue();
+        $mail->assertSeeInHtml('still needed');
+
+        // The emailed link lands the signer in the signing flow.
+        $this->actingAs($request->signer)
+            ->get($mail->ctaUrl)
+            ->assertRedirect(route('esign.sign.consent', $request->public_id));
+
+        $reminder = $request->events()->where('event_type', 'reminder_sent')->sole();
+        expect($reminder->actor_type)->toBe('admin');
+        expect($reminder->meta('email'))->toBe($request->signer_email_snapshot);
+        expect(app(VerifySignatureChain::class)->execute($request)->valid)->toBeTrue();
+
+        expect($request->signable->events()->where('event_type', 'esign_reminder_sent')->exists())->toBeTrue();
+    });
+
+    it('holds reminders to one per cooldown window', function () {
+        Mail::fake();
+        $request = esignSendFor(esignDemandFiling());
+        $remind = fn () => app(SendDemandLetterReminder::class)->execute($request->signable->fresh(), esignAdmin());
+
+        // Too soon after the invitation...
+        expect($remind)->toThrow(\App\Domains\Esign\Exceptions\EsignException::class, 'last emailed');
+
+        $this->travel(config('esign.signing.reminder_cooldown_minutes') + 1)->minutes();
+        $remind();
+
+        // ...and too soon after that reminder.
+        expect($remind)->toThrow(\App\Domains\Esign\Exceptions\EsignException::class, 'last emailed');
+
+        Mail::assertQueued(SignerReminder::class, 1);
+    });
+
+    it('refuses to remind a bounced, signed, or voided request', function () {
+        Mail::fake();
+        $remind = fn (SignatureRequest $request) => app(SendDemandLetterReminder::class)
+            ->execute($request->signable->fresh(), esignAdmin());
+
+        $bounced = esignSendFor(esignDemandFiling());
+        $bounced->update(['invitation_bounced_at' => now()]);
+
+        $signed = esignSendFor(esignDemandFiling());
+        esignCompleteSign($signed, $signed->signer);
+
+        $voided = esignSendFor(esignDemandFiling());
+        $voided->update(['status' => SignatureRequestStatus::Voided, 'voided_at' => now()]);
+
+        // Clear of the cooldown, so each refusal is down to the request's state.
+        $this->travel(1)->hours();
+
+        expect(fn () => $remind($bounced))->toThrow(\App\Domains\Esign\Exceptions\EsignException::class, 'bouncing');
+        expect(fn () => $remind($signed))->toThrow(\App\Domains\Esign\Exceptions\EsignException::class, 'no signature request awaiting');
+        expect(fn () => $remind($voided))->toThrow(\App\Domains\Esign\Exceptions\EsignException::class, 'no signature request awaiting');
+
+        Mail::assertNotQueued(SignerReminder::class);
+    });
+
+    it('shows the signing link and sends a reminder from the admin panel', function () {
+        Mail::fake();
+        $request = esignSendFor(esignDemandFiling());
+        $this->travel(1)->hours();
+        $this->actingAs(esignAdmin());
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $request->signable->fresh()])
+            ->assertSee('Signing link')
+            ->assertSeeHtml('/esign/'.$request->public_id.'?expires=')
+            ->call('sendSignerReminder')
+            ->assertSee('Reminder emailed to '.$request->signer_email_snapshot)
+            ->assertSee('Last reminder')
+            ->assertSee('E-signature reminder sent');
+
+        Mail::assertQueued(SignerReminder::class, fn ($mail) => $mail->hasTo($request->signer_email_snapshot));
+    });
+
+    it('flags an expired link in the panel until a reminder renews it', function () {
+        Mail::fake();
+        $request = esignSendFor(esignDemandFiling());
+        $linkHtml = '/esign/'.$request->public_id.'?expires=';
+        $this->travel(15)->days();
+        $this->actingAs(esignAdmin());
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $request->signable->fresh()])
+            ->assertSee('The signing link expired')
+            ->assertDontSeeHtml($linkHtml)
+            ->call('sendSignerReminder')
+            ->assertDontSee('The signing link expired')
+            ->assertSeeHtml($linkHtml);
+    });
+
+    it('hides the reminder and signing link from view-only admins and once signed', function () {
+        Mail::fake();
+        $request = esignSendFor(esignDemandFiling());
+        $linkHtml = '/esign/'.$request->public_id.'?expires=';
+
+        $viewer = User::factory()->create();
+        $viewer->givePermissionTo('lien.view');
+        $this->actingAs($viewer);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $request->signable->fresh()])
+            ->assertSee('Awaiting Signature')
+            ->assertDontSeeHtml($linkHtml)
+            ->assertDontSeeHtml('wire:click="sendSignerReminder"');
+
+        esignCompleteSign($request, $request->signer);
+        $this->actingAs(esignAdmin());
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $request->signable->fresh()])
+            ->assertDontSeeHtml($linkHtml)
+            ->assertDontSeeHtml('wire:click="sendSignerReminder"');
     });
 });

@@ -11,6 +11,8 @@ enum SignatureEventType: string
     case DocumentCreated = 'document_created';
     case DocumentLocked = 'document_locked';
     case SignerInvited = 'signer_invited';
+    // An admin re-emailed the signer their signing link (renewing its expiry).
+    case ReminderSent = 'reminder_sent';
     // The invitation email hard-bounced or was spam-flagged (via Postmark).
     case InvitationBounced = 'invitation_bounced';
     case SignerOpened = 'signer_opened';
@@ -34,6 +36,7 @@ enum SignatureEventType: string
             self::DocumentCreated => 'Document created',
             self::DocumentLocked => 'Document locked',
             self::SignerInvited => 'Signer invited',
+            self::ReminderSent => 'Reminder sent',
             self::InvitationBounced => 'Invitation email bounced',
             self::SignerOpened => 'Signer opened',
             self::SignerIdentityVerified => 'Signer identity verified',

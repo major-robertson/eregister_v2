@@ -4,6 +4,7 @@ namespace App\Domains\Lien\Admin\Livewire;
 
 use App\Domains\Esign\Actions\VerifySignatureChain;
 use App\Domains\Esign\Actions\VoidSignatureRequest;
+use App\Domains\Esign\Enums\SignatureEventType;
 use App\Domains\Esign\Enums\SignatureRequestStatus;
 use App\Domains\Esign\Exceptions\EsignException;
 use App\Domains\Lien\Admin\Actions\AddFilingComment;
@@ -20,6 +21,7 @@ use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Enums\PartyRole;
 use App\Domains\Lien\Enums\RecordingMethod;
 use App\Domains\Lien\Esign\Actions\SendDemandLetterForSignature;
+use App\Domains\Lien\Esign\Actions\SendDemandLetterReminder;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienStateRule;
 use Illuminate\Contracts\View\View;
@@ -98,7 +100,7 @@ class LienFilingDetail extends Component
     private const ACTIVITY_EVENT_TYPES = [
         'status_changed', 'note_added', 'payment_refunded', 'recording_details_updated',
         'application_project_updated', 'application_filing_updated', 'application_parties_updated',
-        'esign_sent', 'esign_completed',
+        'esign_sent', 'esign_reminder_sent', 'esign_completed',
     ];
 
     public function mount(string|LienFiling $lienFiling): void
@@ -213,12 +215,22 @@ class LienFilingDetail extends Component
             && $this->lienFiling->canTransitionTo(FilingStatus::AwaitingEsign)
             && auth()->user()->can('changeStatus', $this->lienFiling);
 
+        $canChangeStatus = ! $isDeleted && auth()->user()->can('changeStatus', $this->lienFiling);
+
+        // While the signer hasn't signed, admins can email a reminder or copy
+        // the signing link to share it directly (text, chat, a phone call).
+        $esignAwaiting = $esignRequest?->status === SignatureRequestStatus::AwaitingSignature;
+
+        $esignReminders = $esignRequest?->events
+            ->filter(fn ($event) => $event->event_type === SignatureEventType::ReminderSent)
+            ->values() ?? collect();
+
         return view('lien.admin.filing-detail', [
             'filing' => $this->lienFiling,
             'kanbanColumn' => KanbanColumn::forFiling($this->lienFiling),
             'allowedTransitions' => $this->lienFiling->allowedTransitions(),
             'activityLog' => $this->getActivityLog(),
-            'canChangeStatus' => ! $isDeleted && auth()->user()->can('changeStatus', $this->lienFiling),
+            'canChangeStatus' => $canChangeStatus,
             'canUpdate' => ! $isDeleted && auth()->user()->can('update', $this->lienFiling),
             'canAddComment' => ! $isDeleted && auth()->user()->can('addComment', $this->lienFiling),
             'canRefund' => $canRefund,
@@ -232,6 +244,12 @@ class LienFilingDetail extends Component
             'hasPriorEsign' => $signedEsignRequest !== null,
             'recipientCount' => $recipientCount,
             'canSendEsign' => $canSendEsign,
+            'esignAwaiting' => $esignAwaiting,
+            'esignReminders' => $esignReminders,
+            'canRemindSigner' => $esignAwaiting && $canChangeStatus && $esignRequest->invitation_bounced_at === null,
+            'signingUrl' => $esignAwaiting && $canChangeStatus && ! $esignRequest->isExpired()
+                ? $esignRequest->signingUrl()
+                : null,
         ])->layout('layouts.admin', ['title' => 'Filing Detail']);
     }
 
@@ -630,6 +648,25 @@ class LienFilingDetail extends Component
         } catch (EsignException $e) {
             $this->showSendEsignModal = false;
 
+            session()->flash('error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Email the signer a reminder with their signing link, renewing the link
+     * for another TTL window.
+     */
+    public function sendSignerReminder(): void
+    {
+        $this->authorize('changeStatus', $this->lienFiling);
+
+        try {
+            $request = app(SendDemandLetterReminder::class)->execute($this->lienFiling, auth()->user());
+
+            $this->afterEdit();
+
+            session()->flash('success', "Reminder emailed to {$request->signer_email_snapshot}.");
+        } catch (EsignException $e) {
             session()->flash('error', $e->getMessage());
         }
     }

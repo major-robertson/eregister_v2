@@ -817,6 +817,22 @@
                         <flux:text class="font-medium">{{ $esignRequest->completed_at->eastern()->format('M j, Y g:i A') }}</flux:text>
                     </div>
                     @endif
+                    @if ($esignReminders->isNotEmpty())
+                    <div class="flex items-center justify-between">
+                        <flux:text class="text-gray-500">Last reminder</flux:text>
+                        <flux:text class="font-medium">
+                            {{ $esignReminders->last()->occurred_at->eastern()->format('M j, Y g:i A') }}@if ($esignReminders->count() > 1) <span class="text-xs font-normal text-gray-400">({{ $esignReminders->count() }} sent)</span>@endif
+                        </flux:text>
+                    </div>
+                    @endif
+                    @if ($esignAwaiting && $esignRequest->expires_at)
+                    <div class="flex items-center justify-between">
+                        <flux:text class="text-gray-500">Link expires</flux:text>
+                        <flux:text :class="$esignRequest->isExpired() ? 'font-medium text-red-600' : 'font-medium'">
+                            {{ $esignRequest->expires_at->eastern()->format('M j, Y g:i A') }}@if ($esignRequest->isExpired()) (expired)@endif
+                        </flux:text>
+                    </div>
+                    @endif
                     @if ($esignRequest->consent)
                     <div class="flex items-center justify-between">
                         <flux:text class="text-gray-500">Consent</flux:text>
@@ -824,6 +840,36 @@
                     </div>
                     @endif
                 </div>
+
+                @if ($esignAwaiting && $esignRequest->invitation_bounced_at)
+                <flux:callout variant="danger" icon="exclamation-triangle" class="mt-4">
+                    <flux:callout.heading>The signing email is bouncing</flux:callout.heading>
+                    <flux:callout.text>
+                        Email to {{ $esignRequest->signer_email_snapshot }} can't be delivered, so reminders are off.
+                        @if ($signingUrl)
+                        Copy the signing link below and share it with the signer directly, or void and re-send once their address is fixed.
+                        @else
+                        Void and re-send once their address is fixed.
+                        @endif
+                    </flux:callout.text>
+                </flux:callout>
+                @elseif ($canRemindSigner && $esignRequest->isExpired())
+                <flux:callout variant="warning" icon="clock" class="mt-4">
+                    <flux:callout.text>
+                        The signing link expired {{ $esignRequest->expires_at->eastern()->format('M j, Y') }}.
+                        Sending a reminder renews it for another {{ config('esign.signing.invitation_link_ttl_days', 14) }} days.
+                    </flux:callout.text>
+                </flux:callout>
+                @endif
+
+                {{-- Copyable signing link, for sharing outside email (text, chat, a call).
+                     Keyed on the expiry so a renewed link replaces the field's value. --}}
+                @if ($signingUrl)
+                <div class="mt-4" wire:key="esign-link-{{ $esignRequest->id }}-{{ $esignRequest->expires_at?->timestamp }}">
+                    <flux:input size="sm" readonly copyable :value="$signingUrl" label="Signing link"
+                        description="Works only for {{ $esignRequest->signer_email_snapshot }}, who signs in to use it." />
+                </div>
+                @endif
 
                 @if ($esignRequest->intent_statement)
                 <flux:text class="mt-3 block rounded bg-gray-50 p-2 text-xs text-gray-600">{{ $esignRequest->intent_statement }}</flux:text>
@@ -875,6 +921,10 @@
                 @endif
 
                 <div class="mt-4 flex flex-wrap gap-2 border-t border-gray-100 pt-4">
+                    @if ($canRemindSigner)
+                    <flux:button size="sm" icon="envelope" wire:click="sendSignerReminder"
+                        wire:confirm="Email {{ $esignRequest->signer_email_snapshot }} a reminder with the signing link? This also renews the link for {{ config('esign.signing.invitation_link_ttl_days', 14) }} days.">Send reminder</flux:button>
+                    @endif
                     <flux:button size="sm" variant="ghost" icon="shield-check" wire:click="verifyChain">Verify audit chain</flux:button>
                     @if ($esignRequest->isActive() && $canChangeStatus)
                     <flux:button size="sm" variant="ghost" icon="x-mark" wire:click="voidEsign"
@@ -1197,9 +1247,9 @@
                                 </flux:text>
                             </div>
                         </div>
-                        @elseif (in_array($event->event_type, ['esign_sent', 'esign_completed'], true))
+                        @elseif (in_array($event->event_type, ['esign_sent', 'esign_reminder_sent', 'esign_completed'], true))
                         <div class="flex items-start gap-2">
-                            <flux:icon name="pencil-square" class="mt-0.5 size-4 shrink-0 text-purple-500" />
+                            <flux:icon :name="$event->event_type === 'esign_reminder_sent' ? 'envelope' : 'pencil-square'" class="mt-0.5 size-4 shrink-0 text-purple-500" />
                             <div class="min-w-0">
                                 <flux:text class="text-sm font-medium text-purple-700">{{ $event->description() }}</flux:text>
                                 @if ($event->event_type === 'esign_sent' && ! empty($event->payload_json['signer_email']))
@@ -1207,6 +1257,8 @@
                                     to {{ $event->payload_json['signer_email'] }} &middot;
                                     {{ $event->payload_json['documents'] ?? 1 }} letter(s)
                                 </flux:text>
+                                @elseif ($event->event_type === 'esign_reminder_sent' && ! empty($event->payload_json['signer_email']))
+                                <flux:text class="text-xs text-gray-600">to {{ $event->payload_json['signer_email'] }}</flux:text>
                                 @endif
                                 <flux:text class="text-xs text-gray-400">
                                     {{ $event->created_at->eastern()->format('M j, g:i A') }}

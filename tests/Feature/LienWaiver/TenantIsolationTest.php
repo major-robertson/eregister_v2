@@ -8,9 +8,13 @@ use App\Domains\Lien\Models\LienContact;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienWaiver;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 beforeEach(function () {
+    // Waiver PDFs go to the s3 disk; fake it so tests never need, or write to, a real bucket.
+    Storage::fake('s3');
+
     $this->userA = User::factory()->create();
     $this->businessA = Business::factory()->create([
         'name' => 'Business A',

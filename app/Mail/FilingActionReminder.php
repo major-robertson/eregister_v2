@@ -36,7 +36,7 @@ class FilingActionReminder extends Mailable implements ShouldQueue
 
         $filing = $sequence->sequenceable;
         $triggerStatus = FilingStatus::from($sequence->trigger_status);
-        $context = $triggerStatus->reminderContext();
+        $context = $this->reminderContext($filing, $triggerStatus);
 
         $this->userName = $filing->createdBy->first_name ?? 'there';
         $this->headline = $context['headline'];
@@ -44,6 +44,31 @@ class FilingActionReminder extends Mailable implements ShouldQueue
         $this->ctaLabel = $context['cta_label'];
         $this->ctaUrl = $this->resolveCtaUrl($filing, $triggerStatus);
         $this->projectName = $filing->project?->name;
+    }
+
+    /**
+     * The status copy, except for the e-sign reminder sent in the signing link's
+     * last day (day 13 of 14), which warns that the link is about to expire.
+     * Judged from the link itself (with slack for scheduler drift), so a renewed
+     * link isn't mislabeled.
+     *
+     * @return array{headline: string, body: string, cta_label: string}
+     */
+    private function reminderContext($filing, FilingStatus $status): array
+    {
+        $expiresAt = $status === FilingStatus::AwaitingEsign
+            ? $filing->activeSignatureRequest()?->expires_at
+            : null;
+
+        if ($expiresAt === null || $expiresAt->gt(now()->addHours(36))) {
+            return $status->reminderContext();
+        }
+
+        return [
+            'headline' => 'Your signing link expires in 24 hours',
+            'body' => 'Your e-signature request is still waiting for you, and your signing link expires in 24 hours. Please sign today so we can continue processing your filing.',
+            'cta_label' => 'Sign Now',
+        ];
     }
 
     /**

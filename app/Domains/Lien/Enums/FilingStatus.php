@@ -156,7 +156,7 @@ enum FilingStatus: string
             ],
             self::AwaitingEsign => [
                 'headline' => 'Please sign your document',
-                'body' => 'An e-signature request has been sent to you. Please check your email for the signing link and complete it so we can continue processing your filing.',
+                'body' => 'Your documents are ready for your electronic signature. Please review and sign them so we can continue processing your filing.',
                 'cta_label' => 'Sign Now',
             ],
             self::AwaitingNotary => [

@@ -55,6 +55,13 @@ class EmailSequence extends Model
         ],
     ];
 
+    /**
+     * E-signature links expire 14 days after they're sent, so e-sign reminders
+     * run on days 2, 5, 8, 11 and 13 instead; the day-13 one warns that the link
+     * expires in 24 hours (see FilingActionReminder).
+     */
+    private const ESIGN_REMINDER_DELAYS = [2880, 4320, 4320, 4320, 2880];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -71,13 +78,19 @@ class EmailSequence extends Model
     }
 
     /**
-     * Get the config for this sequence type.
+     * Get the config for this sequence type (e-sign reminders use their own delays).
      *
      * @return array{steps: int, delays: int[], email_prefix: string, unsubscribe_category: string}
      */
     public function config(): array
     {
-        return static::$sequenceConfig[$this->sequence_type];
+        $config = static::$sequenceConfig[$this->sequence_type];
+
+        if ($this->trigger_status === FilingStatus::AwaitingEsign->value) {
+            $config['delays'] = self::ESIGN_REMINDER_DELAYS;
+        }
+
+        return $config;
     }
 
     /**
@@ -259,17 +272,20 @@ class EmailSequence extends Model
     ): self {
         static::deleteReminderFor($filing);
 
-        $config = static::$sequenceConfig['filing_action_reminder'];
-
-        return static::create([
+        $sequence = new static([
             'sequence_type' => 'filing_action_reminder',
             'sequenceable_type' => $filing->getMorphClass(),
             'sequenceable_id' => $filing->getKey(),
             'user_id' => $user->getKey(),
             'business_id' => $business->getKey(),
             'trigger_status' => $triggerStatus->value,
-            'next_send_at' => now()->addMinutes($config['delays'][0]),
         ]);
+
+        // config() knows the trigger status, so e-sign reminders start on their own schedule.
+        $sequence->next_send_at = now()->addMinutes($sequence->config()['delays'][0]);
+        $sequence->save();
+
+        return $sequence;
     }
 
     /**

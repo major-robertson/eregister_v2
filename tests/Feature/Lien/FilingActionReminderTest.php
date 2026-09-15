@@ -1,6 +1,8 @@
 <?php
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Esign\Enums\SignatureRequestStatus;
+use App\Domains\Esign\Models\SignatureRequest;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Models\LienDocumentType;
 use App\Domains\Lien\Models\LienFiling;
@@ -9,6 +11,7 @@ use App\Mail\FilingActionReminder;
 use App\Models\EmailSequence;
 use App\Models\SentEmail;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 
 beforeEach(function () {
     $this->user = User::factory()->create();
@@ -261,4 +264,110 @@ it('only creates one active sequence per filing', function () {
         ->count();
 
     expect($count)->toBe(1);
+});
+
+/** An e-sign session awaiting the filing creator's signature, fabricated directly (no PDFs). */
+function esignReminderRequest(LienFiling $filing, User $signer, DateTimeInterface $expiresAt): SignatureRequest
+{
+    return SignatureRequest::create([
+        'signable_type' => $filing->getMorphClass(),
+        'signable_id' => $filing->id,
+        'business_id' => $filing->business_id,
+        'signer_user_id' => $signer->id,
+        'document_signing_policy_key' => 'demand_letter',
+        'status' => SignatureRequestStatus::AwaitingSignature,
+        'signer_name_snapshot' => $signer->name,
+        'signer_email_snapshot' => $signer->email,
+        'invited_at' => now(),
+        'expires_at' => $expiresAt,
+    ]);
+}
+
+it('fits awaiting-esign reminders inside the signing link lifetime', function () {
+    $esign = (new EmailSequence(['sequence_type' => 'filing_action_reminder', 'trigger_status' => 'awaiting_esign']))->config();
+    $client = (new EmailSequence(['sequence_type' => 'filing_action_reminder', 'trigger_status' => 'awaiting_client']))->config();
+
+    expect($esign['steps'])->toBe(5);
+    expect($esign['delays'])->toBe([2880, 4320, 4320, 4320, 2880]); // days 2, 5, 8, 11, 13
+    expect(array_sum($esign['delays']))->toBeLessThan(config('esign.signing.invitation_link_ttl_days') * 24 * 60);
+
+    // Statuses without an expiring link keep the longer cadence.
+    expect($client['delays'])->toBe([2880, 4320, 10080, 10080, 10080]);
+});
+
+it('sends every e-sign reminder before the link expires, warning on day 13', function () {
+    Mail::fake();
+    $this->travelTo(now()->startOfMinute());
+
+    $request = esignReminderRequest($this->filing, $this->user, now()->addDays(config('esign.signing.invitation_link_ttl_days')));
+    $this->filing->transitionTo(FilingStatus::AwaitingEsign);
+
+    $sequence = EmailSequence::query()
+        ->where('sequence_type', 'filing_action_reminder')
+        ->where('sequenceable_id', $this->filing->id)
+        ->first();
+
+    $sentOnDay = [];
+
+    for ($i = 0; $i < 10 && $sequence->refresh()->next_send_at !== null; $i++) {
+        $this->travelTo($sequence->next_send_at);
+        $this->artisan('email:process-sequences')->assertSuccessful();
+        $sentOnDay[] = (int) $request->invited_at->diffInDays(now());
+    }
+
+    expect($sentOnDay)->toBe([2, 5, 8, 11, 13]);
+    expect(now()->lessThan($request->expires_at))->toBeTrue();
+
+    expect(Mail::queued(FilingActionReminder::class)->pluck('headline')->all())->toBe([
+        'Please sign your document',
+        'Please sign your document',
+        'Please sign your document',
+        'Please sign your document',
+        'Your signing link expires in 24 hours',
+    ]);
+});
+
+it('does not warn about expiry when the signing link has been renewed', function () {
+    esignReminderRequest($this->filing, $this->user, now()->addDays(10));
+    $this->filing->transitionTo(FilingStatus::AwaitingEsign);
+
+    $sequence = EmailSequence::query()
+        ->where('sequence_type', 'filing_action_reminder')
+        ->where('sequenceable_id', $this->filing->id)
+        ->first();
+
+    expect((new FilingActionReminder($sequence, 5))->headline)->toBe('Please sign your document');
+});
+
+it('puts a call-to-action button in the email', function (FilingStatus $status, string $label) {
+    $this->filing->transitionTo($status);
+
+    $sequence = EmailSequence::query()
+        ->where('sequence_type', 'filing_action_reminder')
+        ->where('sequenceable_id', $this->filing->id)
+        ->first();
+
+    $mailable = new FilingActionReminder($sequence, 1);
+
+    $mailable->assertSeeInHtml($label);
+    $mailable->assertSeeInHtml($mailable->ctaUrl);
+})->with([
+    'awaiting_client' => [FilingStatus::AwaitingClient, 'Provide Information'],
+    'awaiting_esign' => [FilingStatus::AwaitingEsign, 'Sign Now'],
+    'awaiting_notary' => [FilingStatus::AwaitingNotary, 'View Filing Details'],
+]);
+
+it('points the e-sign reminder button straight at the signing page', function () {
+    $request = esignReminderRequest($this->filing, $this->user, now()->addDays(14));
+    $this->filing->transitionTo(FilingStatus::AwaitingEsign);
+
+    $sequence = EmailSequence::query()
+        ->where('sequence_type', 'filing_action_reminder')
+        ->where('sequenceable_id', $this->filing->id)
+        ->first();
+
+    $mailable = new FilingActionReminder($sequence, 1);
+
+    expect($mailable->ctaUrl)->toContain('/esign/'.$request->public_id);
+    $mailable->assertSeeInHtml($mailable->ctaUrl);
 });

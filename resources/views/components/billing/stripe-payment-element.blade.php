@@ -48,7 +48,12 @@ document.addEventListener('alpine:init', () => {
             
             this.stripe = Stripe('{{ config("cashier.key") }}');
             this.elements = this.stripe.elements({ clientSecret });
-            const paymentElement = this.elements.create('payment');
+            // Without a business name, Stripe's mandate text ("you allow ... to
+            // charge your card") uses the account's public name, which is
+            // shared with the old Tax Resale Certificate app.
+            const paymentElement = this.elements.create('payment', {
+                business: { name: 'eRegister' },
+            });
             
             paymentElement.on('ready', () => {
                 this.isInitialized = true;

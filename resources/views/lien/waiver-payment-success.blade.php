@@ -9,6 +9,15 @@
             transaction_id: "{{ $payment->id }}"
         });
     </script>
+    <!-- GA4 funnel: purchase (lien waiver subscription) -->
+    <script data-navigate-once>
+        window.gtag && gtag('event', 'purchase', {
+            transaction_id: "{{ $payment->id }}",
+            value: {{ number_format($payment->amount_cents / 100, 2, '.', '') }},
+            currency: "USD",
+            items: [{ item_name: "Lien Waiver Pro", price: {{ number_format($payment->amount_cents / 100, 2, '.', '') }}, quantity: 1 }]
+        });
+    </script>
     <!-- Reddit Pixel Conversion (lien waiver subscription) -->
     <script data-navigate-once>
         rdt('track', 'Purchase', {

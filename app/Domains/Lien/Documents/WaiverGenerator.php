@@ -2,6 +2,7 @@
 
 namespace App\Domains\Lien\Documents;
 
+use App\Domains\Business\Models\Business;
 use App\Domains\Lien\Enums\WaiverDirection;
 use App\Domains\Lien\Models\LienWaiver;
 use App\Domains\Lien\Waivers\ResolvedWaiverForm;
@@ -45,6 +46,26 @@ class WaiverGenerator
             ->format('letter');
     }
 
+    /**
+     * The business profile's address in the same line shape as
+     * LienParty::addressLines().
+     *
+     * @return list<string>
+     */
+    private function businessAddressLines(?Business $business): array
+    {
+        $address = $business?->business_address ?? [];
+
+        $cityState = implode(', ', array_filter([$address['city'] ?? null, $address['state'] ?? null]));
+        $cityStateZip = trim($cityState.' '.($address['zip'] ?? ''));
+
+        return array_values(array_filter([
+            $address['line1'] ?? null,
+            $address['line2'] ?? null,
+            $cityStateZip,
+        ]));
+    }
+
     public function filename(LienWaiver $waiver): string
     {
         $kind = str_replace('_', '-', $waiver->kind->value);
@@ -67,13 +88,17 @@ class WaiverGenerator
         $project = $waiver->project;
         $claimantParty = $project?->claimantParty();
         $ownerParty = $project?->ownerParty();
+        $businessModel = $project?->business;
 
+        // Without a claimant party (a waiver-first signup never adds one) the
+        // form still needs the claimant's address, so the business profile
+        // stands in.
         $business = [
-            'company' => ($claimantParty?->company_name ?: null) ?? $project?->business?->name,
+            'company' => ($claimantParty?->company_name ?: null) ?? $businessModel?->name,
             'name' => $claimantParty?->name ?: null,
-            'address_lines' => $claimantParty?->addressLines() ?? [],
+            'address_lines' => ($claimantParty?->addressLines() ?: null) ?? $this->businessAddressLines($businessModel),
             'email' => $claimantParty?->email ?: null,
-            'phone' => $claimantParty?->phone ?: null,
+            'phone' => ($claimantParty?->phone ?: null) ?? ($businessModel?->phone ?: null),
         ];
 
         $counterparty = [

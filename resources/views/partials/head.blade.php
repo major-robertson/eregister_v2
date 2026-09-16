@@ -9,6 +9,9 @@
   gtag('js', new Date());
   gtag('config', 'G-MSVBK7VE6P');
   gtag('config', 'AW-984288380');
+@foreach (\App\Support\Analytics\Gtag::drain() as $queuedEvent)
+  gtag('event', @js($queuedEvent['name']), @js((object) $queuedEvent['params']));
+@endforeach
 </script>
 
 <!-- Reddit Pixel -->

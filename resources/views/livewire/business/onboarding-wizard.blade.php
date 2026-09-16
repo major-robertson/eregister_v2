@@ -6,6 +6,13 @@
         send_to: "AW-984288380/XDg5CMWk_7oZEPyYrNUD"
     });
 </script>
+<!-- GA4 funnel: sign_up (landing_path says which product page brought them) -->
+<script data-navigate-once>
+    window.gtag && gtag('event', 'sign_up', {
+        method: 'email',
+        landing_path: @js(auth()->user()->signup_landing_path)
+    });
+</script>
 <!-- Reddit Pixel Conversion - Create Account -->
 <script data-navigate-once>
     rdt('track', 'SignUp', {
@@ -22,11 +29,14 @@
 @endif
 
 <div class="w-full max-w-lg">
-    {{-- Progress dots: 2/4 if from liens + first business (continuous flow), 2/2 otherwise --}}
+    {{-- Progress dots: 2/4 if from liens + first business (continuous flow
+         into lien onboarding), 2/2 otherwise. Waiver signups skip lien
+         onboarding, so they get 2/2 and continue into the wizard. --}}
     @php
         $user = auth()->user();
-        $isFromLiens = $user->signedUpFromLiens();
         $isFirstBusiness = $user->businesses()->count() === 1;
+        $isWaiverFlow = $user->signedUpFromWaivers() && $isFirstBusiness;
+        $isFromLiens = $user->signedUpFromLiens() && ! $user->signedUpFromWaivers();
         $isContinuousFlow = $isFromLiens && $isFirstBusiness;
     @endphp
     <div class="mb-16 flex justify-center gap-2">
@@ -123,7 +133,7 @@
         </div>
 
         <div class="flex justify-end pt-6">
-            @if ($isContinuousFlow)
+            @if ($isContinuousFlow || $isWaiverFlow)
                 <flux:button type="submit" variant="primary" icon-trailing="arrow-right">
                     Continue
                 </flux:button>

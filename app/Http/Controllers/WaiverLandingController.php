@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Domains\Lien\Waivers\WaiverFormResolver;
+use App\Domains\Lien\Waivers\WaiverIntent;
 use App\Domains\Lien\Waivers\WaiverStateRegistry;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 /**
- * Public marketing pages for lien waivers: the main landing page and the 50
- * per-state SEO pages. Everything is driven by WaiverStateRegistry so the
- * marketing copy can never drift from what the waiver wizard actually
- * generates — a state data file update changes both at once.
+ * Public marketing pages for lien waivers: the main landing page, the 50
+ * per-state SEO pages, and the ads landing pages. Everything is driven by
+ * WaiverStateRegistry so the marketing copy can never drift from what the
+ * waiver wizard actually generates — a state data file update changes both
+ * at once.
  */
 class WaiverLandingController extends Controller
 {
@@ -50,6 +53,48 @@ class WaiverLandingController extends Controller
             'pageTitle' => $stateName.' Lien Waiver Forms | Free '.$stateName.' Lien Waiver Generator',
             'metaDescription' => $this->metaDescription($stateName, $rules),
             'canonicalUrl' => route('liens.lien-waivers.state', ['state' => strtolower($code)]),
+        ]);
+    }
+
+    /**
+     * Ads landing page: the state page's promise with no site chrome and the
+     * starter above the fold. The state is optional (the generic page speaks
+     * for all 50); ?d= and ?type= pre-select the starter so an ad group can
+     * land on the choice its keywords imply. noindex — the SEO pages carry
+     * the canonical content.
+     */
+    public function lp(?string $state = null): View|RedirectResponse
+    {
+        if ($state !== null) {
+            abort_unless(WaiverStateRegistry::isSupported($state), 404);
+
+            if ($state !== strtolower($state)) {
+                return redirect()->route('lp.lien-waiver', ['state' => strtolower($state)] + request()->query(), 301);
+            }
+        }
+
+        $code = $state !== null ? strtoupper($state) : null;
+        $rules = $code !== null ? WaiverStateRegistry::for($code) : null;
+        $stateName = $code !== null ? ($rules['state_name'] ?? WaiverStateRegistry::STATE_NAMES[$code]) : null;
+
+        $preselected = WaiverIntent::normalize([
+            'direction' => request()->query('d'),
+            'kind' => request()->query('type'),
+        ]);
+
+        return view('pages.liens.lien-waiver-lp', [
+            'code' => $code,
+            'rules' => $rules,
+            'stateName' => $stateName,
+            'kinds' => $code !== null ? app(WaiverFormResolver::class)->availableKinds($code) : [],
+            'preselectedDirection' => $preselected['direction'],
+            'preselectedKind' => $preselected['kind'],
+            'pageTitle' => $stateName !== null
+                ? "Free {$stateName} Lien Waiver Form | Generate & Download"
+                : 'Free Lien Waiver Form Generator | All 50 States',
+            'metaDescription' => $stateName !== null
+                ? $this->metaDescription($stateName, $rules)
+                : 'Generate the correct lien waiver form for any state, filled in with your details, and download the PDF free. Conditional, unconditional, progress, and final waivers.',
         ]);
     }
 

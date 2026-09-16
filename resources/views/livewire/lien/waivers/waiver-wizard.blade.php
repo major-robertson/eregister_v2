@@ -283,19 +283,120 @@
             <flux:error name="direction" class="mt-3" />
 
         @elseif ($step === 2)
-            {{-- Step 2: Project --}}
-            <x-slot:header>Which project is this waiver for?</x-slot:header>
+            {{-- Step 2: Project. A waiver-first signup has none yet, so the
+                 jobsite is collected right here instead of the project wizard. --}}
+            <x-slot:header>{{ $creatingProject ? 'Where is the job?' : 'Which project is this waiver for?' }}</x-slot:header>
 
-            @if ($projects->isEmpty())
-                <div class="py-6 text-center">
-                    <flux:icon name="folder-plus" class="mx-auto size-10 text-zinc-400" />
-                    <flux:text class="mt-2 text-zinc-500">
-                        You don't have any completed projects yet. A waiver needs a project so we know
-                        which state's form to use.
-                    </flux:text>
-                    <flux:button href="{{ route('lien.projects.create') }}" variant="primary" class="mt-4" wire:navigate>
-                        Create a project first
-                    </flux:button>
+            @if ($creatingProject)
+                <div class="space-y-5">
+                    <p class="text-sm text-text-secondary">
+                        The jobsite's state decides which waiver form applies. The property owner and the
+                        other party come next.
+                    </p>
+
+                    <flux:field>
+                        <flux:label>Jobsite street address</flux:label>
+                        <flux:input wire:model="project_address1" placeholder="Start typing to search..."
+                            autocomplete="off" data-places-autocomplete data-places-method="updateProjectAddressFromAutocomplete" />
+                        <flux:error name="project_address1" />
+                    </flux:field>
+
+                    <flux:field>
+                        <flux:label>Address line 2 <span class="font-normal text-zinc-400">(optional)</span></flux:label>
+                        <flux:input wire:model="project_address2" placeholder="Suite, unit, building" />
+                        <flux:error name="project_address2" />
+                    </flux:field>
+
+                    <div class="grid gap-4 sm:grid-cols-3">
+                        <flux:field>
+                            <flux:label>City</flux:label>
+                            <flux:input wire:model="project_city" />
+                            <flux:error name="project_city" />
+                        </flux:field>
+
+                        <flux:field>
+                            <flux:label>State</flux:label>
+                            <flux:select variant="combobox" clearable placeholder="Select..." wire:model="project_state">
+                                @foreach (config('states') as $code => $name)
+                                    <flux:select.option value="{{ $code }}">{{ $name }}</flux:select.option>
+                                @endforeach
+                            </flux:select>
+                            <flux:error name="project_state" />
+                        </flux:field>
+
+                        <flux:field>
+                            <flux:label>ZIP</flux:label>
+                            <flux:input wire:model="project_zip" />
+                            <flux:error name="project_zip" />
+                        </flux:field>
+                    </div>
+
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <flux:field>
+                            <flux:label>County <span class="font-normal text-zinc-400">(optional)</span></flux:label>
+                            <flux:input wire:model="project_county" placeholder="Fills in from the address" />
+                            <flux:error name="project_county" />
+                        </flux:field>
+
+                        <flux:field>
+                            <flux:label>Property type</flux:label>
+                            <flux:select wire:model="project_property_class">
+                                <option value="">Select...</option>
+                                <option value="residential">Residential</option>
+                                <option value="commercial">Commercial</option>
+                                <option value="government">Government / Public</option>
+                            </flux:select>
+                            <flux:error name="project_property_class" />
+                        </flux:field>
+                    </div>
+
+                    <flux:field>
+                        <flux:label>Project name <span class="font-normal text-zinc-400">(optional)</span></flux:label>
+                        <flux:input wire:model="project_name" placeholder="Defaults to the jobsite address" />
+                        <flux:error name="project_name" />
+                    </flux:field>
+
+                    <div>
+                        <p class="mb-2.5 text-[15px] font-semibold text-text-primary">Your role on this job</p>
+                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            @foreach ($projectRoles as $roleValue => $role)
+                                @php $selected = $project_role === $roleValue; @endphp
+                                <button
+                                    type="button"
+                                    wire:key="project-role-{{ $roleValue }}"
+                                    wire:click="$set('project_role', '{{ $roleValue }}')"
+                                    @class([
+                                        'flex items-start gap-3 rounded-xl border p-4 text-left transition',
+                                        'border-primary bg-primary/5' => $selected,
+                                        'border-border bg-white hover:border-primary/40' => ! $selected,
+                                    ])
+                                >
+                                    <span @class([
+                                        'mt-0.5 size-[18px] shrink-0 rounded-full bg-white',
+                                        'border-[5px] border-primary' => $selected,
+                                        'border-[1.5px] border-zinc-300' => ! $selected,
+                                    ])></span>
+                                    <span class="min-w-0">
+                                        <span class="block text-[15px] font-semibold text-text-primary">{{ $role['label'] }}</span>
+                                        <span class="mt-0.5 block text-sm text-text-secondary">{{ $role['hint'] }}</span>
+                                    </span>
+                                </button>
+                            @endforeach
+                        </div>
+                        <flux:error name="project_role" class="mt-2" />
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-end gap-3 border-t border-zinc-200 pt-5 dark:border-zinc-700">
+                        @if ($projects->isNotEmpty())
+                            <flux:button wire:click="cancelNewProject" variant="ghost">
+                                Cancel
+                            </flux:button>
+                        @endif
+                        <flux:button wire:click="createProject" wire:loading.attr="disabled" variant="primary" icon-trailing="arrow-right">
+                            <span wire:loading.remove wire:target="createProject">Save project &amp; continue</span>
+                            <span wire:loading wire:target="createProject">Saving...</span>
+                        </flux:button>
+                    </div>
                 </div>
             @else
                 <div class="space-y-4">
@@ -311,12 +412,10 @@
                         <flux:error name="projectId" />
                     </flux:field>
 
-                    {{-- Leaves the wizard (project creation is its own flow); only
-                         the direction choice is lost at this step. --}}
-                    <a href="{{ route('lien.projects.create') }}" wire:navigate
+                    <button type="button" wire:click="startNewProject"
                         class="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 p-3 text-sm font-semibold text-primary transition hover:border-primary hover:bg-primary/5">
                         <span class="text-lg leading-none">+</span> Add a new project
-                    </a>
+                    </button>
 
                     @if ($project)
                         <flux:callout color="blue" icon="map-pin">
@@ -641,7 +740,8 @@
         </div>
 
         <div>
-            @if ($step < $totalSteps)
+            {{-- The inline project form has its own save-and-continue button. --}}
+            @if ($step < $totalSteps && ! ($step === 2 && $creatingProject))
                 <flux:button wire:click="nextStep" wire:loading.attr="disabled" variant="primary" icon-trailing="arrow-right">
                     <span wire:loading.remove wire:target="nextStep">{{ $step === 4 ? 'Continue to review' : 'Continue' }}</span>
                     <span wire:loading wire:target="nextStep">Checking...</span>

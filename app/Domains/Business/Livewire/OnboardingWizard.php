@@ -148,7 +148,12 @@ class OnboardingWizard extends Component
         $isFirstBusiness = $user->businesses()->count() === 1;
         $landingPath = $user->signup_landing_path;
 
-        if ($isFirstBusiness && $user->signedUpFromLiens()) {
+        if ($isFirstBusiness && $user->signedUpFromWaivers()) {
+            // Waiver-first signups go straight into the wizard. Lien
+            // onboarding (phone, license, signer title) only matters for
+            // filings and is collected when they first open a filing page.
+            $redirectRoute = route('lien.waivers.create');
+        } elseif ($isFirstBusiness && $user->signedUpFromLiens()) {
             $redirectRoute = route('lien.onboarding');
         } elseif ($isFirstBusiness && $user->signedUpFromResaleCerts()) {
             // Lands on the resale dashboard, which shows the pricing card

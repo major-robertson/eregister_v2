@@ -33,17 +33,14 @@
         <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">
             Generate conditional, unconditional, progress, and final lien waivers with the right form for your project's state, including the exact statutory text where the law prescribes one. Download free, or send for e-signature and get the signed copy stored automatically.
         </p>
-        <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <a href="{{ route('register') }}" class="group inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#B91C1C]">
-                Create a free lien waiver
-                <svg class="h-4 w-4 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-            </a>
-            <a href="{{ route('liens.lien-waivers.pricing') }}" class="inline-flex items-center gap-2 rounded-lg border border-zinc-600 px-8 py-4 text-base font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-white">
-                See pricing
-            </a>
+        {{-- The starter replaces the register button: state, send/collect,
+             and waiver type are chosen here and carried through signup. --}}
+        <div class="mx-auto mt-10 max-w-2xl">
+            <x-lien.waiver-starter :from="request()->getPathInfo()" />
         </div>
+        <p class="mt-6 text-sm text-zinc-400">
+            <a href="{{ route('liens.lien-waivers.pricing') }}" class="underline decoration-zinc-600 underline-offset-4 transition hover:text-white">See pricing</a>
+        </p>
     </div>
 </section>
 
@@ -174,7 +171,7 @@
                     <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> E-signature send &amp; collect, reminders, signed-copy storage</li>
                     <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Free project &amp; deadline tracking</li>
                 </ul>
-                <a href="{{ route('register') }}" class="mt-8 inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-6 py-3 font-semibold text-zinc-900 transition hover:border-zinc-400">
+                <a href="#start" class="mt-8 inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-6 py-3 font-semibold text-zinc-900 transition hover:border-zinc-400">
                     Start free
                 </a>
             </div>
@@ -193,7 +190,7 @@
                     <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Per-seat pricing — pay only for teammates who need it</li>
                     <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> No per-waiver or per-signature charges</li>
                 </ul>
-                <a href="{{ route('register') }}" class="group mt-8 inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-zinc-800">
+                <a href="#start" class="group mt-8 inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-zinc-800">
                     Start with Pro
                     <svg class="h-4 w-4 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -320,10 +317,10 @@
             <h2 class="text-3xl font-bold text-white sm:text-4xl">Create your first lien waiver free</h2>
             <p class="mt-4 text-lg text-zinc-400">The correct form for your state, filled in and ready to download in about two minutes. No credit card required.</p>
             <div class="mt-8">
-                <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 font-semibold text-zinc-900 shadow-lg transition hover:scale-105 hover:bg-zinc-50">
+                <a href="#start" class="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 font-semibold text-zinc-900 shadow-lg transition hover:scale-105 hover:bg-zinc-50">
                     Create a free lien waiver
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                     </svg>
                 </a>
             </div>

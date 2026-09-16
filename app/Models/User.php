@@ -151,8 +151,9 @@ class User extends Authenticatable
     }
 
     /**
-     * Whether the user signed up from any /liens marketing page
-     * (the main /liens page or any sub-page like /liens/payment-demand-letter).
+     * Whether the user signed up from any /liens marketing page (the main
+     * /liens page, a sub-page like /liens/payment-demand-letter, or a lien
+     * waiver page, including the /lp/ ads variants).
      */
     public function signedUpFromLiens(): bool
     {
@@ -162,7 +163,29 @@ class User extends Authenticatable
             return false;
         }
 
-        return $path === '/liens' || str_starts_with($path, '/liens/');
+        return $path === '/liens' || str_starts_with($path, '/liens/') || $this->signedUpFromWaivers();
+    }
+
+    /**
+     * Whether the user signed up from the lien waiver generator's pages: the
+     * SEO landing page, a state page, or an ads landing page. These signups
+     * skip lien onboarding and go straight into the waiver wizard.
+     */
+    public function signedUpFromWaivers(): bool
+    {
+        $path = $this->signup_landing_path;
+
+        if (! $path) {
+            return false;
+        }
+
+        foreach (['/liens/lien-waivers', '/lp/lien-waiver'] as $prefix) {
+            if ($path === $prefix || str_starts_with($path, $prefix.'/')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

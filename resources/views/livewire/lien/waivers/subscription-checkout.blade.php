@@ -1,3 +1,16 @@
+@push('scripts')
+<!-- GA4 funnel: the checkout page was reached -->
+<script data-navigate-once>
+    window.gtag && gtag('event', 'begin_checkout', {
+        currency: 'USD',
+        value: @js(round($amountCents / 100, 2)),
+        interval: @js($interval),
+        seats: @js($selectedCount),
+        items: [{ item_name: 'Lien Waiver Pro', price: @js(round($unitAmountCents / 100, 2)), quantity: @js($selectedCount) }]
+    });
+</script>
+@endpush
+
 <div class="mx-auto max-w-md space-y-6 px-6 py-10">
     <div class="text-center">
         <flux:heading size="xl">Secure payment</flux:heading>

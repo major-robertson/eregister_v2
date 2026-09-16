@@ -10,52 +10,6 @@
                 {{ $filing->project?->business?->name }} — {{ $filing->project?->name }}
             </flux:text>
         </div>
-        @php
-            $demandRecipients = $filing->isDemandLetter()
-                ? ($filing->project?->nonClaimantParties() ?? collect())
-                : collect();
-            // Once signed, the prominent download serves the SIGNED letters; the
-            // on-the-fly unsigned draft stays available but is labeled as such.
-            $headerSignedDocs = $signedEsignRequest
-                ? $signedEsignRequest->documents->filter(fn ($d) => $d->signed_at !== null)
-                : collect();
-        @endphp
-        @if ($filing->isDemandLetter() && ($demandRecipients->isNotEmpty() || $headerSignedDocs->isNotEmpty()))
-        <flux:dropdown>
-            <flux:button icon="arrow-down-tray" variant="primary" size="sm">Demand Letter</flux:button>
-            <flux:menu>
-                @if ($headerSignedDocs->isNotEmpty())
-                    @foreach ($headerSignedDocs as $signedDoc)
-                    <flux:menu.item
-                        wire:key="hdr-signed-{{ $signedDoc->id }}"
-                        icon="document-check"
-                        :href="route('admin.liens.esign.documents.download', $signedDoc->public_id)">
-                        {{ $signedDoc->label }} — signed
-                    </flux:menu.item>
-                    @endforeach
-                    @if ($demandRecipients->isNotEmpty())
-                    <flux:menu.separator />
-                    @endif
-                @endif
-                @foreach ($demandRecipients as $party)
-                <flux:menu.item
-                    wire:key="hdr-draft-{{ $party->id }}"
-                    icon="document-arrow-down"
-                    :href="route('admin.liens.demand-letter', [$filing->public_id, $party->id])">
-                    {{ $party->displayName() ?: 'Unnamed party' }} — {{ $party->role->label() }}@if ($headerSignedDocs->isNotEmpty()) (unsigned draft)@endif
-                </flux:menu.item>
-                @endforeach
-                @if ($demandRecipients->isNotEmpty())
-                <flux:menu.separator />
-                <flux:menu.item
-                    icon="document-duplicate"
-                    :href="route('admin.liens.demand-letters', $filing->public_id)">
-                    {{ $headerSignedDocs->isNotEmpty() ? 'Download all unsigned drafts' : 'Download all' }} ({{ $demandRecipients->count() }})
-                </flux:menu.item>
-                @endif
-            </flux:menu>
-        </flux:dropdown>
-        @endif
         @if ($canSendEsign)
         <flux:button wire:click="confirmSendForEsign" icon="pencil-square" variant="primary" size="sm">
             {{ $hasPriorEsign ? 'Re-send for E-Sign' : 'Send for E-Sign' }}
@@ -767,7 +721,7 @@
                         <flux:callout.text>
                             This filing has <strong>already been e-signed</strong>. Sending again starts a brand-new
                             signature request with a new signing link. The previously signed copies stay available
-                            to download below.
+                            to download under Demand Letters.
                         </flux:callout.text>
                     </flux:callout>
                     @endif
@@ -901,25 +855,6 @@
                     @endforeach
                 </div>
 
-                {{-- Signed documents stay downloadable by admins even after a re-send
-                     starts a new (unsigned) session. Sourced from the latest completed session. --}}
-                @if ($signedEsignRequest)
-                <div class="mt-4 border-t border-gray-100 pt-4">
-                    <flux:text class="mb-2 block text-sm font-medium text-gray-700">Signed documents</flux:text>
-                    <div class="space-y-2">
-                        @foreach ($signedEsignRequest->documents as $signedDoc)
-                        @if ($signedDoc->signed_at)
-                        <flux:button wire:key="signed-doc-{{ $signedDoc->id }}" size="sm" variant="ghost"
-                            icon="arrow-down-tray" class="w-full justify-start"
-                            :href="route('admin.liens.esign.documents.download', $signedDoc->public_id)">
-                            {{ $signedDoc->document_identifier }} — {{ $signedDoc->label }}
-                        </flux:button>
-                        @endif
-                        @endforeach
-                    </div>
-                </div>
-                @endif
-
                 <div class="mt-4 flex flex-wrap gap-2 border-t border-gray-100 pt-4">
                     @if ($canRemindSigner)
                     <flux:button size="sm" icon="envelope" wire:click="sendSignerReminder"
@@ -931,6 +866,52 @@
                         wire:confirm="Void this signature request? The signer's link will stop working.">Void</flux:button>
                     @endif
                 </div>
+            </div>
+            @endif
+
+            {{-- Demand letter downloads, under the E-Signature panel. Signed copies come
+                 from the latest completed session, so they survive a re-send; each
+                 recipient's draft is generated from the filing's current details. --}}
+            @if ($filing->isDemandLetter())
+            <div class="rounded-lg border border-border bg-white p-6">
+                <flux:heading size="lg" class="mb-4">Demand Letters</flux:heading>
+
+                <div class="space-y-2">
+                    @foreach ($signedLetters as $letter)
+                    <a wire:key="signed-letter-{{ $letter->id }}" title="{{ $letter->label }}"
+                        href="{{ route('admin.liens.esign.documents.download', $letter->public_id) }}"
+                        class="flex items-center gap-3 rounded-lg border border-gray-200 p-2 hover:bg-gray-50">
+                        <flux:icon name="document-check" class="size-5 shrink-0 text-green-600" />
+                        <div class="min-w-0 flex-1">
+                            <flux:text class="truncate text-sm font-medium">{{ $letter->label }}</flux:text>
+                            <flux:text class="text-xs text-gray-500">{{ $letter->document_identifier }} · Signed {{ $letter->signed_at->eastern()->format('M j, Y') }}</flux:text>
+                        </div>
+                        <flux:icon name="arrow-down-tray" class="size-4 shrink-0 text-gray-400" />
+                    </a>
+                    @endforeach
+
+                    @forelse ($demandRecipients as $party)
+                    <a wire:key="draft-letter-{{ $party->id }}"
+                        href="{{ route('admin.liens.demand-letter', [$filing->public_id, $party->id]) }}"
+                        class="flex items-center gap-3 rounded-lg border border-gray-200 p-2 hover:bg-gray-50">
+                        <flux:icon name="document-text" class="size-5 shrink-0 text-gray-400" />
+                        <div class="min-w-0 flex-1">
+                            <flux:text class="truncate text-sm font-medium">{{ $party->displayName() ?: 'Unnamed party' }}</flux:text>
+                            <flux:text class="text-xs text-gray-500">{{ $party->role->label() }} · Unsigned draft</flux:text>
+                        </div>
+                        <flux:icon name="arrow-down-tray" class="size-4 shrink-0 text-gray-400" />
+                    </a>
+                    @empty
+                    <flux:text class="text-sm text-gray-500">Add a recipient under Parties to generate a letter.</flux:text>
+                    @endforelse
+                </div>
+
+                @if ($demandRecipients->count() > 1)
+                <flux:button size="sm" icon="document-duplicate" class="mt-3 w-full"
+                    :href="route('admin.liens.demand-letters', $filing->public_id)">
+                    Download all drafts ({{ $demandRecipients->count() }})
+                </flux:button>
+                @endif
             </div>
             @endif
 

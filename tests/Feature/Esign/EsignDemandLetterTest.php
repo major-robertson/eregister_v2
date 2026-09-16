@@ -402,10 +402,10 @@ describe('admin panel', function () {
             ->get(route('admin.liens.esign.documents.download', $signedDoc->public_id))
             ->assertRedirect();
 
-        // ...and the panel surfaces it even though the latest session is unsigned.
+        // ...and the Demand Letters card lists it even though the latest session is unsigned.
         $this->actingAs(esignAdmin());
         Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing->fresh()])
-            ->assertSee('Signed documents')
+            ->assertSee($signedDoc->document_identifier.' · Signed')
             ->assertSeeHtml(route('admin.liens.esign.documents.download', $signedDoc->public_id));
     });
 
@@ -422,7 +422,7 @@ describe('admin panel', function () {
             ->assertSee('already been e-signed');
     });
 
-    it('serves signed letters from the header Demand Letter download once signed', function () {
+    it('lists signed letters ahead of the unsigned drafts once signed', function () {
         Mail::fake();
         $request = esignSendFor(esignDemandFiling());
         esignCompleteSign($request, $request->signer);
@@ -431,9 +431,8 @@ describe('admin panel', function () {
 
         $this->actingAs(esignAdmin());
         Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
-            // Header dropdown links to the signed PDF and labels the on-the-fly letter as a draft.
             ->assertSeeHtml(route('admin.liens.esign.documents.download', $signedDoc->public_id))
-            ->assertSee('unsigned draft');
+            ->assertSeeHtmlInOrder([$signedDoc->document_identifier.' · Signed', 'Unsigned draft']);
     });
 });
 

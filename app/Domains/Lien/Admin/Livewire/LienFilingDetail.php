@@ -204,9 +204,11 @@ class LienFilingDetail extends Component
             ->latest('id')
             ->first();
 
-        $recipientCount = $this->lienFiling->isDemandLetter()
-            ? ($this->lienFiling->project?->nonClaimantParties()->count() ?? 0)
-            : 0;
+        // Every party except the claimant (the sender) gets its own letter.
+        $demandRecipients = $this->lienFiling->isDemandLetter()
+            ? ($this->lienFiling->project?->nonClaimantParties() ?? collect())
+            : collect();
+        $recipientCount = $demandRecipients->count();
 
         $canSendEsign = ! $isDeleted
             && $this->lienFiling->isDemandLetter()
@@ -240,8 +242,9 @@ class LienFilingDetail extends Component
             'requiredDeadlines' => $requiredDeadlines,
             'filingDocStatus' => $filingDocStatus,
             'esignRequest' => $esignRequest,
-            'signedEsignRequest' => $signedEsignRequest,
             'hasPriorEsign' => $signedEsignRequest !== null,
+            'demandRecipients' => $demandRecipients,
+            'signedLetters' => $signedEsignRequest?->documents->whereNotNull('signed_at')->values() ?? collect(),
             'recipientCount' => $recipientCount,
             'canSendEsign' => $canSendEsign,
             'esignAwaiting' => $esignAwaiting,

@@ -173,8 +173,8 @@ describe('authorization', function () {
     });
 });
 
-describe('dropdown affordance', function () {
-    it('lists a menu item per recipient plus download-all for a demand letter', function () {
+describe('Demand Letters card', function () {
+    it('lists an unsigned draft per recipient plus download-all for a demand letter', function () {
         $admin = demandAdmin();
         $project = demandProject();
         $filing = demandFiling($project, 'demand_letter');
@@ -182,13 +182,27 @@ describe('dropdown affordance', function () {
         $this->actingAs($admin);
 
         Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
-            ->assertSee('Owner Holdings')
-            ->assertSee('Property Owner')
-            ->assertSee('Customer Co')
-            ->assertSee('GC Builders')
-            ->assertSee('Download all (3)')
+            ->assertSee('Demand Letters')
+            ->assertSee('Property Owner · Unsigned draft')
+            ->assertSee('Download all drafts (3)')
             ->assertSeeHtml(route('admin.liens.demand-letter', [$filing->public_id, $project->ownerParty()->id]))
-            ->assertSeeHtml(route('admin.liens.demand-letters', $filing->public_id));
+            ->assertSeeHtml(route('admin.liens.demand-letters', $filing->public_id))
+            // The claimant sends the letters, so it never gets one.
+            ->assertDontSeeHtml(route('admin.liens.demand-letter', [$filing->public_id, $project->claimantParty()->id]));
+    });
+
+    it('skips download-all when there is a single recipient', function () {
+        $admin = demandAdmin();
+        $project = LienProject::factory()->forBusiness(Business::factory()->create())->create();
+        demandParty($project, PartyRole::Claimant, 'Carl Claimant', 'Carl Construction LLC');
+        $owner = demandParty($project, PartyRole::Owner, 'Olivia Owner', 'Owner Holdings');
+        $filing = demandFiling($project, 'demand_letter');
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->assertSeeHtml(route('admin.liens.demand-letter', [$filing->public_id, $owner->id]))
+            ->assertDontSee('Download all');
     });
 
     it('is hidden for a non-demand-letter filing', function () {
@@ -199,10 +213,12 @@ describe('dropdown affordance', function () {
         $this->actingAs($admin);
 
         Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->assertDontSee('Demand Letters')
+            ->assertDontSee('Unsigned draft')
             ->assertDontSee('Download all');
     });
 
-    it('is hidden when a demand letter has no recipients', function () {
+    it('asks for a recipient when a demand letter has none', function () {
         $admin = demandAdmin();
         $project = LienProject::factory()->forBusiness(Business::factory()->create())->create();
         demandParty($project, PartyRole::Claimant, 'Solo Claimant', 'Solo LLC');
@@ -211,6 +227,8 @@ describe('dropdown affordance', function () {
         $this->actingAs($admin);
 
         Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->assertSee('Add a recipient under Parties to generate a letter.')
+            ->assertDontSee('Unsigned draft')
             ->assertDontSee('Download all');
     });
 });

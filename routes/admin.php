@@ -24,6 +24,7 @@ use App\Domains\Lien\Admin\Livewire\LienBoardAll;
 use App\Domains\Lien\Admin\Livewire\LienFilingDetail;
 use App\Domains\Lien\Admin\Livewire\LienRulesOverview;
 use App\Domains\ResaleCert\Admin\Http\Controllers\SampleCertificateController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -37,8 +38,23 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('admin')->middleware(['auth'])->group(function () {
-    // Admin home - redirect to liens board for now
-    Route::get('/', fn () => redirect()->route('admin.liens.board'))->name('admin.home');
+    // Admin home - send each user to the first board they can open, so
+    // sales-tax-only or formations-only staff don't land on a 403.
+    Route::get('/', function (Request $request) {
+        $boards = [
+            'lien.view' => 'admin.liens.board',
+            'tax.view' => 'admin.sales-tax.board',
+            'llc.view' => 'admin.formations.board',
+        ];
+
+        foreach ($boards as $permission => $board) {
+            if ($request->user()->can($permission)) {
+                return redirect()->route($board);
+            }
+        }
+
+        abort(403);
+    })->name('admin.home');
 
     // Lien admin routes - require lien.view permission
     Route::prefix('liens')

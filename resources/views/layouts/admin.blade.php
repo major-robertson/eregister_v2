@@ -16,10 +16,12 @@
 
         <flux:sidebar.nav>
             <flux:sidebar.group :heading="__('Applications')">
+                @can('lien.view')
                 <flux:sidebar.item icon="document-text" :href="route('admin.liens.board')"
                     :current="request()->routeIs('admin.liens.*')" wire:navigate>
                     {{ __('Liens') }}
                 </flux:sidebar.item>
+                @endcan
                 @can('tax.view')
                 <flux:sidebar.item icon="receipt-percent" :href="route('admin.sales-tax.board')"
                     :current="request()->routeIs('admin.sales-tax.*')" wire:navigate>

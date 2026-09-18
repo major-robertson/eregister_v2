@@ -154,3 +154,42 @@ describe('status changes', function () {
         expect($state->fresh()->current_admin_status->value)->toBe('new');
     });
 });
+
+describe('comments', function () {
+    it('lets an llc_agent comment without changing the status', function () {
+        $agent = User::factory()->create();
+        $agent->assignRole('llc_agent');
+
+        $state = paidLlcFormationState('hold');
+
+        $this->actingAs($agent);
+
+        Livewire::test(FormationApplicationStateDetail::class, ['formApplicationState' => $state])
+            ->set('newComment', 'Customer asked us to wait until January')
+            ->call('addComment')
+            ->assertHasNoErrors()
+            ->assertSee('Customer asked us to wait until January');
+
+        $state->refresh();
+
+        expect($state->current_admin_status->value)->toBe('hold')
+            ->and($state->transitions()->count())->toBe(1)
+            ->and($state->transitions()->first()->isComment())->toBeTrue();
+    });
+
+    it('forbids a viewer (no llc.update) from commenting', function () {
+        $viewer = User::factory()->create();
+        $viewer->assignRole('viewer'); // has llc.view but not llc.update
+
+        $state = paidLlcFormationState('new');
+
+        $this->actingAs($viewer);
+
+        Livewire::test(FormationApplicationStateDetail::class, ['formApplicationState' => $state])
+            ->set('newComment', 'Should not save')
+            ->call('addComment')
+            ->assertForbidden();
+
+        expect($state->transitions()->count())->toBe(0);
+    });
+});

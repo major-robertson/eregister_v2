@@ -118,41 +118,44 @@
                 </div>
             @endif
 
-            {{-- Transitions audit log --}}
+            {{-- Activity log: status changes and comments (a comment is a
+                 row whose from and to status match) --}}
             <div class="rounded-xl border border-border bg-white p-6">
-                <flux:heading size="md">Status History</flux:heading>
+                <flux:heading size="md">Activity</flux:heading>
                 @if ($this->transitions->isEmpty())
                     <flux:text class="mt-3 text-sm text-text-secondary">
-                        No status changes yet. The formation has been in {{ $state->current_admin_status->label() }} since it was paid.
+                        No status changes or comments yet. The formation has been in {{ $state->current_admin_status->label() }} since it was paid.
                     </flux:text>
                 @else
                     <ol class="mt-4 space-y-4">
                         @foreach ($this->transitions as $transition)
-                            <li class="flex gap-3">
+                            <li class="flex gap-3" wire:key="transition-{{ $transition->id }}">
                                 <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100">
-                                    <flux:icon name="{{ $transition->to_status->icon() }}" class="size-4 text-zinc-600" />
+                                    <flux:icon name="{{ $transition->isComment() ? 'chat-bubble-left' : $transition->to_status->icon() }}" class="size-4 text-zinc-600" />
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        @if ($transition->from_status)
-                                            <flux:badge color="{{ $transition->from_status->color() }}" size="sm">
-                                                {{ $transition->from_status->label() }}
+                                    @if ($transition->isComment())
+                                        <flux:text class="text-sm font-medium text-text-primary">Comment</flux:text>
+                                    @else
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            @if ($transition->from_status)
+                                                <flux:badge color="{{ $transition->from_status->color() }}" size="sm">
+                                                    {{ $transition->from_status->label() }}
+                                                </flux:badge>
+                                                <flux:icon name="arrow-right" class="size-3 text-text-secondary" />
+                                            @endif
+                                            <flux:badge color="{{ $transition->to_status->color() }}" size="sm">
+                                                {{ $transition->to_status->label() }}
                                             </flux:badge>
-                                            <flux:icon name="arrow-right" class="size-3 text-text-secondary" />
-                                        @endif
-                                        <flux:badge color="{{ $transition->to_status->color() }}" size="sm">
-                                            {{ $transition->to_status->label() }}
-                                        </flux:badge>
-                                    </div>
+                                        </div>
+                                    @endif
                                     <flux:text class="mt-1 text-xs text-text-secondary">
                                         {{ $transition->changedBy?->name ?? 'System' }}
                                         &middot; {{ $transition->created_at->eastern()->format('M j, Y g:ia') }}
                                         ({{ $transition->created_at->diffForHumans() }})
                                     </flux:text>
                                     @if ($transition->comment)
-                                        <flux:text class="mt-2 text-sm text-text-primary">
-                                            {{ $transition->comment }}
-                                        </flux:text>
+                                        <flux:text class="mt-2 whitespace-pre-line break-words text-sm text-text-primary">{{ $transition->comment }}</flux:text>
                                     @endif
                                 </div>
                             </li>
@@ -162,8 +165,8 @@
             </div>
         </div>
 
-        {{-- Right column: status change panel --}}
-        <div>
+        {{-- Right column: status change and comment panels --}}
+        <div class="space-y-6">
             <div class="rounded-xl border border-border bg-white p-6">
                 <flux:heading size="md">Change Status</flux:heading>
 
@@ -200,6 +203,28 @@
                     </flux:text>
                 @endcan
             </div>
+
+            @can('llc.update')
+                <div class="rounded-xl border border-border bg-white p-6">
+                    <flux:heading size="md">Add Comment</flux:heading>
+
+                    <form wire:submit="addComment" class="mt-4 space-y-4">
+                        <flux:field>
+                            <flux:textarea
+                                wire:model="newComment"
+                                rows="3"
+                                placeholder="Write a comment. The status won't change."
+                                aria-label="Comment"
+                            />
+                            <flux:error name="newComment" />
+                        </flux:field>
+
+                        <flux:button type="submit" variant="primary" class="w-full">
+                            Add Comment
+                        </flux:button>
+                    </form>
+                </div>
+            @endcan
         </div>
     </div>
 </div>

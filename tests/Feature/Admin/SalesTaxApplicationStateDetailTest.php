@@ -193,3 +193,103 @@ describe('changeStatus action', function () {
             ->toBe(FormApplicationStateAdminStatus::SubmittedToState);
     });
 });
+
+describe('addComment action', function () {
+    beforeEach(function () {
+        $this->agent = User::factory()->create();
+        $this->agent->assignRole('tax_agent');
+    });
+
+    it('adds a comment without changing the status', function () {
+        $state = makeSalesTaxStateForDetail($this->agent);
+        $state->update(['current_admin_status' => FormApplicationStateAdminStatus::AwaitingClient]);
+
+        $this->actingAs($this->agent);
+
+        Livewire::test(SalesTaxApplicationStateDetail::class, [
+            'formApplicationState' => $state,
+        ])
+            ->set('newComment', '  Left a voicemail about the missing SSN  ')
+            ->call('addComment')
+            ->assertHasNoErrors()
+            ->assertSet('newComment', '')
+            ->assertSee('Left a voicemail about the missing SSN');
+
+        $state->refresh();
+
+        expect($state->current_admin_status)
+            ->toBe(FormApplicationStateAdminStatus::AwaitingClient)
+            ->and($state->transitions()->count())->toBe(1);
+
+        $comment = $state->transitions()->first();
+        expect($comment->isComment())->toBeTrue()
+            ->and($comment->comment)->toBe('Left a voicemail about the missing SSN')
+            ->and($comment->changed_by_user_id)->toBe($this->agent->id);
+    });
+
+    it('allows comments on an Approved (terminal) card', function () {
+        $state = makeSalesTaxStateForDetail($this->agent);
+        $state->update(['current_admin_status' => FormApplicationStateAdminStatus::Approved]);
+
+        $this->actingAs($this->agent)
+            ->get(route('admin.sales-tax.states.show', $state))
+            ->assertSee('No further transitions allowed')
+            ->assertSee('Add Comment');
+
+        Livewire::test(SalesTaxApplicationStateDetail::class, [
+            'formApplicationState' => $state,
+        ])
+            ->set('newComment', 'Sent the permit to the customer')
+            ->call('addComment')
+            ->assertHasNoErrors();
+
+        expect($state->fresh()->current_admin_status)
+            ->toBe(FormApplicationStateAdminStatus::Approved)
+            ->and($state->transitions()->count())->toBe(1);
+    });
+
+    it('requires comment text', function () {
+        $state = makeSalesTaxStateForDetail($this->agent);
+
+        $this->actingAs($this->agent);
+
+        Livewire::test(SalesTaxApplicationStateDetail::class, [
+            'formApplicationState' => $state,
+        ])
+            ->set('newComment', '   ')
+            ->call('addComment')
+            ->assertHasErrors(['newComment' => 'required']);
+
+        expect($state->transitions()->count())->toBe(0);
+    });
+
+    it('rejects users without tax.update permission', function () {
+        $viewer = User::factory()->create();
+        $viewer->assignRole('viewer'); // tax.view only
+
+        $state = makeSalesTaxStateForDetail($viewer);
+
+        $this->actingAs($viewer)
+            ->get(route('admin.sales-tax.states.show', $state))
+            ->assertSuccessful()
+            ->assertDontSee('Add Comment');
+
+        Livewire::test(SalesTaxApplicationStateDetail::class, [
+            'formApplicationState' => $state,
+        ])
+            ->set('newComment', 'Should not save')
+            ->call('addComment')
+            ->assertForbidden();
+
+        expect($state->transitions()->count())->toBe(0);
+    });
+
+    it('shows the latest comment on the board card', function () {
+        $state = makeSalesTaxStateForDetail($this->agent);
+        $state->addAdminComment('Waiting on the CDTFA account number', $this->agent);
+
+        $this->actingAs($this->agent)
+            ->get(route('admin.sales-tax.board'))
+            ->assertSee('Waiting on the CDTFA account number');
+    });
+});

@@ -109,4 +109,23 @@ class FormApplicationState extends Model
             ])->save();
         });
     }
+
+    /**
+     * Log an admin comment without changing the status. The row goes in
+     * the transitions log with from and to both set to the current
+     * status; transitionAdminStatusTo() never writes a same-status row,
+     * so that shape only ever means a comment. The status and its
+     * changed-at timestamp are left alone.
+     */
+    public function addAdminComment(string $comment, ?User $by = null): void
+    {
+        $current = $this->current_admin_status ?? FormApplicationStateAdminStatus::New;
+
+        $this->transitions()->create([
+            'from_status' => $current,
+            'to_status' => $current,
+            'changed_by_user_id' => $by?->id,
+            'comment' => $comment,
+        ]);
+    }
 }

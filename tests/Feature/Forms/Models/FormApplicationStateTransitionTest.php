@@ -95,6 +95,52 @@ it('keeps the denormalized current_admin_status in sync with the latest transiti
         ->and($latest->from_status)->toBe(FormApplicationStateAdminStatus::SubmittedToState);
 });
 
+it('adds a comment without changing the status', function () {
+    $state = makeStateForTransition();
+    $admin = User::factory()->create();
+
+    $state->transitionAdminStatusTo(FormApplicationStateAdminStatus::NeedsReview);
+    $state->refresh();
+    $changedAt = $state->current_admin_status_changed_at;
+
+    $this->travel(5)->minutes();
+
+    $state->addAdminComment('Called the customer about their FEIN', $admin);
+
+    $state->refresh();
+
+    expect($state->current_admin_status)
+        ->toBe(FormApplicationStateAdminStatus::NeedsReview)
+        ->and($state->current_admin_status_changed_at->equalTo($changedAt))->toBeTrue()
+        ->and($state->transitions()->count())->toBe(2);
+
+    $comment = $state->transitions()->first();
+    expect($comment->isComment())->toBeTrue()
+        ->and($comment->from_status)->toBe(FormApplicationStateAdminStatus::NeedsReview)
+        ->and($comment->to_status)->toBe(FormApplicationStateAdminStatus::NeedsReview)
+        ->and($comment->changed_by_user_id)->toBe($admin->id)
+        ->and($comment->comment)->toBe('Called the customer about their FEIN');
+});
+
+it('allows a comment on a terminal (Approved) status', function () {
+    $state = makeStateForTransition();
+    $state->update(['current_admin_status' => FormApplicationStateAdminStatus::Approved]);
+
+    $state->addAdminComment('Emailed the permit to the customer');
+
+    expect($state->fresh()->current_admin_status)
+        ->toBe(FormApplicationStateAdminStatus::Approved)
+        ->and($state->transitions()->first()->isComment())->toBeTrue();
+});
+
+it('does not treat a status change with a comment as a comment row', function () {
+    $state = makeStateForTransition();
+
+    $state->transitionAdminStatusTo(FormApplicationStateAdminStatus::NeedsReview, comment: 'Looking into this');
+
+    expect($state->transitions()->first()->isComment())->toBeFalse();
+});
+
 it('allows SubmittedToState to transition to any non-terminal status (including Rejected/Hold)', function () {
     $state = makeStateForTransition();
     $state->update(['current_admin_status' => FormApplicationStateAdminStatus::SubmittedToState]);

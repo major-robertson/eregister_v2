@@ -24,6 +24,8 @@ class SalesTaxApplicationStateDetail extends Component
 
     public string $comment = '';
 
+    public string $newComment = '';
+
     /**
      * Decrypted core (shared) application data. Sensitive fields (FEIN,
      * SSN, etc.) are stored encrypted-at-rest; admins processing an
@@ -159,6 +161,28 @@ class SalesTaxApplicationStateDetail extends Component
         $this->reset(['newStatus', 'comment']);
 
         session()->flash('success', "Status changed to {$next->label()}.");
+    }
+
+    /**
+     * Add a comment to the card without changing its status. Allowed on
+     * any status, including terminal ones.
+     */
+    public function addComment(): void
+    {
+        Gate::authorize('tax.update');
+
+        $this->validate(
+            ['newComment' => ['required', 'string', 'max:2000']],
+            attributes: ['newComment' => 'comment'],
+        );
+
+        $this->state->addAdminComment(trim($this->newComment), Auth::user());
+
+        unset($this->transitions);
+
+        $this->reset('newComment');
+
+        session()->flash('success', 'Comment added.');
     }
 
     public function render(): View

@@ -77,6 +77,7 @@
                 @include('livewire.forms.partials.answer-summary', [
                     'data' => $this->coreData,
                     'exclude' => ['responsible_people'],
+                    'fields' => $reviewFields['core'] ?? [],
                 ])
 
                 @if (!empty($this->coreData['responsible_people']))
@@ -125,6 +126,7 @@
                             'data' => $stateDataForReview,
                             'exclude' => ['responsible_people_extra'],
                             'stripPrefix' => strtolower($stateCode).'_',
+                            'fields' => $reviewFields['states'][$stateCode] ?? [],
                         ])
                     @endif
                 </x-ui.card>

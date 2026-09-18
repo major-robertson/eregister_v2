@@ -2,6 +2,7 @@
 
 namespace App\Domains\Forms\Admin\Support;
 
+use App\Domains\Forms\Engine\AnswerFormatter;
 use App\Domains\Forms\Engine\FormRegistry;
 use App\Domains\Forms\Engine\SensitiveDataProtector;
 use App\Domains\Forms\FormTypeConfig;
@@ -47,6 +48,7 @@ class ApplicationDataDump
         private FormRegistry $registry,
         private SensitiveDataProtector $protector,
         private Encrypter $encrypter,
+        private AnswerFormatter $answers,
     ) {}
 
     /**
@@ -253,7 +255,7 @@ class ApplicationDataDump
     private function matrixRows(array $field, array $cells): array
     {
         $template = $field['label'] ?? 'Value';
-        $cellField = ['type' => $field['cell_type'] ?? 'text', 'options' => $field['cell_options'] ?? null];
+        $cellField = ['type' => $field['cell_type'] ?? 'text'];
         $rows = [];
 
         foreach ($cells as $code => $cell) {
@@ -424,35 +426,7 @@ class ApplicationDataDump
             };
         }
 
-        if (is_bool($value)) {
-            return $value ? 'Yes' : 'No';
-        }
-
-        if ($type === 'checkbox' && in_array($value, [1, '1', 'true', 'on', 'yes'], true)) {
-            return 'Yes';
-        }
-
-        if ($type === 'checkbox' && in_array($value, [0, '0', 'false', 'off', 'no'], true)) {
-            return 'No';
-        }
-
-        $options = $field['options'] ?? null;
-
-        if ($options === '<<selected_states>>' && is_string($value)) {
-            return $this->stateName($value);
-        }
-
-        if (is_array($options)) {
-            $flat = $this->flattenOptions($options);
-
-            if (array_key_exists((string) $value, $flat)) {
-                return (string) $flat[(string) $value];
-            }
-        }
-
-        $text = trim((string) $value);
-
-        return $type === 'percent' && is_numeric($text) ? "{$text}%" : $text;
+        return $this->answers->format($value, $field);
     }
 
     /**
@@ -637,25 +611,6 @@ class ApplicationDataDump
     private function valueRow(string $label, string $value): array
     {
         return $value === '' ? [] : [['label' => $label, 'value' => $value]];
-    }
-
-    /**
-     * @param  array<int|string, mixed>  $options
-     * @return array<int|string, mixed>
-     */
-    private function flattenOptions(array $options): array
-    {
-        $flat = [];
-
-        foreach ($options as $key => $option) {
-            if (is_array($option)) {
-                $flat += $option; // optgroup
-            } else {
-                $flat[$key] = $option;
-            }
-        }
-
-        return $flat;
     }
 
     private function isBlank(mixed $value): bool

@@ -97,6 +97,7 @@
                     <div class="mt-4">
                         @include('livewire.forms.partials.answer-summary', [
                             'data' => $app->core_data,
+                            'fields' => $this->summaryFields['core'],
                         ])
                     </div>
                 </div>
@@ -111,6 +112,7 @@
                             'data' => $state->data,
                             'exclude' => ['responsible_people_extra'],
                             'stripPrefix' => strtolower($state->state_code).'_',
+                            'fields' => $this->summaryFields['state'],
                         ])
                     </div>
                 </div>

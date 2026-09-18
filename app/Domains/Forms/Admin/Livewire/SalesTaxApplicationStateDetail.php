@@ -3,6 +3,7 @@
 namespace App\Domains\Forms\Admin\Livewire;
 
 use App\Domains\Forms\Admin\Support\ApplicationDataDump;
+use App\Domains\Forms\Engine\AnswerFormatter;
 use App\Domains\Forms\Engine\FormRegistry;
 use App\Domains\Forms\Engine\SensitiveDataProtector;
 use App\Domains\Forms\Enums\FormApplicationStateAdminStatus;
@@ -87,6 +88,26 @@ class SalesTaxApplicationStateDetail extends Component
     public function dataDump(): array
     {
         return app(ApplicationDataDump::class)->build($this->state->application);
+    }
+
+    /**
+     * Field definitions for the Shared / state answer summaries, so values
+     * show by their type and options ("January", "Checking") rather than
+     * as raw "1"/"0".
+     *
+     * @return array{core: array<string, array<string, mixed>>, state: array<string, array<string, mixed>>}
+     */
+    #[Computed]
+    public function summaryFields(): array
+    {
+        $registry = app(FormRegistry::class);
+        $formatter = app(AnswerFormatter::class);
+        $formType = $this->state->application->form_type;
+
+        return [
+            'core' => $formatter->fieldsIn($registry->getBase($formType)['core_steps'] ?? []),
+            'state' => $formatter->fieldsIn($registry->get($formType, $this->state->state_code)['state_steps'] ?? []),
+        ];
     }
 
     /**

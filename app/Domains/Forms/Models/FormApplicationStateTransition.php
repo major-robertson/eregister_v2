@@ -11,7 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Audit log row for an admin status change on a FormApplicationState.
  * Inserted via FormApplicationState::transitionAdminStatusTo() inside a
  * single DB transaction with the denormalized fields update on the
- * parent state row.
+ * parent state row. Rows whose from and to status match are comments
+ * made without a status change (FormApplicationState::addAdminComment()).
  */
 class FormApplicationStateTransition extends Model
 {
@@ -39,5 +40,13 @@ class FormApplicationStateTransition extends Model
     public function changedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'changed_by_user_id');
+    }
+
+    /**
+     * Whether this row is a comment made without a status change.
+     */
+    public function isComment(): bool
+    {
+        return $this->from_status !== null && $this->from_status === $this->to_status;
     }
 }

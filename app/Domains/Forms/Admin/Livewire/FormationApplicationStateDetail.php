@@ -19,6 +19,8 @@ class FormationApplicationStateDetail extends Component
 
     public string $comment = '';
 
+    public string $newComment = '';
+
     public function mount(FormApplicationState $formApplicationState): void
     {
         Gate::authorize('llc.view');
@@ -83,6 +85,28 @@ class FormationApplicationStateDetail extends Component
         $this->reset(['newStatus', 'comment']);
 
         session()->flash('success', "Status changed to {$next->label()}.");
+    }
+
+    /**
+     * Add a comment to the card without changing its status. Allowed on
+     * any status, including terminal ones.
+     */
+    public function addComment(): void
+    {
+        Gate::authorize('llc.update');
+
+        $this->validate(
+            ['newComment' => ['required', 'string', 'max:2000']],
+            attributes: ['newComment' => 'comment'],
+        );
+
+        $this->state->addAdminComment(trim($this->newComment), Auth::user());
+
+        unset($this->transitions);
+
+        $this->reset('newComment');
+
+        session()->flash('success', 'Comment added.');
     }
 
     public function render(): View

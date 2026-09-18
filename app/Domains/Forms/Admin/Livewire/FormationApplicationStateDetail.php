@@ -2,6 +2,8 @@
 
 namespace App\Domains\Forms\Admin\Livewire;
 
+use App\Domains\Forms\Engine\AnswerFormatter;
+use App\Domains\Forms\Engine\FormRegistry;
 use App\Domains\Forms\Enums\FormApplicationStateAdminStatus;
 use App\Domains\Forms\Models\FormApplicationState;
 use Illuminate\Contracts\View\View;
@@ -32,6 +34,26 @@ class FormationApplicationStateDetail extends Component
         ]);
 
         $this->state = $formApplicationState;
+    }
+
+    /**
+     * Field definitions for the answer summaries, so values show by their
+     * type and options (e.g. the Management Structure label) rather than
+     * as raw keys or "1"/"0".
+     *
+     * @return array{core: array<string, array<string, mixed>>, state: array<string, array<string, mixed>>}
+     */
+    #[Computed]
+    public function summaryFields(): array
+    {
+        $registry = app(FormRegistry::class);
+        $formatter = app(AnswerFormatter::class);
+        $formType = $this->state->application->form_type;
+
+        return [
+            'core' => $formatter->fieldsIn($registry->getBase($formType)['core_steps'] ?? []),
+            'state' => $formatter->fieldsIn($registry->get($formType, $this->state->state_code)['state_steps'] ?? []),
+        ];
     }
 
     /**

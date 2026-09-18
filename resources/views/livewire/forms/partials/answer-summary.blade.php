@@ -13,10 +13,18 @@
      * fields and must never print ciphertext.
      *
      * Inputs: $data (array), optional $exclude (array of keys), optional
-     * $stripPrefix (e.g. 'ca_' on a state card where the state is implied).
+     * $stripPrefix (e.g. 'ca_' on a state card where the state is implied),
+     * optional $fields (field key => definition, from AnswerFormatter::fieldsIn()).
+     *
+     * With $fields, values render by their definition: option labels
+     * ("January", "Checking"), Yes/No for checkboxes and yes/no radios,
+     * and text as typed, so a count of "1" stays "1". Keys without a
+     * definition fall back to guessing ("1" → "Yes").
      */
     $exclude = $exclude ?? [];
     $stripPrefix = $stripPrefix ?? null;
+    $fields = $fields ?? [];
+    $answerFormatter = app(\App\Domains\Forms\Engine\AnswerFormatter::class);
 
     $looksEncrypted = fn ($v) => is_string($v) && str_starts_with($v, 'eyJpdiI6');
 
@@ -37,9 +45,12 @@
         return implode(' ', $words);
     };
 
-    $displayScalar = function ($v) use ($looksEncrypted) {
+    $displayScalar = function ($v, ?array $field = null) use ($looksEncrypted, $answerFormatter) {
         if ($looksEncrypted($v)) {
             return '•••• (encrypted)';
+        }
+        if ($field !== null) {
+            return $answerFormatter->format($v, $field);
         }
         if (is_bool($v)) {
             return $v ? 'Yes' : 'No';
@@ -91,7 +102,10 @@
         @continue(in_array($key, $exclude, true))
         @continue($value === null || $value === '' || $value === [])
 
-        @php $label = $makeLabel((string) $key); @endphp
+        @php
+            $label = $makeLabel((string) $key);
+            $field = $fields[$key] ?? null;
+        @endphp
 
         @if ($isAppliesValue($value))
             <div>
@@ -119,7 +133,7 @@
                     @foreach ($value as $code => $cell)
                         <span class="text-sm">
                             <span class="text-text-secondary">{{ $stateName($code) }}:</span>
-                            <span class="font-medium text-text-primary">{{ $displayScalar($cell) ?: '-' }}</span>
+                            <span class="font-medium text-text-primary">{{ $displayScalar($cell, $field ? ['type' => $field['cell_type'] ?? 'text'] : null) ?: '-' }}</span>
                         </span>
                     @endforeach
                 </dd>
@@ -130,9 +144,19 @@
                 <dd class="mt-1 space-y-1">
                     @foreach ($value as $row)
                         @php
-                            $rowParts = collect($row)
+                            // Schema order (name before DOB/SSN) rather than the
+                            // JSON column's length-sorted keys, with checkbox flags
+                            // after the identifying fields.
+                            $row = (array) $row;
+                            $rowSchema = $field['schema'] ?? [];
+                            $rowParts = collect($rowSchema)
+                                ->sortBy(fn ($sub) => ($sub['type'] ?? null) === 'checkbox' ? 1 : 0)
+                                ->keys()
+                                ->filter(fn ($k) => array_key_exists($k, $row))
+                                ->mapWithKeys(fn ($k) => [$k => $row[$k]])
+                                ->union($row)
                                 ->except(['_id'])
-                                ->map(function ($v) use ($displayScalar, $isAddress, $formatAddress, $looksEncrypted) {
+                                ->map(function ($v, $k) use ($displayScalar, $isAddress, $formatAddress, $looksEncrypted, $rowSchema) {
                                     if ($isAddress($v)) {
                                         return $formatAddress($v);
                                     }
@@ -143,7 +167,7 @@
                                         return null; // Never leak ciphertext into row summaries.
                                     }
 
-                                    return $displayScalar($v);
+                                    return $displayScalar($v, $rowSchema[$k] ?? null);
                                 })
                                 ->filter(fn ($v) => $v !== null && $v !== '')
                                 ->take(4)
@@ -171,7 +195,7 @@
         @else
             <div>
                 <dt class="text-sm text-text-secondary">{{ $label }}</dt>
-                <dd class="font-medium text-text-primary break-words">{{ $displayScalar($value) ?: '-' }}</dd>
+                <dd class="font-medium text-text-primary break-words">{{ $displayScalar($value, $field) ?: '-' }}</dd>
             </div>
         @endif
     @endforeach

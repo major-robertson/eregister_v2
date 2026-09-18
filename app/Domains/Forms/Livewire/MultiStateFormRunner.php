@@ -3,6 +3,7 @@
 namespace App\Domains\Forms\Livewire;
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Forms\Engine\AnswerFormatter;
 use App\Domains\Forms\Engine\FormRegistry;
 use App\Domains\Forms\Engine\SensitiveDataProtector;
 use App\Domains\Forms\Livewire\Concerns\WithFormDataIO;
@@ -627,6 +628,25 @@ class MultiStateFormRunner extends Component
         ];
     }
 
+    /**
+     * Field definitions for the review summaries, so answers show by their
+     * type and options ("January", "Checking") rather than as raw "1"/"0".
+     *
+     * @return array{core: array<string, array<string, mixed>>, states: array<string, array<string, array<string, mixed>>>}
+     */
+    protected function reviewFields(): array
+    {
+        $formatter = app(AnswerFormatter::class);
+
+        return [
+            'core' => $formatter->fieldsIn($this->definition['base']['core_steps'] ?? []),
+            'states' => array_map(
+                fn (array $definition): array => $formatter->fieldsIn($definition['state_steps'] ?? []),
+                $this->definition['states'] ?? [],
+            ),
+        ];
+    }
+
     public function render(): View
     {
         $currentStep = $this->getCurrentStepProperty();
@@ -649,6 +669,7 @@ class MultiStateFormRunner extends Component
             'allStatesComplete' => $this->application->allStatesComplete(),
             'states' => config('states'),
             'statePersonFields' => $this->getStatePersonFieldsProperty(),
+            'reviewFields' => $this->currentPhase === 'review' ? $this->reviewFields() : [],
             // URL to return to when the user clicks Previous on the very first
             // step of the wizard. Falls back to the dashboard if the workspace
             // doesn't expose a start route (shouldn't happen in practice).

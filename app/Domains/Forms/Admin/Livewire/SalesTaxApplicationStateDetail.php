@@ -2,9 +2,11 @@
 
 namespace App\Domains\Forms\Admin\Livewire;
 
+use App\Domains\Forms\Admin\Support\ApplicationDataDump;
 use App\Domains\Forms\Engine\FormRegistry;
 use App\Domains\Forms\Engine\SensitiveDataProtector;
 use App\Domains\Forms\Enums\FormApplicationStateAdminStatus;
+use App\Domains\Forms\Models\FormApplication;
 use App\Domains\Forms\Models\FormApplicationState;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -43,7 +45,9 @@ class SalesTaxApplicationStateDetail extends Component
         Gate::authorize('tax.view');
 
         $formApplicationState->load([
-            'application:id,business_id,form_type,created_by_user_id,paid_at,submitted_at,selected_states,core_data',
+            // Everything but the multi-MB definition_snapshot; the All
+            // Application Data section lists status, phase and Stripe ids.
+            'application' => fn ($query) => $query->select([...FormApplication::LIST_COLUMNS, 'core_data']),
             'application.business:id,name',
             // User->name is an accessor; load underlying columns.
             'application.createdBy:id,first_name,last_name,email',
@@ -69,6 +73,20 @@ class SalesTaxApplicationStateDetail extends Component
                 $stateDef
             );
         }
+    }
+
+    /**
+     * Everything saved on the whole application (every selected state's
+     * answers, not just this card's) for the collapsed All Application
+     * Data section. Computed rather than a public property so the
+     * decrypted values stay out of the Livewire snapshot.
+     *
+     * @return array<string, mixed>
+     */
+    #[Computed]
+    public function dataDump(): array
+    {
+        return app(ApplicationDataDump::class)->build($this->state->application);
     }
 
     /**

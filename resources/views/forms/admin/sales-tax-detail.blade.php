@@ -137,6 +137,73 @@
                 </div>
             @endif
 
+            {{-- Full dump of the whole application: metadata, payments, every
+                 shared answer and every selected state's answers (not just
+                 this card's), untruncated and decrypted. Collapsed by
+                 default; wire:ignore.self keeps it open across re-renders. --}}
+            @php $dump = $this->dataDump; @endphp
+            <details class="group rounded-xl border border-border bg-white" wire:ignore.self data-application-data-dump>
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-6 [&::-webkit-details-marker]:hidden">
+                    <div>
+                        <flux:heading size="md">All Application Data</flux:heading>
+                        <flux:text class="mt-1 text-sm text-text-secondary">
+                            Every saved answer for {{ collect($dump['states'])->pluck('code')->implode(', ') }}, plus application and payment details. Sensitive values are decrypted.
+                        </flux:text>
+                    </div>
+                    <flux:icon name="chevron-down" class="size-5 shrink-0 text-text-secondary transition-transform group-open:rotate-180" />
+                </summary>
+
+                <div class="space-y-8 border-t border-border p-6">
+                    <section>
+                        <flux:heading size="lg">Application</flux:heading>
+                        <div class="mt-2">
+                            @include('forms.admin.partials.data-dump-rows', ['rows' => $dump['application']])
+                        </div>
+                    </section>
+
+                    <section>
+                        <flux:heading size="lg">Shared Answers</flux:heading>
+                        @forelse ($dump['core'] as $block)
+                            <div class="mt-4">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-text-secondary">{{ $block['title'] }}</p>
+                                @include('forms.admin.partials.data-dump-rows', ['rows' => $block['rows']])
+                            </div>
+                        @empty
+                            <flux:text class="mt-2 text-sm text-text-secondary">No shared answers saved.</flux:text>
+                        @endforelse
+                    </section>
+
+                    @foreach ($dump['states'] as $dumpState)
+                        <section class="border-t border-border pt-6">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <flux:heading size="lg">{{ $dumpState['name'] }} ({{ $dumpState['code'] }})</flux:heading>
+                                @if ($dumpState['record_id'] === $state->id)
+                                    <flux:badge size="sm" color="blue">This card</flux:badge>
+                                @elseif ($dumpState['record_id'])
+                                    <a href="{{ route('admin.sales-tax.states.show', $dumpState['record_id']) }}"
+                                        class="text-sm text-blue-600 hover:underline" wire:navigate>
+                                        Open {{ $dumpState['code'] }} card
+                                    </a>
+                                @endif
+                            </div>
+                            <div class="mt-2">
+                                @include('forms.admin.partials.data-dump-rows', ['rows' => $dumpState['meta']])
+                            </div>
+                            @forelse ($dumpState['blocks'] as $block)
+                                <div class="mt-4">
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-text-secondary">{{ $block['title'] }}</p>
+                                    @include('forms.admin.partials.data-dump-rows', ['rows' => $block['rows']])
+                                </div>
+                            @empty
+                                <flux:text class="mt-4 text-sm text-text-secondary">
+                                    No {{ $dumpState['name'] }}-specific answers. The shared answers cover this state.
+                                </flux:text>
+                            @endforelse
+                        </section>
+                    @endforeach
+                </div>
+            </details>
+
             {{-- Transitions audit log --}}
             <div class="rounded-xl border border-border bg-white p-6">
                 <flux:heading size="md">Status History</flux:heading>

@@ -79,14 +79,20 @@ Route::view('resale-certificates', 'pages.resale-certificates')->name('resale-ce
 
 // Payment Protection (lien sub-pages)
 Route::get('liens/lien-waivers', [\App\Http\Controllers\WaiverLandingController::class, 'index'])->name('liens.lien-waivers');
-// Registered before the {state} route so "pricing" resolves to the page, not a state code.
+// Registered before the {state} route so "pricing" and "start" resolve to their pages, not a state code.
 Route::view('liens/lien-waivers/pricing', 'pages.liens.lien-waivers-pricing')->name('liens.lien-waivers.pricing');
+// Every "create a waiver" button submits here: it stores the visitor's choices, then register or the wizard.
+Route::get('liens/lien-waivers/start', \App\Http\Controllers\WaiverStartController::class)->name('liens.lien-waivers.start');
 Route::get('liens/lien-waivers/{state}', [\App\Http\Controllers\WaiverLandingController::class, 'state'])->name('liens.lien-waivers.state');
 Route::view('liens/preliminary-notice', 'pages.liens.preliminary-notice')->name('liens.preliminary-notice');
 Route::view('liens/notice-of-intent-to-lien', 'pages.liens.notice-of-intent-to-lien')->name('liens.notice-of-intent-to-lien');
 Route::view('liens/lien-release', 'pages.liens.lien-release')->name('liens.lien-release');
 Route::view('liens/payment-demand-letter', 'pages.liens.payment-demand-letter')->name('liens.payment-demand-letter');
 Route::view('liens/pricing', 'pages.liens.pricing')->name('liens.pricing');
+
+// Google Ads landing pages for the waiver generator: the state page's promise
+// with no site chrome and the starter above the fold (noindex).
+Route::get('lp/lien-waiver/{state?}', [\App\Http\Controllers\WaiverLandingController::class, 'lp'])->name('lp.lien-waiver');
 
 // Government
 Route::prefix('government')->name('government.')->group(function () {

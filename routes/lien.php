@@ -2,6 +2,8 @@
 
 use App\Domains\Lien\Http\Controllers\FilingDownloadController;
 use App\Domains\Lien\Http\Controllers\FilingPaymentController;
+use App\Domains\Lien\Http\Controllers\WaiverDownloadController;
+use App\Domains\Lien\Http\Controllers\WaiverPaymentController;
 use App\Domains\Lien\Livewire\Dashboard;
 use App\Domains\Lien\Livewire\DeadlineList;
 use App\Domains\Lien\Livewire\FilingCheckout;
@@ -13,8 +15,6 @@ use App\Domains\Lien\Livewire\LienProfileComplete;
 use App\Domains\Lien\Livewire\ProjectForm;
 use App\Domains\Lien\Livewire\ProjectList;
 use App\Domains\Lien\Livewire\ProjectShow;
-use App\Domains\Lien\Http\Controllers\WaiverDownloadController;
-use App\Domains\Lien\Http\Controllers\WaiverPaymentController;
 use App\Domains\Lien\Livewire\Waivers\ContactForm;
 use App\Domains\Lien\Livewire\Waivers\ContactList;
 use App\Domains\Lien\Livewire\Waivers\WaiverDashboard;
@@ -67,7 +67,21 @@ Route::middleware(['auth', 'business.current', 'business.complete', 'lien.onboar
         // Filings list
         Route::get('/filings', FilingList::class)->name('lien.filings.index');
 
-        // Lien waivers
+        // Deadlines list
+        Route::get('/deadlines', DeadlineList::class)->name('lien.deadlines.index');
+
+        // Placeholder routes - redirect to dashboard until implemented
+        Route::get('/parties', fn () => redirect()->route('lien.dashboard'))->name('lien.parties.index');
+        Route::get('/payments', fn () => redirect()->route('lien.dashboard'))->name('lien.payments.index');
+    });
+
+// Lien waivers: usable as soon as the business profile exists. Lien
+// onboarding (phone, license, signer title) only matters for filings, so a
+// waiver-first signup goes straight from business setup into the wizard and
+// meets that onboarding the first time they open a filing page.
+Route::middleware(['auth', 'business.current', 'business.complete'])
+    ->prefix('/portal/liens')
+    ->group(function (): void {
         Route::get('/waivers', WaiverDashboard::class)->name('lien.waivers.index');
         Route::get('/waivers/all', WaiverList::class)->name('lien.waivers.list');
         Route::get('/waivers/new', WaiverWizard::class)->name('lien.waivers.create');
@@ -84,13 +98,6 @@ Route::middleware(['auth', 'business.current', 'business.complete', 'lien.onboar
         Route::get('/waivers/{waiver}', WaiverShow::class)->name('lien.waivers.show');
         Route::get('/waivers/{waiver}/download', [WaiverDownloadController::class, 'download'])
             ->name('lien.waivers.download');
-
-        // Deadlines list
-        Route::get('/deadlines', DeadlineList::class)->name('lien.deadlines.index');
-
-        // Placeholder routes - redirect to dashboard until implemented
-        Route::get('/parties', fn () => redirect()->route('lien.dashboard'))->name('lien.parties.index');
-        Route::get('/payments', fn () => redirect()->route('lien.dashboard'))->name('lien.payments.index');
     });
 
 // API route for payment status polling

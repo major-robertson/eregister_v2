@@ -4,6 +4,8 @@ namespace App\Domains\Lien\Livewire\Waivers;
 
 use App\Domains\Esign\Exceptions\EsignException;
 use App\Domains\Lien\Documents\WaiverGenerator;
+use App\Domains\Lien\Engine\DeadlineCalculator;
+use App\Domains\Lien\Enums\ClaimantType;
 use App\Domains\Lien\Enums\WaiverDirection;
 use App\Domains\Lien\Enums\WaiverKind;
 use App\Domains\Lien\Enums\WaiverStatus;
@@ -18,9 +20,13 @@ use App\Domains\Lien\Waivers\ResolvedWaiverForm;
 use App\Domains\Lien\Waivers\WaiverEntitlements;
 use App\Domains\Lien\Waivers\WaiverFormResolver;
 use App\Domains\Lien\Waivers\WaiverFormUnavailable;
+use App\Domains\Lien\Waivers\WaiverIntent;
 use App\Domains\Lien\Waivers\WaiverStateRegistry;
+use App\Services\GooglePlacesService;
+use App\Support\Analytics\Gtag;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
@@ -166,6 +172,68 @@ class WaiverWizard extends Component
     /** Which gate opened the upsell modal; drives its heading. */
     public string $upsellContext = 'save';
 
+    /**
+     * Carried in from the marketing-page starter (WaiverIntent): the waiver
+     * type is applied the moment a project fixes the state; the state seeds
+     * the inline project form.
+     */
+    public string $intentKind = '';
+
+    public string $intentState = '';
+
+    // Step 2: inline project creation. A waiver-first signup arrives with no
+    // project, so the jobsite is collected right here instead of sending them
+    // through the three-screen project wizard.
+    public bool $creatingProject = false;
+
+    public string $project_name = '';
+
+    public ?string $project_address1 = null;
+
+    public ?string $project_address2 = null;
+
+    public ?string $project_city = null;
+
+    public string $project_state = '';
+
+    public ?string $project_zip = null;
+
+    public ?string $project_county = null;
+
+    public string $project_property_class = '';
+
+    public string $project_role = '';
+
+    /**
+     * One "your role on this job" question standing in for ProjectForm's two
+     * role-capture facts. The facts are stored too, so the project edits and
+     * derives its claimant type exactly like one built in ProjectForm.
+     *
+     * @var array<string, array{label: string, hint: string, facts: array{0: string, 1: string}}>
+     */
+    public const PROJECT_ROLES = [
+        'gc' => [
+            'label' => 'General / prime contractor',
+            'hint' => 'Hired directly by the property owner.',
+            'facts' => ['both', 'owner'],
+        ],
+        'subcontractor' => [
+            'label' => 'Subcontractor',
+            'hint' => 'Hired by the general contractor.',
+            'facts' => ['both', 'direct_contractor'],
+        ],
+        'sub_subcontractor' => [
+            'label' => 'Sub-subcontractor',
+            'hint' => 'Hired by another subcontractor.',
+            'facts' => ['both', 'subcontractor'],
+        ],
+        'supplier' => [
+            'label' => 'Material supplier',
+            'hint' => 'Supplied materials to a contractor on the job.',
+            'facts' => ['materials_only', 'direct_contractor'],
+        ],
+    ];
+
     public function mount(): void
     {
         // Validate the ?project= deep link; silently drop anything that isn't
@@ -186,6 +254,27 @@ class WaiverWizard extends Component
             $this->selectKind($this->presetKind);
             $this->kindLocked = $this->kind !== '';
         }
+
+        // The marketing-page starter's choices (state, send vs collect, waiver
+        // type) rode along in the session through registration; consume them
+        // so the wizard opens where the landing page left off. A ?project=
+        // deep link is a different entry and ignores them.
+        $intent = WaiverIntent::pull();
+
+        if ($intent !== null && ! $this->projectLocked) {
+            $this->intentKind = $intent['kind'] ?? '';
+            $this->intentState = $intent['state'] ?? '';
+            $this->project_state = $this->intentState;
+
+            if ($intent['direction'] !== null) {
+                $this->direction = $intent['direction'];
+                $this->step = 2;
+            }
+        }
+
+        // Nothing to pick from yet: open the inline project form straight
+        // away rather than a dead-end "create a project first".
+        $this->creatingProject = ! $this->projectLocked && ! $this->completedProjectsQuery()->exists();
     }
 
     // ------------------------------------------------------------------
@@ -435,6 +524,16 @@ class WaiverWizard extends Component
         $this->paymentReceived = '';
         $this->redirectNotice = null;
         $this->legal_description = null;
+
+        $this->applyIntentKind();
+    }
+
+    /** Projects the wizard can build a waiver on. */
+    private function completedProjectsQuery(): Builder
+    {
+        return LienProject::query()
+            ->whereNotNull('wizard_completed_at')
+            ->whereNotNull('jobsite_state');
     }
 
     public function selectedProject(): ?LienProject
@@ -443,11 +542,139 @@ class WaiverWizard extends Component
             return null;
         }
 
-        return LienProject::query()
+        return $this->completedProjectsQuery()
             ->where('public_id', $this->projectId)
-            ->whereNotNull('wizard_completed_at')
-            ->whereNotNull('jobsite_state')
             ->first();
+    }
+
+    /**
+     * The starter's waiver type is applied once, the first time a project
+     * fixes the state; selectKind() no-ops when the state doesn't use it.
+     */
+    private function applyIntentKind(): void
+    {
+        if ($this->intentKind === '' || $this->state() === null) {
+            return;
+        }
+
+        $this->selectKind($this->intentKind);
+        $this->intentKind = '';
+    }
+
+    public function startNewProject(): void
+    {
+        $this->creatingProject = true;
+
+        if ($this->project_state === '') {
+            $this->project_state = $this->intentState;
+        }
+    }
+
+    public function cancelNewProject(): void
+    {
+        $this->creatingProject = false;
+        $this->resetValidation(array_keys($this->projectRules()));
+    }
+
+    /**
+     * Google Places pick for the inline project form's street-address input
+     * (see livewire.lien._places-autocomplete).
+     *
+     * @param  array<string, mixed>  $addressData
+     */
+    public function updateProjectAddressFromAutocomplete(array $addressData): void
+    {
+        $this->project_address1 = $addressData['line1'] ?? null;
+        $this->project_city = $addressData['city'] ?? null;
+        $this->project_state = strtoupper((string) ($addressData['state'] ?? '')) ?: $this->project_state;
+        $this->project_zip = $addressData['zip'] ?? null;
+        $this->project_county = $addressData['county'] ?? null;
+    }
+
+    /**
+     * @return array<string, array<int, mixed>>
+     */
+    private function projectRules(): array
+    {
+        return [
+            'project_name' => ['nullable', 'string', 'max:255'],
+            'project_address1' => ['required', 'string', 'max:255'],
+            'project_address2' => ['nullable', 'string', 'max:255'],
+            'project_city' => ['required', 'string', 'max:255'],
+            'project_state' => ['required', 'string', Rule::in(array_keys(WaiverStateRegistry::STATE_NAMES))],
+            'project_zip' => ['nullable', 'string', 'max:10'],
+            'project_county' => ['nullable', 'string', 'max:255'],
+            'project_property_class' => ['required', Rule::in(['residential', 'commercial', 'government'])],
+            'project_role' => ['required', Rule::in(array_keys(self::PROJECT_ROLES))],
+        ];
+    }
+
+    /**
+     * Create the project from the inline form and move on: to the type step,
+     * or straight to details when the starter already chose the type.
+     */
+    public function createProject(): void
+    {
+        $this->validate($this->projectRules(), [
+            'project_address1.required' => 'Enter the jobsite street address.',
+            'project_city.required' => 'Enter the jobsite city.',
+            'project_state.required' => 'Pick the jobsite state.',
+            'project_state.in' => 'Pick the jobsite state.',
+            'project_property_class.required' => 'Pick the property type.',
+            'project_role.required' => 'Pick your role on this job.',
+        ]);
+
+        [$providedType, $hiredBy] = self::PROJECT_ROLES[$this->project_role]['facts'];
+        $state = strtoupper($this->project_state);
+        $name = trim($this->project_name) !== ''
+            ? trim($this->project_name)
+            : trim($this->project_address1).', '.trim($this->project_city);
+
+        // Same geocode fallback as ProjectForm (the delegated autocomplete
+        // hands over the parsed address, not the place id).
+        $geo = app(GooglePlacesService::class)->geocodeAddress(implode(', ', array_filter([
+            $this->project_address1, $this->project_city, $state, $this->project_zip,
+        ]))) ?? [];
+
+        $project = LienProject::create([
+            'business_id' => Auth::user()->currentBusiness()->id,
+            'created_by_user_id' => Auth::id(),
+            'name' => $name,
+            'provided_type' => $providedType,
+            'hired_by' => $hiredBy,
+            'claimant_type' => ClaimantType::derive($providedType, $hiredBy)->value,
+            'property_class' => $this->project_property_class,
+            'property_context' => 'unknown',
+            'jobsite_address1' => $this->project_address1,
+            'jobsite_address2' => $this->project_address2 ?: null,
+            'jobsite_city' => $this->project_city,
+            'jobsite_state' => $state,
+            'jobsite_zip' => $this->project_zip ?: null,
+            'jobsite_county' => $this->project_county ?: ($geo['county'] ?? null),
+            'jobsite_county_google' => $geo['county'] ?? ($this->project_county ?: null),
+            'jobsite_place_id' => $geo['place_id'] ?? null,
+            'jobsite_formatted_address' => $geo['formatted_address'] ?? null,
+            'jobsite_lat' => $geo['lat'] ?? null,
+            'jobsite_lng' => $geo['lng'] ?? null,
+            'noc_status' => 'unknown',
+            'wizard_completed_at' => now(),
+        ]);
+
+        // As in ProjectForm: deadline rows exist from day one, so the project
+        // page can show what's still missing to track lien deadlines.
+        app(DeadlineCalculator::class)->calculateForProject($project->fresh());
+
+        $this->creatingProject = false;
+        $this->projectId = $project->public_id;
+        $this->updatedProjectId();
+
+        // Advance exactly like a manual pick, skipping the type step when the
+        // starter already answered it.
+        $this->nextStep();
+
+        if ($this->kind !== '') {
+            $this->nextStep();
+        }
     }
 
     public function state(): ?string
@@ -620,7 +847,6 @@ class WaiverWizard extends Component
 
         return LienContact::query()->find($this->contactId);
     }
-
 
     public function openContactModal(): void
     {
@@ -873,7 +1099,6 @@ class WaiverWizard extends Component
         $this->owner_zip = $addressData['zip'] ?? null;
     }
 
-
     // ------------------------------------------------------------------
     // Step 5: auto-save + actions
     // ------------------------------------------------------------------
@@ -934,6 +1159,13 @@ class WaiverWizard extends Component
         $this->savedWaiverId = $waiver->id;
         $this->syncProjectLegalDescription();
         app(GenerateWaiver::class)->execute($waiver);
+
+        // GA4 funnel: the activation event (a finished, downloadable waiver).
+        $this->js(Gtag::eventJs('waiver_generated', [
+            'state' => $waiver->state,
+            'direction' => $waiver->direction->value,
+            'waiver_kind' => $waiver->kind->value,
+        ]));
     }
 
     /** Stream the saved draft's PDF; over the free limit, pitch the upgrade. */
@@ -1097,9 +1329,7 @@ class WaiverWizard extends Component
         $business = Auth::user()->currentBusiness();
         $project = $this->selectedProject();
 
-        $projects = LienProject::query()
-            ->whereNotNull('wizard_completed_at')
-            ->whereNotNull('jobsite_state')
+        $projects = $this->completedProjectsQuery()
             ->orderBy('name')
             ->get();
 
@@ -1110,6 +1340,7 @@ class WaiverWizard extends Component
         return view('livewire.lien.waivers.waiver-wizard', [
             'directions' => WaiverDirection::cases(),
             'projects' => $projects,
+            'projectRoles' => self::PROJECT_ROLES,
             'contacts' => $contacts,
             'project' => $project,
             'stateRules' => $this->stateRules(),

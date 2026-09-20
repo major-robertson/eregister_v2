@@ -54,13 +54,9 @@
             Generate the correct {{ $stateName }} lien waiver in minutes: free download, with e-signature and signed-copy storage when you need them.
             @endif
         </p>
-        <div class="mt-10">
-            <a href="{{ route('register') }}" class="group inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#B91C1C]">
-                Create a free {{ $code }} lien waiver
-                <svg class="h-4 w-4 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-            </a>
+        {{-- The starter, with this state locked in, replaces the register button. --}}
+        <div class="mx-auto mt-10 max-w-2xl">
+            <x-lien.waiver-starter :state="$code" :from="request()->getPathInfo()" :heading="'Create your '.$stateName.' waiver'" />
         </div>
     </div>
 </section>
@@ -204,10 +200,10 @@
                 <h2 class="text-3xl font-bold text-white sm:text-4xl">Create a free {{ $stateName }} lien waiver</h2>
                 <p class="mt-4 text-lg text-zinc-400">The correct {{ $stateName }} form, filled in and ready to download in about two minutes. Free to generate and download. Upgrade only when you want e-signature and automatic reminders.</p>
                 <div class="mt-8">
-                    <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 font-semibold text-zinc-900 shadow-lg transition hover:scale-105 hover:bg-zinc-50">
+                    <a href="#start" class="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 font-semibold text-zinc-900 shadow-lg transition hover:scale-105 hover:bg-zinc-50">
                         Get started free
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                         </svg>
                     </a>
                 </div>

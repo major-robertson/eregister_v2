@@ -124,6 +124,20 @@ describe('GenerateWaiver action', function () {
 });
 
 describe('WaiverGenerator payload', function () {
+    it('prints the business profile address on the claimant line when the project has no claimant party', function () {
+        $waiver = waiverGenFixture(['direction' => WaiverDirection::Provide]);
+        $waiver->project->business->update([
+            'business_address' => ['line1' => '100 Main St', 'line2' => 'Suite 4', 'city' => 'Austin', 'state' => 'TX', 'zip' => '78701'],
+            'phone' => '512-555-0100',
+        ]);
+
+        $data = app(WaiverGenerator::class)->data($waiver);
+
+        expect($data['claimant']['company'])->toBe('Acme Construction LLC');
+        expect($data['claimant']['address_lines'])->toBe(['100 Main St', 'Suite 4', 'Austin, TX 78701']);
+        expect($data['claimant']['phone'])->toBe('512-555-0100');
+    });
+
     it('provide direction puts the business on the claimant line and the counterparty as customer', function () {
         $waiver = waiverGenFixture(['direction' => WaiverDirection::Provide]);
 

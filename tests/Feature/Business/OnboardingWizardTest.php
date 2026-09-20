@@ -90,6 +90,28 @@ describe('OnboardingWizard', function () {
             ->assertRedirect(route('lien.onboarding'));
     });
 
+    it('sends a waiver-page signup straight into the waiver wizard, skipping lien onboarding', function () {
+        foreach (['/liens/lien-waivers/tx', '/lp/lien-waiver'] as $index => $path) {
+            $user = User::factory()->create(['signup_landing_path' => $path]);
+            $business = Business::create(['name' => "Waiver Biz {$index}", 'legal_name' => "Waiver Biz {$index}"]);
+            $user->businesses()->attach($business->id, ['role' => 'owner']);
+
+            $this->actingAs($user)
+                ->withSession(['current_business_id' => $business->id]);
+
+            Livewire::test(OnboardingWizard::class)
+                ->set('businessAddress.line1', '12 Waiver Way')
+                ->set('businessAddress.city', 'Houston')
+                ->set('businessAddress.state', 'TX')
+                ->set('businessAddress.zip', '77002')
+                ->call('complete')
+                ->assertHasNoErrors()
+                ->assertRedirect(route('lien.waivers.create'));
+
+            expect($business->fresh()->isLienOnboardingComplete())->toBeFalse();
+        }
+    });
+
     it('redirects to dashboard when user from liens adds second business', function () {
         $user = User::factory()->create(['signup_landing_path' => '/liens']);
 

@@ -8,11 +8,11 @@
             A signed copy{{ count($documents) > 1 ? ' of each document' : '' }} is available to download below.
             Both parties receive the signed copy by email.
         @elseif ($waiverUrl)
-            The signed copy is below and stored on the waiver.
+            Your signed copy is below. It's also saved with the waiver.
             @if ($waiverCounterpartyEmail)
-                We've emailed it to {{ $waiverCounterpartyEmail }} and to you.
+                We emailed a copy to {{ $waiverCounterpartyEmail }} and to you.
             @else
-                We've emailed it to you; there's no email on file for the other party, so send it on to them.
+                We emailed a copy to you. We don't have an email for the other party, so please send it to them.
             @endif
         @else
             A signed copy{{ count($documents) > 1 ? ' of each letter' : '' }} is available to download below,

@@ -85,7 +85,7 @@
                         @if ($businessSubscribed)
                             Your team has Lien Waiver Pro, but you don't have a seat yet — grab one to go unlimited.
                         @else
-                            Creating and downloading waivers is free. Pro gets them signed: sign your own, collect from subs and vendors, automatic reminders, signed copies stored.
+                            Creating and downloading waivers is free. With Pro you can sign waivers online and collect signatures from your subs and vendors.
                         @endif
                     </p>
                     <div class="mt-3 h-2 w-full max-w-xs overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">

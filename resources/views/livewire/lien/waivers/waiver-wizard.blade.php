@@ -391,7 +391,7 @@
                     <flux:field>
                         <flux:label>First day on this job <span class="font-normal text-zinc-400">(optional)</span></flux:label>
                         <flux:date-picker wire:model="project_first_furnish_date" />
-                        <flux:description>When you first provided labor or materials. We use it to track your notice and lien deadlines for this job, free.</flux:description>
+                        <flux:description>The day you started work or first delivered materials. We use it to calculate your lien deadlines. Free.</flux:description>
                         <flux:error name="project_first_furnish_date" />
                     </flux:field>
 
@@ -655,7 +655,7 @@
                 @if ($savedWaiverId !== null)
                     <div class="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50/70 px-3.5 py-2.5">
                         <flux:icon name="check-circle" class="size-4 shrink-0 text-green-600" />
-                        <p class="text-[13px] text-green-800">Saved to the project. Download it free, or get it signed below.</p>
+                        <p class="text-[13px] text-green-800">Your waiver is saved. Download it for free, or sign it online below.</p>
                     </div>
                 @else
                     <div class="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/70 px-3.5 py-2.5">
@@ -682,12 +682,11 @@
                          to be signed, and that is the step Pro takes over. --}}
                     @if ($showSignPrompt && ! $canEsign && (! $form || $form->esignAllowed))
                         <flux:callout color="blue" icon="sparkles">
-                            <flux:callout.heading>Downloaded. Need it signed?</flux:callout.heading>
+                            <flux:callout.heading>Need it signed?</flux:callout.heading>
                             <flux:callout.text>
-                                Skip the print, sign, and scan:
                                 {{ $direction === 'provide'
-                                    ? 'sign it here and we email the signed copy for you.'
-                                    : 'send it for e-signature and we chase the signer for you.' }}
+                                    ? 'You can sign it online instead of printing it. We email the signed copy for you.'
+                                    : 'You can send it to be signed online. We remind the signer until it\'s done.' }}
                             </flux:callout.text>
                         </flux:callout>
                     @endif
@@ -711,15 +710,15 @@
                                 @if ($direction === 'provide')
                                     {{-- The signed copy is only emailed when the contact has an address. --}}
                                     @php $customer = $this->selectedContact(); @endphp
-                                    Sign on the next screen.
+                                    You sign on the next screen.
                                     {{ $customer?->email
-                                        ? 'We email the signed copy to '.$customer->displayName().' and store it on the project.'
-                                        : 'We store the signed copy on the project, ready for you to send.' }}
+                                        ? 'We email the signed copy to '.$customer->displayName().' and save it to your project.'
+                                        : 'We save the signed copy to your project.' }}
                                 @else
-                                    We email {{ $this->selectedContact()?->displayName() ?? 'the signer' }} a secure link, remind them automatically, and store the signed copy.
+                                    We email {{ $this->selectedContact()?->displayName() ?? 'the signer' }} a link to sign. We remind them until it's signed.
                                 @endif
                                 @unless ($canEsign)
-                                    <span class="font-medium text-zinc-700 dark:text-zinc-300">Pro, {{ $proMonthly }}/mo per seat, cancel anytime.</span>
+                                    <span class="font-medium text-zinc-700 dark:text-zinc-300">Part of Pro: {{ $proMonthly }}/mo per seat. Cancel anytime.</span>
                                 @endunless
                             </p>
                         @endif

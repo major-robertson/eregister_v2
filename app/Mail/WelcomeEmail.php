@@ -25,7 +25,7 @@ class WelcomeEmail extends Mailable implements ShouldQueue
     {
         return new Envelope(
             subject: $this->isFinishingAWaiver()
-                ? 'Welcome to eRegister. Your lien waiver is about 2 minutes away'
+                ? 'Welcome to eRegister. Here is your lien waiver link'
                 : 'Welcome to eRegister',
         );
     }

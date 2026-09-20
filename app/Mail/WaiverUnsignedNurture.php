@@ -17,7 +17,6 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Str;
 
 /**
  * The waiver_unsigned sequence: a free-plan user saved a waiver.
@@ -50,13 +49,13 @@ class WaiverUnsignedNurture extends Mailable implements ShouldQueue
 
         return new Envelope(subject: match ($this->step) {
             1 => $waiver?->direction === WaiverDirection::Collect
-                ? "Your {$state} waiver is ready to send for signature"
-                : "Your {$state} waiver is ready. Sign it in about a minute",
-            2 => 'Does an e-signed lien waiver hold up?',
+                ? "Your {$state} waiver is ready to send"
+                : "Your {$state} waiver is ready",
+            2 => 'Is an e-signed lien waiver legal?',
             3 => $nextDeadline !== null
-                ? "Your {$nextDeadline->documentType->name} deadline: ".$nextDeadline->due_date->format('M j')
-                : 'If a payment on this job doesn\'t show up',
-            default => 'Next draw coming up?',
+                ? "Your {$nextDeadline->documentType->name} is due ".$nextDeadline->due_date->format('M j')
+                : 'What if you don\'t get paid on this job?',
+            default => 'Need another lien waiver?',
         });
     }
 
@@ -72,10 +71,6 @@ class WaiverUnsignedNurture extends Mailable implements ShouldQueue
                 'step' => $this->step,
                 'stateName' => $this->stateName($waiver),
                 'projectName' => $project?->name,
-                // "Conditional · Progress" reads better in a sentence as "conditional progress".
-                'kindLabel' => $waiver?->kind !== null
-                    ? Str::lower(str_replace(' · ', ' ', $waiver->kind->shortLabel()))
-                    : null,
                 'counterparty' => $waiver?->counterpartyDisplayName(),
                 // The signed copy is only emailed when the other party has an address.
                 'emailsCounterparty' => filled($waiver?->counterparty_email),

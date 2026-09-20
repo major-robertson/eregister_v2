@@ -13,16 +13,17 @@
     <div>
         <flux:heading size="lg">{{ $heading }}</flux:heading>
         <flux:text class="mt-1 text-sm text-zinc-500">
-            Creating and downloading waivers stays free. Pro is everything that gets a waiver signed.
+            Creating and downloading waivers is always free. Pro lets you sign and send them online.
         </flux:text>
     </div>
 
     <ul class="space-y-2">
         @foreach ([
-            'Sign your own waivers here and send the signed copy in one step',
-            'Collect signatures from subs and vendors, with automatic reminders',
-            'Signed copies stored on the project with an audit certificate',
-            'Unlimited waivers for every seat holder',
+            'Sign your own waivers online',
+            'Collect signatures from subs and vendors',
+            'Automatic reminders until they sign',
+            'Signed copies saved to your project',
+            'Unlimited waivers',
         ] as $feature)
             <li class="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
                 <flux:icon name="check-circle" class="mt-0.5 size-4 shrink-0 text-green-600 dark:text-green-400" />

@@ -120,7 +120,7 @@ describe('waiver page: e-sign is the Pro step', function () {
         Livewire::test(WaiverShow::class, ['waiver' => $waiver])
             ->assertSee('Download unsigned PDF')
             ->assertSee('Sign & send')
-            ->assertSee('$49/month per seat')
+            ->assertSee('$49/month per seat. Cancel anytime.')
             ->call('sendForSignature')
             ->assertSet('showUpsellModal', true)
             ->assertNoRedirect();
@@ -300,7 +300,7 @@ describe('after signing your own waiver', function () {
         ]);
 
         Livewire::test(SignDone::class, ['request' => $request])
-            ->assertSee('stored on the waiver')
+            ->assertSee('saved with the waiver')
             ->assertSee('gc@builder.test')
             ->assertSee('Back to the waiver')
             ->assertSee(route('lien.waivers.show', $waiver), false)
@@ -320,7 +320,7 @@ describe('after signing your own waiver', function () {
         ]);
 
         Livewire::test(SignDone::class, ['request' => $request])
-            ->assertSee('send it on to them')
+            ->assertSee('please send it to them')
             ->assertSee('Back to the waiver');
     });
 });

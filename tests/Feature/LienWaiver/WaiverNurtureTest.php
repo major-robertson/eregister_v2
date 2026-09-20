@@ -146,7 +146,7 @@ describe('welcome email', function () {
 
         $mailable = new WelcomeEmail($user);
 
-        $mailable->assertHasSubject('Welcome to eRegister. Your lien waiver is about 2 minutes away');
+        $mailable->assertHasSubject('Welcome to eRegister. Here is your lien waiver link');
         $mailable->assertSeeInHtml('Wendy');
         $mailable->assertSeeInHtml('Create my waiver');
         $mailable->assertSeeInHtml(route('lien.waivers.create'), false);
@@ -233,14 +233,14 @@ describe('finish-your-waiver sequence', function () {
 
         $mailable = new WaiverStartedReminder($this->sequence, 1);
 
-        $mailable->assertHasSubject('Your Texas lien waiver is about 2 minutes away');
+        $mailable->assertHasSubject('Finish your Texas lien waiver (about 2 minutes)');
         $mailable->assertSeeInHtml('Wendy');
         $mailable->assertSeeInHtml('Finish my waiver');
         $mailable->assertSeeInHtml('state=tx', false);
         $mailable->assertSeeInHtml('Manage email preferences or unsubscribe');
         $mailable->assertSeeInHtml('100 Main St, Springfield, IL 62701');
 
-        (new WaiverStartedReminder($this->sequence, 2))->assertHasSubject('Still need that Texas lien waiver?');
+        (new WaiverStartedReminder($this->sequence, 2))->assertHasSubject('Do you still need a Texas lien waiver?');
     });
 
     it('leaves the postal address line out until one is configured', function () {
@@ -386,10 +386,10 @@ describe('free-plan series', function () {
     it('pitches signing your own waiver, with the Pro price', function () {
         $mailable = new WaiverUnsignedNurture($this->sequence, 1);
 
-        $mailable->assertHasSubject('Your California waiver is ready. Sign it in about a minute');
+        $mailable->assertHasSubject('Your California waiver is ready');
         $mailable->assertSeeInHtml('Market Street Lofts');
-        $mailable->assertSeeInHtml('Sign &amp; send my waiver', false);
-        $mailable->assertSeeInHtml('$49 a month per person');
+        $mailable->assertSeeInHtml('Sign my waiver online');
+        $mailable->assertSeeInHtml('$49 a month per person. Cancel anytime.');
         $mailable->assertSeeInHtml(route('lien.waivers.show', $this->waiver), false);
         $mailable->assertSeeInHtml('Manage email preferences or unsubscribe');
     });
@@ -402,7 +402,7 @@ describe('free-plan series', function () {
 
         $mailable = new WaiverUnsignedNurture(waiverNurtureSequence($waiver, $this->user, $this->business), 1);
 
-        $mailable->assertHasSubject('Your California waiver is ready to send for signature');
+        $mailable->assertHasSubject('Your California waiver is ready to send');
         $mailable->assertSeeInHtml('Vendor Concrete LLC');
         $mailable->assertSeeInHtml('Send it for signature');
     });
@@ -411,19 +411,19 @@ describe('free-plan series', function () {
         $this->waiver->update(['status' => WaiverStatus::Signed, 'signed_at' => now()]);
 
         $first = new WaiverUnsignedNurture($this->sequence->refresh(), 1);
-        $first->assertDontSeeInHtml('Sign &amp; send my waiver', false);
+        $first->assertDontSeeInHtml('Sign my waiver online');
         $first->assertSeeInHtml('View my waiver');
 
         (new WaiverUnsignedNurture($this->sequence, 2))->assertSeeInHtml('Create my next waiver');
     });
 
-    it('explains why an e-signed waiver holds up', function () {
+    it('explains that an e-signed waiver is legal', function () {
         $mailable = new WaiverUnsignedNurture($this->sequence, 2);
 
-        $mailable->assertHasSubject('Does an e-signed lien waiver hold up?');
+        $mailable->assertHasSubject('Is an e-signed lien waiver legal?');
         $mailable->assertSeeInHtml('ESIGN Act');
-        $mailable->assertSeeInHtml('certificate of completion');
-        $mailable->assertSeeInHtml('California is one of the states');
+        $mailable->assertSeeInHtml('signing record');
+        $mailable->assertSeeInHtml('We offer e-signing for waivers in California.');
     });
 
     it('names the real deadline on day 7 when the project has its first day on the job', function () {
@@ -435,7 +435,7 @@ describe('free-plan series', function () {
         // California subcontractor: preliminary notice is due 20 days after first furnishing.
         $due = today()->subDays(5)->addDays(20);
 
-        $mailable->assertHasSubject('Your Preliminary Notice deadline: '.$due->format('M j'));
+        $mailable->assertHasSubject('Your Preliminary Notice is due '.$due->format('M j'));
         $mailable->assertSeeInHtml('Preliminary Notice:');
         $mailable->assertSeeInHtml('due '.$due->format('F j, Y'));
         $mailable->assertSeeInHtml('15 days left');
@@ -448,15 +448,15 @@ describe('free-plan series', function () {
 
         $mailable = new WaiverUnsignedNurture($this->sequence, 3);
 
-        $mailable->assertHasSubject("If a payment on this job doesn't show up");
+        $mailable->assertHasSubject("What if you don't get paid on this job?");
         $mailable->assertSeeInHtml('Add my job dates');
-        $mailable->assertDontSeeInHtml('here is what');
+        $mailable->assertDontSeeInHtml('coming up, based on');
     });
 
     it('invites the next waiver on day 21', function () {
         $mailable = new WaiverUnsignedNurture($this->sequence, 4);
 
-        $mailable->assertHasSubject('Next draw coming up?');
+        $mailable->assertHasSubject('Need another lien waiver?');
         $mailable->assertSeeInHtml('Create my next waiver');
         $mailable->assertSeeInHtml(route('lien.waivers.create'), false);
     });

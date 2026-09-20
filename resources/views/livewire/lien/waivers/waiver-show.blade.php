@@ -89,13 +89,13 @@ use App\Domains\Lien\Enums\WaiverStatus;
                 @if (($form === null || $form->esignAllowed) && ! $canEsign)
                     <flux:callout color="blue" icon="sparkles">
                         <flux:callout.heading>
-                            {{ $isProvide ? 'Need it signed? Sign it here in under a minute.' : 'Get it signed without chasing anyone.' }}
+                            {{ $isProvide ? 'Sign it online in about a minute' : 'Send it to be signed online' }}
                         </flux:callout.heading>
                         <flux:callout.text>
                             {{ $isProvide
-                                ? 'Pro applies your e-signature, emails the signed copy to your customer, and stores it on the project.'
-                                : 'Pro emails the signer a secure link, reminds them automatically, and stores the signed copy on the project.' }}
-                            {{ $proMonthly }}/month per seat, cancel anytime.
+                                ? 'No printing or scanning. We email the signed copy to your customer and save it to your project.'
+                                : 'They sign from their phone. We remind them until it\'s signed, then save the signed copy to your project.' }}
+                            This is part of Pro: {{ $proMonthly }}/month per seat. Cancel anytime.
                         </flux:callout.text>
                     </flux:callout>
                 @endif
@@ -140,7 +140,9 @@ use App\Domains\Lien\Enums\WaiverStatus;
                     <flux:callout color="blue" icon="pencil-square">
                         <flux:callout.heading>Waiting on your signature</flux:callout.heading>
                         <flux:callout.text>
-                            This is your own waiver. Sign it now and the signed copy is stored here{{ $waiver->counterparty_email ? ' and emailed to '.$waiver->counterpartyDisplayName() : '' }}.
+                            This waiver needs your signature. {{ $waiver->counterparty_email
+                                ? 'After you sign, we email the signed copy to '.$waiver->counterpartyDisplayName().' and save it here.'
+                                : 'After you sign, we save the signed copy here.' }}
                         </flux:callout.text>
                     </flux:callout>
                     <div>

@@ -32,8 +32,8 @@ class WaiverStartedReminder extends Mailable implements ShouldQueue
         $waiver = $this->stateName() !== null ? $this->stateName().' lien waiver' : 'lien waiver';
 
         return new Envelope(subject: match ($this->step) {
-            1 => "Your {$waiver} is about 2 minutes away",
-            default => "Still need that {$waiver}?",
+            1 => "Finish your {$waiver} (about 2 minutes)",
+            default => "Do you still need a {$waiver}?",
         });
     }
 

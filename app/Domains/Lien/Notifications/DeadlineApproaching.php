@@ -7,11 +7,18 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\URL;
 
 class DeadlineApproaching extends Notification implements ShouldQueue
 {
     use Queueable;
 
+    /** Missing one of these can cost the customer their lien rights; the email says so. */
+    private const LIEN_RIGHTS_DOCUMENTS = ['prelim_notice', 'noi', 'mechanics_lien'];
+
+    /**
+     * @param  int  $daysRemaining  Days until the due date on the day this was sent (0 = due today).
+     */
     public function __construct(
         public LienProjectDeadline $deadline,
         public int $daysRemaining
@@ -24,29 +31,34 @@ class DeadlineApproaching extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $subject = $this->daysRemaining === 0
-            ? "OVERDUE: {$this->deadline->documentType->name} for {$this->deadline->project->name}"
-            : "{$this->deadline->documentType->name} due in {$this->daysRemaining} days";
+        $document = $this->deadline->documentType->name;
+        $project = $this->deadline->project->name;
+        $dueDate = $this->deadline->due_date->format('F j, Y');
+
+        $when = match ($this->daysRemaining) {
+            0 => 'today',
+            1 => 'tomorrow',
+            default => "in {$this->daysRemaining} days",
+        };
 
         $message = (new MailMessage)
-            ->subject($subject)
-            ->greeting('Hello!')
-            ->line("Your {$this->deadline->documentType->name} deadline for project \"{$this->deadline->project->name}\" is approaching.");
+            ->subject("{$document} due {$when}: {$project}")
+            ->greeting('Hi '.($notifiable->first_name ?: 'there').',')
+            ->line("Your {$document} for **{$project}** is due {$when}, on {$dueDate}.");
 
-        if ($this->daysRemaining === 0) {
-            $message->line('**This deadline is now overdue!**');
-        } else {
-            $message->line("Due date: {$this->deadline->due_date->format('F j, Y')}");
+        if (in_array($this->deadline->documentType->slug, self::LIEN_RIGHTS_DOCUMENTS, true)) {
+            $message->line('If you miss this deadline, you can lose your lien rights on this job.');
         }
 
-        $message->action('Start Filing Now', route('lien.filings.start', [
-            'project' => $this->deadline->project,
-            'deadline' => $this->deadline,
-        ]));
-
-        $message->line('Taking action now helps protect your lien rights.');
-
-        return $message;
+        return $message
+            ->action("Start my {$document}", route('lien.filings.start', [
+                'project' => $this->deadline->project,
+                'deadline' => $this->deadline,
+            ]))
+            // No promise of a same-day turnaround when it is due today or tomorrow.
+            ->line($this->daysRemaining <= 1 ? 'Time is short, so please start now.' : 'We can prepare and send it for you.')
+            ->line('We calculate this date from the dates you entered, so please double-check it.')
+            ->line('[Turn off deadline reminders]('.URL::signedRoute('email.preferences', ['user' => $notifiable->getKey()]).')');
     }
 
     public function toArray(object $notifiable): array

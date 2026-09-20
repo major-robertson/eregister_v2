@@ -10,7 +10,7 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 // Lien deadline reminders - run hourly to catch different business timezones
-Schedule::command('lien:send-deadline-reminders')->hourly();
+Schedule::command('lien:send-deadline-reminders')->hourly()->withoutOverlapping();
 
 // Lien waiver signature reminders - hourly; per-(waiver, interval) dedup log
 Schedule::command('lien:send-waiver-reminders')->hourly()->withoutOverlapping();

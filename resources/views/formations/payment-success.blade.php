@@ -1,5 +1,6 @@
 @if (($trackConversion ?? false) && $payment)
     @push('scripts')
+    @include('partials.google-purchase-tracking', ['itemName' => 'LLC Formation'])
     <!-- Google Ads Conversion Tracking (LLC formation) -->
     <script data-navigate-once>
         gtag('event', 'conversion', {

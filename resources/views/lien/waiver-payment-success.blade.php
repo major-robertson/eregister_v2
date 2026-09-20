@@ -1,5 +1,6 @@
 @if (($trackConversion ?? false) && $payment)
     @push('scripts')
+    @include('partials.google-purchase-tracking', ['itemName' => 'Lien Waiver Pro'])
     <!-- Google Ads Conversion Tracking (lien waiver subscription) -->
     <script data-navigate-once>
         gtag('event', 'conversion', {
@@ -7,15 +8,6 @@
             value: {{ number_format($payment->amount_cents / 100, 2, '.', '') }},
             currency: "USD",
             transaction_id: "{{ $payment->id }}"
-        });
-    </script>
-    <!-- GA4 funnel: purchase (lien waiver subscription) -->
-    <script data-navigate-once>
-        window.gtag && gtag('event', 'purchase', {
-            transaction_id: "{{ $payment->id }}",
-            value: {{ number_format($payment->amount_cents / 100, 2, '.', '') }},
-            currency: "USD",
-            items: [{ item_name: "Lien Waiver Pro", price: {{ number_format($payment->amount_cents / 100, 2, '.', '') }}, quantity: 1 }]
         });
     </script>
     <!-- Reddit Pixel Conversion (lien waiver subscription) -->

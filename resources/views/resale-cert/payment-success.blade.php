@@ -1,5 +1,6 @@
 @if (($trackConversion ?? false) && $payment)
     @push('scripts')
+    @include('partials.google-purchase-tracking', ['itemName' => 'Resale Certificate Generator'])
     <!-- Google Ads Conversion Tracking (annual subscription) -->
     <script data-navigate-once>
         gtag('event', 'conversion', {

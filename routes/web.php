@@ -93,6 +93,8 @@ Route::view('liens/pricing', 'pages.liens.pricing')->name('liens.pricing');
 // Google Ads landing pages for the waiver generator: the state page's promise
 // with no site chrome and the starter above the fold (noindex).
 Route::get('lp/lien-waiver/{state?}', [\App\Http\Controllers\WaiverLandingController::class, 'lp'])->name('lp.lien-waiver');
+// Same page for "lien waiver software" searches: sells collecting waivers from subs, price shown.
+Route::get('lp/lien-waiver-software', [\App\Http\Controllers\WaiverLandingController::class, 'lpSoftware'])->name('lp.lien-waiver-software');
 
 // Government
 Route::prefix('government')->name('government.')->group(function () {

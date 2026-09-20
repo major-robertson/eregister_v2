@@ -38,11 +38,15 @@ readonly class ActivityItem
     {
         $deadline = $log->projectDeadline;
         $docTypeName = $deadline?->documentType?->name ?? 'Document';
-        $daysText = $log->interval_days === 1 ? '1 day' : "{$log->interval_days} days";
+        $dueText = match ($log->interval_days) {
+            0 => 'due today',
+            1 => 'due in 1 day',
+            default => "due in {$log->interval_days} days",
+        };
 
         return new self(
             type: 'notification',
-            label: "Reminder: {$docTypeName} due in {$daysText}",
+            label: "Reminder: {$docTypeName} {$dueText}",
             icon: 'bell',
             filingPublicId: null,
             projectId: $deadline?->project_id,

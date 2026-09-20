@@ -16,6 +16,8 @@ class EmailUnsubscribe extends Model
 
     const CATEGORY_MARKETING = 'marketing';
 
+    const CATEGORY_DEADLINE_REMINDERS = 'deadline_reminders';
+
     /**
      * All available unsubscribe categories with human-readable labels.
      *
@@ -23,6 +25,7 @@ class EmailUnsubscribe extends Model
      */
     public static array $categories = [
         self::CATEGORY_ABANDON_CHECKOUT => 'Order Reminders',
+        self::CATEGORY_DEADLINE_REMINDERS => 'Lien Deadline Reminders',
         self::CATEGORY_MARKETING => 'Marketing & Promotions',
     ];
 

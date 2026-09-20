@@ -147,7 +147,21 @@ return [
     |
     */
     'notifications' => [
-        'reminder_intervals' => [14, 7, 3, 1, 0], // Days before due date (0 = overdue)
+        // Kill switch for lien:send-deadline-reminders.
+        'reminders_enabled' => env('LIEN_DEADLINE_REMINDERS_ENABLED', true),
+
+        // Days before the due date (0 = due today). Each fires on its exact
+        // day only; a day that is missed is skipped, never caught up.
+        'reminder_intervals' => [14, 7, 3, 1, 0],
+
+        // Business-local hour from which reminders go out (the command runs
+        // hourly from midnight; nobody wants a deadline email at 12:05am).
+        'send_from_hour' => 8,
+
+        // A single run that would send more than this sends nothing and
+        // reports an error. Production ran at 2-10 emails a day in 2026-09,
+        // all in one 8am Eastern run; the backlog this guards against was 345.
+        'max_emails_per_run' => env('LIEN_DEADLINE_REMINDERS_MAX_PER_RUN', 50),
     ],
 
     /*

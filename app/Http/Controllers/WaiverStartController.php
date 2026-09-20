@@ -33,6 +33,8 @@ class WaiverStartController extends Controller
             'kind' => ['nullable', Rule::enum(WaiverKind::class)],
             // The marketing page the form sat on: an internal path only.
             'from' => ['nullable', 'string', 'max:255', 'regex:#^/[A-Za-z0-9\-_/]*$#'],
+            // Set on links in our own emails: the visitor already has an account.
+            'returning' => ['nullable', 'boolean'],
         ], [
             'state.required' => 'Pick the state the project is in.',
             'state.size' => 'Pick the state the project is in.',
@@ -57,6 +59,12 @@ class WaiverStartController extends Controller
         $user = $request->user();
 
         if ($user === null) {
+            // A "finish your waiver" email link: log in, then come back through
+            // here so the choices above carry into the wizard.
+            if ($request->boolean('returning')) {
+                return redirect()->guest(route('login'));
+            }
+
             // Attribution normally comes from the /register referer. The
             // starter names its page explicitly so the signup is credited to
             // the waiver pages even when the referer is stripped.

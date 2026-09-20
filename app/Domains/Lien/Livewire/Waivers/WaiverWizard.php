@@ -22,6 +22,7 @@ use App\Domains\Lien\Waivers\WaiverEntitlements;
 use App\Domains\Lien\Waivers\WaiverFormResolver;
 use App\Domains\Lien\Waivers\WaiverFormUnavailable;
 use App\Domains\Lien\Waivers\WaiverIntent;
+use App\Domains\Lien\Waivers\WaiverNurture;
 use App\Domains\Lien\Waivers\WaiverStateRegistry;
 use App\Services\GooglePlacesService;
 use App\Support\Analytics\Gtag;
@@ -211,6 +212,13 @@ class WaiverWizard extends Component
     public string $project_property_class = '';
 
     public string $project_role = '';
+
+    /**
+     * Optional. The anchor most states use for the preliminary notice
+     * deadline, so the project can show (and the follow-up email can name) a
+     * real date instead of "add your dates".
+     */
+    public ?string $project_first_furnish_date = null;
 
     /**
      * One "your role on this job" question standing in for ProjectForm's two
@@ -614,6 +622,8 @@ class WaiverWizard extends Component
             'project_county' => ['nullable', 'string', 'max:255'],
             'project_property_class' => ['required', Rule::in(['residential', 'commercial', 'government'])],
             'project_role' => ['required', Rule::in(array_keys(self::PROJECT_ROLES))],
+            // Same rule as ProjectForm.
+            'project_first_furnish_date' => ['nullable', 'date', 'before_or_equal:today'],
         ];
     }
 
@@ -630,6 +640,7 @@ class WaiverWizard extends Component
             'project_state.in' => 'Pick the jobsite state.',
             'project_property_class.required' => 'Pick the property type.',
             'project_role.required' => 'Pick your role on this job.',
+            'project_first_furnish_date.before_or_equal' => 'Your first day on the job can\'t be in the future.',
         ]);
 
         [$providedType, $hiredBy] = self::PROJECT_ROLES[$this->project_role]['facts'];
@@ -665,6 +676,7 @@ class WaiverWizard extends Component
             'jobsite_lat' => $geo['lat'] ?? null,
             'jobsite_lng' => $geo['lng'] ?? null,
             'noc_status' => 'unknown',
+            'first_furnish_date' => $this->project_first_furnish_date ?: null,
             'wizard_completed_at' => now(),
         ]);
 
@@ -1167,6 +1179,10 @@ class WaiverWizard extends Component
         $this->savedWaiverId = $waiver->id;
         $this->syncProjectLegalDescription();
         app(GenerateWaiver::class)->execute($waiver);
+
+        // Free plan: follow up by email on getting it signed (no-op for Pro).
+        // Rescued: email bookkeeping must never cost someone their waiver.
+        rescue(fn () => WaiverNurture::onWaiverSaved($waiver, Auth::user(), $business));
 
         // GA4 funnel: the activation event (a finished, downloadable waiver).
         $this->js(Gtag::eventJs('waiver_generated', [

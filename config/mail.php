@@ -132,4 +132,17 @@ return [
         explode(',', (string) env('MAIL_BLOCKED_RECIPIENT_DOMAINS', 'test.test'))
     ))),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Postal Address
+    |--------------------------------------------------------------------------
+    |
+    | Printed in the footer of marketing emails (mail.partials.marketing-footer)
+    | next to the email-preferences link. CAN-SPAM requires a valid physical
+    | postal address on commercial email; the line is omitted while unset.
+    |
+    */
+
+    'postal_address' => env('MAIL_POSTAL_ADDRESS'),
+
 ];

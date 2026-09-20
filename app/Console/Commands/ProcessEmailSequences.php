@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use App\Mail\AbandonedCheckoutReminder;
 use App\Mail\FilingActionReminder;
+use App\Mail\WaiverStartedReminder;
+use App\Mail\WaiverUnsignedNurture;
 use App\Models\EmailSequence;
 use App\Models\SentEmail;
 use Illuminate\Console\Command;
@@ -87,6 +89,8 @@ class ProcessEmailSequences extends Command
         match ($sequence->sequence_type) {
             'abandon_checkout' => Mail::to($user)->queue(new AbandonedCheckoutReminder($sequence, $step)),
             'filing_action_reminder' => Mail::to($user)->queue(new FilingActionReminder($sequence, $step)),
+            'waiver_started' => Mail::to($user)->queue(new WaiverStartedReminder($sequence, $step)),
+            'waiver_unsigned' => Mail::to($user)->queue(new WaiverUnsignedNurture($sequence, $step)),
             default => Log::warning('ProcessEmailSequences: No mailable for sequence type', [
                 'sequence_type' => $sequence->sequence_type,
             ]),

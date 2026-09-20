@@ -386,6 +386,15 @@
                         <flux:error name="project_role" class="mt-2" />
                     </div>
 
+                    {{-- Optional, and last: it never blocks the waiver. With it the
+                         project can show a real notice deadline for this job. --}}
+                    <flux:field>
+                        <flux:label>First day on this job <span class="font-normal text-zinc-400">(optional)</span></flux:label>
+                        <flux:date-picker wire:model="project_first_furnish_date" />
+                        <flux:description>When you first provided labor or materials. We use it to track your notice and lien deadlines for this job, free.</flux:description>
+                        <flux:error name="project_first_furnish_date" />
+                    </flux:field>
+
                     <div class="flex flex-wrap items-center justify-end gap-3 border-t border-zinc-200 pt-5 dark:border-zinc-700">
                         @if ($projects->isNotEmpty())
                             <flux:button wire:click="cancelNewProject" variant="ghost">

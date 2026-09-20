@@ -4,6 +4,7 @@ namespace App\Actions\Fortify;
 
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
+use App\Domains\Lien\Waivers\WaiverNurture;
 use App\Mail\WelcomeEmail;
 use App\Models\User;
 use App\Rules\Recaptcha;
@@ -43,6 +44,11 @@ class CreateNewUser implements CreatesNewUsers
         ]);
 
         $this->clearSignupAttributionSession();
+
+        // Waiver-page signups get "finish your waiver" follow-ups; started
+        // before the welcome email is queued, which links to the same place.
+        // Rescued: email bookkeeping must never fail a registration.
+        rescue(fn () => WaiverNurture::onSignup($user));
 
         Mail::to($user)->queue(
             (new WelcomeEmail($user))->delay(now()->addMinutes(7))

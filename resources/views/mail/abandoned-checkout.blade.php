@@ -25,7 +25,5 @@ Thanks,<br>
 Major<br>
 eRegister
 
-<div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #9ca3af;">
-<a href="{{ $preferencesUrl }}" style="color: #9ca3af;">Manage email preferences</a>
-</div>
+@include('mail.partials.marketing-footer')
 </x-mail::message>

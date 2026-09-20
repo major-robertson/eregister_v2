@@ -4,7 +4,10 @@ namespace App\Models;
 
 use App\Domains\Business\Models\Business;
 use App\Domains\Lien\Enums\FilingStatus;
+use App\Domains\Lien\Enums\WaiverStatus;
 use App\Domains\Lien\Models\LienFiling;
+use App\Domains\Lien\Models\LienWaiver;
+use App\Domains\Lien\Waivers\WaiverEntitlements;
 use App\Enums\PaymentStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -53,7 +56,26 @@ class EmailSequence extends Model
             'email_prefix' => 'filing_action_reminder_step',
             'unsubscribe_category' => null,
         ],
+        // Signed up from a waiver page, no waiver yet. The waiver welcome
+        // email covers the first hour, so these land on day 1 and day 3.
+        'waiver_started' => [
+            'steps' => 2,
+            'delays' => [1440, 2880],
+            'email_prefix' => 'waiver_started_step',
+            'unsubscribe_category' => EmailUnsubscribe::CATEGORY_MARKETING,
+        ],
+        // Free-plan waiver saved: 2 hours (sign it here), day 2 (is e-sign
+        // valid), day 7 (lien deadlines for the job), day 21 (next draw).
+        'waiver_unsigned' => [
+            'steps' => 4,
+            'delays' => [120, 2880, 7200, 20160],
+            'email_prefix' => 'waiver_unsigned_step',
+            'unsubscribe_category' => EmailUnsubscribe::CATEGORY_MARKETING,
+        ],
     ];
+
+    /** Sequence types with their own stop rules (see shouldSuppressWaiverNurture). */
+    public const WAIVER_NURTURE_TYPES = ['waiver_started', 'waiver_unsigned'];
 
     /**
      * E-signature links expire 14 days after they're sent, so e-sign reminders
@@ -133,6 +155,10 @@ class EmailSequence extends Model
             return 'email_bounced';
         }
 
+        if (in_array($this->sequence_type, self::WAIVER_NURTURE_TYPES, true)) {
+            return $this->shouldSuppressWaiverNurture();
+        }
+
         if ($this->trigger_status) {
             return $this->shouldSuppressTriggered();
         }
@@ -179,6 +205,54 @@ class EmailSequence extends Model
         }
 
         return null;
+    }
+
+    /**
+     * Stop rules for the lien waiver nurture emails. "Finish your waiver"
+     * stops once the user has made one; the free-plan series stops when the
+     * waiver is gone or voided, or the user now holds a Pro seat (every email
+     * in it sells Pro or assumes the free plan).
+     */
+    protected function shouldSuppressWaiverNurture(): ?string
+    {
+        $user = $this->user;
+
+        if ($user === null) {
+            return 'user_deleted';
+        }
+
+        if (EmailUnsubscribe::isUnsubscribed($user, EmailUnsubscribe::CATEGORY_MARKETING)) {
+            return 'unsubscribed';
+        }
+
+        if ($this->sequence_type === 'waiver_started') {
+            // Deleted waivers count: they made one, so "finish your waiver" is wrong.
+            $madeAWaiver = LienWaiver::query()
+                ->withoutGlobalScope('business')
+                ->withTrashed()
+                ->where('created_by_user_id', $user->id)
+                ->exists();
+
+            if ($madeAWaiver) {
+                return 'waiver_created';
+            }
+        } else {
+            $waiver = $this->sequenceable;
+
+            if (! $waiver instanceof LienWaiver) {
+                return 'sequenceable_deleted';
+            }
+
+            if ($waiver->status === WaiverStatus::Voided) {
+                return 'waiver_voided';
+            }
+
+            if ($this->business !== null && WaiverEntitlements::hasPaidAccess($this->business, $user)) {
+                return 'subscribed';
+            }
+        }
+
+        return $this->currentStep() === null ? 'all_steps_sent' : null;
     }
 
     /**

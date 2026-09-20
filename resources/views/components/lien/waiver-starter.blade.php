@@ -21,9 +21,10 @@
     $selectedKind = (string) ($kind ?? old('kind', ''));
     $from = $from ?? request()->getPathInfo();
 
+    // Collect first, matching the wizard's direction step.
     $directions = [
-        'provide' => ['Send a waiver to get paid', 'A customer wants a signed waiver before releasing my payment.'],
         'collect' => ['Collect a waiver from someone I pay', 'I need a signed waiver back from a sub or vendor before I cut the check.'],
+        'provide' => ['Send a waiver to get paid', 'A customer wants a signed waiver before releasing my payment.'],
     ];
 
     $kinds = [
@@ -81,9 +82,7 @@
         </fieldset>
 
         <fieldset>
-            <legend class="text-sm font-semibold text-zinc-900">
-                Which waiver? <span class="font-normal text-zinc-500">(optional)</span>
-            </legend>
+            <legend class="text-sm font-semibold text-zinc-900">Which waiver?</legend>
             <div class="mt-2 grid grid-cols-2 gap-2">
                 @foreach ($kinds as $value => [$condition, $payment])
                     <label
@@ -95,10 +94,19 @@
                         <span class="block text-xs text-zinc-500">{{ $payment }}</span>
                     </label>
                 @endforeach
+
+                {{-- Always visible and the default, so nothing appears or
+                     deselects as the visitor clicks. An empty kind means the
+                     wizard's two plain-English questions pick the form. --}}
+                <label
+                    class="col-span-2 cursor-pointer rounded-xl border px-3 py-2.5 transition"
+                    :class="kind === '' ? 'border-amber-500 bg-amber-50 ring-1 ring-amber-500' : 'border-zinc-200 hover:border-zinc-300'"
+                >
+                    <input type="radio" name="kind" value="" x-model="kind" class="sr-only">
+                    <span class="block text-sm font-semibold text-zinc-900">Not sure — help me choose</span>
+                    <span class="block text-xs text-zinc-500">Two quick questions pick the right form.</span>
+                </label>
             </div>
-            <button type="button" x-show="kind !== ''" x-cloak @click="kind = ''" class="mt-2 text-xs text-zinc-500 underline hover:text-zinc-700">
-                Not sure — help me choose
-            </button>
         </fieldset>
 
         <div>

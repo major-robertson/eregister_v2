@@ -17,7 +17,7 @@
     $notaryRequired = $rules['notarization_required'] ?? false;
     $witnessRequired = $rules['witness_required'] ?? false;
     $enabledKinds = collect($kinds)->filter(fn ($entry) => $entry['enabled'] ?? false);
-    $monthlyPrice = number_format(config('lien_waivers.prices.monthly.amount_cents', 9900) / 100);
+    $monthlyPrice = number_format(config('lien_waivers.prices.monthly.amount_cents', 4900) / 100);
     $freeSaves = (int) config('lien_waivers.free_saved_waivers_per_month', 3);
     $from = request()->getPathInfo();
     $statutoryStates = ['Arizona', 'California', 'Florida', 'Georgia', 'Michigan', 'Mississippi', 'Nevada', 'Texas', 'Utah', 'Wyoming'];
@@ -50,7 +50,8 @@
                     Conditional, unconditional, progress, and final lien waivers with the correct form for all 50 states, including the exact statutory text where the law prescribes one. Filled in with your details, downloaded free.
                 @endif
             </p>
-            <ul class="mt-6 space-y-2.5 text-zinc-300">
+            {{-- Hidden on phones so the starter sits above the fold. --}}
+            <ul class="mt-6 hidden space-y-2.5 text-zinc-300 sm:block">
                 <li class="flex items-start gap-2.5"><span class="mt-0.5 text-amber-400">&#10003;</span> Conditional and unconditional waivers for progress and final payments</li>
                 <li class="flex items-start gap-2.5"><span class="mt-0.5 text-amber-400">&#10003;</span> Statutory wording where the state requires it, attorney-reviewed forms everywhere else</li>
                 <li class="flex items-start gap-2.5"><span class="mt-0.5 text-amber-400">&#10003;</span> Download the PDF free, or sign and send it electronically with Pro</li>

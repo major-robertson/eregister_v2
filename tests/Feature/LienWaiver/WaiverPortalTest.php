@@ -200,9 +200,9 @@ describe('signed copy upload', function () {
         expect($waiver->deemed_effective_at)->toBeNull();
     });
 
-    it('lets a free-tier business store a signed copy: e-sign features are included on every tier', function () {
-        // No subscription needed — the free tier is limited only by its
-        // monthly save allowance, which this already-saved waiver consumed.
+    it('lets a free-tier business store a copy signed on paper: only e-sign is Pro', function () {
+        // No subscription needed — the paper path is how the free plan (and
+        // every notary/witness state) finishes a waiver.
         $project = waiverPortalProject($this->business, 'TX');
         $waiver = LienWaiver::factory()->forProject($project)->generated()->create();
 

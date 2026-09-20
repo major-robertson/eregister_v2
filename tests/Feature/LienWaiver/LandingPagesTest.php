@@ -7,10 +7,13 @@ it('renders the lien waiver landing page with pricing and free-tier copy', funct
         ->assertSuccessful()
         ->assertSee('Lien Waiver Generator')
         // Pro pricing pulled from config/lien_waivers.php.
-        ->assertSee('$99')
-        ->assertSee('$990')
+        ->assertSee('$49')
+        ->assertSee('$490')
+        ->assertDontSee('$99')
         // Free-tier allowance pulled from config.
         ->assertSee('3 waivers per month')
+        // Free is create + download; signing is the Pro step.
+        ->assertSee('Creating and downloading waivers is free')
         // The 50-state directory grid is present.
         ->assertSee('Lien waiver forms by state')
         ->assertSee('Alabama')
@@ -21,8 +24,11 @@ it('renders the dedicated lien waiver pricing page and cross-links lien filing p
     $this->get('/liens/lien-waivers/pricing')
         ->assertSuccessful()
         ->assertSee('Lien Waiver Pricing')
-        ->assertSee('$99')
-        ->assertSee('$990')
+        ->assertSee('$49')
+        ->assertSee('$490')
+        ->assertDontSee('$99')
+        // Every button runs through the generator page's starter.
+        ->assertSee(route('liens.lien-waivers').'#start', false)
         // Cross-reference to the lien filing pricing page.
         ->assertSee('See lien filing pricing')
         ->assertSee(route('liens.pricing'));

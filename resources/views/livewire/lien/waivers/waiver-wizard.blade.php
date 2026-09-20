@@ -646,7 +646,7 @@
                 @if ($savedWaiverId !== null)
                     <div class="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50/70 px-3.5 py-2.5">
                         <flux:icon name="check-circle" class="size-4 shrink-0 text-green-600" />
-                        <p class="text-[13px] text-green-800">Saved to the project — download it or send it for signature below.</p>
+                        <p class="text-[13px] text-green-800">Saved to the project. Download it free, or get it signed below.</p>
                     </div>
                 @else
                     <div class="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/70 px-3.5 py-2.5">
@@ -664,10 +664,24 @@
                 <div class="space-y-3 border-t border-zinc-200 pt-6 dark:border-zinc-700">
                     <div>
                         <flux:button wire:click="downloadPdf" wire:loading.attr="disabled" variant="outline" icon="arrow-down-tray" class="w-full">
-                            <span wire:loading.remove wire:target="downloadPdf">Download PDF</span>
+                            <span wire:loading.remove wire:target="downloadPdf">{{ $canEsign ? 'Download PDF' : 'Download unsigned PDF' }}</span>
                             <span wire:loading wire:target="downloadPdf">Building PDF...</span>
                         </flux:button>
                     </div>
+
+                    {{-- Free plan, right after the download: the PDF still has
+                         to be signed, and that is the step Pro takes over. --}}
+                    @if ($showSignPrompt && ! $canEsign && (! $form || $form->esignAllowed))
+                        <flux:callout color="blue" icon="sparkles">
+                            <flux:callout.heading>Downloaded. Need it signed?</flux:callout.heading>
+                            <flux:callout.text>
+                                Skip the print, sign, and scan:
+                                {{ $direction === 'provide'
+                                    ? 'sign it here and we email the signed copy for you.'
+                                    : 'send it for e-signature and we chase the signer for you.' }}
+                            </flux:callout.text>
+                        </flux:callout>
+                    @endif
 
                     <div>
                         @if ($form && ! $form->esignAllowed)
@@ -678,10 +692,27 @@
                                 {{ $form->esignDisabledReason ?? 'This state requires in-person execution, so e-signing is unavailable. Use Download, sign on paper, then upload the signed copy.' }}
                             </p>
                         @else
-                            <flux:button wire:click="saveAndSend" wire:loading.attr="disabled" variant="primary" icon="paper-airplane" class="w-full">
-                                <span wire:loading.remove wire:target="saveAndSend">Send for signature</span>
-                                <span wire:loading wire:target="saveAndSend">Sending...</span>
+                            {{-- Provide waivers are signed by the user themselves,
+                                 so the action is "sign", not "send". --}}
+                            <flux:button wire:click="saveAndSend" wire:loading.attr="disabled" variant="primary" :icon="$direction === 'provide' ? 'pencil-square' : 'paper-airplane'" class="w-full">
+                                <span wire:loading.remove wire:target="saveAndSend">{{ $direction === 'provide' ? 'Sign & send' : 'Send for signature' }}</span>
+                                <span wire:loading wire:target="saveAndSend">{{ $direction === 'provide' ? 'Opening...' : 'Sending...' }}</span>
                             </flux:button>
+                            <p class="mt-1.5 text-center text-xs text-zinc-500">
+                                @if ($direction === 'provide')
+                                    {{-- The signed copy is only emailed when the contact has an address. --}}
+                                    @php $customer = $this->selectedContact(); @endphp
+                                    Sign on the next screen.
+                                    {{ $customer?->email
+                                        ? 'We email the signed copy to '.$customer->displayName().' and store it on the project.'
+                                        : 'We store the signed copy on the project, ready for you to send.' }}
+                                @else
+                                    We email {{ $this->selectedContact()?->displayName() ?? 'the signer' }} a secure link, remind them automatically, and store the signed copy.
+                                @endif
+                                @unless ($canEsign)
+                                    <span class="font-medium text-zinc-700 dark:text-zinc-300">Pro, {{ $proMonthly }}/mo per seat, cancel anytime.</span>
+                                @endunless
+                            </p>
                         @endif
                     </div>
 
@@ -918,16 +949,29 @@
         </div>
     </flux:modal>
 
-    {{-- Upsell modal (save limit hit): a seatless member of a subscribed
-         business needs a seat, not a second subscription. --}}
+    {{-- Upsell modal. Two gates open it: the monthly save allowance ran out
+         ('save'), or the action needs e-signature, which is Pro ('esign'). A
+         seatless member of a subscribed business needs a seat, not a second
+         subscription. --}}
+    @php
+        $upsellHeading = match (true) {
+            $upsellContext !== 'esign' => "You've used all your free waivers this month",
+            $direction === 'provide' => 'Sign and send this waiver with Pro',
+            default => 'Send this waiver for signature with Pro',
+        };
+    @endphp
     <flux:modal wire:model="showUpsellModal" class="max-w-md">
         @if ($businessSubscribed && ! $hasPaidAccess)
             <div class="space-y-4">
                 <div>
                     <flux:heading size="lg">Your team has Lien Waiver Pro</flux:heading>
                     <flux:text class="mt-1 text-sm text-zinc-500">
-                        The free allowance is used up and you don't have a seat yet. Seat holders
-                        get unlimited waivers.
+                        @if ($upsellContext === 'esign')
+                            E-signature comes with a Pro seat, and you don't have one yet.
+                        @else
+                            The free allowance is used up and you don't have a seat yet. Seat holders
+                            get unlimited waivers.
+                        @endif
                     </flux:text>
                 </div>
                 @if ($canManageSeats)
@@ -944,7 +988,7 @@
                 @endif
             </div>
         @else
-            <x-lien.waiver-upsell heading="You've used all your free waivers this month" />
+            <x-lien.waiver-upsell :heading="$upsellHeading" :waiver="$savedWaiverPublicId" />
         @endif
     </flux:modal>
 

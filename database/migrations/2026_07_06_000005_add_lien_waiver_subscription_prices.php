@@ -7,11 +7,12 @@ use Illuminate\Database\Migrations\Migration;
 return new class extends Migration
 {
     /**
-     * Land the lien-waiver subscription prices ($99/mo, $990/yr, i.e. two
-     * months free on yearly) in the `prices` table. The real Stripe recurring
-     * Price IDs live as literals in LienWaiverPriceSeeder (the canonical
-     * source, like ResaleCertPriceSeeder); this defers to it so a fresh
-     * migrate lands the row too. Idempotent (updateOrCreate).
+     * Land the lien-waiver subscription prices in the `prices` table. They
+     * launched at $99/mo and $990/yr and were repriced on 2026-09-20 (see
+     * that migration). The real Stripe recurring Price IDs live as literals
+     * in LienWaiverPriceSeeder (the canonical source, like
+     * ResaleCertPriceSeeder); this defers to it so a fresh migrate lands the
+     * rows too. Idempotent (updateOrCreate).
      */
     public function up(): void
     {

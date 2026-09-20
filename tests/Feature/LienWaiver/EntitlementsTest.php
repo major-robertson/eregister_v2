@@ -170,17 +170,19 @@ describe('per-seat paid access', function () {
         expect(WaiverEntitlements::canManageSeats($this->business, $outsider))->toBeFalse();
     });
 
-    it('canUseEsign is available on every tier: the only limit is the save allowance', function () {
-        // Free business: full feature set, including e-sign.
-        expect(WaiverEntitlements::canUseEsign($this->business))->toBeTrue();
+    it('canUseEsign takes a Pro seat: free is create and download, Pro is getting it signed', function () {
+        $seatless = User::factory()->create();
+        $this->business->users()->attach($seatless, ['role' => 'member']);
 
-        // Even at the save cap the existing waivers may still be e-signed —
-        // the meter gates saving new ones, not acting on saved ones.
-        LienWaiver::factory()->count(3)->forProject($this->project)->create();
-        expect(WaiverEntitlements::canSaveWaiver($this->business, $this->user))->toBeFalse();
-        expect(WaiverEntitlements::canUseEsign($this->business))->toBeTrue();
+        // Free business: saving is allowed, e-sign is not.
+        expect(WaiverEntitlements::canSaveWaiver($this->business, $this->user))->toBeTrue();
+        expect(WaiverEntitlements::canUseEsign($this->business, $this->user))->toBeFalse();
 
         waiverEntSubscribe($this->business, $this->user);
-        expect(WaiverEntitlements::canUseEsign($this->business->refresh()))->toBeTrue();
+        $this->business->refresh();
+
+        // The seat holder can e-sign; a teammate without a seat still cannot.
+        expect(WaiverEntitlements::canUseEsign($this->business, $this->user))->toBeTrue();
+        expect(WaiverEntitlements::canUseEsign($this->business, $seatless))->toBeFalse();
     });
 });

@@ -7,6 +7,13 @@
         @if ($isGuest)
             A signed copy{{ count($documents) > 1 ? ' of each document' : '' }} is available to download below.
             Both parties receive the signed copy by email.
+        @elseif ($waiverUrl)
+            The signed copy is below and stored on the waiver.
+            @if ($waiverCounterpartyEmail)
+                We've emailed it to {{ $waiverCounterpartyEmail }} and to you.
+            @else
+                We've emailed it to you; there's no email on file for the other party, so send it on to them.
+            @endif
         @else
             A signed copy{{ count($documents) > 1 ? ' of each letter' : '' }} is available to download below,
             and our team has been notified.
@@ -29,6 +36,14 @@
         </div>
         @endforeach
     </div>
+
+    @if ($waiverUrl)
+        <div class="mt-6">
+            <flux:button variant="primary" icon="arrow-left" :href="$waiverUrl">
+                Back to the waiver
+            </flux:button>
+        </div>
+    @endif
 
     @if ($isGuest)
         <div class="mt-8 rounded-lg border border-blue-200 bg-blue-50 p-5 text-left">

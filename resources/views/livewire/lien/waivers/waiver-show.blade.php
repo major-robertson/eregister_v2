@@ -67,20 +67,38 @@ use App\Domains\Lien\Enums\WaiverStatus;
                 </flux:button>
 
             @elseif ($waiver->status === WaiverStatus::Generated)
+                {{-- Provide waivers are signed by the user themselves, so the
+                     action is "sign", not "send". --}}
+                @php $isProvide = $waiver->direction === \App\Domains\Lien\Enums\WaiverDirection::Provide; @endphp
                 <div class="flex flex-wrap items-center gap-3">
                     @if ($hasGeneratedPdf)
                         <flux:button href="{{ route('lien.waivers.download', $waiver) }}" variant="outline" icon="arrow-down-tray">
-                            Download PDF
+                            {{ $canEsign ? 'Download PDF' : 'Download unsigned PDF' }}
                         </flux:button>
                     @endif
 
                     @if ($form === null || $form->esignAllowed)
-                        <flux:button wire:click="sendForSignature" wire:loading.attr="disabled" variant="primary" icon="paper-airplane">
-                            <span wire:loading.remove wire:target="sendForSignature">Send for signature</span>
-                            <span wire:loading wire:target="sendForSignature">Sending...</span>
+                        <flux:button wire:click="sendForSignature" wire:loading.attr="disabled" variant="primary" :icon="$isProvide ? 'pencil-square' : 'paper-airplane'">
+                            <span wire:loading.remove wire:target="sendForSignature">{{ $isProvide ? 'Sign & send' : 'Send for signature' }}</span>
+                            <span wire:loading wire:target="sendForSignature">{{ $isProvide ? 'Opening...' : 'Sending...' }}</span>
                         </flux:button>
                     @endif
                 </div>
+
+                {{-- Free plan: the download is theirs; signing is the Pro step. --}}
+                @if (($form === null || $form->esignAllowed) && ! $canEsign)
+                    <flux:callout color="blue" icon="sparkles">
+                        <flux:callout.heading>
+                            {{ $isProvide ? 'Need it signed? Sign it here in under a minute.' : 'Get it signed without chasing anyone.' }}
+                        </flux:callout.heading>
+                        <flux:callout.text>
+                            {{ $isProvide
+                                ? 'Pro applies your e-signature, emails the signed copy to your customer, and stores it on the project.'
+                                : 'Pro emails the signer a secure link, reminds them automatically, and stores the signed copy on the project.' }}
+                            {{ $proMonthly }}/month per seat, cancel anytime.
+                        </flux:callout.text>
+                    </flux:callout>
+                @endif
 
                 @if ($form && ! $form->esignAllowed)
                     <flux:callout color="purple" icon="pencil-square">
@@ -118,7 +136,19 @@ use App\Domains\Lien\Enums\WaiverStatus;
                 </div>
 
             @elseif ($waiver->status === WaiverStatus::AwaitingSignature)
-                @if ($activeRequest?->invitation_bounced_at !== null)
+                @if ($signNowUrl)
+                    <flux:callout color="blue" icon="pencil-square">
+                        <flux:callout.heading>Waiting on your signature</flux:callout.heading>
+                        <flux:callout.text>
+                            This is your own waiver. Sign it now and the signed copy is stored here{{ $waiver->counterparty_email ? ' and emailed to '.$waiver->counterpartyDisplayName() : '' }}.
+                        </flux:callout.text>
+                    </flux:callout>
+                    <div>
+                        <flux:button href="{{ $signNowUrl }}" variant="primary" icon="pencil-square">
+                            Sign now
+                        </flux:button>
+                    </div>
+                @elseif ($activeRequest?->invitation_bounced_at !== null)
                     <flux:callout color="red" icon="exclamation-triangle">
                         <flux:callout.heading>The invitation couldn't be delivered</flux:callout.heading>
                         <flux:callout.text>
@@ -337,6 +367,9 @@ use App\Domains\Lien\Enums\WaiverStatus;
 
     {{-- Upsell modal (e-sign gated) --}}
     <flux:modal wire:model="showUpsellModal" class="max-w-md">
-        <x-lien.waiver-upsell heading="E-sign requires Waiver Pro" />
+        <x-lien.waiver-upsell
+            :heading="$waiver->direction === \App\Domains\Lien\Enums\WaiverDirection::Provide ? 'Sign and send this waiver with Pro' : 'Send this waiver for signature with Pro'"
+            :waiver="$waiver->public_id"
+        />
     </flux:modal>
 </div>

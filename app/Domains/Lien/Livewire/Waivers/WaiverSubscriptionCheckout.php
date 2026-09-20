@@ -3,6 +3,7 @@
 namespace App\Domains\Lien\Livewire\Waivers;
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Lien\Models\LienWaiver;
 use App\Domains\Lien\Waivers\Services\WaiverPaymentService;
 use App\Domains\Lien\Waivers\WaiverEntitlements;
 use App\Domains\Lien\Waivers\WaiverSeats;
@@ -17,7 +18,7 @@ use Livewire\Component;
 use Stripe\StripeClient;
 
 /**
- * Lien waiver subscription checkout: $99/mo or $990/yr (two months free)
+ * Lien waiver subscription checkout: $49/mo or $490/yr (two months free)
  * PER SEAT, embedded on-page card entry. Two phases: pick which members get
  * seats (owners/admins see the whole team; members buy their own seat), then
  * pay — Stripe's embedded-subscription pattern (create with
@@ -31,10 +32,22 @@ use Stripe\StripeClient;
  */
 class WaiverSubscriptionCheckout extends Component
 {
+    /** Session key: the waiver the user was trying to sign when they hit the paywall. */
+    public const RETURN_WAIVER_SESSION_KEY = 'waiver_checkout_return';
+
     public Business $business;
 
     #[Url]
     public string $interval = 'monthly';
+
+    /**
+     * ?waiver=<public id> from an e-sign upsell. Remembered in the session
+     * (the interval toggle and the seat confirmation are full redirects that
+     * drop the query string) so the confirmation page can send the user
+     * straight back to it to sign.
+     */
+    #[Url]
+    public string $waiver = '';
 
     /**
      * Comma-separated member ids from the ?seats= handoff. Like the interval
@@ -74,6 +87,15 @@ class WaiverSubscriptionCheckout extends Component
             $this->redirect(route('portal.select-business'));
 
             return;
+        }
+
+        // Business-scoped lookup: another tenant's waiver id resolves to null.
+        $returnWaiver = $this->waiver !== ''
+            ? LienWaiver::query()->where('public_id', $this->waiver)->first()
+            : null;
+
+        if ($returnWaiver !== null) {
+            session()->put(self::RETURN_WAIVER_SESSION_KEY, $returnWaiver->public_id);
         }
 
         // Already subscribed (browser back button, double click); seats are

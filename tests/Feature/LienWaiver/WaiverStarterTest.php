@@ -118,6 +118,30 @@ describe('ads landing page', function () {
     });
 });
 
+describe('starter form', function () {
+    it('lists collect before send, and offers "not sure" as an always-visible default instead of a pop-in', function () {
+        $this->get('/lp/lien-waiver/tx')
+            ->assertSuccessful()
+            ->assertSeeInOrder(['Collect a waiver from someone I pay', 'Send a waiver to get paid'])
+            ->assertSeeInOrder(['Unconditional', 'Final payment', 'Not sure — help me choose'])
+            // The "not sure" choice is a real option with an empty value...
+            ->assertSee('name="kind" value=""', false)
+            // ...and the old link that appeared after a selection is gone.
+            ->assertDontSee("kind !== ''", false);
+    });
+
+    it('accepts the empty "not sure" waiver type', function () {
+        $this->get('/liens/lien-waivers/start?state=tx&direction=collect&kind=')
+            ->assertRedirect(route('register'))
+            ->assertSessionHas('waiver_intent', [
+                'state' => 'TX',
+                'direction' => 'collect',
+                'kind' => null,
+                'source' => null,
+            ]);
+    });
+});
+
 describe('marketing pages', function () {
     it('puts the starter on the generator page and the state pages', function () {
         $this->get('/liens/lien-waivers')

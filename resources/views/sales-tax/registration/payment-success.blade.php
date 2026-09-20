@@ -1,5 +1,6 @@
 @if (($trackConversion ?? false) && $payment)
     @push('scripts')
+    @include('partials.google-purchase-tracking', ['itemName' => 'Sales Tax Registration'])
     <!-- Google Ads Conversion Tracking (one-time purchase) -->
     <script data-navigate-once>
         gtag('event', 'conversion', {

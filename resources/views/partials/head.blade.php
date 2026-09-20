@@ -1,6 +1,23 @@
+{{-- Ad and analytics tags load in production only. Google's tag diagnostics
+     showed the production tag firing from the local dev domain, so local
+     browsing was landing in Analytics and a local test purchase could have
+     recorded a real Google Ads conversion. Pages still call gtag(), rdt() and
+     oaiq() for their events, so everywhere else they exist as no-ops. --}}
+@unless(app()->environment('production'))
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){}
+  window.rdt = window.rdt || function(){};
+  window.oaiq = window.oaiq || function(){};
+@foreach (\App\Support\Analytics\Gtag::drain() as $queuedEvent)
+  gtag('event', @js($queuedEvent['name']), @js((object) $queuedEvent['params']));
+@endforeach
+</script>
+@endunless
+
 {{-- No ad tags on admin pages or the third-party sales demos (simulated
      MDCPS / Florida EOG sites shown to procurement evaluators). --}}
-@unless(request()->routeIs('admin.*', 'mdcps-demo.*', 'government.florida-eog-demo-*'))
+@if(app()->environment('production') && ! request()->routeIs('admin.*', 'mdcps-demo.*', 'government.florida-eog-demo-*'))
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-MSVBK7VE6P"></script>
 <script>
@@ -58,7 +75,7 @@ oaiq("init", {
 });
 </script>
 <!-- End OpenAI Ads Pixel -->
-@endunless
+@endif
 
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />

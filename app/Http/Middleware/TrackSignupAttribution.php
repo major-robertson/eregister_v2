@@ -40,8 +40,21 @@ class TrackSignupAttribution
         $this->captureReferrer($request);
         $this->captureRedditClickId($request);
         $this->captureOpenAiClickId($request);
+        $this->captureGoogleClickId($request);
 
         return $next($request);
+    }
+
+    /**
+     * Capture the Google Ads click id (?gclid=, added by auto-tagging) if not
+     * already set. Stored on the user at signup so a paying customer can be
+     * traced to the ad click, and the keyword UTMs, that brought them.
+     */
+    protected function captureGoogleClickId(Request $request): void
+    {
+        if (! session()->has('signup_gclid') && $this->isStorableParam($request->query('gclid'))) {
+            session()->put('signup_gclid', $request->query('gclid'));
+        }
     }
 
     /**

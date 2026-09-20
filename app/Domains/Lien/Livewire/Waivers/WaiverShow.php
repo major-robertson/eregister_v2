@@ -15,6 +15,7 @@ use App\Domains\Lien\Waivers\ResolvedWaiverForm;
 use App\Domains\Lien\Waivers\WaiverEntitlements;
 use App\Domains\Lien\Waivers\WaiverFormResolver;
 use App\Domains\Lien\Waivers\WaiverFormUnavailable;
+use App\Support\Analytics\Gtag;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -72,6 +73,13 @@ class WaiverShow extends Component
     {
         if (! WaiverEntitlements::canUseEsign(Auth::user()->currentBusiness(), Auth::user())) {
             $this->showUpsellModal = true;
+
+            // GA4 funnel: same event as the wizard's gate.
+            $this->js(Gtag::eventJs('esign_upsell_shown', [
+                'source' => 'waiver_page',
+                'direction' => $this->waiver->direction->value,
+                'state' => $this->waiver->state,
+            ]));
 
             return;
         }

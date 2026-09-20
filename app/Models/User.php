@@ -42,6 +42,7 @@ class User extends Authenticatable
         'signup_utm_content',
         'signup_rdt_cid',
         'signup_oppref',
+        'signup_gclid',
         'signup_ip',
         'signup_user_agent',
         'attributed_marketing_lead_id',
@@ -179,7 +180,7 @@ class User extends Authenticatable
             return false;
         }
 
-        foreach (['/liens/lien-waivers', '/lp/lien-waiver'] as $prefix) {
+        foreach (['/liens/lien-waivers', '/lp/lien-waiver', '/lp/lien-waiver-software'] as $prefix) {
             if ($path === $prefix || str_starts_with($path, $prefix.'/')) {
                 return true;
             }

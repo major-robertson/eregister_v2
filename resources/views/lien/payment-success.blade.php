@@ -1,5 +1,6 @@
 @if (($trackConversion ?? false) && $payment)
 @push('scripts')
+@include('partials.google-purchase-tracking', ['itemName' => $filing->documentType?->name ?? 'Lien Filing'])
 <!-- Google Ads Conversion Tracking -->
 <script data-navigate-once>
     gtag('event', 'conversion', {

@@ -1259,6 +1259,14 @@ class WaiverWizard extends Component
             $this->upsellContext = 'esign';
             $this->showUpsellModal = true;
 
+            // GA4 funnel: a free user asked to sign or send. The strongest
+            // sign of intent to pay that we see before checkout.
+            $this->js(Gtag::eventJs('esign_upsell_shown', [
+                'source' => 'wizard',
+                'direction' => $this->direction,
+                'state' => $waiver->state,
+            ]));
+
             return;
         }
 

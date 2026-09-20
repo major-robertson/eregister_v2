@@ -83,6 +83,7 @@ class WaiverLandingController extends Controller
         ]);
 
         return view('pages.liens.lien-waiver-lp', [
+            'variant' => 'form',
             'code' => $code,
             'rules' => $rules,
             'stateName' => $stateName,
@@ -95,6 +96,28 @@ class WaiverLandingController extends Controller
             'metaDescription' => $stateName !== null
                 ? $this->metaDescription($stateName, $rules)
                 : 'Generate the correct lien waiver form for any state, filled in with your details, and download the PDF free. Conditional, unconditional, progress, and final waivers.',
+        ]);
+    }
+
+    /**
+     * Ads landing page for people searching for waiver software: contractors
+     * and owners who collect waivers from subs and vendors on every draw.
+     * Same page and starter as lp(), but the promise is the paid product
+     * (send, remind, track, store) with its price in plain sight, and the
+     * starter opens on "Collect a waiver".
+     */
+    public function lpSoftware(): View
+    {
+        return view('pages.liens.lien-waiver-lp', [
+            'variant' => 'software',
+            'code' => null,
+            'rules' => null,
+            'stateName' => null,
+            'kinds' => [],
+            'preselectedDirection' => 'collect',
+            'preselectedKind' => WaiverIntent::normalize(['kind' => request()->query('type')])['kind'],
+            'pageTitle' => 'Lien Waiver Software | Collect, Track and Store Signed Waivers',
+            'metaDescription' => 'Send lien waivers to subs and vendors for e-signature, get automatic reminders until they sign, and keep every signed copy with the project. $49 a month per person.',
         ]);
     }
 

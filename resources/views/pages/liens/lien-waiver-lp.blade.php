@@ -26,6 +26,27 @@
 {{-- Hero: the promise on the left, the starter on the right --}}
 <section class="bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-800 py-12 lg:py-20">
     <div class="mx-auto grid max-w-6xl items-start gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-14 lg:px-8">
+        @if (($variant ?? 'form') === 'software')
+        {{-- Software searchers collect waivers on every draw. Sell the paid
+             product, with its price, instead of a free form. --}}
+        <div>
+            <div class="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-1.5 text-sm text-amber-400">
+                Lien waiver software &middot; ${{ $monthlyPrice }} a month
+            </div>
+            <h1 class="mt-6 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+                Collect Lien Waivers Without Chasing Anyone
+            </h1>
+            <p class="mt-5 text-lg text-zinc-300">
+                Send each sub or vendor the correct waiver for the job's state. They sign online from their phone, with no account. We remind them until it's signed and keep the signed copy with your project.
+            </p>
+            {{-- Hidden on phones so the starter sits above the fold. --}}
+            <ul class="mt-6 hidden space-y-2.5 text-zinc-300 sm:block">
+                <li class="flex items-start gap-2.5"><span class="mt-0.5 text-amber-400">&#10003;</span> The correct form for all 50 states, with statutory wording where required</li>
+                <li class="flex items-start gap-2.5"><span class="mt-0.5 text-amber-400">&#10003;</span> Automatic reminders until each waiver is signed</li>
+                <li class="flex items-start gap-2.5"><span class="mt-0.5 text-amber-400">&#10003;</span> ${{ $monthlyPrice }} a month per person. Create your first waiver free.</li>
+            </ul>
+        </div>
+        @else
         <div>
             <div class="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-1.5 text-sm text-amber-400">
                 @if ($hasStatutoryForm)
@@ -57,13 +78,14 @@
                 <li class="flex items-start gap-2.5"><span class="mt-0.5 text-amber-400">&#10003;</span> Download the PDF free, or sign and send it electronically with Pro</li>
             </ul>
         </div>
+        @endif
 
         <x-lien.waiver-starter
             :state="$code"
             :direction="$preselectedDirection"
             :kind="$preselectedKind"
             :from="$from"
-            :heading="$stateName ? 'Create your '.$stateName.' waiver' : 'Create your waiver'"
+            :heading="($variant ?? 'form') === 'software' ? 'Send your first waiver' : ($stateName ? 'Create your '.$stateName.' waiver' : 'Create your waiver')"
         />
     </div>
 </section>

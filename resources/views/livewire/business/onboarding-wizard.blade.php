@@ -1,5 +1,10 @@
 @if ($justRegistered)
 @push('scripts')
+<!-- Enhanced conversions: the new user's email, hashed in the browser by the
+     Google tag, so the sign-up can be matched to its ad click. -->
+<script data-navigate-once>
+    window.gtag && gtag('set', 'user_data', { email: @js(auth()->user()->email) });
+</script>
 <!-- Google Ads Conversion Tracking - Create Account -->
 <script data-navigate-once>
     gtag('event', 'conversion', {

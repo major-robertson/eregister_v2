@@ -63,11 +63,23 @@
                     automatic reminders, and signed-copy storage.
                 </flux:text>
 
-                <div class="pt-2">
-                    <flux:button href="{{ route('lien.waivers.index') }}" variant="primary">
-                        Go to Lien Waivers
-                    </flux:button>
-                </div>
+                {{-- Came here from a waiver's e-sign upsell: that waiver is the next step. --}}
+                @if ($returnWaiver ?? null)
+                    <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+                        <flux:button href="{{ route('lien.waivers.show', $returnWaiver) }}" variant="primary" icon="pencil-square">
+                            Back to your waiver
+                        </flux:button>
+                        <flux:button href="{{ route('lien.waivers.index') }}" variant="ghost">
+                            All waivers
+                        </flux:button>
+                    </div>
+                @else
+                    <div class="pt-2">
+                        <flux:button href="{{ route('lien.waivers.index') }}" variant="primary">
+                            Go to Lien Waivers
+                        </flux:button>
+                    </div>
+                @endif
             </div>
         </x-ui.card>
     </div>

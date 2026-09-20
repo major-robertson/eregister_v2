@@ -161,7 +161,7 @@ class WaiverPaymentService
                 'business_id' => $business->id,
                 'purchasable_type' => $business->getMorphClass(),
                 'purchasable_id' => $business->id,
-                'price_id' => $this->renewalPrice($invoice)?->id,
+                'price_id' => $this->renewalPrice($invoice, $business)?->id,
                 'amount_cents' => $invoice->amount_paid ?? $invoice->total ?? 0,
                 'currency' => strtolower($invoice->currency ?? 'usd'),
                 'status' => PaymentStatus::Succeeded,
@@ -194,12 +194,14 @@ class WaiverPaymentService
     }
 
     /**
-     * Which interval's price row a renewal invoice belongs to. Invoices don't
-     * carry our variant_key, so match on the charged amount ($99 monthly vs
-     * $990 yearly); fall back to the first row so a promo-priced invoice
-     * still records a Payment rather than dropping the receipt.
+     * Which price row a renewal invoice belongs to. Invoices don't carry our
+     * variant_key, so go by the Stripe price the subscription is on (current
+     * and launch prices are separate rows, and a multi-seat total matches no
+     * single row). Failing that, match the charged amount, then fall back to a
+     * current row so a promo-priced invoice still records a Payment rather
+     * than dropping the receipt.
      */
-    private function renewalPrice(StripeObject $invoice): ?Price
+    private function renewalPrice(StripeObject $invoice, Business $business): ?Price
     {
         $prices = Price::query()
             ->where('product_family', 'lien')
@@ -207,9 +209,25 @@ class WaiverPaymentService
             ->where('billing_type', 'subscription')
             ->get();
 
+        $stripePrice = $business->subscription(config('lien_waivers.subscription_type'))?->stripe_price;
+
+        if ($stripePrice) {
+            $onSubscription = $prices->first(fn (Price $price) => in_array(
+                $stripePrice,
+                [$price->stripe_price_id_test, $price->stripe_price_id_live],
+                true,
+            ));
+
+            if ($onSubscription) {
+                return $onSubscription;
+            }
+        }
+
         $amount = $invoice->amount_paid ?? $invoice->total ?? null;
 
-        return $prices->firstWhere('amount_cents', $amount) ?? $prices->first();
+        return $prices->firstWhere('amount_cents', $amount)
+            ?? $prices->firstWhere('active', true)
+            ?? $prices->first();
     }
 
     private function shouldFlagForReview(Payment $payment, StripeObject $paymentIntent): bool

@@ -3,6 +3,7 @@
 namespace App\Domains\Lien\Livewire\Waivers;
 
 use App\Domains\Esign\Exceptions\EsignException;
+use App\Domains\Esign\Support\SigningLink;
 use App\Domains\Lien\Documents\WaiverGenerator;
 use App\Domains\Lien\Engine\DeadlineCalculator;
 use App\Domains\Lien\Enums\ClaimantType;
@@ -169,8 +170,15 @@ class WaiverWizard extends Component
 
     public bool $showUpsellModal = false;
 
-    /** Which gate opened the upsell modal; drives its heading. */
+    /**
+     * Which gate opened the upsell modal; drives its heading. 'save' = the
+     * monthly free allowance ran out; 'esign' = the action needs e-signature,
+     * which is Pro.
+     */
     public string $upsellContext = 'save';
+
+    /** Free plan: shown once the unsigned PDF has been downloaded. */
+    public bool $showSignPrompt = false;
 
     /**
      * Carried in from the marketing-page starter (WaiverIntent): the waiver
@@ -1192,17 +1200,22 @@ class WaiverWizard extends Component
 
         $filename = $generator->filename($waiver);
 
+        // The unsigned PDF is theirs to keep; this is the moment to offer the
+        // step that finishes the job.
+        $this->showSignPrompt = ! WaiverEntitlements::canUseEsign(Auth::user()->currentBusiness(), Auth::user());
+
         return response()->streamDownload(function () use ($bytes): void {
             echo $bytes;
         }, $filename, ['Content-Type' => 'application/pdf']);
     }
 
     /**
-     * Send the saved draft for e-signature — available on every tier; the
-     * free tier's only limit is the monthly save allowance, which was already
-     * enforced at auto-save. When the send fails (esign policy, missing
-     * signer email, ...) the waiver is already saved; surface the message on
-     * the show page instead of losing work.
+     * E-sign the saved draft. E-signature is Pro, so without a seat this
+     * pitches the upgrade. With one, a provide waiver (the user signs their
+     * own) goes straight into the signing ceremony, and a collect waiver
+     * emails the signer. When the send fails (esign policy, missing signer
+     * email, ...) the waiver is already saved; surface the message on the
+     * show page instead of losing work.
      */
     public function saveAndSend(SendWaiverForSignature $send): void
     {
@@ -1226,12 +1239,31 @@ class WaiverWizard extends Component
             return;
         }
 
+        if (! WaiverEntitlements::canUseEsign(Auth::user()->currentBusiness(), Auth::user())) {
+            $this->upsellContext = 'esign';
+            $this->showUpsellModal = true;
+
+            return;
+        }
+
         try {
-            $send->execute($waiver, Auth::user());
-            Flux::toast(text: 'Waiver sent for signature.', variant: 'success');
+            $request = $send->execute($waiver, Auth::user());
         } catch (EsignException $e) {
             session()->flash('esign_error', $e->getMessage());
+            $this->redirect(route('lien.waivers.show', $waiver), navigate: true);
+
+            return;
         }
+
+        // Your own waiver: sign it now rather than waiting for the invitation
+        // email, which is still sent as a way back in.
+        if ($request->signer_user_id === Auth::id()) {
+            $this->redirect(SigningLink::for($request));
+
+            return;
+        }
+
+        Flux::toast(text: 'Waiver sent for signature.', variant: 'success');
 
         $this->redirect(route('lien.waivers.show', $waiver), navigate: true);
     }
@@ -1347,7 +1379,10 @@ class WaiverWizard extends Component
             'kinds' => $this->availableKinds(),
             'form' => $this->resolvedForm(),
             'canSave' => WaiverEntitlements::canSaveWaiver($business, Auth::user()),
-            'canEsign' => WaiverEntitlements::canUseEsign($business),
+            'canEsign' => WaiverEntitlements::canUseEsign($business, Auth::user()),
+            'proMonthly' => '$'.number_format(config('lien_waivers.prices.monthly.amount_cents') / 100),
+            // Rides along to checkout so paying brings them back to this waiver.
+            'savedWaiverPublicId' => $this->savedWaiver()?->public_id,
             'hasPaidAccess' => WaiverEntitlements::hasPaidAccess($business, Auth::user()),
             'remainingFreeSaves' => WaiverEntitlements::remainingFreeSaves($business),
             'freeSavesLimit' => WaiverEntitlements::freeSavesLimit(),

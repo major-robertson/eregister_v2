@@ -3,6 +3,7 @@
 namespace App\Domains\Lien\Livewire\Waivers;
 
 use App\Domains\Esign\Exceptions\EsignException;
+use App\Domains\Esign\Support\SigningLink;
 use App\Domains\Lien\Enums\WaiverKind;
 use App\Domains\Lien\Enums\WaiverStatus;
 use App\Domains\Lien\Esign\Actions\SendWaiverForSignature;
@@ -14,7 +15,6 @@ use App\Domains\Lien\Waivers\ResolvedWaiverForm;
 use App\Domains\Lien\Waivers\WaiverEntitlements;
 use App\Domains\Lien\Waivers\WaiverFormResolver;
 use App\Domains\Lien\Waivers\WaiverFormUnavailable;
-use App\Domains\Lien\Waivers\WaiverStateRegistry;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -63,20 +63,37 @@ class WaiverShow extends Component
         Flux::toast(text: 'Waiver PDF generated.', variant: 'success');
     }
 
+    /**
+     * E-signature is Pro: without a seat this pitches the upgrade instead.
+     * With one, a waiver the user signs themselves (provide direction) goes
+     * straight into the signing ceremony; a collect waiver emails the signer.
+     */
     public function sendForSignature(SendWaiverForSignature $send): void
     {
-        if (! WaiverEntitlements::canUseEsign(Auth::user()->currentBusiness())) {
+        if (! WaiverEntitlements::canUseEsign(Auth::user()->currentBusiness(), Auth::user())) {
             $this->showUpsellModal = true;
 
             return;
         }
 
         try {
-            $send->execute($this->waiver, Auth::user());
-            Flux::toast(text: 'Waiver sent for signature.', variant: 'success');
+            $request = $send->execute($this->waiver, Auth::user());
         } catch (EsignException $e) {
             Flux::toast(text: $e->getMessage(), variant: 'danger');
+            $this->waiver->refresh();
+
+            return;
         }
+
+        // Your own waiver: sign it now rather than waiting for the invitation
+        // email, which is still sent as a way back in.
+        if ($request->signer_user_id === Auth::id()) {
+            $this->redirect(SigningLink::for($request));
+
+            return;
+        }
+
+        Flux::toast(text: 'Waiver sent for signature.', variant: 'success');
 
         $this->waiver->refresh();
     }
@@ -89,15 +106,8 @@ class WaiverShow extends Component
      */
     public function uploadSigned(VoidWaiverSignatureRequest $void): void
     {
-        // E-sign features are included on every tier (the free tier is only
-        // limited by its monthly save allowance, consumed when the waiver was
-        // saved); the gate stays as a single switch should that ever change.
-        if (! WaiverEntitlements::canUseEsign(Auth::user()->currentBusiness())) {
-            $this->showUpsellModal = true;
-
-            return;
-        }
-
+        // Free on every tier: the paper path is the only way to execute a
+        // waiver in notary/witness states, and the free plan's way to finish.
         $this->validate([
             'signedFile' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:10240'],
         ]);
@@ -170,6 +180,13 @@ class WaiverShow extends Component
             'form' => $form,
             'latestRequest' => $latestRequest,
             'activeRequest' => $activeRequest,
+            // The request is waiting on the viewer's own signature: offer the
+            // ceremony directly instead of pointing them at their inbox.
+            'signNowUrl' => $activeRequest !== null && $activeRequest->signer_user_id === Auth::id()
+                ? SigningLink::for($activeRequest)
+                : null,
+            'canEsign' => WaiverEntitlements::canUseEsign(Auth::user()->currentBusiness(), Auth::user()),
+            'proMonthly' => '$'.number_format(config('lien_waivers.prices.monthly.amount_cents') / 100),
             'hasPaidAccess' => WaiverEntitlements::hasPaidAccess(Auth::user()->currentBusiness(), Auth::user()),
             'hasGeneratedPdf' => $this->waiver->getFirstMedia('generated') !== null,
             'hasSignedCopy' => $signedMedia !== null,

@@ -4,13 +4,18 @@
 
 @section('meta')
 <link rel="canonical" href="{{ route('liens.lien-waivers.pricing') }}" />
-<meta name="description" content="Lien waiver pricing: generate and download waivers for all 50 states free. Upgrade for e-signature, automatic reminders, and signed-copy storage at $99 per person/month or $990 per person/year.">
+@php
+    $freeSaves = config('lien_waivers.free_saved_waivers_per_month', 3);
+    $monthlyPrice = number_format(config('lien_waivers.prices.monthly.amount_cents', 4900) / 100);
+    $yearlyPrice = number_format(config('lien_waivers.prices.yearly.amount_cents', 49000) / 100);
+@endphp
+<meta name="description" content="Lien waiver pricing: generate and download waivers for all 50 states free. Upgrade for e-signature, automatic reminders, and signed-copy storage at ${{ $monthlyPrice }} per person/month or ${{ $yearlyPrice }} per person/year.">
 @endsection
 
 @php
-    $freeSaves = config('lien_waivers.free_saved_waivers_per_month', 4);
-    $monthlyPrice = number_format(config('lien_waivers.prices.monthly.amount_cents', 9900) / 100);
-    $yearlyPrice = number_format(config('lien_waivers.prices.yearly.amount_cents', 99000) / 100);
+    // Every button goes through the generator page's starter (state, send or
+    // collect, waiver type), which carries those choices through signup.
+    $startUrl = route('liens.lien-waivers').'#start';
 @endphp
 
 @section('content')
@@ -28,7 +33,7 @@
             Generating and downloading the correct waiver for any of the 50 states is always free. Pay only when you want e-signature, automatic reminders, and signed-copy storage handling the follow-up for you.
         </p>
         <div class="mt-10">
-            <a href="{{ route('register') }}" class="group inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#B91C1C]">
+            <a href="{{ $startUrl }}" class="group inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#B91C1C]">
                 Create a free lien waiver
                 <svg class="h-4 w-4 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -53,14 +58,15 @@
                     <span class="text-5xl font-bold tracking-tight text-zinc-900">$0</span>
                     <span class="text-zinc-500">/month</span>
                 </div>
-                <p class="mt-3 text-sm text-zinc-600">Everything you need to generate a correct waiver and get it out the door.</p>
+                <p class="mt-3 text-sm text-zinc-600">Everything you need to create a correct waiver and download it.</p>
                 <ul class="mt-6 flex-1 space-y-3 text-zinc-600">
-                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> {{ $freeSaves }} waivers per month with every Pro feature, no watermark</li>
                     <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Correct forms for all 50 states, statutory text included</li>
-                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> E-signature send &amp; collect, reminders, signed-copy storage</li>
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> PDF download, no watermark</li>
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Up to {{ $freeSaves }} waivers per month saved to your projects</li>
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Upload copies signed on paper</li>
                     <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Free project &amp; deadline tracking</li>
                 </ul>
-                <a href="{{ route('register') }}" class="mt-8 inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-6 py-3 font-semibold text-zinc-900 transition hover:border-zinc-400">
+                <a href="{{ $startUrl }}" class="mt-8 inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white px-6 py-3 font-semibold text-zinc-900 transition hover:border-zinc-400">
                     Start free
                 </a>
             </div>
@@ -72,14 +78,16 @@
                     <span class="text-5xl font-bold tracking-tight text-zinc-900">${{ $monthlyPrice }}</span>
                     <span class="text-zinc-500">/person/month</span>
                 </div>
-                <p class="mt-3 text-sm text-zinc-600">Or ${{ $yearlyPrice }}/person/year, two months free. Add a seat for each teammate who needs unlimited waivers.</p>
+                <p class="mt-3 text-sm text-zinc-600">Or ${{ $yearlyPrice }}/person/year, two months free. Everything that gets a waiver signed. Cancel anytime.</p>
                 <ul class="mt-6 flex-1 space-y-3 text-zinc-600">
-                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Everything in Free</li>
-                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Unlimited waivers every month, no cap</li>
-                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Per-seat pricing — pay only for teammates who need it</li>
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Everything in Free, with unlimited waivers</li>
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Sign your own waivers here and send the signed copy in one step</li>
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Collect signatures from subs and vendors, no account needed on their end</li>
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Automatic reminders until it's signed</li>
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Signed copies stored with a tamper-evident audit certificate</li>
                     <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> No per-waiver or per-signature charges</li>
                 </ul>
-                <a href="{{ route('register') }}" class="group mt-8 inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-zinc-800">
+                <a href="{{ $startUrl }}" class="group mt-8 inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-zinc-800">
                     Start with Pro
                     <svg class="h-4 w-4 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -87,7 +95,7 @@
                 </a>
             </div>
         </div>
-        <p class="mx-auto mt-8 max-w-2xl text-center text-sm text-zinc-500">Pro is billed per person — one subscription for your business, with a seat for each teammate who needs unlimited waivers. Add or remove seats anytime, prorated. No per-waiver or per-signature charges.</p>
+        <p class="mx-auto mt-8 max-w-2xl text-center text-sm text-zinc-500">Pro is billed per person — one subscription for your business, with a seat for each teammate who signs or sends waivers. Add or remove seats anytime, prorated. No per-waiver or per-signature charges.</p>
     </div>
 </section>
 
@@ -163,7 +171,7 @@
             <h2 class="text-3xl font-bold text-white sm:text-4xl">Start free, upgrade when you're ready</h2>
             <p class="mt-4 text-lg text-zinc-400">Generate your first waiver in about two minutes. No credit card required.</p>
             <div class="mt-8">
-                <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 font-semibold text-zinc-900 shadow-lg transition hover:scale-105 hover:bg-zinc-50">
+                <a href="{{ $startUrl }}" class="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 font-semibold text-zinc-900 shadow-lg transition hover:scale-105 hover:bg-zinc-50">
                     Create a free lien waiver
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />

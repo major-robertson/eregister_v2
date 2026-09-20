@@ -10,13 +10,15 @@ use Laravel\Cashier\Subscription;
 /**
  * Free-vs-paid gate for the lien waiver product — per seat.
  *
- * The business holds ONE Cashier subscription (type 'lien_waiver', $99/mo or
- * $990/yr per seat) whose quantity is the number of seats; seats are assigned
+ * The business holds ONE Cashier subscription (type 'lien_waiver', $49/mo or
+ * $490/yr per seat) whose quantity is the number of seats; seats are assigned
  * to members via business_user.lien_waiver_seat_at. A member with a seat has
- * unlimited waivers; members without one share the business's free tier —
- * the full product (download, e-sign send/collect, reminders, signed-copy
- * storage) for config('lien_waivers.free_saved_waivers_per_month') waivers
- * per calendar month across the business.
+ * unlimited waivers and e-signature (signing their own waivers, sending and
+ * collecting signatures, reminders, signed-copy storage). Members without
+ * one share the business's free tier: create, save up to
+ * config('lien_waivers.free_saved_waivers_per_month') waivers per calendar
+ * month across the business, download the unsigned PDF, and upload a copy
+ * signed on paper.
  *
  * Owners and admins manage seats (assign, release, add) from the seat
  * manager; each change syncs the Stripe quantity with proration.
@@ -95,8 +97,9 @@ class WaiverEntitlements
 
     /**
      * The per-seat price of the active subscription (for confirm dialogs),
-     * resolved from the subscription's Stripe price; falls back to the monthly
-     * catalog price for stubs or an unmatched price.
+     * resolved from the subscription's Stripe price, so a subscription still
+     * on a retired (inactive) price row reports what it actually pays; falls
+     * back to the current monthly catalog price for stubs or an unmatched price.
      *
      * @return array{amount_cents: int, interval: string, per_label: string, formatted: string}
      */
@@ -111,6 +114,7 @@ class WaiverEntitlements
             ->get();
 
         $match = $prices->first(fn ($price) => $price->stripePriceId() === $priceId)
+            ?? $prices->where('active', true)->firstWhere('interval', 'month')
             ?? $prices->firstWhere('interval', 'month');
 
         $cents = (int) ($match->amount_cents ?? config('lien_waivers.prices.monthly.amount_cents'));
@@ -151,12 +155,13 @@ class WaiverEntitlements
     }
 
     /**
-     * E-signature (send, collect, reminders, signed storage) is available on
-     * every tier: the only limit is the monthly save allowance, enforced when
-     * the waiver is saved — a waiver that exists may be sent.
+     * E-signature is what Pro sells: signing your own waiver, sending one for
+     * signature, and the reminders and storage that follow. It takes a seat
+     * on an active subscription. Requests already out for signature keep
+     * working (and keep getting reminders) whatever happens to the seat.
      */
-    public static function canUseEsign(Business $business): bool
+    public static function canUseEsign(Business $business, User $user): bool
     {
-        return true;
+        return static::hasPaidAccess($business, $user);
     }
 }

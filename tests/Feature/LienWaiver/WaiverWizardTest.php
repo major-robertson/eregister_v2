@@ -420,8 +420,59 @@ describe('auto-save at review', function () {
 });
 
 describe('send for signature', function () {
-    it('sends a free-tier collect waiver: e-sign is included in the free allowance', function () {
+    it('pitches Pro instead of sending on the free plan; the saved waiver stays downloadable', function () {
         Mail::fake();
+        $project = waiverWizardProject($this->business, 'TX');
+
+        $contact = waiverWizardCollectContact($this->user);
+
+        waiverWizardAtReview($project, 'collect', 'conditional_progress', [
+            'contactId' => (string) $contact->id,
+        ])->call('saveAndSend')
+            ->assertSet('showUpsellModal', true)
+            ->assertSet('upsellContext', 'esign')
+            ->assertNoRedirect();
+
+        // The free save still happened; only the e-sign step is Pro.
+        $waiver = LienWaiver::firstOrFail();
+        expect($waiver->status)->toBe(WaiverStatus::Generated);
+        expect($waiver->latestSignatureRequest())->toBeNull();
+        Mail::assertNothingQueued();
+    });
+
+    it('nudges a free user toward signing after the free download', function () {
+        $project = waiverWizardProject($this->business, 'TX');
+
+        waiverWizardAtReview($project)
+            ->assertSet('showSignPrompt', false)
+            ->call('downloadPdf')
+            ->assertSet('showSignPrompt', true)
+            ->assertSet('showUpsellModal', false)
+            ->assertSee('Need it signed?');
+    });
+
+    it('takes a Pro user straight to signing their own waiver', function () {
+        Mail::fake();
+        waiverWizardSubscribe($this->business, $this->user);
+        $project = waiverWizardProject($this->business, 'TX');
+
+        $component = waiverWizardAtReview($project, 'provide', 'conditional_progress')
+            ->call('saveAndSend');
+
+        $waiver = LienWaiver::firstOrFail();
+        $request = $waiver->latestSignatureRequest();
+
+        // Provide direction: the signer is the user, so skip the email round trip.
+        expect($request->signer_user_id)->toBe($this->user->id);
+        expect($waiver->status)->toBe(WaiverStatus::AwaitingSignature);
+
+        $component->assertRedirectContains('/esign/')
+            ->assertRedirectContains('signature=');
+    });
+
+    it('sends a Pro collect waiver to the counterparty for signature', function () {
+        Mail::fake();
+        waiverWizardSubscribe($this->business, $this->user);
         $project = waiverWizardProject($this->business, 'TX');
 
         $contact = waiverWizardCollectContact($this->user);

@@ -2,6 +2,8 @@
 
 namespace App\Domains\Lien\Http\Controllers;
 
+use App\Domains\Lien\Livewire\Waivers\WaiverSubscriptionCheckout;
+use App\Domains\Lien\Models\LienWaiver;
 use App\Domains\Lien\Waivers\Services\WaiverPaymentService;
 use App\Enums\PaymentStatus;
 use App\Models\Price;
@@ -57,7 +59,7 @@ class WaiverPaymentController
         $subscribed = $business->subscribed(config('lien_waivers.subscription_type'));
 
         if ($subscribed || $payment?->status === PaymentStatus::Succeeded) {
-            return view('lien.waiver-payment-success', compact('business', 'payment', 'trackConversion'));
+            return $this->success($business, $payment, $trackConversion);
         }
 
         // Server-side fallback: ask Stripe directly in case the webhook is behind.
@@ -68,7 +70,7 @@ class WaiverPaymentController
             if ($pi->status === 'succeeded') {
                 $this->paymentService->markSucceeded($payment, $pi);
 
-                return view('lien.waiver-payment-success', compact('business', 'payment', 'trackConversion'));
+                return $this->success($business, $payment, $trackConversion);
             }
         }
 
@@ -85,5 +87,21 @@ class WaiverPaymentController
                 'attempts' => $attempts + 1,
             ])),
         ]);
+    }
+
+    /**
+     * The success page. When checkout was opened from a waiver's e-sign
+     * upsell, that waiver comes back as the next step: they paid to sign it.
+     * Pulled (not read) so a later visit to this page is a plain receipt.
+     */
+    private function success(mixed $business, mixed $payment, bool $trackConversion): View
+    {
+        $returnWaiverId = session()->pull(WaiverSubscriptionCheckout::RETURN_WAIVER_SESSION_KEY);
+
+        $returnWaiver = $returnWaiverId
+            ? LienWaiver::query()->where('public_id', $returnWaiverId)->first()
+            : null;
+
+        return view('lien.waiver-payment-success', compact('business', 'payment', 'trackConversion', 'returnWaiver'));
     }
 }

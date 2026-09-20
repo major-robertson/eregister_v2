@@ -319,11 +319,28 @@ describe('reassign, cancel, resume', function () {
 
         $price = WaiverEntitlements::perSeatPrice($this->business);
 
-        // Stub subscriptions fall back to the monthly catalog price.
-        expect($price['amount_cents'])->toBe(9900);
+        // Stub subscriptions fall back to the current monthly catalog price.
+        expect($price['amount_cents'])->toBe(4900);
         expect($price['interval'])->toBe('month');
-        expect($price['formatted'])->toBe('$99');
+        expect($price['formatted'])->toBe('$49');
         expect($price['per_label'])->toBe('mo');
+    });
+
+    it('quotes a launch-price subscriber the $99 they actually pay per seat', function () {
+        waiverSeatsSubscribe($this->business, $this->owner);
+
+        $launchPrice = \App\Models\Price::query()
+            ->where('product_key', 'lien_waiver')
+            ->where('variant_key', 'monthly_launch_99')
+            ->firstOrFail();
+
+        $this->business->subscription(config('lien_waivers.subscription_type'))
+            ->update(['stripe_price' => $launchPrice->stripePriceId()]);
+
+        $price = WaiverEntitlements::perSeatPrice($this->business->refresh());
+
+        expect($price['amount_cents'])->toBe(9900);
+        expect($price['formatted'])->toBe('$99');
     });
 });
 

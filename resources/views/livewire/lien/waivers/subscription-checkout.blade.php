@@ -89,11 +89,11 @@
             <ul class="space-y-1.5 border-t border-zinc-200 pt-3 text-zinc-600">
                 <li class="flex items-center gap-2">
                     <flux:icon name="check" class="h-4 w-4 shrink-0 text-green-600" />
-                    Unlimited waivers for every seat holder
+                    Sign your own waivers and send the signed copy
                 </li>
                 <li class="flex items-center gap-2">
                     <flux:icon name="check" class="h-4 w-4 shrink-0 text-green-600" />
-                    E-signature send &amp; collect
+                    Collect signatures from subs and vendors
                 </li>
                 <li class="flex items-center gap-2">
                     <flux:icon name="check" class="h-4 w-4 shrink-0 text-green-600" />
@@ -102,6 +102,10 @@
                 <li class="flex items-center gap-2">
                     <flux:icon name="check" class="h-4 w-4 shrink-0 text-green-600" />
                     Signed-copy storage + audit certificates
+                </li>
+                <li class="flex items-center gap-2">
+                    <flux:icon name="check" class="h-4 w-4 shrink-0 text-green-600" />
+                    Unlimited waivers for every seat holder
                 </li>
             </ul>
 

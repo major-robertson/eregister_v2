@@ -363,10 +363,10 @@ describe('waiver subscriptions', function () {
 
         $stats = Livewire::test(LienStats::class)->viewData('waiverSubscriptionStats');
 
-        // Stub prices fall back to the configured monthly amount ($99/seat).
+        // Stub prices fall back to the configured monthly amount ($49/seat).
         expect($stats['active'])->toBe(2)
             ->and($stats['seats'])->toBe(4)
-            ->and($stats['mrr_cents'])->toBe(4 * 9900)
+            ->and($stats['mrr_cents'])->toBe(4 * 4900)
             ->and($stats['new_this_month'])->toBe(2)
             ->and($stats['cancelling'])->toBe(0);
     });
@@ -383,7 +383,30 @@ describe('waiver subscriptions', function () {
 
         $stats = Livewire::test(LienStats::class)->viewData('waiverSubscriptionStats');
 
-        expect($stats['mrr_cents'])->toBe(2 * (int) round(99000 / 12));
+        expect($stats['mrr_cents'])->toBe(2 * (int) round(49000 / 12));
+    });
+
+    it('keeps a subscriber on the retired $99 launch price at what they actually pay', function () {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        // The launch rows stay in the table (inactive) for exactly this.
+        $launchPrice = Price::query()
+            ->where('product_key', 'lien_waiver')
+            ->where('variant_key', 'monthly_launch_99')
+            ->firstOrFail();
+
+        expect($launchPrice->active)->toBeFalse();
+
+        lienStatsSubscribe(Business::factory()->create(), seats: 2, overrides: [
+            'stripe_price' => $launchPrice->stripe_price_id_test,
+        ]);
+
+        $this->actingAs($admin);
+
+        $stats = Livewire::test(LienStats::class)->viewData('waiverSubscriptionStats');
+
+        expect($stats['mrr_cents'])->toBe(2 * 9900);
     });
 
     it('counts a grace-period subscription as cancelling but still active', function () {

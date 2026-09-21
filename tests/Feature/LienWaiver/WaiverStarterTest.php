@@ -121,7 +121,9 @@ describe('ads landing page', function () {
     it('backs the promise with proof: the Google rating, years in business, and real reviews', function () {
         $this->get('/lp/lien-waiver/tx')
             ->assertSuccessful()
-            ->assertSee('on Google (7 reviews)')
+            ->assertSee('on Google')
+            // Seven is too few to brag about, so the count stays off the page.
+            ->assertDontSee('7 reviews')
             ->assertSee('In business since 2017')
             ->assertSee('href="#reviews"', false)
             ->assertSee('What contractors say about eRegister')

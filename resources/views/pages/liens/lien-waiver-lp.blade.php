@@ -6,6 +6,21 @@
 <meta name="description" content="{{ $metaDescription }}">
 @endsection
 
+{{-- The same links serve the desktop menu and the phone dropdown. --}}
+@section('nav')
+<a href="#how-it-works" class="rounded-lg px-3 py-2 transition hover:bg-zinc-100 hover:text-zinc-900 md:p-0 md:hover:bg-transparent">How it works</a>
+<a href="#pricing" class="rounded-lg px-3 py-2 transition hover:bg-zinc-100 hover:text-zinc-900 md:p-0 md:hover:bg-transparent">Pricing</a>
+<a href="#questions" class="rounded-lg px-3 py-2 transition hover:bg-zinc-100 hover:text-zinc-900 md:p-0 md:hover:bg-transparent">Questions</a>
+<a href="{{ route('liens.lien-waivers') }}#states" class="rounded-lg px-3 py-2 transition hover:bg-zinc-100 hover:text-zinc-900 md:p-0 md:hover:bg-transparent">Forms by state</a>
+<a href="{{ route('contact') }}" class="rounded-lg px-3 py-2 transition hover:bg-zinc-100 hover:text-zinc-900 md:p-0 md:hover:bg-transparent">Contact</a>
+@endsection
+
+@section('footer_links')
+<a href="{{ route('liens.lien-waivers') }}#states" class="transition hover:text-zinc-900">Lien waiver forms by state</a>
+<a href="{{ route('liens.lien-waivers.pricing') }}" class="transition hover:text-zinc-900">Lien waiver pricing</a>
+<a href="{{ route('liens') }}" class="transition hover:text-zinc-900">Mechanics lien filing</a>
+@endsection
+
 @section('content')
 @php
     // Everything state-specific comes from the WaiverStateRegistry rules so
@@ -24,8 +39,8 @@
 @endphp
 
 {{-- Hero: the promise on the left, the starter on the right --}}
-<section class="bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-800 py-12 lg:py-20">
-    <div class="mx-auto grid max-w-6xl items-start gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-14 lg:px-8">
+<section class="bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-800 py-8 sm:py-12 lg:py-20">
+    <div class="mx-auto grid max-w-6xl items-start gap-8 px-4 sm:gap-10 sm:px-6 lg:grid-cols-2 lg:gap-14 lg:px-8">
         @if (($variant ?? 'form') === 'software')
         {{-- Software searchers collect waivers on every draw. Sell the paid
              product, with its price, instead of a free form. --}}
@@ -85,6 +100,7 @@
             :direction="$preselectedDirection"
             :kind="$preselectedKind"
             :from="$from"
+            sticky-button
             :heading="($variant ?? 'form') === 'software' ? 'Send your first waiver' : ($stateName ? 'Create your '.$stateName.' waiver' : 'Create your waiver')"
         />
     </div>
@@ -171,7 +187,7 @@
 </section>
 
 {{-- How it works --}}
-<section class="border-y border-zinc-200 bg-zinc-50 py-16 lg:py-20">
+<section id="how-it-works" class="scroll-mt-6 border-y border-zinc-200 bg-zinc-50 py-16 lg:py-20">
     <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div class="text-center">
             <h2 class="text-3xl font-bold text-zinc-900">Three steps to a finished waiver</h2>
@@ -197,7 +213,7 @@
 </section>
 
 {{-- Pricing strip --}}
-<section class="bg-white py-16 lg:py-20">
+<section id="pricing" class="scroll-mt-6 bg-white py-16 lg:py-20">
     <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <div class="text-center">
             <h2 class="text-3xl font-bold text-zinc-900">Free to create. Pro when you need it signed and sent.</h2>
@@ -227,7 +243,7 @@
 </section>
 
 {{-- FAQ --}}
-<section class="border-t border-zinc-200 bg-zinc-50 py-16 lg:py-20">
+<section id="questions" class="scroll-mt-6 border-t border-zinc-200 bg-zinc-50 py-16 lg:py-20">
     <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <h2 class="text-center text-3xl font-bold text-zinc-900">Questions</h2>
         <div class="mt-10 space-y-4">

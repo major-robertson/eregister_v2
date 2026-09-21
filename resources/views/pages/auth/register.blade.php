@@ -1,6 +1,24 @@
+@php
+    // A visitor who picked a waiver on a marketing page lands here next. Keep
+    // talking about that waiver instead of greeting them with a blank form.
+    // An invitation has its own explanation, so it wins.
+    $forWaiver = ($waiverIntent ?? null) !== null && ($invitation ?? null) === null;
+    $waiverStateName = $forWaiver
+        ? (\App\Domains\Lien\Waivers\WaiverStateRegistry::STATE_NAMES[$waiverIntent['state'] ?? ''] ?? null)
+        : null;
+@endphp
+
 <x-layouts::auth title="Create an Account">
     <div class="flex flex-col gap-6">
-        <x-auth-header :title="__('Create an account')" :description="__('Enter your details below to create your account')" />
+        @if ($forWaiver)
+            <div class="flex w-full flex-col text-center">
+                <p class="text-sm font-medium text-text-secondary">Step 1 of 3</p>
+                <flux:heading size="xl" class="mt-1">Create your free account to finish your {{ $waiverStateName ? $waiverStateName.' ' : '' }}lien waiver</flux:heading>
+                <flux:subheading>Free. No credit card.</flux:subheading>
+            </div>
+        @else
+            <x-auth-header :title="__('Create an account')" :description="__('Enter your details below to create your account')" />
+        @endif
 
         <!-- Session Status -->
         <x-auth-session-status class="text-center" :status="session('status')" />
@@ -81,7 +99,7 @@
 
             <div class="flex items-center justify-end">
                 <flux:button type="submit" variant="primary" class="w-full" data-test="register-user-button">
-                    {{ __('Create account') }}
+                    {{ $forWaiver ? 'Create my free account' : __('Create account') }}
                 </flux:button>
             </div>
         </form>

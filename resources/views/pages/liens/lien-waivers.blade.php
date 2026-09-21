@@ -202,7 +202,7 @@
 </section>
 
 {{-- State directory --}}
-<section class="border-t border-zinc-200 bg-zinc-50 py-24">
+<section id="states" class="scroll-mt-20 border-t border-zinc-200 bg-zinc-50 py-24">
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div class="text-center">
             <h2 class="text-3xl font-bold text-zinc-900">Lien waiver forms by state</h2>

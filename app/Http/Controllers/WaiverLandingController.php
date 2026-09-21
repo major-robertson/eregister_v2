@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Domains\Lien\Waivers\WaiverFormResolver;
+use App\Domains\Lien\Waivers\WaiverFormPreview;
 use App\Domains\Lien\Waivers\WaiverIntent;
 use App\Domains\Lien\Waivers\WaiverStateRegistry;
 use Illuminate\Http\RedirectResponse;
@@ -87,7 +87,7 @@ class WaiverLandingController extends Controller
             'code' => $code,
             'rules' => $rules,
             'stateName' => $stateName,
-            'kinds' => $code !== null ? app(WaiverFormResolver::class)->availableKinds($code) : [],
+            'previews' => app(WaiverFormPreview::class)->for($code),
             'preselectedDirection' => $preselected['direction'],
             'preselectedKind' => $preselected['kind'],
             'pageTitle' => $stateName !== null
@@ -113,7 +113,7 @@ class WaiverLandingController extends Controller
             'code' => null,
             'rules' => null,
             'stateName' => null,
-            'kinds' => [],
+            'previews' => app(WaiverFormPreview::class)->for(null),
             'preselectedDirection' => 'collect',
             'preselectedKind' => WaiverIntent::normalize(['kind' => request()->query('type')])['kind'],
             'pageTitle' => 'Lien Waiver Software | Collect, Track and Store Signed Waivers',

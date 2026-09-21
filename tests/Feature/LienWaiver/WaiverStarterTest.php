@@ -2,6 +2,8 @@
 
 use App\Domains\Business\Models\Business;
 use App\Domains\Business\Models\BusinessInvitation;
+use App\Domains\Lien\Waivers\WaiverFormPreview;
+use App\Domains\Lien\Waivers\WaiverFormResolver;
 use App\Domains\Lien\Waivers\WaiverIntent;
 use App\Domains\Lien\Waivers\WaiverStateRegistry;
 use App\Models\User;
@@ -133,6 +135,61 @@ describe('ads landing page', function () {
             ->assertSee('value="TX" selected', false)
             ->assertSee("direction: 'provide'", false)
             ->assertSee("kind: 'conditional_final'", false);
+    });
+
+    it('shows the real form, sample-filled, for every waiver the state uses', function () {
+        $response = $this->get('/lp/lien-waiver/tx')->assertSuccessful();
+
+        expect(substr_count($response->getContent(), '<iframe'))->toBe(4);
+
+        $response
+            ->assertSee('data-waiver-preview', false)
+            ->assertSee('Exact statutory text')
+            ->assertSee('SAMPLE')
+            // The generator's own document, framed: statutory wording and sample details.
+            ->assertSee('On receipt by the signer of this document of a check from')
+            ->assertSee('Tex. Prop. Code')
+            ->assertSee('Acme Drywall LLC')
+            ->assertSee('Anytown, TX')
+            // The titles card it replaced is gone.
+            ->assertDontSee('Conditional Progress');
+    });
+
+    it('opens the preview on the waiver type the ad asked for', function () {
+        $this->get('/lp/lien-waiver/tx?type=unconditional_final')
+            ->assertSuccessful()
+            ->assertSee("{ kind: 'unconditional_final', scale: null }", false);
+    });
+
+    it('previews the house form, with the state left blank, on the all-states pages', function () {
+        foreach (['/lp/lien-waiver', '/lp/lien-waiver-software'] as $path) {
+            $response = $this->get($path)->assertSuccessful();
+
+            expect(substr_count($response->getContent(), '<iframe'))->toBe(4);
+
+            $response
+                ->assertSee('Any state')
+                ->assertSee('Attorney-reviewed form')
+                ->assertSee('State of ____________')
+                ->assertDontSee('Exact statutory text');
+        }
+    });
+
+    it('only previews the waiver types a state uses', function () {
+        foreach (array_keys(WaiverStateRegistry::STATE_NAMES) as $code) {
+            $used = collect(app(WaiverFormResolver::class)->availableKinds($code))->where('enabled', true)->count();
+            $previews = app(WaiverFormPreview::class)->for($code);
+
+            expect($previews)->toHaveCount($used, $code);
+
+            foreach ($previews as $preview) {
+                expect($preview['html'])->toContain('<html', '</head>', 'Acme Drywall LLC');
+            }
+        }
+    });
+
+    it('keeps the preview off the search pages', function () {
+        $this->get('/liens/lien-waivers/tx')->assertSuccessful()->assertDontSee('data-waiver-preview', false);
     });
 
     it('ignores unknown pre-selections', function () {

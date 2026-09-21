@@ -114,7 +114,48 @@ describe('ads landing page', function () {
     it('leaves the address out of the footer when none is configured', function () {
         config(['mail.postal_address' => null]);
 
-        $this->get('/lp/lien-waiver')->assertSuccessful()->assertDontSee('Louisville');
+        // The FAQ names the city; the street address and ZIP only come from config.
+        $this->get('/lp/lien-waiver')->assertSuccessful()->assertDontSee('KY 40207');
+    });
+
+    it('backs the promise with proof: the Google rating, years in business, and real reviews', function () {
+        $this->get('/lp/lien-waiver/tx')
+            ->assertSuccessful()
+            ->assertSee('on Google (7 reviews)')
+            ->assertSee('In business since 2017')
+            ->assertSee('href="#reviews"', false)
+            ->assertSee('What contractors say about eRegister')
+            ->assertSee('Everything was straightforward, communication was excellent')
+            ->assertSee('Floors Kitchen & Bath Direct')
+            ->assertSee("Reviews of eRegister's lien filing service.", false)
+            ->assertSee(config('company.google_reviews.url'), false);
+
+        // The owner asked to keep his first name out of quoted reviews.
+        foreach (config('company.google_reviews.featured') as $review) {
+            expect($review['text'])->not->toContain('Major');
+        }
+    });
+
+    it('drops the proof line and the reviews when no rating is configured', function () {
+        config(['company.google_reviews' => ['url' => null, 'rating' => null, 'count' => null, 'featured' => []]]);
+
+        $this->get('/lp/lien-waiver')
+            ->assertSuccessful()
+            ->assertDontSee('on Google')
+            ->assertDontSee('What contractors say about eRegister');
+    });
+
+    it('answers seven questions, and writes the notarization answer for the state', function () {
+        $texas = $this->get('/lp/lien-waiver/tx')->assertSuccessful();
+        $texas->assertSee('Not in Texas.')
+            ->assertSee('Who is eRegister?')
+            ->assertSee('in business since 2017')
+            ->assertSee('Does the person I send a waiver to need an account to sign it?');
+        expect(substr_count($texas->getContent(), '<details'))->toBe(7);
+
+        $this->get('/lp/lien-waiver/ms')->assertSee('In Mississippi, yes.');
+        $this->get('/lp/lien-waiver/ga')->assertSee('Georgia asks for a witness rather than a notary');
+        $this->get('/lp/lien-waiver')->assertSee('Almost never.');
     });
 
     it('keeps a copy of the button fixed to the screen on phones, on the ads pages only', function () {

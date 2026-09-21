@@ -10,6 +10,7 @@
 @section('nav')
 <a href="#how-it-works" class="rounded-lg px-3 py-2 transition hover:bg-zinc-100 hover:text-zinc-900 md:p-0 md:hover:bg-transparent">How it works</a>
 <a href="#pricing" class="rounded-lg px-3 py-2 transition hover:bg-zinc-100 hover:text-zinc-900 md:p-0 md:hover:bg-transparent">Pricing</a>
+<a href="#reviews" class="rounded-lg px-3 py-2 transition hover:bg-zinc-100 hover:text-zinc-900 md:p-0 md:hover:bg-transparent">Reviews</a>
 <a href="#questions" class="rounded-lg px-3 py-2 transition hover:bg-zinc-100 hover:text-zinc-900 md:p-0 md:hover:bg-transparent">Questions</a>
 <a href="{{ route('liens.lien-waivers') }}#states" class="rounded-lg px-3 py-2 transition hover:bg-zinc-100 hover:text-zinc-900 md:p-0 md:hover:bg-transparent">Forms by state</a>
 <a href="{{ route('contact') }}" class="rounded-lg px-3 py-2 transition hover:bg-zinc-100 hover:text-zinc-900 md:p-0 md:hover:bg-transparent">Contact</a>
@@ -35,6 +36,27 @@
     $freeSaves = (int) config('lien_waivers.free_saved_waivers_per_month', 3);
     $from = request()->getPathInfo();
     $statutoryStates = ['Arizona', 'California', 'Florida', 'Georgia', 'Michigan', 'Mississippi', 'Nevada', 'Texas', 'Utah', 'Wyoming'];
+
+    // The answers are the ones on the generator's search page. Notarization
+    // leads with the visitor's own state when the page has one.
+    $notaryRule = "Only Mississippi and Wyoming require lien waivers to be notarized, and Georgia requires a witness signature on its statutory forms. In the other 47 states an ordinary signature is enough, though a customer's contract can always ask for more than the statute does.";
+    $notaryAnswer = match (true) {
+        $stateName === null => 'Almost never. '.$notaryRule,
+        $notaryRequired => "In {$stateName}, yes. {$stateName} requires lien waivers to be notarized, so we generate a print-ready PDF with the notary block. ".$notaryRule,
+        $witnessRequired => "{$stateName} asks for a witness rather than a notary, so we generate a print-ready PDF with the witness signature line. ".$notaryRule,
+        default => "Not in {$stateName}. ".$notaryRule,
+    };
+    $since = config('company.in_business_since');
+
+    $faqs = [
+        'Is the waiver really free?' => 'Yes. Creating the waiver and downloading the PDF is free, with no watermark and no credit card. Pro adds electronic signing and sending, reminders, and signed-copy storage.',
+        'Conditional or unconditional: which one do I need?' => "A conditional waiver only takes effect once the payment actually arrives, so it is the safe choice when the check hasn't cleared. An unconditional waiver gives up lien rights the moment it is signed; sign one only after the money is in hand. Progress waivers cover one payment; a final waiver goes with the last payment on the job.",
+        "What's the difference between sending a waiver and collecting one?" => 'Sending is for subcontractors and suppliers who sign their own waiver so a customer will release payment. Collecting is for general contractors and owners who request signed waivers from the subs and vendors they pay. The same tool handles both: it picks the correct form, tracks who has signed, and keeps every signed copy on the project.',
+        'Do lien waivers need to be notarized?' => $notaryAnswer,
+        'Is an electronic signature valid on a lien waiver?' => "In most states, yes: the federal E-SIGN Act and each state's UETA make electronic signatures equivalent to ink, and every signed copy comes with a tamper-evident audit certificate. Where a statute requires a notary or witness (Mississippi, Wyoming, Georgia), we generate a print-ready PDF instead and say so before you start.",
+        'Does the person I send a waiver to need an account to sign it?' => 'No. The signer gets a secure link by email, verifies their identity with a one-time code, reviews the waiver, and signs, all in the browser with no account, password, or download.',
+        'Who is eRegister?' => 'eRegister is a business filing company based in Louisville, Kentucky'.($since ? ", in business since {$since}" : '').'. Besides lien waivers, we file mechanics liens, preliminary notices, notices of intent to lien, and lien releases for contractors.',
+    ];
 @endphp
 
 {{-- Hero: the promise on the left, the starter on the right --}}
@@ -53,6 +75,7 @@
             <p class="mt-5 text-lg text-zinc-300">
                 Send each sub or vendor the correct waiver for the job's state. They sign online from their phone, with no account. We remind them until it's signed and keep the signed copy with your project.
             </p>
+            <x-reviews.google-line dark class="mt-5" />
             {{-- Hidden on phones so the starter sits above the fold. --}}
             <ul class="mt-6 hidden space-y-2.5 text-zinc-300 sm:block">
                 <li class="flex items-start gap-2.5"><span class="mt-0.5 text-amber-400">&#10003;</span> The correct form for all 50 states, with statutory wording where required</li>
@@ -85,6 +108,7 @@
                     Conditional, unconditional, progress, and final lien waivers with the correct form for all 50 states, including the exact statutory text where the law prescribes one. Filled in with your details, downloaded free.
                 @endif
             </p>
+            <x-reviews.google-line dark class="mt-5" />
             {{-- Hidden on phones so the starter sits above the fold. --}}
             <ul class="mt-6 hidden space-y-2.5 text-zinc-300 sm:block">
                 <li class="flex items-start gap-2.5"><span class="mt-0.5 text-amber-400">&#10003;</span> Conditional and unconditional waivers for progress and final payments</li>
@@ -184,6 +208,9 @@
     </div>
 </section>
 
+{{-- What customers say (Google reviews of the lien filing service) --}}
+<x-reviews.google-cards class="border-b border-zinc-200" />
+
 {{-- Pricing strip --}}
 <section id="pricing" class="scroll-mt-6 bg-white py-16 lg:py-20">
     <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
@@ -219,27 +246,15 @@
     <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <h2 class="text-center text-3xl font-bold text-zinc-900">Questions</h2>
         <div class="mt-10 space-y-4">
-            <details class="group rounded-xl border border-zinc-200 bg-white">
-                <summary class="flex cursor-pointer items-center justify-between p-5 font-medium text-zinc-900 [&::-webkit-details-marker]:hidden">
-                    Is the waiver really free?
-                    <svg class="h-5 w-5 shrink-0 text-zinc-400 transition group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                </summary>
-                <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">Yes. Creating the waiver and downloading the PDF is free, with no watermark and no credit card. Pro adds electronic signing and sending, reminders, and signed-copy storage.</div>
-            </details>
-            <details class="group rounded-xl border border-zinc-200 bg-white">
-                <summary class="flex cursor-pointer items-center justify-between p-5 font-medium text-zinc-900 [&::-webkit-details-marker]:hidden">
-                    Conditional or unconditional: which one do I need?
-                    <svg class="h-5 w-5 shrink-0 text-zinc-400 transition group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                </summary>
-                <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">A conditional waiver only takes effect once the payment actually arrives, so it is the safe choice when the check hasn't cleared. An unconditional waiver gives up lien rights the moment it is signed; sign one only after the money is in hand. Progress waivers cover one payment; a final waiver goes with the last payment on the job.</div>
-            </details>
-            <details class="group rounded-xl border border-zinc-200 bg-white">
-                <summary class="flex cursor-pointer items-center justify-between p-5 font-medium text-zinc-900 [&::-webkit-details-marker]:hidden">
-                    Is an electronic signature valid on a lien waiver?
-                    <svg class="h-5 w-5 shrink-0 text-zinc-400 transition group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                </summary>
-                <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">In most states, yes: the federal E-SIGN Act and each state's UETA make electronic signatures equivalent to ink, and every signed copy comes with a tamper-evident audit certificate. Where a statute requires a notary or witness (Mississippi, Wyoming, Georgia), we generate a print-ready PDF instead and say so before you start.</div>
-            </details>
+            @foreach ($faqs as $question => $answer)
+                <details class="group rounded-xl border border-zinc-200 bg-white">
+                    <summary class="flex cursor-pointer items-center justify-between p-5 font-medium text-zinc-900 [&::-webkit-details-marker]:hidden">
+                        {{ $question }}
+                        <svg class="h-5 w-5 shrink-0 text-zinc-400 transition group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </summary>
+                    <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">{{ $answer }}</div>
+                </details>
+            @endforeach
         </div>
     </div>
 </section>

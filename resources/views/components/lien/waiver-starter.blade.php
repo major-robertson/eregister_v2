@@ -5,6 +5,10 @@
     wizard. Only the state is required — the wizard still asks whatever was
     skipped. Rendered on the generator landing page, the 50 state pages, and
     the ads landing pages.
+
+    sticky-button: on phones the form's button sits more than a screen down,
+    so a copy of it stays fixed to the bottom of the screen until the real
+    one scrolls into view. Three of four ad clicks are phones.
 --}}
 @props([
     'state' => null,
@@ -12,6 +16,7 @@
     'kind' => null,
     'from' => null,
     'heading' => 'Create your waiver',
+    'stickyButton' => false,
 ])
 
 @php
@@ -39,7 +44,7 @@
     method="GET"
     action="{{ route('liens.lien-waivers.start') }}"
     id="start"
-    x-data="{ direction: @js($selectedDirection), kind: @js($selectedKind) }"
+    x-data="{ direction: @js($selectedDirection), kind: @js($selectedKind), buttonInView: false }"
     {{ $attributes->class(['scroll-mt-24 rounded-2xl bg-white p-6 text-left shadow-2xl ring-1 ring-black/5 sm:p-8']) }}
 >
     <input type="hidden" name="from" value="{{ $from }}">
@@ -109,7 +114,7 @@
             </div>
         </fieldset>
 
-        <div>
+        <div @if ($stickyButton) x-intersect:enter="buttonInView = true" x-intersect:leave="buttonInView = false" @endif>
             <button
                 type="submit"
                 class="group inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#DC2626] px-6 py-3.5 text-base font-semibold text-white shadow-lg transition hover:bg-[#B91C1C]"
@@ -122,4 +127,25 @@
             <p class="mt-3 text-center text-xs text-zinc-500">Free PDF download. No credit card. No watermark.</p>
         </div>
     </div>
+
+    @if ($stickyButton)
+        {{-- Shown from the first paint (no x-cloak) so the button is on the
+             first phone screen even before Alpine starts. It submits this
+             form; with no state picked the browser points at the state field. --}}
+        <div
+            x-show="!buttonInView"
+            class="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] backdrop-blur sm:hidden"
+            data-sticky-button
+        >
+            <button
+                type="submit"
+                class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#DC2626] px-6 py-3.5 text-base font-semibold text-white shadow-lg transition hover:bg-[#B91C1C]"
+            >
+                Create my free waiver
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+            </button>
+        </div>
+    @endif
 </form>

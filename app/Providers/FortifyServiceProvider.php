@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Domains\Business\Models\BusinessInvitation;
+use App\Domains\Lien\Waivers\WaiverIntent;
 use App\Http\Middleware\ActivateMarketingLeadContext;
 use App\Http\Responses\LoginResponse;
 use App\Http\Responses\RegisterResponse;
@@ -73,6 +74,9 @@ class FortifyServiceProvider extends ServiceProvider
 
             return view('pages::auth.register', [
                 'invitation' => $this->pendingBusinessInvitation(),
+                // Set by the waiver starter on the marketing pages, so the
+                // form can keep talking about the waiver they came for.
+                'waiverIntent' => WaiverIntent::get(),
             ]);
         });
         Fortify::resetPasswordView(fn () => view('pages::auth.reset-password'));

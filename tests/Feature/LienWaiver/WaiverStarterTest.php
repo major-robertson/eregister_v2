@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Business\Models\BusinessInvitation;
 use App\Domains\Lien\Waivers\WaiverIntent;
 use App\Domains\Lien\Waivers\WaiverStateRegistry;
 use App\Models\User;
@@ -81,8 +82,46 @@ describe('ads landing page', function () {
             ->assertSee('name="robots" content="noindex, nofollow"', false)
             ->assertSee(route('liens.lien-waivers.start'))
             ->assertSee('Create my free waiver')
-            // No site navigation on a paid-traffic page.
+            // A slim menu of its own, not the full site navigation.
             ->assertDontSee('Form a Business');
+    });
+
+    it('gives the visitor a way around: a slim menu, a fuller footer, and the business address', function () {
+        config(['mail.postal_address' => '4869 Example Rd, Louisville KY 40207']);
+
+        $this->get('/lp/lien-waiver/tx')
+            ->assertSuccessful()
+            // Menu links and the sections they jump to.
+            ->assertSee('href="#how-it-works"', false)
+            ->assertSee('id="how-it-works"', false)
+            ->assertSee('href="#pricing"', false)
+            ->assertSee('id="pricing"', false)
+            ->assertSee('href="#questions"', false)
+            ->assertSee('id="questions"', false)
+            ->assertSee(route('liens.lien-waivers').'#states', false)
+            ->assertSee(route('contact'), false)
+            // Footer: who we are and where else to go.
+            ->assertSee(route('liens.lien-waivers.pricing'), false)
+            ->assertSee(route('liens'), false)
+            ->assertSee('4869 Example Rd, Louisville KY 40207');
+
+        // "Forms by state" has somewhere to land.
+        $this->get('/liens/lien-waivers')->assertSee('id="states"', false);
+    });
+
+    it('leaves the address out of the footer when none is configured', function () {
+        config(['mail.postal_address' => null]);
+
+        $this->get('/lp/lien-waiver')->assertSuccessful()->assertDontSee('Louisville');
+    });
+
+    it('keeps a copy of the button fixed to the screen on phones, on the ads pages only', function () {
+        foreach (['/lp/lien-waiver', '/lp/lien-waiver/tx', '/lp/lien-waiver-software'] as $path) {
+            $this->get($path)->assertSuccessful()->assertSee('data-sticky-button', false);
+        }
+
+        $this->get('/liens/lien-waivers')->assertDontSee('data-sticky-button', false);
+        $this->get('/liens/lien-waivers/tx')->assertDontSee('data-sticky-button', false);
     });
 
     it('renders a state page with its statutory titles and pre-selects the starter from the query', function () {
@@ -139,6 +178,48 @@ describe('starter form', function () {
                 'kind' => null,
                 'source' => null,
             ]);
+    });
+});
+
+describe('register page after the starter', function () {
+    it('keeps talking about the waiver the visitor picked', function () {
+        $this->get('/liens/lien-waivers/start?state=tx&from=/lp/lien-waiver/tx')->assertRedirect(route('register'));
+
+        $this->get(route('register'))
+            ->assertSuccessful()
+            ->assertSee('Step 1 of 3')
+            ->assertSee('Create your free account to finish your Texas lien waiver')
+            ->assertSee('Free. No credit card.')
+            ->assertSee('Create my free account')
+            ->assertDontSee('Enter your details below');
+    });
+
+    it('greets everyone else the usual way', function () {
+        $this->get(route('register'))
+            ->assertSuccessful()
+            ->assertSee('Create an account')
+            ->assertSee('Enter your details below')
+            ->assertDontSee('Step 1 of 3');
+    });
+
+    it('lets a team invitation explain itself instead', function () {
+        $business = Business::factory()->onboarded()->create(['name' => 'Acme Contracting']);
+        $owner = User::factory()->create();
+        $owner->businesses()->attach($business->id, ['role' => 'owner']);
+        $invitation = BusinessInvitation::factory()->create([
+            'business_id' => $business->id,
+            'email' => 'invitee@example.com',
+            'role' => 'member',
+            'invited_by_user_id' => $owner->id,
+        ]);
+
+        $this->get('/liens/lien-waivers/start?state=tx')->assertRedirect(route('register'));
+        $this->get($invitation->acceptUrl())->assertRedirect(route('register'));
+
+        $this->get(route('register'))
+            ->assertSuccessful()
+            ->assertSee('Acme Contracting')
+            ->assertDontSee('Step 1 of 3');
     });
 });
 

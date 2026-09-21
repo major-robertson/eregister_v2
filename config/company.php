@@ -15,6 +15,7 @@ return [
     'google_reviews' => [
         'url' => 'https://maps.app.goo.gl/knY7FTPFt6txVE6PA',
         'rating' => 5.0,
+        // Not shown on the site while it is this small (the owner's call, 2026-09-21).
         'count' => 7,
         'checked_on' => '2026-09-21',
 

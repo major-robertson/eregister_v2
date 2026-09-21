@@ -6,6 +6,9 @@
     skipped. Rendered on the generator landing page, the 50 state pages, and
     the ads landing pages.
 
+    The waiver type stays in step with the form preview on the same page
+    (x-lien.waiver-form-preview) through the "waiver-kind" window event.
+
     sticky-button: on phones the form's button sits more than a screen down,
     so a copy of it stays fixed to the bottom of the screen until the real
     one scrolls into view. Three of four ad clicks are phones.
@@ -45,6 +48,8 @@
     action="{{ route('liens.lien-waivers.start') }}"
     id="start"
     x-data="{ direction: @js($selectedDirection), kind: @js($selectedKind), buttonInView: false }"
+    x-init="$watch('kind', value => $dispatch('waiver-kind', { kind: value, from: 'starter' }))"
+    @waiver-kind.window="if ($event.detail.from !== 'starter') kind = $event.detail.kind"
     {{ $attributes->class(['scroll-mt-24 rounded-2xl bg-white p-6 text-left shadow-2xl ring-1 ring-black/5 sm:p-8']) }}
 >
     <input type="hidden" name="from" value="{{ $from }}">

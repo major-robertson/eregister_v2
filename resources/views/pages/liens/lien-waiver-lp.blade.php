@@ -31,7 +31,6 @@
     $esignAllowed = $rules['esign_allowed'] ?? true;
     $notaryRequired = $rules['notarization_required'] ?? false;
     $witnessRequired = $rules['witness_required'] ?? false;
-    $enabledKinds = collect($kinds)->filter(fn ($entry) => $entry['enabled'] ?? false);
     $monthlyPrice = number_format(config('lien_waivers.prices.monthly.amount_cents', 4900) / 100);
     $freeSaves = (int) config('lien_waivers.free_saved_waivers_per_month', 3);
     $from = request()->getPathInfo();
@@ -109,7 +108,7 @@
 {{-- The form they'll get --}}
 <section class="bg-white py-16 lg:py-20">
     <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div class="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
+        <div class="grid items-start gap-10 lg:grid-cols-2 lg:gap-14">
             <div>
                 <p class="text-sm font-semibold uppercase tracking-widest text-amber-600">The form you'll get</p>
                 <h2 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
@@ -148,40 +147,13 @@
                 @endif
             </div>
 
-            {{-- Paper preview: the state's form titles, straight from the registry --}}
-            <div class="relative">
-                <div class="absolute inset-0 translate-x-3 translate-y-3 rounded-lg bg-zinc-200"></div>
-                <div class="relative rounded-lg border border-zinc-200 bg-white p-8 shadow-xl">
-                    <div class="flex items-center justify-between border-b border-zinc-200 pb-4">
-                        <span class="font-serif text-xs uppercase tracking-[0.2em] text-zinc-500">{{ $stateName ?? 'Your state' }}</span>
-                        <span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
-                            {{ $hasStatutoryForm ? 'Exact statutory text' : 'Attorney-reviewed form' }}
-                        </span>
-                    </div>
-                    <div class="mt-5 space-y-3 font-serif">
-                        @forelse ($enabledKinds as $kindKey => $entry)
-                            <div class="rounded border border-zinc-100 bg-zinc-50 px-4 py-3">
-                                <p class="text-sm font-semibold text-zinc-900">{{ $entry['title'] }}</p>
-                                <p class="mt-1 text-xs text-zinc-500">{{ \Illuminate\Support\Str::headline($kindKey) }}</p>
-                            </div>
-                        @empty
-                            @foreach (['Conditional Waiver and Release on Progress Payment', 'Unconditional Waiver and Release on Progress Payment', 'Conditional Waiver and Release on Final Payment', 'Unconditional Waiver and Release on Final Payment'] as $title)
-                                <div class="rounded border border-zinc-100 bg-zinc-50 px-4 py-3">
-                                    <p class="text-sm font-semibold text-zinc-900">{{ $title }}</p>
-                                </div>
-                            @endforeach
-                        @endforelse
-                    </div>
-                    <div class="mt-6 space-y-2">
-                        <div class="h-2 w-3/4 rounded bg-zinc-100"></div>
-                        <div class="h-2 w-full rounded bg-zinc-100"></div>
-                        <div class="h-2 w-5/6 rounded bg-zinc-100"></div>
-                    </div>
-                    @if ($statute)
-                        <p class="mt-6 text-xs text-zinc-500">{{ $statute }}</p>
-                    @endif
-                </div>
-            </div>
+            {{-- The real form, sample-filled: what the wizard will hand them --}}
+            <x-lien.waiver-form-preview
+                :previews="$previews"
+                :state-name="$stateName"
+                :statutory="(bool) $hasStatutoryForm"
+                :kind="$preselectedKind"
+            />
         </div>
     </div>
 </section>

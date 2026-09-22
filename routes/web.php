@@ -95,6 +95,11 @@ Route::view('liens/pricing', 'pages.liens.pricing')->name('liens.pricing');
 Route::get('lp/lien-waiver/{state?}', [\App\Http\Controllers\WaiverLandingController::class, 'lp'])->name('lp.lien-waiver');
 // Same page for "lien waiver software" searches: sells collecting waivers from subs, price shown.
 Route::get('lp/lien-waiver-software', [\App\Http\Controllers\WaiverLandingController::class, 'lpSoftware'])->name('lp.lien-waiver-software');
+// Google Ads landing pages for sales tax registration and the resale
+// certificate generator: one page per state with the state's own term, fee
+// and timing, and the three-way front door above the fold (noindex).
+Route::get('lp/sales-tax/{state?}', [\App\Http\Controllers\SalesTaxLandingController::class, 'permit'])->name('lp.sales-tax');
+Route::get('lp/resale-certificate/{state?}', [\App\Http\Controllers\SalesTaxLandingController::class, 'resale'])->name('lp.resale-certificate');
 
 // Government
 Route::prefix('government')->name('government.')->group(function () {

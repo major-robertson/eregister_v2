@@ -2,7 +2,9 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
-    @include('partials.head', ['title' => $__env->yieldContent('title', config('app.name', 'eRegister'))])
+    {{-- Inline @section('title', ...) values arrive already escaped; decode so the head partial's {{ }} does not double-escape "&". --}}
+    @include('partials.head', ['title' => html_entity_decode($__env->yieldContent('title', config('app.name', 'eRegister')), ENT_QUOTES)])
+    @include('partials.seo')
     @yield('meta')
 </head>
 

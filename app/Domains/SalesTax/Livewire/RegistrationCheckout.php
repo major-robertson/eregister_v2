@@ -104,7 +104,20 @@ class RegistrationCheckout extends Component
 
         if ($this->step === 'pay') {
             $this->initializePayment();
+
+            return;
         }
+
+        // Seeing the order without paying is the drop-off point now, so the
+        // reminders start here (an hour, a day, three days later) and stop
+        // on their own once the registration is paid.
+        EmailSequence::startFor(
+            'abandon_checkout',
+            $this->application,
+            Auth::user(),
+            $this->business,
+            route('sales-tax.registrations.checkout', $this->application)
+        );
     }
 
     /**

@@ -5,6 +5,7 @@ namespace App\Domains\SalesTax\Services;
 use App\Domains\Forms\Models\FormApplication;
 use App\Enums\PaymentStatus;
 use App\Mail\PaymentReceipt;
+use App\Models\EmailSequence;
 use App\Models\Payment;
 use App\Models\SentEmail;
 use App\Services\OpenAiConversionsApi;
@@ -135,6 +136,21 @@ class RegistrationPaymentService
         }
 
         $application->update($attributes);
+
+        // Paid and still open: remind them to finish the questions (day 1,
+        // 4 and 11). The series stops on its own once the wizard submits.
+        if (! $application->isLocked()) {
+            $user = $application->createdBy ?? $application->business?->users()->first();
+
+            if ($user) {
+                EmailSequence::startUnfinishedRegistrationFor(
+                    $application,
+                    $user,
+                    $application->business,
+                    route('sales-tax.registrations.show', $application),
+                );
+            }
+        }
     }
 
     private function shouldFlagForReview(Payment $payment, StripeObject $stripePaymentIntent): bool

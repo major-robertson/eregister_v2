@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Forms\Models\FormApplication;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Enums\WaiverStatus;
 use App\Domains\Lien\Models\LienFiling;
@@ -71,6 +72,15 @@ class EmailSequence extends Model
             'delays' => [120, 2880, 7200, 20160],
             'email_prefix' => 'waiver_unsigned_step',
             'unsubscribe_category' => EmailUnsubscribe::CATEGORY_MARKETING,
+        ],
+        // Paid for a sales tax registration, questions not sent in: day 1,
+        // day 4, day 11. Service mail about an order they paid for, so no
+        // unsubscribe category.
+        'registration_unfinished' => [
+            'steps' => 3,
+            'delays' => [1440, 4320, 10080],
+            'email_prefix' => 'registration_unfinished_step',
+            'unsubscribe_category' => null,
         ],
     ];
 
@@ -157,6 +167,10 @@ class EmailSequence extends Model
 
         if (in_array($this->sequence_type, self::WAIVER_NURTURE_TYPES, true)) {
             return $this->shouldSuppressWaiverNurture();
+        }
+
+        if ($this->sequence_type === 'registration_unfinished') {
+            return $this->shouldSuppressUnfinishedRegistration();
         }
 
         if ($this->trigger_status) {
@@ -253,6 +267,63 @@ class EmailSequence extends Model
         }
 
         return $this->currentStep() === null ? 'all_steps_sent' : null;
+    }
+
+    /**
+     * Stop rules for "finish the questions": the sequence lives while the
+     * registration is paid and still open. Submitting it (the wizard locks
+     * it) ends the series; so does a payment that went away.
+     */
+    protected function shouldSuppressUnfinishedRegistration(): ?string
+    {
+        $application = $this->sequenceable;
+
+        if (! $application instanceof FormApplication) {
+            return 'sequenceable_deleted';
+        }
+
+        if ($application->isLocked()) {
+            return 'submitted';
+        }
+
+        if (! $application->isPaid()) {
+            return 'not_paid';
+        }
+
+        return $this->currentStep() === null ? 'all_steps_sent' : null;
+    }
+
+    /**
+     * Start the "finish the questions" series for a paid, still-open sales
+     * tax registration. Idempotent per application (the unique key), so a
+     * second payment event does not restart it.
+     */
+    public static function startUnfinishedRegistrationFor(
+        FormApplication $application,
+        User $user,
+        Business $business,
+        string $resumeUrl
+    ): ?self {
+        if (! $application->isPaid() || $application->isLocked()) {
+            return null;
+        }
+
+        $config = static::$sequenceConfig['registration_unfinished'];
+
+        return static::firstOrCreate(
+            [
+                'sequence_type' => 'registration_unfinished',
+                'sequenceable_type' => $application->getMorphClass(),
+                'sequenceable_id' => $application->getKey(),
+            ],
+            [
+                'user_id' => $user->getKey(),
+                'business_id' => $business->getKey(),
+                'customer_type' => static::detectCustomerType($business),
+                'resume_url' => $resumeUrl,
+                'next_send_at' => now()->addMinutes($config['delays'][0]),
+            ]
+        );
     }
 
     /**

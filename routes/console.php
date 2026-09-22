@@ -21,6 +21,11 @@ Schedule::job(new ProcessCampaignSteps)->hourly();
 // Email sequences (abandon checkout, nurture, etc.) - run every 15 minutes
 Schedule::command('email:process-sequences')->everyFifteenMinutes()->withoutOverlapping();
 
+// Sales tax funnel report to the admins - Monday mornings Eastern (13:00 UTC)
+Schedule::command('report:sales-tax-funnel --email')
+    ->weeklyOn(1, '13:00')
+    ->withoutOverlapping();
+
 // Expiring resale certificates - daily digest at 9 AM Eastern (13/14 UTC)
 Schedule::command('resale-cert:check-expiring --send-emails')
     ->dailyAt('13:00')

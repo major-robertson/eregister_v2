@@ -9,6 +9,7 @@ use App\Enums\PaymentStatus;
 use App\Models\EmailSequence;
 use App\Models\Payment;
 use App\Models\Price;
+use App\Support\Analytics\Gtag;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -101,6 +102,21 @@ class RegistrationCheckout extends Component
         $this->amountCents = $this->expectedAmount();
 
         $this->step = $this->showsOrderScreen() && request()->query('step') !== 'pay' ? 'order' : 'pay';
+
+        // GA4 funnel steps, drained into the page head on this render:
+        // registration_order (the order screen) and begin_checkout (the card
+        // form); purchase fires on the confirmation page.
+        Gtag::queue($this->step === 'pay' ? 'begin_checkout' : 'registration_order', [
+            'currency' => 'USD',
+            'value' => $this->amountCents / 100,
+            'states' => $this->stateCount,
+            'rush' => $this->wantsRush(),
+            'items' => [[
+                'item_name' => 'Sales Tax Registration',
+                'quantity' => $this->stateCount,
+                'price' => $this->perStateCents / 100,
+            ]],
+        ]);
 
         if ($this->step === 'pay') {
             $this->initializePayment();

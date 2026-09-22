@@ -81,16 +81,62 @@ describe('StateSelector', function () {
         expect($component->get('selectedStates'))->toHaveCount(count($availableStates));
     });
 
-    it('can select all and clear all in multi mode', function () {
+    it('has no select-all any more and can clear the selection', function () {
         $this->actingAs($this->user);
 
         Livewire::test(StateSelector::class, [
             'formType' => 'sales_tax_permit',
         ])
-            ->call('selectAll')
-            ->assertSet('selectedStates', fn ($states) => count($states) > 0)
+            ->assertDontSee('Select All')
+            ->call('toggleState', 'CA')
+            ->call('toggleState', 'TX')
             ->call('clearAll')
             ->assertSet('selectedStates', []);
+    });
+
+    it('preselects the business state when there is no draft', function () {
+        $this->business->update(['business_address' => ['line1' => '1 Main St', 'city' => 'Austin', 'state' => 'TX', 'zip' => '78701']]);
+        $this->actingAs($this->user);
+
+        Livewire::test(StateSelector::class, [
+            'formType' => 'sales_tax_permit',
+        ])->assertSet('selectedStates', ['TX']);
+    });
+
+    it('preselects the state the visitor picked on the marketing page over the business state', function () {
+        $this->business->update(['business_address' => ['line1' => '1 Main St', 'city' => 'Austin', 'state' => 'TX', 'zip' => '78701']]);
+        \App\Support\SignupIntent::store(['product' => 'sales-tax', 'state' => 'ny']);
+        $this->actingAs($this->user);
+
+        Livewire::test(StateSelector::class, [
+            'formType' => 'sales_tax_permit',
+        ])->assertSet('selectedStates', ['NY']);
+    });
+
+    it('does not preselect a state that is excluded, blocked, or unknown', function () {
+        $this->business->update(['business_address' => ['line1' => '1 Main St', 'city' => 'Portland', 'state' => 'OR', 'zip' => '97201']]);
+        \App\Support\SignupIntent::store(['product' => 'sales-tax', 'state' => 'ZZ']);
+        $this->actingAs($this->user);
+
+        Livewire::test(StateSelector::class, [
+            'formType' => 'sales_tax_permit',
+        ])->assertSet('selectedStates', []);
+    });
+
+    it('shows the per-state price for the sales tax permit and none for the LLC', function () {
+        \App\Models\Price::updateOrCreate(
+            ['product_family' => 'tax', 'product_key' => 'sales_tax_permit', 'variant_key' => 'per_state', 'billing_type' => 'one_time'],
+            ['amount_cents' => 19900, 'currency' => 'usd', 'active' => true],
+        );
+        $this->actingAs($this->user);
+
+        Livewire::test(StateSelector::class, ['formType' => 'sales_tax_permit'])
+            ->assertSet('perStateCents', 19900)
+            ->assertSee('$199 per state, paid when you order');
+
+        Livewire::test(StateSelector::class, ['formType' => 'llc'])
+            ->assertSet('perStateCents', null)
+            ->assertDontSee('per state, paid when you order');
     });
 
     it('creates application and redirects to form runner on proceed', function () {
@@ -242,7 +288,8 @@ describe('StateSelector', function () {
         expect($component->get('blockedStates'))->toContain('FL');
     });
 
-    it('excludes blocked states from select all', function () {
+    it('does not preselect the business state when it already has a paid application', function () {
+        $this->business->update(['business_address' => ['line1' => '1 Main St', 'city' => 'Los Angeles', 'state' => 'CA', 'zip' => '90001']]);
         $this->actingAs($this->user);
 
         // Create a paid application for CA
@@ -269,9 +316,7 @@ describe('StateSelector', function () {
             'formType' => 'sales_tax_permit',
         ]);
 
-        $component->call('selectAll');
-
-        // CA should not be in selected states
-        expect($component->get('selectedStates'))->not->toContain('CA');
+        // CA is blocked, so nothing is preselected
+        expect($component->get('selectedStates'))->toBe([]);
     });
 });

@@ -6,36 +6,36 @@ use Livewire\Livewire;
 use Tests\Feature\Forms\Support\RunnerTestFactory;
 
 /**
- * Generic conditional badge mechanism: any field can declare a
- * `badge_when` list of {condition, label, color} entries, and the field
- * dispatcher evaluates them first-match-wins via ConditionEvaluator,
- * passing the resolved badge into the typed partial. Used here to show
- * an "Optional" badge on the EIN field for sole proprietors.
+ * Field badges come in two shapes. A plain `badge` {label, color} shows
+ * unconditionally; a `badge_when` list of {condition, label, color}
+ * entries is evaluated first-match-wins via ConditionEvaluator. The field
+ * dispatcher resolves either into the badge passed to the typed partial.
  *
- * The tests exercise both layers:
- *   1. The definition itself carries the right badge_when shape on
- *      the EIN field (definition guard).
- *   2. The rendered runner output actually surfaces the badge text
- *      when entity_type=sole_prop, and omits it otherwise (integration).
+ * Since EREG-54 the EIN field is optional for every entity type, so it
+ * carries the plain badge; the conditional mechanism is pinned by the
+ * synthetic tests below.
  */
-describe('badge_when definition shape', function () {
-    it('defines an Optional badge on FEIN that fires for sole proprietors', function () {
+describe('badge definition shape', function () {
+    it('defines an unconditional Optional badge on FEIN', function () {
         $base = app(FormRegistry::class)->getBase('sales_tax_permit');
         $field = $base['core_steps']['identity']['fields']['fein'];
 
-        expect($field['badge_when'] ?? null)->toBeArray()->not->toBeEmpty();
+        expect($field['badge'] ?? null)->toBe(['label' => 'Optional', 'color' => 'zinc'])
+            ->and($field['badge_when'] ?? null)->toBeNull();
+    });
 
-        $first = $field['badge_when'][0];
-        expect($first['label'])->toBe('Optional')
-            ->and($first['color'])->toBe('zinc')
-            ->and($first['condition'])->toBe(['==' => [['var' => 'entity_type'], 'sole_prop']]);
+    it('defines an unconditional Optional badge on the NAICS code', function () {
+        $base = app(FormRegistry::class)->getBase('sales_tax_permit');
+        $field = $base['core_steps']['activity']['fields']['naics_code'];
+
+        expect($field['badge'] ?? null)->toBe(['label' => 'Optional', 'color' => 'zinc']);
     });
 });
 
 describe('FEIN Optional badge rendering', function () {
-    it('shows the Optional badge when entity_type is sole_prop', function () {
+    it('shows the Optional badge for every entity type', function (string $entityType) {
         $application = RunnerTestFactory::make()
-            ->coreData(['entity_type' => 'sole_prop'])
+            ->coreData(['entity_type' => $entityType])
             ->boot();
 
         $html = Livewire::test(MultiStateFormRunner::class, ['application' => $application])
@@ -44,35 +44,9 @@ describe('FEIN Optional badge rendering', function () {
         // The badge text appears in the rendered label region. We assert
         // on the visible string rather than on Flux's internal markup so
         // the test isn't coupled to Flux versions.
-        expect($html)->toContain('Optional');
-    });
-
-    it('omits the Optional badge for non-sole-prop entity types', function () {
-        $application = RunnerTestFactory::make()
-            ->coreData(['entity_type' => 'corporation'])
-            ->boot();
-
-        $html = Livewire::test(MultiStateFormRunner::class, ['application' => $application])
-            ->html();
-
-        // Other UI strings might legitimately contain "Optional" in
-        // theory, so we narrow to the EIN label region by asserting the
-        // FEIN/EIN label is present (proving the field rendered) and
-        // separately that "Optional" is absent within the page.
         expect($html)->toContain('Federal Employer Identification Number')
-            ->and($html)->not->toContain('Optional');
-    });
-
-    it('updates the badge live when entity_type flips from corporation to sole_prop', function () {
-        $application = RunnerTestFactory::make()
-            ->coreData(['entity_type' => 'corporation'])
-            ->boot();
-
-        Livewire::test(MultiStateFormRunner::class, ['application' => $application])
-            ->assertDontSee('Optional')
-            ->set('coreData.entity_type', 'sole_prop')
-            ->assertSee('Optional');
-    });
+            ->and($html)->toContain('Optional');
+    })->with(['sole_prop', 'corporation', 'llc_single']);
 });
 
 describe('badge_when first-match-wins behavior', function () {

@@ -58,6 +58,8 @@
         'sales-tax-permit' => 'Sales Tax Permit',
         'sales-tax-id' => 'Sales Tax ID',
         'sellers-permit' => "Seller's Permit",
+        'sales-tax-license' => 'Sales Tax License',
+        'certificate-of-authority' => 'Certificate of Authority',
     ], 'sales-tax-registration');
 
     // Mid-sentence noun form (lower case, used in body copy / step headings).
@@ -66,6 +68,8 @@
         'sales-tax-permit' => 'sales tax permit',
         'sales-tax-id' => 'sales tax ID',
         'sellers-permit' => "seller's permit",
+        'sales-tax-license' => 'sales tax license',
+        'certificate-of-authority' => 'certificate of authority',
     ], 'sales-tax-registration');
 
     // Full heading shown on the permit card visual.
@@ -74,11 +78,26 @@
         'sales-tax-permit' => 'Sales & Use Tax Permit',
         'sales-tax-id' => 'Sales & Use Tax ID',
         'sellers-permit' => "Seller's Permit",
+        'sales-tax-license' => 'Sales & Use Tax License',
+        'certificate-of-authority' => 'Certificate of Authority',
     ], 'sales-tax-registration');
 
-    // Single source of truth for the CTA target — signup flow drives the sales-tax onboarding redirect.
-    $startUrl = route('register');
-    $price = '$199'; // flat fee placeholder — confirm real price
+    // Single source of truth for the CTA target. The product, the ad keyword
+    // variant and the state (from the ad's ?state=TX) travel to /register
+    // in the query string, so the sign-up flow knows what to open without
+    // depending on the Referer header.
+    $startUrl = route('register', array_filter([
+        'product' => 'sales-tax',
+        'intent' => preg_match('/^[a-z0-9-]{1,40}$/', (string) request()->query('intent', '')) ? request()->query('intent') : null,
+        'state' => array_key_exists(strtoupper((string) request()->query('state', '')), config('states')) ? strtoupper(request()->query('state')) : null,
+    ]));
+
+    // Live price from the catalog (PriceSeeder), fallback if unseeded.
+    try {
+        $price = '$'.number_format(\App\Models\Price::resolve('tax', 'sales_tax_permit', 'per_state', 'one_time')->amount_cents / 100);
+    } catch (\Throwable) {
+        $price = '$199';
+    }
 @endphp
 
 <div class="sales-tax-page text-slate-700">

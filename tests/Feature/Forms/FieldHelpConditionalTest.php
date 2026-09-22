@@ -12,62 +12,29 @@ use Tests\Feature\Forms\Support\RunnerTestFactory;
  * first-match-wins via the existing ConditionEvaluator. The static
  * `help` key is the fallback when no entry matches.
  *
- * Used here to keep the EIN help short for entity types that always
- * need one ("Get an EIN at: <url>") while giving sole proprietors a
- * longer note explaining the optional-but-recommended framing.
+ * Since EREG-54 the EIN and NAICS fields are optional for everyone and
+ * carry one static help line each; the conditional mechanism is pinned
+ * by the synthetic tests below.
  */
-describe('help_when definition shape', function () {
-    it('declares a sole-prop-only override on the EIN field', function () {
+describe('optional-field help text', function () {
+    it('tells every applicant they may leave the EIN blank', function () {
         $base = app(FormRegistry::class)->getBase('sales_tax_permit');
         $field = $base['core_steps']['identity']['fields']['fein'];
 
-        expect($field['help'] ?? null)
-            ->toBe('Get an EIN at https://www.irs.gov/businesses/employer-identification-number')
-            ->and($field['help_when'] ?? null)->toBeArray()->not->toBeEmpty();
-
-        $first = $field['help_when'][0];
-        expect($first['condition'])->toBe(['==' => [['var' => 'entity_type'], 'sole_prop']])
-            ->and($first['help'])->toContain('You may leave blank')
-            ->and($first['help'])->toContain('highly recommended');
+        expect($field['help'] ?? null)->toContain('Leave this blank')
+            ->and($field['help_when'] ?? null)->toBeNull();
     });
-});
 
-describe('FEIN help_when rendering', function () {
-    it('renders the long sole-prop help text when entity_type is sole_prop', function () {
+    it('renders the EIN help for corporations and sole proprietors alike', function (string $entityType) {
         $application = RunnerTestFactory::make()
-            ->coreData(['entity_type' => 'sole_prop'])
+            ->coreData(['entity_type' => $entityType])
             ->boot();
 
         $html = Livewire::test(MultiStateFormRunner::class, ['application' => $application])
             ->html();
 
-        expect($html)->toContain('You may leave blank')
-            ->and($html)->toContain('highly recommended');
-    });
-
-    it('renders the short default help for non-sole-prop entity types', function () {
-        $application = RunnerTestFactory::make()
-            ->coreData(['entity_type' => 'corporation'])
-            ->boot();
-
-        $html = Livewire::test(MultiStateFormRunner::class, ['application' => $application])
-            ->html();
-
-        expect($html)->toContain('Get an EIN at')
-            ->and($html)->not->toContain('You may leave blank')
-            ->and($html)->not->toContain('highly recommended');
-    });
-
-    it('swaps help text live when entity_type flips between corporation and sole_prop', function () {
-        $application = RunnerTestFactory::make()
-            ->coreData(['entity_type' => 'corporation'])
-            ->boot();
-
-        Livewire::test(MultiStateFormRunner::class, ['application' => $application])
-            ->assertDontSee('You may leave blank')
-            ->set('coreData.entity_type', 'sole_prop')
-            ->assertSee('You may leave blank');
-    });
+        expect($html)->toContain('Leave this blank and keep going');
+    })->with(['sole_prop', 'corporation']);
 });
 
 describe('help_when first-match-wins and no-op fallback', function () {
@@ -133,6 +100,7 @@ describe('help_when first-match-wins and no-op fallback', function () {
         $naics = $base['core_steps']['activity']['fields']['naics_code'];
 
         expect($naics['help_when'] ?? null)->toBeNull()
-            ->and($naics['help'])->toBe('Find your code here: https://www.census.gov/naics/');
+            ->and($naics['help'])->toContain('Leave this blank')
+            ->and($naics['rules'])->toBe(['nullable', 'digits:6']);
     });
 });

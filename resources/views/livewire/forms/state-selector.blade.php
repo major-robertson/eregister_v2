@@ -53,10 +53,16 @@
     <div class="mb-6 flex items-center justify-between">
         <div class="text-sm text-zinc-600 dark:text-zinc-400">
             <span x-text="selected.length"></span> state<span x-show="selected.length !== 1">s</span> selected
+            @if ($perStateCents)
+                <span class="text-zinc-400 dark:text-zinc-500">·</span>
+                <span class="font-medium text-zinc-900 dark:text-zinc-100">
+                    $<span x-text="(selected.length * {{ $perStateCents / 100 }}).toLocaleString()"></span>
+                </span>
+                <span>at ${{ number_format($perStateCents / 100) }} per state, paid when you order</span>
+            @endif
         </div>
         @if ($stateMode === 'multi')
             <div class="flex gap-2">
-                <flux:button wire:click="selectAll" size="sm" variant="ghost">Select All</flux:button>
                 <flux:button wire:click="clearAll" size="sm" variant="ghost">Clear All</flux:button>
             </div>
         @endif

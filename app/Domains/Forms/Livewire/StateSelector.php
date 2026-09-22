@@ -7,6 +7,8 @@ use App\Domains\Forms\Engine\FormRegistry;
 use App\Domains\Forms\FormTypeConfig;
 use App\Domains\Forms\Models\FormApplication;
 use App\Domains\Forms\Models\FormApplicationState;
+use App\Models\Price;
+use App\Support\SignupIntent;
 use App\Support\Workspaces\WorkspaceRegistry;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -38,6 +40,9 @@ class StateSelector extends Component
     public ?int $maxStates = null;
 
     public ?FormApplication $existingDraft = null;
+
+    /** Price per selected state in cents, when the form type is billed per state. */
+    public ?int $perStateCents = null;
 
     public function mount(string $formType): void
     {
@@ -103,6 +108,53 @@ class StateSelector extends Component
             $this->selectedStates = array_values(
                 array_diff($this->existingDraft->selected_states, $this->blockedStates)
             );
+        } else {
+            $this->preselectState();
+        }
+
+        $this->perStateCents = $this->resolvePerStateCents($config);
+    }
+
+    /**
+     * Start with the state the visitor picked on the marketing page, or the
+     * business's own state. One state is what most customers need; "Select
+     * All" used to send two dozen people into a 46-state application they
+     * never finished.
+     */
+    private function preselectState(): void
+    {
+        $candidates = [
+            SignupIntent::state(),
+            strtoupper((string) ($this->business->business_address['state'] ?? '')),
+        ];
+
+        foreach ($candidates as $code) {
+            if ($code && in_array($code, $this->availableStates, true)
+                && ! in_array($code, $this->blockedStates, true)
+                && ! array_key_exists($code, $this->excludedStates)) {
+                $this->selectedStates = [$code];
+
+                return;
+            }
+        }
+    }
+
+    /**
+     * The per-state price shown next to the selection, for form types billed
+     * per state. Null when the form type is billed another way.
+     *
+     * @param  array<string, mixed>  $config
+     */
+    private function resolvePerStateCents(array $config): ?int
+    {
+        if (($config['billing_type'] ?? null) !== 'one_time_per_state') {
+            return null;
+        }
+
+        try {
+            return Price::resolve('tax', $this->formType, 'per_state', 'one_time')->amount_cents;
+        } catch (\Throwable) {
+            return null;
         }
     }
 
@@ -126,19 +178,6 @@ class StateSelector extends Component
                 }
             }
         }
-    }
-
-    public function selectAll(): void
-    {
-        if ($this->stateMode === 'single') {
-            return; // Not applicable for single mode
-        }
-
-        // Exclude blocked states when selecting all
-        $selectableStates = array_values(array_diff($this->availableStates, $this->blockedStates));
-        $this->selectedStates = $this->maxStates !== null
-            ? array_slice($selectableStates, 0, $this->maxStates)
-            : $selectableStates;
     }
 
     public function clearAll(): void
@@ -299,6 +338,7 @@ class StateSelector extends Component
             'blockedStates' => $this->blockedStates,
             'formTypeName' => $config['name'],
             'excludedStates' => $this->excludedStates,
+            'perStateCents' => $this->perStateCents,
         ])->layout('components.layouts.portal', ['title' => 'Select States']);
     }
 }

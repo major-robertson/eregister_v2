@@ -193,7 +193,7 @@ class StateSelector extends Component
             return;
         }
 
-        $this->redirect($this->applicationUrlFor($this->existingDraft));
+        $this->redirect($this->nextUrlFor($this->existingDraft));
     }
 
     public function startOver(): void
@@ -269,7 +269,23 @@ class StateSelector extends Component
             return $application;
         });
 
-        $this->redirect($this->applicationUrlFor($application));
+        $this->redirect($this->nextUrlFor($application));
+    }
+
+    /**
+     * Where a new or resumed draft goes next. Pay-first types (sales tax)
+     * order and pay before the questions, so an unpaid draft opens the
+     * workspace's order screen; everything else opens the wizard.
+     */
+    private function nextUrlFor(FormApplication $application): string
+    {
+        $workspace = app(WorkspaceRegistry::class)->findByFormType($application->form_type);
+
+        if ($application->paysFirst() && ! $application->isPaid() && $workspace?->checkoutRouteName) {
+            return route($workspace->checkoutRouteName, $application);
+        }
+
+        return $this->applicationUrlFor($application);
     }
 
     /**

@@ -50,19 +50,22 @@ class EnsureHasAccess
             404
         );
 
-        // Check access based on billing type
+        // Check access based on billing type. An unpaid pay-first draft goes
+        // to the workspace's own order screen when it has one.
         if (! $this->hasAccess($business, $application)) {
-            return redirect()->route('portal.checkout', $application);
+            return redirect()->route($workspace->checkoutRouteName ?? 'portal.checkout', $application);
         }
 
         return $next($request);
     }
 
     /**
-     * Whether the draft form runner is accessible. All billing types now
-     * collect payment at the END of the wizard (on submit), so the draft
-     * is always reachable — `MultiStateFormRunner::submit()` redirects
-     * unpaid/unsubscribed applications to checkout. Locked (paid/submitted)
+     * Whether the draft form runner is accessible. Pay-first form types
+     * (sales tax) collect payment right after state selection, so the
+     * questions open only once `paid_at` is set. Every other billing type
+     * collects payment at the END of the wizard (on submit), so the draft is
+     * always reachable — `MultiStateFormRunner::submit()` redirects
+     * unpaid/unsubscribed applications to checkout. Locked (submitted)
      * applications are redirected to the read-only confirmation page by the
      * runner's own mount guard, not here. The `default => false` arm keeps
      * unknown/misconfigured billing types failing closed.
@@ -70,6 +73,10 @@ class EnsureHasAccess
     protected function hasAccess(Business $business, FormApplication $application): bool
     {
         $config = FormTypeConfig::get($application->form_type);
+
+        if (($config['pay_first'] ?? false) === true) {
+            return $application->isPaid();
+        }
 
         return match ($config['billing_type']) {
             'subscription', 'one_time_per_state', 'one_time' => true,

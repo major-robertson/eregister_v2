@@ -152,9 +152,9 @@ describe('StateSelector', function () {
         $application = FormApplication::where('business_id', $this->business->id)->first();
         expect($application)->not->toBeNull();
 
-        // Workspace-aware redirect: sales_tax_permit applications now live
-        // under the Sales Tax workspace's show route.
-        $component->assertRedirect(route('sales-tax.registrations.show', ['application' => $application]));
+        // Sales tax orders before the questions: a new draft opens the
+        // workspace's order screen, not the wizard.
+        $component->assertRedirect(route('sales-tax.registrations.checkout', ['application' => $application]));
 
         expect($application->selected_states)->toBe(['CA', 'TX']);
         expect($application->status)->toBe('draft');

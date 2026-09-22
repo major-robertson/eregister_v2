@@ -523,7 +523,14 @@ class MultiStateFormRunner extends Component
 
             session()->flash('success', 'Your application has been submitted successfully.');
 
-            $this->redirect(route('dashboard'));
+            // Pay-first types land on their confirmation page (what happens
+            // next); everything else goes back to the dashboard.
+            $workspace = app(WorkspaceRegistry::class)->findByFormType($this->application->form_type);
+            $confirmationUrl = $this->application->paysFirst()
+                ? $workspace?->confirmationRouteFor($this->application)
+                : null;
+
+            $this->redirect($confirmationUrl ?? route('dashboard'));
         } else {
             // Prefer the owning workspace's dedicated checkout route (e.g.
             // Sales Tax's PaymentIntent flow); fall back to the generic
@@ -667,6 +674,10 @@ class MultiStateFormRunner extends Component
             'phaseProgress' => $this->getPhaseProgressProperty(),
             'hasStateQuestions' => $this->selectedStatesHaveQuestions(),
             'allStatesComplete' => $this->application->allStatesComplete(),
+            // Paid-first applications submit straight to us; the review step
+            // says so instead of "Proceed to Payment", and the first step
+            // can't go back to state selection (those states are paid for).
+            'isPaid' => $this->application->isPaid(),
             'states' => config('states'),
             'statePersonFields' => $this->getStatePersonFieldsProperty(),
             'reviewFields' => $this->currentPhase === 'review' ? $this->reviewFields() : [],

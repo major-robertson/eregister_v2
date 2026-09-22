@@ -55,7 +55,11 @@
         <div class="space-y-8">
             <flux:heading size="xl" class="text-center">Review Your Application</flux:heading>
             <p class="text-center text-text-secondary">
-                Please review all your information before submitting.
+                @if ($isPaid)
+                    Check your answers, then submit. We take it from there.
+                @else
+                    Please review all your information before submitting.
+                @endif
             </p>
 
             {{-- Shared answers (asked once). The "shared across states"
@@ -142,7 +146,7 @@
                     type="button"
                     :disabled="!$allStatesComplete"
                 >
-                    Proceed to Payment
+                    {{ $isPaid ? 'Submit my application' : 'Proceed to Payment' }}
                 </x-ui.action-button>
             </div>
         </div>
@@ -339,10 +343,15 @@
                 @if ($isCore && $currentStepKey === ($stepKeys[0] ?? null))
                     {{-- First step: Previous returns to the state-selector page.
                          $stepKeys is numerically indexed (from array_keys), so
-                         we compare against $stepKeys[0] not array_key_first(). --}}
-                    <flux:button :href="$startUrl" type="button" variant="ghost">
-                        Back to state selection
-                    </flux:button>
+                         we compare against $stepKeys[0] not array_key_first().
+                         A paid application keeps its states, so no way back. --}}
+                    @if ($isPaid)
+                        <span></span>
+                    @else
+                        <flux:button :href="$startUrl" type="button" variant="ghost">
+                            Back to state selection
+                        </flux:button>
+                    @endif
                 @else
                     <flux:button wire:click="previousStep" type="button" variant="ghost">
                         Previous

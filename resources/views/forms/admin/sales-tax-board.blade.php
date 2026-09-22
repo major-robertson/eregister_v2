@@ -129,9 +129,18 @@
                                 </flux:text>
                             @endif
 
-                            @if ($formTypeLabel)
-                                <div class="mt-2">
-                                    <flux:badge size="sm" color="zinc">{{ $formTypeLabel }}</flux:badge>
+                            @if ($formTypeLabel || $app?->isRush() || $app?->isAwaitingAnswers())
+                                <div class="mt-2 flex flex-wrap items-center gap-1">
+                                    @if ($formTypeLabel)
+                                        <flux:badge size="sm" color="zinc">{{ $formTypeLabel }}</flux:badge>
+                                    @endif
+                                    @if ($app?->isRush())
+                                        <flux:badge size="sm" color="red">Rush</flux:badge>
+                                    @endif
+                                    {{-- Paid before the questions: nothing to file yet. --}}
+                                    @if ($app?->isAwaitingAnswers())
+                                        <flux:badge size="sm" color="amber">Awaiting customer answers</flux:badge>
+                                    @endif
                                 </div>
                             @endif
 

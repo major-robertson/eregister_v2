@@ -377,8 +377,11 @@
 
             <div class="mt-12 border-t border-zinc-800 pt-8">
                 <div class="flex flex-col items-center justify-between gap-4 sm:flex-row">
-                    <p class="text-sm text-zinc-500">&copy; {{ date('Y') }} {{ config('app.name', 'eRegister') }}. All
-                        rights reserved.</p>
+                    <div>
+                        <p class="text-sm text-zinc-500">&copy; {{ date('Y') }} {{ config('app.name', 'eRegister') }}. All
+                            rights reserved.</p>
+                        <p class="mt-2 max-w-xl text-xs text-zinc-600">{{ config('app.name', 'eRegister') }} is a private document preparation and filing service. It is not a government agency and is not affiliated with or endorsed by any government agency.</p>
+                    </div>
                     <div class="flex gap-6">
                         <a href="#" class="text-zinc-400 transition hover:text-white">
                             <span class="sr-only">Twitter</span>

@@ -149,5 +149,22 @@ class PriceSeeder extends Seeder
                 'active' => true,
             ]
         );
+
+        // Rush processing add-on for the registration: filed within 2
+        // business days instead of 5. One fee per application, added to the
+        // same inline-amount PaymentIntent (no Stripe Price needed).
+        Price::updateOrCreate(
+            [
+                'product_family' => 'tax',
+                'product_key' => 'sales_tax_permit',
+                'variant_key' => 'rush',
+                'billing_type' => 'one_time',
+            ],
+            [
+                'amount_cents' => 9900,
+                'currency' => 'usd',
+                'active' => true,
+            ]
+        );
     }
 }

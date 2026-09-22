@@ -33,11 +33,45 @@ class PaymentReceipt extends Mailable implements ShouldQueue
             with: [
                 'userName' => $this->recipientName(),
                 'itemDescription' => $this->itemDescription(),
+                'lines' => $this->lines(),
                 'amount' => $this->payment->formattedAmount(),
                 'paidAt' => $this->payment->paid_at?->eastern()->format('F j, Y g:i A'),
                 'paymentId' => $this->payment->id,
             ],
         );
+    }
+
+    /**
+     * Receipt rows. A sales tax order records its breakdown on the payment
+     * (states x per-state fee, optional rush) so the receipt can itemize it;
+     * every other payment is a single line.
+     *
+     * @return list<array{label: string, amount: string}>
+     */
+    protected function lines(): array
+    {
+        $meta = $this->payment->meta ?? [];
+
+        if (! isset($meta['per_state_cents'], $meta['state_count'])) {
+            return [['label' => $this->itemDescription(), 'amount' => $this->payment->formattedAmount()]];
+        }
+
+        $count = (int) $meta['state_count'];
+        $perState = (int) $meta['per_state_cents'];
+
+        $lines = [[
+            'label' => $this->itemDescription().' ('.$count.' '.\Illuminate\Support\Str::plural('state', $count).' x $'.number_format($perState / 100, 2).')',
+            'amount' => '$'.number_format($perState * $count / 100, 2),
+        ]];
+
+        if (! empty($meta['rush']) && ! empty($meta['rush_cents'])) {
+            $lines[] = [
+                'label' => 'Rush processing (filed within 2 business days)',
+                'amount' => '$'.number_format(((int) $meta['rush_cents']) / 100, 2),
+            ];
+        }
+
+        return $lines;
     }
 
     protected function recipientName(): string

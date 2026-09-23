@@ -58,12 +58,12 @@
                         <span class="block font-semibold text-zinc-900">{{ $door['title'] }}</span>
                         <span class="mt-1 block text-sm text-zinc-600">{{ $door['text'] }}</span>
                     </span>
-                    <span class="mt-0.5 hidden shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold sm:inline-block {{ $primary ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-700' }}">{{ $door['button'] }}</span>
+                    <span class="mt-0.5 hidden shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold sm:inline-block bg-red-600 text-white">{{ $door['button'] }}</span>
                     <span aria-hidden="true" class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full sm:hidden {{ $primary ? 'bg-amber-200 text-amber-900' : 'bg-zinc-100 text-zinc-500' }}">
                         <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6" /></svg>
                     </span>
                 </span>
-                <span class="mt-3 block rounded-full px-3 py-2.5 text-center text-sm font-semibold sm:hidden {{ $primary ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-700' }}">{{ $door['button'] }}</span>
+                <span class="mt-3 block rounded-full px-3 py-2.5 text-center text-sm font-semibold sm:hidden bg-red-600 text-white">{{ $door['button'] }}</span>
             </a>
         @endforeach
     </div>

@@ -13,6 +13,7 @@ use App\Domains\Forms\Livewire\Concerns\WithPhaseProgress;
 use App\Domains\Forms\Livewire\Concerns\WithRepeaterModal;
 use App\Domains\Forms\Livewire\Concerns\WithStepNavigation;
 use App\Domains\Forms\Models\FormApplication;
+use App\Support\Analytics\Gtag;
 use App\Support\Workspaces\WorkspaceRegistry;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -529,6 +530,15 @@ class MultiStateFormRunner extends Component
             $confirmationUrl = $this->application->paysFirst()
                 ? $workspace?->confirmationRouteFor($this->application)
                 : null;
+
+            // GA4: the paid customer finished the questions (drained on the
+            // confirmation page).
+            if ($confirmationUrl) {
+                Gtag::queue('registration_submitted', [
+                    'states' => $this->application->stateCount(),
+                    'rush' => $this->application->isRush(),
+                ]);
+            }
 
             $this->redirect($confirmationUrl ?? route('dashboard'));
         } else {

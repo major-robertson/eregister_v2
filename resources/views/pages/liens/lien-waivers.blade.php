@@ -2,10 +2,7 @@
 
 @section('title', 'Lien Waiver Generator | Free Forms for All 50 States')
 
-@section('meta')
-<link rel="canonical" href="{{ route('liens.lien-waivers') }}" />
-<meta name="description" content="Generate free lien waiver forms with the correct form for all 50 states, including the exact statutory text where the law prescribes one. Conditional, unconditional, progress, and final waivers with e-signature and automatic reminders.">
-@endsection
+@section('description', 'Generate free lien waiver forms with the correct form for all 50 states, including the exact statutory text where the law prescribes one. Conditional, unconditional, progress, and final waivers with e-signature and automatic reminders.')
 
 @section('content')
 @php

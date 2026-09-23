@@ -75,7 +75,18 @@ Route::view('operating-agreement', 'pages.operating-agreement')->name('operating
 
 // Compliance & Tax
 Route::view('sales-tax-registration', 'pages.sales-tax-registration')->name('sales-tax-registration');
+
+// Paths from the previous product that Google still indexes and that old ads
+// still point at (32 ads were disapproved for "destination not working" on
+// /sales-tax). Permanent redirects to the pages that replaced them.
+Route::permanentRedirect('sales-tax', '/sales-tax-registration');
+Route::permanentRedirect('sales-tax/pricing', '/sales-tax-registration');
+Route::permanentRedirect('formation/pricing', '/llc');
+Route::permanentRedirect('pricing', '/sales-tax-registration');
 Route::view('resale-certificates', 'pages.resale-certificates')->name('resale-certificates');
+Route::get('resale-certificates/{state}', [\App\Http\Controllers\ResaleStateLandingController::class, 'show'])
+    ->where('state', '[a-z-]{2,}')
+    ->name('resale-certificates.state');
 
 // Payment Protection (lien sub-pages)
 Route::get('liens/lien-waivers', [\App\Http\Controllers\WaiverLandingController::class, 'index'])->name('liens.lien-waivers');
@@ -89,6 +100,12 @@ Route::view('liens/notice-of-intent-to-lien', 'pages.liens.notice-of-intent-to-l
 Route::view('liens/lien-release', 'pages.liens.lien-release')->name('liens.lien-release');
 Route::view('liens/payment-demand-letter', 'pages.liens.payment-demand-letter')->name('liens.payment-demand-letter');
 Route::view('liens/pricing', 'pages.liens.pricing')->name('liens.pricing');
+
+// Mechanics lien rules by state ("/liens/texas"). Registered after the fixed
+// lien slugs above so those always win; two-letter codes 301 to the slug.
+Route::get('liens/{state}', [\App\Http\Controllers\LienStateLandingController::class, 'show'])
+    ->where('state', '[a-z-]{2,}')
+    ->name('liens.state');
 
 // Google Ads landing pages for the waiver generator: the state page's promise
 // with no site chrome and the starter above the fold (noindex).

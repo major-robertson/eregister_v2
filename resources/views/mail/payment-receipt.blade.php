@@ -6,7 +6,12 @@ Thank you for your payment! Here's your receipt.
 <x-mail::table>
 | Item | Amount |
 |:-----|-------:|
-| {{ $itemDescription }} | {{ $amount }} |
+@foreach ($lines as $line)
+| {{ $line['label'] }} | {{ $line['amount'] }} |
+@endforeach
+@if (count($lines) > 1)
+| **Total** | **{{ $amount }}** |
+@endif
 </x-mail::table>
 
 **Date:** {{ $paidAt }}<br>

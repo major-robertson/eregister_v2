@@ -60,12 +60,21 @@
     // the pricing/subscribe page for signed-in users. Guests carry the
     // product (and the ad's ?state=) to /register so the sign-up flow knows
     // what to open without depending on the Referer header.
+    $adState = array_key_exists(strtoupper((string) request()->query('state', '')), config('states')) ? strtoupper(request()->query('state')) : null;
     $startUrl = auth()->check()
         ? route('resale-cert.dashboard')
         : route('register', array_filter([
             'product' => 'resale-cert',
-            'state' => array_key_exists(strtoupper((string) request()->query('state', '')), config('states')) ? strtoupper(request()->query('state')) : null,
+            'state' => $adState,
         ]));
+    // The other two doors: a certificate needs a permit number, so a
+    // business without one registers first; "not sure" starts there too.
+    $registerUrl = auth()->check()
+        ? route('sales-tax.registrations.start')
+        : route('register', array_filter(['product' => 'sales-tax', 'state' => $adState]));
+    $notSureUrl = auth()->check()
+        ? route('sales-tax.registrations.start')
+        : route('register', array_filter(['product' => 'sales-tax', 'intent' => 'not-sure', 'state' => $adState]));
 
     // Live price from the catalog (ResaleCertPriceSeeder), fallback if unseeded.
     try {
@@ -120,6 +129,11 @@
                 </div>
                 <p class="rise-3 mt-4 text-sm text-white/55">
                     {{ $priceAmount }}/year flat &middot; No per-certificate fees &middot; Cancel anytime
+                </p>
+                <p class="rise-3 mt-3 text-sm text-white/60" data-front-door>
+                    No sales tax permit yet?
+                    <a href="{{ $registerUrl }}" class="underline decoration-white/30 underline-offset-2 transition hover:text-white">Register for one first</a>, then generate certificates.
+                    <a href="{{ $notSureUrl }}" class="underline decoration-white/30 underline-offset-2 transition hover:text-white">Not sure what you need?</a>
                 </p>
 
                 {{-- trust row --}}

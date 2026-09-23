@@ -2,6 +2,7 @@
 
 namespace App\Domains\SalesTax\Services;
 
+use App\Domains\Forms\Models\FormApplication;
 use App\Enums\PaymentStatus;
 use App\Mail\PaymentReceipt;
 use App\Models\Payment;
@@ -59,17 +60,12 @@ class RegistrationPaymentService
 
             $application = $payment->purchasable;
 
-            // Paying for the registration submits + locks the application,
-            // matching the existing stub-checkout behavior. The admin kanban
-            // and blocked-state logic key off the application's paid_at.
-            if ($application && ! $application->isLocked()) {
-                $application->update([
-                    'paid_at' => now(),
-                    'status' => 'submitted',
-                    'submitted_at' => now(),
-                    'locked_at' => now(),
-                    'stripe_payment_intent_id' => $payment->stripe_payment_intent_id,
-                ]);
+            if ($application) {
+                $this->applyPayment(
+                    $application,
+                    $payment->stripe_payment_intent_id,
+                    (bool) ($payment->meta['rush'] ?? false),
+                );
             }
         });
 
@@ -99,6 +95,46 @@ class RegistrationPaymentService
                 Mail::to($user)->queue(new PaymentReceipt($payment));
             });
         });
+    }
+
+    /**
+     * What a successful payment does to the application. The admin board and
+     * the blocked-state logic key off `paid_at`.
+     *
+     * Pay-first types (sales tax) are marked paid and stay open: the customer
+     * answers the questions next and the wizard's submit locks the
+     * application. A draft that already finished the questions (review
+     * phase, every state complete: pay-at-end drafts from before the order
+     * screen) is locked here, so nothing waits on a customer with nothing
+     * left to answer. Pay-at-end types keep paid + submitted + locked in one
+     * step.
+     */
+    public function applyPayment(FormApplication $application, ?string $paymentIntentId, bool $rush): void
+    {
+        if ($application->isLocked()) {
+            return;
+        }
+
+        $attributes = [
+            'paid_at' => now(),
+            'stripe_payment_intent_id' => $paymentIntentId,
+        ];
+
+        if ($rush && $application->rush_requested_at === null) {
+            $attributes['rush_requested_at'] = now();
+        }
+
+        $finished = $application->isInReviewPhase() && $application->allStatesComplete();
+
+        if (! $application->paysFirst() || $finished) {
+            $attributes += [
+                'status' => 'submitted',
+                'submitted_at' => now(),
+                'locked_at' => now(),
+            ];
+        }
+
+        $application->update($attributes);
     }
 
     private function shouldFlagForReview(Payment $payment, StripeObject $stripePaymentIntent): bool

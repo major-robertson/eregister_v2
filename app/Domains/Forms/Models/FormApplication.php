@@ -40,6 +40,7 @@ class FormApplication extends Model
         'core_data_hash',
         'created_by_user_id',
         'paid_at',
+        'rush_requested_at',
         'submitted_at',
         'locked_at',
         'stripe_checkout_session_id',
@@ -76,6 +77,7 @@ class FormApplication extends Model
         'core_data_hash',
         'created_by_user_id',
         'paid_at',
+        'rush_requested_at',
         'submitted_at',
         'locked_at',
         'stripe_checkout_session_id',
@@ -92,6 +94,7 @@ class FormApplication extends Model
             'current_state_index' => 'integer',
             'definition_version' => 'integer',
             'paid_at' => 'datetime',
+            'rush_requested_at' => 'datetime',
             'submitted_at' => 'datetime',
             'locked_at' => 'datetime',
         ];
@@ -155,6 +158,35 @@ class FormApplication extends Model
     public function isLocked(): bool
     {
         return $this->locked_at !== null || $this->status === 'submitted';
+    }
+
+    /**
+     * Whether this form type takes payment right after state selection and
+     * before the questions (config form_types.*.pay_first). The wizard is
+     * then gated on `paid_at` and its submit locks the application without
+     * a second checkout.
+     */
+    public function paysFirst(): bool
+    {
+        if (! \App\Domains\Forms\FormTypeConfig::exists($this->form_type)) {
+            return false;
+        }
+
+        return (bool) (\App\Domains\Forms\FormTypeConfig::get($this->form_type)['pay_first'] ?? false);
+    }
+
+    /**
+     * Paid, but the customer has not sent the questions in yet. The admin
+     * board flags these so nobody starts a filing on incomplete answers.
+     */
+    public function isAwaitingAnswers(): bool
+    {
+        return $this->isPaid() && ! $this->isLocked();
+    }
+
+    public function isRush(): bool
+    {
+        return $this->rush_requested_at !== null;
     }
 
     public function isInCorePhase(): bool
@@ -244,6 +276,12 @@ class FormApplication extends Model
         // form-runner detail route.
         if ($this->isLocked() && $workspace?->confirmationRouteName) {
             return $workspace->confirmationRouteFor($this);
+        }
+
+        // Pay-first types resume an unpaid draft at the order screen; the
+        // questions open once it is paid.
+        if ($this->paysFirst() && ! $this->isPaid() && $workspace?->checkoutRouteName) {
+            return route($workspace->checkoutRouteName, $this);
         }
 
         return $workspace?->applicationRouteFor($this);

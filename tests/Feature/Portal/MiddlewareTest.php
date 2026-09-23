@@ -94,7 +94,7 @@ describe('EnsureBusinessProfileComplete Middleware', function () {
 });
 
 describe('EnsureHasAccess Middleware', function () {
-    it('allows access to one-time application even when not paid', function () {
+    it('sends an unpaid sales tax application to its order screen (payment comes before the questions)', function () {
         $user = User::factory()->create();
         $business = Business::create([
             'name' => 'Test Business',
@@ -123,7 +123,7 @@ describe('EnsureHasAccess Middleware', function () {
         $this->actingAs($user)
             ->withSession(['current_business_id' => $business->id])
             ->get("/portal/sales-tax/registrations/{$application->id}")
-            ->assertOk();
+            ->assertRedirect(route('sales-tax.registrations.checkout', $application));
     });
 
     it('allows access when one-time application is paid', function () {

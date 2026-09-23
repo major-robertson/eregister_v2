@@ -82,7 +82,23 @@
                     <div>
                         <dt class="text-xs uppercase tracking-wide text-text-secondary">Submitted by Customer</dt>
                         <dd class="mt-1 text-sm text-text-primary">
-                            {{ $app?->submitted_at?->eastern()->format('M j, Y g:ia') ?? '—' }}
+                            @if ($app?->submitted_at)
+                                {{ $app->submitted_at->eastern()->format('M j, Y g:ia') }}
+                            @elseif ($app?->isAwaitingAnswers())
+                                <flux:badge size="sm" color="amber">Not yet: still answering the questions</flux:badge>
+                            @else
+                                —
+                            @endif
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-text-secondary">Processing</dt>
+                        <dd class="mt-1 text-sm text-text-primary">
+                            @if ($app?->isRush())
+                                <flux:badge size="sm" color="red">Rush: file within 2 business days</flux:badge>
+                            @else
+                                Standard (5 business days)
+                            @endif
                         </dd>
                     </div>
                 </dl>

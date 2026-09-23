@@ -29,8 +29,10 @@ class FormApplicationPolicy
 
     /**
      * Determine if the user can start checkout for the application.
-     * The application must be unlocked (not already paid/submitted), owned
-     * by the user's business, and have every selected state completed.
+     * The application must be unlocked (not already submitted) and owned by
+     * the user's business. Pay-first form types order before the questions,
+     * so they only need a state; pay-at-end types must have every selected
+     * state completed.
      */
     public function checkout(User $user, FormApplication $application): bool
     {
@@ -40,6 +42,10 @@ class FormApplicationPolicy
 
         if (! $user->belongsToBusiness($application->business)) {
             return false;
+        }
+
+        if ($application->paysFirst()) {
+            return $application->stateCount() > 0;
         }
 
         return $application->allStatesComplete();

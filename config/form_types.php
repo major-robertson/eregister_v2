@@ -4,6 +4,10 @@ return [
     'sales_tax_permit' => [
         'name' => 'Sales & Use Tax Permit',
         'billing_type' => 'one_time_per_state', // qty = state count
+        // Order first: state selection -> order screen (rush option) -> pay ->
+        // the questions. The wizard is gated on paid_at and its submit locks
+        // the application; there is no checkout at the end.
+        'pay_first' => true,
         'stripe_price_id' => env('STRIPE_PRICE_SALES_TAX'),
         'state_mode' => 'multi', // multi, single, none
         'max_states' => null,

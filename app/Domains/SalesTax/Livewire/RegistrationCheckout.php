@@ -17,19 +17,42 @@ use Livewire\Component;
 use Stripe\StripeClient;
 
 /**
- * Sales & Use Tax permit registration checkout.
+ * Sales & Use Tax permit registration: order screen + checkout.
  *
- * One payment per application = $199 x number of selected states, charged
- * via an inline-amount Stripe PaymentIntent (mirrors the Lien FilingCheckout
- * pattern). The amount is recomputed on every entry so a state-count change
- * between starting checkout and paying is reconciled against the open
- * PaymentIntent.
+ * Two screens on one URL. `order` (the default) lists the states, offers
+ * rush processing and shows the total; "Continue to payment" stamps the
+ * rush choice on the application and reloads with ?step=pay. `pay` charges
+ * $199 x selected states (+ $99 rush) through an inline-amount Stripe
+ * PaymentIntent (mirrors the Lien FilingCheckout pattern). The amount is
+ * recomputed on every entry so a state-count or rush change between
+ * starting checkout and paying is reconciled against the open PaymentIntent.
+ *
+ * The pay step is a full page load rather than a Livewire step switch: the
+ * Payment Element's scripts are @push'ed by the view and only reach the
+ * layout on the initial render.
+ *
+ * Payment comes BEFORE the questions (form_types.sales_tax_permit.pay_first):
+ * RegistrationPaymentService::applyPayment marks the application paid and
+ * leaves it open for the wizard. Drafts that already finished the questions
+ * (pay-at-end drafts from before the order screen) skip the order step and
+ * are locked on payment.
  */
 class RegistrationCheckout extends Component
 {
     public Business $business;
 
     public FormApplication $application;
+
+    /** 'order' (states, rush choice, total) or 'pay' (card form). */
+    public string $step = 'order';
+
+    /** 'standard' (filed within 5 business days) or 'rush' (2 business days, +$99). */
+    public string $processing = 'standard';
+
+    public int $perStateCents = 0;
+
+    /** Null when no rush price is configured; the option is then not offered. */
+    public ?int $rushCents = null;
 
     public string $paymentIntentId = '';
 
@@ -57,10 +80,11 @@ class RegistrationCheckout extends Component
             abort(403);
         }
 
-        // Already paid (e.g. browser back button) - send to the confirmation
-        // page, which renders success without re-charging.
+        // Already paid (browser back button, refresh): a submitted application
+        // shows its receipt, an open one continues with the questions. Nothing
+        // is charged twice.
         if ($application->isPaid()) {
-            $this->redirect(route('sales-tax.registrations.payment-confirmation', $application));
+            $this->redirect($this->afterPaymentUrl($application));
 
             return;
         }
@@ -70,21 +94,93 @@ class RegistrationCheckout extends Component
         $this->business = $business;
         $this->application = $application;
 
-        $this->initializePayment();
+        $this->perStateCents = Price::resolve('tax', 'sales_tax_permit', 'per_state', 'one_time')->amount_cents;
+        $this->rushCents = $this->resolveRushCents();
+        $this->stateCount = $application->stateCount();
+        $this->processing = $application->isRush() && $this->rushCents !== null ? 'rush' : 'standard';
+        $this->amountCents = $this->expectedAmount();
+
+        $this->step = $this->showsOrderScreen() && request()->query('step') !== 'pay' ? 'order' : 'pay';
+
+        if ($this->step === 'pay') {
+            $this->initializePayment();
+        }
+    }
+
+    /**
+     * The order screen belongs to the pay-first flow. A draft that already
+     * answered everything (the wizard sent it here) has nothing left to
+     * decide and goes straight to the card form.
+     */
+    protected function showsOrderScreen(): bool
+    {
+        return $this->application->paysFirst() && ! $this->questionsFinished();
+    }
+
+    protected function questionsFinished(): bool
+    {
+        return $this->application->isInReviewPhase() && $this->application->allStatesComplete();
+    }
+
+    public function updatedProcessing(string $value): void
+    {
+        $this->processing = $value === 'rush' && $this->rushCents !== null ? 'rush' : 'standard';
+        $this->amountCents = $this->expectedAmount();
+    }
+
+    /**
+     * Stamp the rush choice on the application (the admin board and the
+     * receipt read it) and reload into the payment step.
+     */
+    public function continueToPayment(): void
+    {
+        $this->application->update([
+            'rush_requested_at' => $this->wantsRush() ? ($this->application->rush_requested_at ?? now()) : null,
+        ]);
+
+        $this->redirect(route('sales-tax.registrations.checkout', [
+            'application' => $this->application,
+            'step' => 'pay',
+        ]));
+    }
+
+    protected function wantsRush(): bool
+    {
+        return $this->processing === 'rush' && $this->rushCents !== null;
+    }
+
+    protected function expectedAmount(): int
+    {
+        return $this->perStateCents * $this->stateCount + ($this->wantsRush() ? $this->rushCents : 0);
+    }
+
+    protected function resolveRushCents(): ?int
+    {
+        try {
+            return Price::resolve('tax', 'sales_tax_permit', 'rush', 'one_time')->amount_cents;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    protected function afterPaymentUrl(FormApplication $application): string
+    {
+        return $application->isLocked()
+            ? route('sales-tax.registrations.payment-confirmation', $application)
+            : route('sales-tax.registrations.show', $application);
     }
 
     protected function initializePayment(): void
     {
-        // 1. Live pricing: $199 per selected state. Always recompute from the
-        //    application; never trust a stale stored figure.
-        $perStateCents = Price::resolve('tax', 'sales_tax_permit', 'per_state', 'one_time')->amount_cents;
-        $this->stateCount = $this->application->stateCount();
-        $expected = $perStateCents * $this->stateCount;
+        // 1. Live pricing: $199 per selected state (+ rush). Always recompute
+        //    from the application; never trust a stale stored figure.
+        $expected = $this->expectedAmount();
         $this->amountCents = $expected;
+        $meta = $this->paymentMeta();
 
-        // Stub for keyless local dev: mark paid + submit without Stripe.
+        // Stub for keyless local dev: record the payment without Stripe.
         if (blank(config('cashier.secret'))) {
-            $this->stubCheckout($expected);
+            $this->stubCheckout($expected, $meta);
 
             return;
         }
@@ -93,7 +189,7 @@ class RegistrationCheckout extends Component
         $this->business->createOrGetStripeCustomer();
 
         // 3. Find latest retryable payment row (locked for concurrency).
-        $payment = DB::transaction(function () use ($expected) {
+        $payment = DB::transaction(function () use ($expected, $meta) {
             $payment = Payment::findRetryableForWithLock($this->application);
 
             if (! $payment) {
@@ -108,6 +204,7 @@ class RegistrationCheckout extends Component
                     'status' => PaymentStatus::Initiated,
                     'provider' => 'stripe',
                     'livemode' => Payment::isLiveMode(),
+                    'meta' => $meta,
                 ]);
             }
 
@@ -130,17 +227,18 @@ class RegistrationCheckout extends Component
                 return;
             }
 
-            // Reconcile a stale amount (state count changed since the PI was
-            // created). Stripe allows updating an open PI's amount, so the
-            // same client_secret keeps working.
+            // Reconcile a stale amount (state count or rush changed since the
+            // PI was created). Stripe allows updating an open PI's amount, so
+            // the same client_secret keeps working.
             if ((int) $pi->amount !== $expected) {
                 $pi = $stripe->paymentIntents->update($pi->id, [
                     'amount' => $expected,
                     'metadata' => $metadata,
                 ]);
-                $payment->update(['amount_cents' => $expected]);
-            } elseif ($payment->amount_cents !== $expected) {
-                $payment->update(['amount_cents' => $expected]);
+            }
+
+            if ($payment->amount_cents !== $expected || $payment->meta !== $meta) {
+                $payment->update(['amount_cents' => $expected, 'meta' => $meta]);
             }
 
             $this->amountCents = $payment->fresh()->amount_cents;
@@ -152,8 +250,8 @@ class RegistrationCheckout extends Component
         }
 
         // 5. Keep the stored amount aligned, then create a new PaymentIntent.
-        if ($payment->amount_cents !== $expected) {
-            $payment->update(['amount_cents' => $expected]);
+        if ($payment->amount_cents !== $expected || $payment->meta !== $meta) {
+            $payment->update(['amount_cents' => $expected, 'meta' => $meta]);
         }
 
         $pi = $stripe->paymentIntents->create([
@@ -182,6 +280,22 @@ class RegistrationCheckout extends Component
     }
 
     /**
+     * The order breakdown, recorded on the payment row so the receipt and
+     * the admin side can itemize it without re-deriving prices later.
+     *
+     * @return array{state_count: int, per_state_cents: int, rush: bool, rush_cents: int}
+     */
+    protected function paymentMeta(): array
+    {
+        return [
+            'state_count' => $this->stateCount,
+            'per_state_cents' => $this->perStateCents,
+            'rush' => $this->wantsRush(),
+            'rush_cents' => $this->wantsRush() ? (int) $this->rushCents : 0,
+        ];
+    }
+
+    /**
      * @return array<string, int|string>
      */
     protected function stripeMetadata(Payment $payment): array
@@ -192,18 +306,22 @@ class RegistrationCheckout extends Component
             'payment_kind' => 'sales_tax_registration',
             'sales_tax_application_id' => $this->application->id,
             'state_count' => $this->stateCount,
+            'rush' => $this->wantsRush() ? 1 : 0,
         ];
     }
 
     /**
-     * Keyless local-dev path: record a succeeded payment and submit + lock
-     * the application without touching Stripe.
+     * Keyless local-dev path: record a succeeded payment and apply it to the
+     * application (paid and open for the questions, or locked when the
+     * questions were already finished) without touching Stripe.
+     *
+     * @param  array{state_count: int, per_state_cents: int, rush: bool, rush_cents: int}  $meta
      */
-    protected function stubCheckout(int $expected): void
+    protected function stubCheckout(int $expected, array $meta): void
     {
         $price = Price::resolve('tax', 'sales_tax_permit', 'per_state', 'one_time');
 
-        DB::transaction(function () use ($expected, $price) {
+        DB::transaction(function () use ($expected, $price, $meta) {
             $payment = Payment::create([
                 'purchasable_type' => $this->application->getMorphClass(),
                 'purchasable_id' => $this->application->id,
@@ -215,28 +333,37 @@ class RegistrationCheckout extends Component
                 'provider' => 'stub',
                 'livemode' => false,
                 'paid_at' => now(),
+                'meta' => $meta,
             ]);
 
-            $this->application->update([
-                'paid_at' => now(),
-                'status' => 'submitted',
-                'submitted_at' => now(),
-                'locked_at' => now(),
-            ]);
+            app(RegistrationPaymentService::class)->applyPayment($this->application, null, $meta['rush']);
 
             $this->paymentId = $payment->id;
         });
 
-        session()->flash('success', 'Your application has been submitted successfully.');
+        session()->flash('success', $this->application->isLocked()
+            ? 'Your application has been submitted successfully.'
+            : 'Payment received. Next, answer the questions so we can prepare your filing.');
 
         $this->redirect(route('sales-tax.registrations.payment-confirmation', $this->application));
     }
 
     public function render(): View
     {
+        $stateNames = collect($this->application->selected_states ?? [])
+            ->mapWithKeys(fn (string $code) => [$code => config("states.{$code}", $code)])
+            ->all();
+
         return view('livewire.sales-tax.registration-checkout', [
+            'stateNames' => $stateNames,
+            'perStateFormatted' => '$'.number_format($this->perStateCents / 100, 2),
+            'statesSubtotal' => '$'.number_format($this->perStateCents * $this->stateCount / 100, 2),
+            'rushFormatted' => $this->rushCents !== null ? '$'.number_format($this->rushCents / 100, 2) : null,
             'formattedPrice' => '$'.number_format($this->amountCents / 100, 2),
+            'showsOrderLink' => $this->showsOrderScreen(),
             'returnUrl' => route('sales-tax.registrations.payment-confirmation', $this->application),
-        ])->layout('layouts.minimal', ['title' => 'Checkout']);
+            'orderUrl' => route('sales-tax.registrations.checkout', $this->application),
+            'changeStatesUrl' => route('sales-tax.registrations.start'),
+        ])->layout('layouts.minimal', ['title' => $this->step === 'pay' ? 'Checkout' : 'Your order']);
     }
 }

@@ -91,7 +91,7 @@ class SalesTaxBoard extends Component
                 ->whereNotNull('paid_at')
                 ->whereIn('form_type', $formTypes))
             ->with([
-                'application:id,business_id,form_type,created_by_user_id,paid_at,selected_states',
+                'application:id,business_id,form_type,created_by_user_id,paid_at,submitted_at,locked_at,status,rush_requested_at,selected_states',
                 'application.business:id,name',
                 // `name` is an accessor on User composed from first_name + last_name,
                 // so we load both columns explicitly here.

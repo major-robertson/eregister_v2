@@ -86,11 +86,18 @@
     // variant and the state (from the ad's ?state=TX) travel to /register
     // in the query string, so the sign-up flow knows what to open without
     // depending on the Referer header.
+    $adState = array_key_exists(strtoupper((string) request()->query('state', '')), config('states')) ? strtoupper(request()->query('state')) : null;
     $startUrl = route('register', array_filter([
         'product' => 'sales-tax',
         'intent' => preg_match('/^[a-z0-9-]{1,40}$/', (string) request()->query('intent', '')) ? request()->query('intent') : null,
-        'state' => array_key_exists(strtoupper((string) request()->query('state', '')), config('states')) ? strtoupper(request()->query('state')) : null,
+        'state' => $adState,
     ]));
+    // The other two doors: a registered business that only needs certificates,
+    // and a visitor who does not know yet (registration is the safe default,
+    // a certificate needs a permit number). A permit held in one state is
+    // never a reason to stop offering registration in another.
+    $certificateUrl = route('register', array_filter(['product' => 'resale-cert', 'state' => $adState]));
+    $notSureUrl = route('register', array_filter(['product' => 'sales-tax', 'intent' => 'not-sure', 'state' => $adState]));
 
     // Live price from the catalog (PriceSeeder), fallback if unseeded.
     try {
@@ -137,6 +144,12 @@
                         Start my registration
                     </flux:button>
                 </div>
+                <p class="rise-3 mt-4 text-sm text-white/60" data-front-door>
+                    {{ $price }} per state, one or several states, nothing to pay until you order.
+                    Already registered?
+                    <a href="{{ $certificateUrl }}" class="underline decoration-white/30 underline-offset-2 transition hover:text-white">Create a resale certificate</a>.
+                    <a href="{{ $notSureUrl }}" class="underline decoration-white/30 underline-offset-2 transition hover:text-white">Not sure what you need?</a>
+                </p>
 
                 {{-- trust row --}}
                 <div class="rise-3 mt-12 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm text-white/60">

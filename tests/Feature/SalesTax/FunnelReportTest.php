@@ -103,6 +103,15 @@ it('counts the funnel for the period and the one before it, with paid registrati
     ]);
     // This period: a draft that has not paid.
     reportedRegistration($this->business, $adsUser, ['NY'], ['created_at' => now()->subDays(3)]);
+    // This period: the registration customer went on to the generator.
+    \Illuminate\Support\Facades\DB::table('subscriptions')->insert([
+        'business_id' => $this->business->id,
+        'type' => config('resale_cert.subscription_type'),
+        'stripe_id' => 'sub_report_test',
+        'stripe_status' => 'active',
+        'created_at' => now()->subDay(),
+        'updated_at' => now()->subDay(),
+    ]);
 
     // Previous period: one organic paid registration.
     $earlier = reportedRegistration($this->business, $organicUser, ['CA'], [
@@ -134,7 +143,9 @@ it('counts the funnel for the period and the one before it, with paid registrati
         'rush' => 1,
         'revenue' => 497,
         'submitted' => 1,
-        'resale_subscriptions' => 0,
+        'resale_subscriptions' => 1,
+        'registration_subscribers' => 1,
+        'certificates_generated' => 0,
     ])
         ->and($report['previous']['metrics'])->toMatchArray([
             'signups' => 1,

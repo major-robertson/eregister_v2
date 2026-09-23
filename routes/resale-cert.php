@@ -43,6 +43,11 @@ Route::middleware(['auth', 'business.current', 'business.complete'])
         Route::get('/checkout', SubscriptionCheckout::class)
             ->name('resale-cert.checkout');
 
+        // A sample certificate on the official form, for customers deciding
+        // whether to subscribe (fixed sample data, nothing saved).
+        Route::get('/sample/{state}', \App\Domains\ResaleCert\Http\Controllers\SampleCertificateController::class)
+            ->name('resale-cert.sample');
+
         Route::get('/payment-confirmation', [SubscriptionPaymentController::class, 'confirmation'])
             ->name('resale-cert.payment-confirmation');
 

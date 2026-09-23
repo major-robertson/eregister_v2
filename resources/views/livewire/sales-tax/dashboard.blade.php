@@ -125,18 +125,34 @@
                         </div>
 
                         @unless ($this->hasResaleCertSubscription)
+                            @php($approved = $this->approvedStateNames)
                             <div class="mt-4 rounded-lg bg-blue-500/5 p-4">
-                                <p class="text-sm text-text-primary">
-                                    <span class="font-medium">Skip the paperwork:</span>
-                                    the Resale Certificate Generator fills your certificates automatically —
-                                    every vendor, every state, e-signed and tracked for expiration. Unlimited
-                                    certificates for $297/year.
-                                </p>
-                                <div class="mt-3">
-                                    <x-ui.action-button href="{{ route('resale-cert.dashboard') }}" wire:navigate>
-                                        Generate Certificates Automatically
-                                    </x-ui.action-button>
-                                </div>
+                                @if ($approved !== [])
+                                    {{-- The permit exists: the certificates are the natural next step. --}}
+                                    <p class="text-sm text-text-primary">
+                                        <span class="font-medium">Your {{ implode(' and ', $approved) }} {{ count($approved) === 1 ? 'permit is' : 'permits are' }} approved. Resale certificates are next.</span>
+                                        When you buy inventory, vendors will ask for one. We generate them from the
+                                        business details you already gave us: the official form for every state,
+                                        signed, with vendors saved and expirations tracked. Unlimited certificates for $297 a year.
+                                    </p>
+                                    <div class="mt-3">
+                                        <x-ui.action-button href="{{ route('resale-cert.dashboard') }}" wire:navigate>
+                                            Create my first certificate
+                                        </x-ui.action-button>
+                                    </div>
+                                @else
+                                    <p class="text-sm text-text-primary">
+                                        <span class="font-medium">Skip the paperwork:</span>
+                                        the Resale Certificate Generator fills your certificates automatically —
+                                        every vendor, every state, e-signed and tracked for expiration. Unlimited
+                                        certificates for $297/year.
+                                    </p>
+                                    <div class="mt-3">
+                                        <x-ui.action-button href="{{ route('resale-cert.dashboard') }}" wire:navigate>
+                                            Generate Certificates Automatically
+                                        </x-ui.action-button>
+                                    </div>
+                                @endif
                             </div>
                         @endunless
                     </div>

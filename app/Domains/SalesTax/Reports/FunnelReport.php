@@ -63,6 +63,8 @@ class FunnelReport
             'revenue' => 'Registration revenue ($)',
             'submitted' => 'Questions submitted',
             'resale_subscriptions' => 'Resale certificate subscriptions started',
+            'registration_subscribers' => '  of which by businesses with a paid registration',
+            'certificates_generated' => 'Resale certificates generated',
         ];
     }
 
@@ -116,6 +118,19 @@ class FunnelReport
                 ->count(),
             'resale_subscriptions' => DB::table('subscriptions')
                 ->where('type', config('resale_cert.subscription_type'))
+                ->whereBetween('created_at', [$from, $to])
+                ->count(),
+            // Registration customers who went on to the generator: the
+            // registration -> subscriber path the offer is meant to grow.
+            'registration_subscribers' => DB::table('subscriptions')
+                ->where('type', config('resale_cert.subscription_type'))
+                ->whereBetween('created_at', [$from, $to])
+                ->whereIn('business_id', FormApplication::query()
+                    ->where('form_type', 'sales_tax_permit')
+                    ->whereNotNull('paid_at')
+                    ->select('business_id'))
+                ->count(),
+            'certificates_generated' => DB::table('resale_certificates')
                 ->whereBetween('created_at', [$from, $to])
                 ->count(),
         ];

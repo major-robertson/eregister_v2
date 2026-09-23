@@ -26,6 +26,18 @@
                     </div>
 
                     <div>
+                        <flux:heading size="lg">Signed, vendor-ready resale certificates in minutes</flux:heading>
+                        <flux:text class="mt-1 text-zinc-500">
+                            Enter your business once. Each certificate comes out on the official state form with your signature applied.
+                        </flux:text>
+                        <flux:text class="mt-2">
+                            <a href="{{ route('resale-cert.sample', $this->sampleState) }}" target="_blank" rel="noopener" class="font-medium text-blue-600 underline underline-offset-2">
+                                See a sample certificate ({{ config('states.'.$this->sampleState, $this->sampleState) }})
+                            </a>
+                        </flux:text>
+                    </div>
+
+                    <div>
                         <flux:heading size="xl">$297<span class="text-base font-normal text-zinc-500">/year</span></flux:heading>
                         <flux:text class="text-zinc-500">Unlimited certificates · Less than $25/month</flux:text>
                     </div>

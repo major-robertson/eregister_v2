@@ -3,6 +3,8 @@
 namespace App\Domains\SalesTax\Livewire;
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Forms\Enums\FormApplicationStateAdminStatus;
+use App\Domains\Forms\Models\FormApplicationState;
 use App\Domains\Forms\Models\SalesTaxRegistration;
 use App\Support\Workspaces\Workspace;
 use App\Support\Workspaces\WorkspaceRegistry;
@@ -101,6 +103,30 @@ class Dashboard extends Component
     public function hasResaleCertSubscription(): bool
     {
         return $this->business->subscribed(config('resale_cert.subscription_type'));
+    }
+
+    /**
+     * States whose registration the state has approved: the customer holds
+     * the permit number now, so the resale certificate offer changes from
+     * "skip the paperwork" to "your permit is approved, certificates are next".
+     *
+     * @return list<string>
+     */
+    #[Computed]
+    public function approvedStateNames(): array
+    {
+        return FormApplicationState::query()
+            ->where('current_admin_status', FormApplicationStateAdminStatus::Approved->value)
+            ->whereHas('application', fn ($query) => $query
+                ->where('business_id', $this->business->id)
+                ->where('form_type', 'sales_tax_permit')
+                ->whereNotNull('paid_at'))
+            ->pluck('state_code')
+            ->unique()
+            ->sort()
+            ->map(fn (string $code) => config("states.{$code}", $code))
+            ->values()
+            ->all();
     }
 
     public function render(): View

@@ -86,6 +86,18 @@ class Dashboard extends Component
             ->get();
     }
 
+    /**
+     * The state whose sample certificate the pricing pitch links to: the
+     * business's own state when we have a form for it, otherwise Texas.
+     */
+    #[\Livewire\Attributes\Computed]
+    public function sampleState(): string
+    {
+        $state = strtoupper((string) (($this->business->business_address ?? [])['state'] ?? ''));
+
+        return $state !== '' && config()->has("resale_cert.states.{$state}") ? $state : 'TX';
+    }
+
     public function render(): View
     {
         return view('livewire.resale-cert.dashboard')

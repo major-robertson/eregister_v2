@@ -3,6 +3,7 @@
 namespace App\Domains\Forms\Models;
 
 use App\Domains\Forms\Enums\FormApplicationStateAdminStatus;
+use App\Domains\SalesTax\Services\PermitApprovedResaleOffer;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -108,6 +109,12 @@ class FormApplicationState extends Model
                 'current_admin_status_changed_at' => now(),
             ])->save();
         });
+
+        // The permit exists now, so this is the moment to offer the resale
+        // certificate generator (once per application, see the service).
+        if ($next === FormApplicationStateAdminStatus::Approved) {
+            app(PermitApprovedResaleOffer::class)->send($this);
+        }
     }
 
     /**

@@ -172,7 +172,7 @@ class OnboardingWizard extends Component
             // Lands on the resale dashboard, which shows the pricing card
             // one click from checkout for unsubscribed businesses.
             $redirectRoute = route('resale-cert.dashboard');
-        } elseif ($isFirstBusiness && $landingPath === '/sales-tax-registration') {
+        } elseif ($isFirstBusiness && ($landingPath === '/sales-tax-registration' || $landingPath === '/lp/sales-tax' || str_starts_with((string) $landingPath, '/lp/sales-tax/'))) {
             $redirectRoute = route('sales-tax.registrations.start');
         } elseif ($isFirstBusiness && $landingPath === '/llc') {
             $redirectRoute = route('formations.start', ['formType' => 'llc']);

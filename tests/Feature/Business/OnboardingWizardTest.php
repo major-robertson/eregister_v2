@@ -112,6 +112,42 @@ describe('OnboardingWizard', function () {
         }
     });
 
+    it('sends an ads-page resale certificate signup to the resale dashboard when the session intent is gone', function () {
+        $user = User::factory()->create(['signup_landing_path' => '/lp/resale-certificate/ca']);
+        $business = Business::create(['name' => 'Resale Ads Biz', 'legal_name' => 'Resale Ads Biz']);
+        $user->businesses()->attach($business->id, ['role' => 'owner']);
+
+        $this->actingAs($user)
+            ->withSession(['current_business_id' => $business->id]);
+
+        Livewire::test(OnboardingWizard::class)
+            ->set('businessAddress.line1', '1 Vendor Way')
+            ->set('businessAddress.city', 'Fresno')
+            ->set('businessAddress.state', 'CA')
+            ->set('businessAddress.zip', '93701')
+            ->call('complete')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('resale-cert.dashboard'));
+    });
+
+    it('sends an ads-page sales tax signup to the registration start when the session intent is gone', function () {
+        $user = User::factory()->create(['signup_landing_path' => '/lp/sales-tax/tx']);
+        $business = Business::create(['name' => 'Permit Ads Biz', 'legal_name' => 'Permit Ads Biz']);
+        $user->businesses()->attach($business->id, ['role' => 'owner']);
+
+        $this->actingAs($user)
+            ->withSession(['current_business_id' => $business->id]);
+
+        Livewire::test(OnboardingWizard::class)
+            ->set('businessAddress.line1', '2 Permit Place')
+            ->set('businessAddress.city', 'Dallas')
+            ->set('businessAddress.state', 'TX')
+            ->set('businessAddress.zip', '75201')
+            ->call('complete')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('sales-tax.registrations.start'));
+    });
+
     it('redirects to dashboard when user from liens adds second business', function () {
         $user = User::factory()->create(['signup_landing_path' => '/liens']);
 

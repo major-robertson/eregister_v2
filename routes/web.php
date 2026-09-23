@@ -75,6 +75,14 @@ Route::view('operating-agreement', 'pages.operating-agreement')->name('operating
 
 // Compliance & Tax
 Route::view('sales-tax-registration', 'pages.sales-tax-registration')->name('sales-tax-registration');
+
+// Paths from the previous product that Google still indexes and that old ads
+// still point at (32 ads were disapproved for "destination not working" on
+// /sales-tax). Permanent redirects to the pages that replaced them.
+Route::permanentRedirect('sales-tax', '/sales-tax-registration');
+Route::permanentRedirect('sales-tax/pricing', '/sales-tax-registration');
+Route::permanentRedirect('formation/pricing', '/llc');
+Route::permanentRedirect('pricing', '/sales-tax-registration');
 Route::view('resale-certificates', 'pages.resale-certificates')->name('resale-certificates');
 Route::get('resale-certificates/{state}', [\App\Http\Controllers\ResaleStateLandingController::class, 'show'])
     ->where('state', '[a-z-]{2,}')

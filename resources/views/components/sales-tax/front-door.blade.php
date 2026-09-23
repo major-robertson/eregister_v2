@@ -48,15 +48,22 @@
     <div class="mt-5 space-y-3">
         @foreach ($order as $i => $key)
             @php $door = $doors[$key]; $primary = $i === 0; @endphp
+            {{-- The whole card is the link. On phones a chevron marks it as a tap
+                 target and the button runs full width under the text; from sm up
+                 the button sits beside the text as before. --}}
             <a href="{{ $door['href'] }}" data-door="{{ $key }}"
-               class="block rounded-xl border p-4 transition {{ $primary ? 'border-amber-500 bg-amber-50 hover:bg-amber-100' : 'border-zinc-200 hover:border-zinc-400' }}">
+               class="block rounded-xl border p-4 transition {{ $primary ? 'border-amber-500 bg-amber-50 hover:bg-amber-100' : 'border-zinc-200 hover:border-zinc-400 hover:bg-zinc-50' }}">
                 <span class="flex items-start justify-between gap-4">
-                    <span>
+                    <span class="min-w-0 flex-1">
                         <span class="block font-semibold text-zinc-900">{{ $door['title'] }}</span>
                         <span class="mt-1 block text-sm text-zinc-600">{{ $door['text'] }}</span>
                     </span>
-                    <span class="mt-0.5 shrink-0 rounded-full {{ $primary ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-700' }} px-3 py-1.5 text-xs font-semibold">{{ $door['button'] }}</span>
+                    <span class="mt-0.5 hidden shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold sm:inline-block {{ $primary ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-700' }}">{{ $door['button'] }}</span>
+                    <span aria-hidden="true" class="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full sm:hidden {{ $primary ? 'bg-amber-200 text-amber-900' : 'bg-zinc-100 text-zinc-500' }}">
+                        <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+                    </span>
                 </span>
+                <span class="mt-3 block rounded-full px-3 py-2.5 text-center text-sm font-semibold sm:hidden {{ $primary ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-700' }}">{{ $door['button'] }}</span>
             </a>
         @endforeach
     </div>

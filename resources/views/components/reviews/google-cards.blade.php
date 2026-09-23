@@ -3,6 +3,11 @@
     quoted word for word. They are about the lien filing service, and the
     section says so.
 --}}
+@props([
+    // Lien pages talk to contractors; the sales tax pages pass a broader heading.
+    'heading' => 'What contractors say about eRegister',
+])
+
 @php
     $google = config('company.google_reviews');
     $reviews = $google['featured'] ?? [];
@@ -12,7 +17,7 @@
 <section id="reviews" {{ $attributes->class(['scroll-mt-6 bg-white py-16 lg:py-20']) }}>
     <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div class="text-center">
-            <h2 class="text-3xl font-bold text-zinc-900">What contractors say about eRegister</h2>
+            <h2 class="text-3xl font-bold text-zinc-900">{{ $heading }}</h2>
             <x-reviews.google-line class="mt-3 justify-center" />
         </div>
 

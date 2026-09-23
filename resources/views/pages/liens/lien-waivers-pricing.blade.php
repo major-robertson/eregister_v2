@@ -3,7 +3,6 @@
 @section('title', 'Lien Waiver Pricing | Free Generation, Affordable E-Signature')
 
 @section('meta')
-<link rel="canonical" href="{{ route('liens.lien-waivers.pricing') }}" />
 @php
     $freeSaves = config('lien_waivers.free_saved_waivers_per_month', 3);
     $monthlyPrice = number_format(config('lien_waivers.prices.monthly.amount_cents', 4900) / 100);

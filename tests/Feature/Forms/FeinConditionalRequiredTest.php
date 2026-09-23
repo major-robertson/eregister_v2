@@ -5,12 +5,11 @@ use Livewire\Livewire;
 use Tests\Feature\Forms\Support\RunnerTestFactory;
 
 /**
- * EIN/FEIN required-ness pivots on entity_type:
- *   - Sole proprietors may leave it blank (but it's still encouraged
- *     when they have one, because the engine persists it to the
- *     business profile).
- *   - Every other entity type must provide a valid EIN before
- *     advancing past the identity step.
+ * EIN/FEIN is optional for every entity type since EREG-54 (2026-09):
+ * 42% of applicants quit on the identity step, most within three
+ * minutes, and a new business often has no EIN yet. When one is given
+ * it must still be well-formed, and it is still persisted to the
+ * business profile.
  *
  * EIN lives in the identity step's Tax Identification group. The
  * factory below seeds every identity field, then lets each test
@@ -63,12 +62,20 @@ describe('FEIN conditional required behavior', function () {
             ->assertHasErrors(['coreData.fein']);
     });
 
-    it('requires an EIN from corporations', function () {
-        // Override the factory's default fein so the corporation case
-        // explicitly leaves it blank.
+    it('lets corporations and LLCs leave the EIN blank too', function (string $entityType) {
+        // Override the factory's default fein so the case explicitly
+        // leaves it blank.
         $application = RunnerTestFactory::make()
-            ->coreData(['entity_type' => 'corporation', 'fein' => null])
+            ->coreData(['entity_type' => $entityType, 'fein' => null])
             ->boot();
+
+        Livewire::test(MultiStateFormRunner::class, ['application' => $application])
+            ->call('nextStep')
+            ->assertHasNoErrors('coreData.fein');
+    })->with(['corporation', 'llc_single', 'llc_multi']);
+
+    it('rejects a malformed EIN from a corporation', function () {
+        $application = feinRunner('corporation', '12-34');
 
         Livewire::test(MultiStateFormRunner::class, ['application' => $application])
             ->call('nextStep')

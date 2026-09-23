@@ -136,30 +136,21 @@ return [
                     'when' => ['==' => [['var' => 'entity_type'], 'sole_prop']],
                     'sensitive' => true,
                 ],
+                // Optional for every entity type since 2026-09 (EREG-54): 42% of
+                // applicants quit on this step, most within three minutes, and
+                // a new business often has no EIN yet. The states that need it
+                // get it later; we chase it after payment.
                 'fein' => [
                     'type' => 'text',
                     'label' => 'Federal Employer Identification Number (FEIN/EIN)',
                     'rules' => [
                         'nullable',
                         'regex:/^\d{2}-?\d{7}$/',
-                        'required_unless:{prefix}entity_type,sole_prop',
                     ],
-                    'help' => 'Get an EIN at https://www.irs.gov/businesses/employer-identification-number',
-                    'help_when' => [
-                        [
-                            'condition' => ['==' => [['var' => 'entity_type'], 'sole_prop']],
-                            'help' => 'You may leave blank, but having an EIN is highly recommended. Get an EIN at https://www.irs.gov/businesses/employer-identification-number',
-                        ],
-                    ],
+                    'help' => "Don't have an EIN yet? Leave this blank and keep going. We will ask for it before we file, and we can help you get one.",
                     'placeholder' => '12-3456789',
                     'mask' => '99-9999999',
-                    'badge_when' => [
-                        [
-                            'condition' => ['==' => [['var' => 'entity_type'], 'sole_prop']],
-                            'label' => 'Optional',
-                            'color' => 'zinc',
-                        ],
-                    ],
+                    'badge' => ['label' => 'Optional', 'color' => 'zinc'],
                     'sensitive' => true,
                     'persist_to_business' => true,
                 ],
@@ -249,13 +240,18 @@ return [
                     'rules' => ['required', 'string', 'max:500'],
                     'placeholder' => 'Briefly describe what your business sells or does',
                 ],
+                // Optional since 2026-09 (EREG-54): nobody starting a business
+                // knows their 6-digit code, and 65 applicants a quarter stopped
+                // here. When it is blank, the specialist assigns the code from
+                // the business description above before filing.
                 'naics_code' => [
                     'type' => 'text',
                     'label' => 'NAICS Code',
-                    'rules' => ['required', 'digits:6'],
-                    'help' => 'Find your code here: https://www.census.gov/naics/',
+                    'rules' => ['nullable', 'digits:6'],
+                    'help' => 'Not sure? Leave this blank. We will pick the right code from your description before we file. If you know it, find it at https://www.census.gov/naics/',
                     'placeholder' => '123456',
                     'mask' => '999999',
+                    'badge' => ['label' => 'Optional', 'color' => 'zinc'],
                 ],
             ],
         ],

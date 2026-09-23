@@ -57,8 +57,15 @@
     ], 'resale-certificates');
 
     // Single source of truth for the CTA target — the dashboard doubles as
-    // the pricing/subscribe page for signed-in users.
-    $startUrl = auth()->check() ? route('resale-cert.dashboard') : route('register');
+    // the pricing/subscribe page for signed-in users. Guests carry the
+    // product (and the ad's ?state=) to /register so the sign-up flow knows
+    // what to open without depending on the Referer header.
+    $startUrl = auth()->check()
+        ? route('resale-cert.dashboard')
+        : route('register', array_filter([
+            'product' => 'resale-cert',
+            'state' => array_key_exists(strtoupper((string) request()->query('state', '')), config('states')) ? strtoupper(request()->query('state')) : null,
+        ]));
 
     // Live price from the catalog (ResaleCertPriceSeeder), fallback if unseeded.
     try {

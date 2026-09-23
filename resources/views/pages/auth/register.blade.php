@@ -6,6 +6,20 @@
     $waiverStateName = $forWaiver
         ? (\App\Domains\Lien\Waivers\WaiverStateRegistry::STATE_NAMES[$waiverIntent['state'] ?? ''] ?? null)
         : null;
+
+    // A visitor sent here by a product page (?product=sales-tax&state=TX)
+    // gets a heading about that product instead of a blank "Create an
+    // account". The waiver starter and invitations keep their own copy.
+    $intentProduct = (! $forWaiver && ($invitation ?? null) === null) ? ($signupIntent['product'] ?? null) : null;
+    $intentStateName = $intentProduct && ($signupIntent['state'] ?? null) ? config('states.'.$signupIntent['state']) : null;
+    $statePrefix = $intentStateName ? $intentStateName.' ' : '';
+    $productHeading = match ($intentProduct) {
+        'sales-tax' => "Create your account to start your {$statePrefix}sales tax registration",
+        'resale-cert' => "Create your account to generate {$statePrefix}resale certificates",
+        'llc' => 'Create your account to start your LLC',
+        'liens' => 'Create your account to protect your payment',
+        default => null,
+    };
 @endphp
 
 <x-layouts::auth title="Create an Account">
@@ -15,6 +29,12 @@
                 <p class="text-sm font-medium text-text-secondary">Step 1 of 3</p>
                 <flux:heading size="xl" class="mt-1">Create your free account to finish your {{ $waiverStateName ? $waiverStateName.' ' : '' }}lien waiver</flux:heading>
                 <flux:subheading>Free. No credit card.</flux:subheading>
+            </div>
+        @elseif ($productHeading)
+            <div class="flex w-full flex-col text-center">
+                <p class="text-sm font-medium text-text-secondary">Step 1 of 3</p>
+                <flux:heading size="xl" class="mt-1">{{ $productHeading }}</flux:heading>
+                <flux:subheading>Free to create. Nothing to pay until you order.</flux:subheading>
             </div>
         @else
             <x-auth-header :title="__('Create an account')" :description="__('Enter your details below to create your account')" />

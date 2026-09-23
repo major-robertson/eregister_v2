@@ -11,6 +11,7 @@ use App\Http\Responses\LoginResponse;
 use App\Http\Responses\RegisterResponse;
 use App\Http\Responses\TwoFactorLoginResponse;
 use App\Http\Responses\VerifyEmailResponse;
+use App\Support\SignupIntent;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -64,6 +65,11 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::twoFactorChallengeView(fn () => view('pages::auth.two-factor-challenge'));
         Fortify::confirmPasswordView(fn () => view('pages::auth.confirm-password'));
         Fortify::registerView(function () {
+            // The product, keyword variant and state the marketing page
+            // passed along (?product=sales-tax&state=TX). Read before the
+            // landing path so a lost referer can fall back to it.
+            $signupIntent = SignupIntent::captureFromRequest(request());
+
             $this->captureLandingPath();
 
             // Activate marketing lead context from ?lead= or cookie
@@ -77,6 +83,7 @@ class FortifyServiceProvider extends ServiceProvider
                 // Set by the waiver starter on the marketing pages, so the
                 // form can keep talking about the waiver they came for.
                 'waiverIntent' => WaiverIntent::get(),
+                'signupIntent' => $signupIntent,
             ]);
         });
         Fortify::resetPasswordView(fn () => view('pages::auth.reset-password'));
@@ -109,6 +116,8 @@ class FortifyServiceProvider extends ServiceProvider
         $referer = request()->header('referer');
 
         if (! $referer) {
+            $this->fallBackToIntentLandingPath();
+
             return;
         }
 
@@ -120,6 +129,29 @@ class FortifyServiceProvider extends ServiceProvider
         if ($refererHost === $currentHost && $refererPath && $refererPath !== '/register') {
             session()->put('signup_landing_path', $refererPath);
             session()->put('signup_landing_url', $referer);
+
+            return;
+        }
+
+        $this->fallBackToIntentLandingPath();
+    }
+
+    /**
+     * No usable referer, but the marketing page told us the product through
+     * the query string: report that product's page as the landing path so
+     * sign-up attribution and the onboarding redirect still know the flow.
+     */
+    private function fallBackToIntentLandingPath(): void
+    {
+        if (session()->has('signup_landing_path')) {
+            return;
+        }
+
+        $path = SignupIntent::fallbackLandingPath();
+
+        if ($path) {
+            session()->put('signup_landing_path', $path);
+            session()->put('signup_landing_url', url($path));
         }
     }
 

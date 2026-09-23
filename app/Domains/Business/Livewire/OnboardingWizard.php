@@ -5,6 +5,7 @@ namespace App\Domains\Business\Livewire;
 use App\Concerns\ResolvesMarketingLead;
 use App\Domains\Business\Models\Business;
 use App\Services\GooglePlacesService;
+use App\Support\SignupIntent;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -148,7 +149,19 @@ class OnboardingWizard extends Component
         $isFirstBusiness = $user->businesses()->count() === 1;
         $landingPath = $user->signup_landing_path;
 
-        if ($isFirstBusiness && $user->signedUpFromWaivers()) {
+        // The product the marketing page passed along wins over guessing
+        // from the landing path, which is lost when the referer is stripped.
+        $intentProduct = $isFirstBusiness ? SignupIntent::product() : null;
+
+        if ($intentProduct === 'sales-tax') {
+            $redirectRoute = route('sales-tax.registrations.start');
+        } elseif ($intentProduct === 'resale-cert') {
+            $redirectRoute = route('resale-cert.dashboard');
+        } elseif ($intentProduct === 'llc') {
+            $redirectRoute = route('formations.start', ['formType' => 'llc']);
+        } elseif ($intentProduct === 'liens' && ! $user->signedUpFromWaivers()) {
+            $redirectRoute = route('lien.onboarding');
+        } elseif ($isFirstBusiness && $user->signedUpFromWaivers()) {
             // Waiver-first signups go straight into the wizard. Lien
             // onboarding (phone, license, signer title) only matters for
             // filings and is collected when they first open a filing page.

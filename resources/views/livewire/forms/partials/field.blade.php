@@ -11,8 +11,9 @@ $label = str_replace('{state_name}', $stateName, $field['label'] ?? ucwords(str_
 // just renders the result. `badge_when` and `help_when` are both lists
 // of {condition, ...} entries evaluated first-match-wins via the
 // existing ConditionEvaluator. No match (or no _when at all) means the
-// badge stays null and help falls back to the static `help` string.
-$badge = null;
+// badge stays null and help falls back to the static `help` string. A plain
+// `badge` entry shows unconditionally (e.g. an always-optional field).
+$badge = $field['badge'] ?? null;
 $resolvedHelp = $field['help'] ?? null;
 $hasConditionalContent = ! empty($field['badge_when']) || ! empty($field['help_when']);
 if ($hasConditionalContent) {

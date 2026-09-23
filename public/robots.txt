@@ -1,4 +1,21 @@
 User-agent: *
-Disallow:
+Disallow: /admin
+Disallow: /portal
+Disallow: /settings
+Disallow: /esign
+Disallow: /esign-documents
+Disallow: /email/
+Disallow: /invitations/
+Disallow: /go/
+Disallow: /r/
+Disallow: /api/
+Disallow: /storage/
+Disallow: /landing2
+Disallow: /styleguide
+Disallow: /clay-demo
+Disallow: /mdcps-demo
+Disallow: /pcc-demo
+Disallow: /government/florida-eog-demo-1
+Disallow: /government/florida-eog-demo-2
 
 Sitemap: https://eregister.com/sitemap.xml

@@ -2,9 +2,9 @@
 
 @section('title', 'Resale Certificates | Unlimited Signed Certificates for Every State')
 
-@section('meta')
-<meta name="description" content="Generate signed resale certificates on official state forms in minutes. Unlimited certificates for every applicable state at one flat yearly price.">
+@section('description', 'Generate signed resale certificates on official state forms in minutes. Unlimited certificates for every applicable state at one flat yearly price.')
 
+@section('meta')
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=caveat:600|space-grotesk:500,600,700" rel="stylesheet" />
 
@@ -529,4 +529,29 @@
     </section>
 
 </div>
+{{-- Resale certificate rules by state --}}
+<section id="states" class="border-t border-zinc-200 bg-white py-24">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-3xl text-center">
+            <p class="text-sm font-semibold uppercase tracking-widest text-[#DC2626]">State by state</p>
+            <h2 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">Resale certificate rules for every state</h2>
+            <p class="mt-4 text-lg text-zinc-600">
+                Which form each state accepts, whether the MTC and Streamlined uniform certificates work, out-of-state buyer rules, blanket certificates, and expiration.
+            </p>
+        </div>
+        <ul class="mt-12 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+            @foreach (\Illuminate\Support\Facades\Cache::remember('seo.resale-states.v1', now()->addDay(), fn () => \App\Domains\ResaleCert\Seo\ResaleStatePage::availableStates()) as $stateCode => $stateName)
+            <li>
+                <a href="{{ route('resale-certificates.state', ['state' => \App\Support\Seo\States::slug($stateName)]) }}" class="flex items-center justify-between rounded-lg border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900">
+                    {{ $stateName }}
+                    <span class="text-xs text-zinc-400">{{ $stateCode }}</span>
+                </a>
+            </li>
+            @endforeach
+        </ul>
+    </div>
+</section>
+
+{{-- Structured data --}}
+<x-seo.service name="Resale Certificate Generator" :description="'Generate signed resale certificates on official state forms in minutes. Unlimited certificates for every applicable state at one flat yearly price.'" category="Tax compliance" />
 @endsection

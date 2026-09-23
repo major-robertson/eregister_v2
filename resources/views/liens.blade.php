@@ -2,15 +2,15 @@
 
 @section('title', $pageTitle ?? 'Mechanics Lien Filing Services | File a Construction Lien on Property')
 
-@section('meta')
+@section('description', 'File a mechanics lien on property with our trusted construction lien filing services. Expert mechanics lien filing for contractors, subcontractors & suppliers. File a construction lien in all 50 states.')
 @if (!empty($noIndex))
-<meta name="robots" content="noindex, nofollow" />
+@section('noindex', 'true')
 @endif
 @if (!empty($canonicalUrl))
-<link rel="canonical" href="{{ $canonicalUrl }}" />
+@section('canonical', $canonicalUrl)
 @endif
-<meta name="description"
-    content="File a mechanics lien on property with our trusted construction lien filing services. Expert mechanics lien filing for contractors, subcontractors & suppliers. File a construction lien in all 50 states.">
+
+@section('meta')
 <meta name="keywords"
     content="mechanics lien filing, file construction lien, mechanics lien on property, file a mechanics lien, contractor lien on property, file a construction lien, construction lien filing, construction lien services">
 @endsection

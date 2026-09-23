@@ -2,10 +2,8 @@
 
 @section('title', $pageTitle)
 
-@section('meta')
-<link rel="canonical" href="{{ $canonicalUrl }}" />
-<meta name="description" content="{{ $metaDescription }}">
-@endsection
+@section('description', $metaDescription)
+@section('canonical', $canonicalUrl)
 
 @section('content')
 @php

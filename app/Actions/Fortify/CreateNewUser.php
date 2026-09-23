@@ -5,6 +5,7 @@ namespace App\Actions\Fortify;
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Domains\Lien\Waivers\WaiverNurture;
+use App\Domains\ResaleCert\ResaleFollowUp;
 use App\Mail\WelcomeEmail;
 use App\Models\User;
 use App\Rules\Recaptcha;
@@ -49,6 +50,10 @@ class CreateNewUser implements CreatesNewUsers
         // before the welcome email is queued, which links to the same place.
         // Rescued: email bookkeeping must never fail a registration.
         rescue(fn () => WaiverNurture::onSignup($user));
+
+        // Resale certificate signups get "get your certificate" follow-ups
+        // until they subscribe.
+        rescue(fn () => ResaleFollowUp::onSignup($user));
 
         Mail::to($user)->queue(
             (new WelcomeEmail($user))->delay(now()->addMinutes(7))

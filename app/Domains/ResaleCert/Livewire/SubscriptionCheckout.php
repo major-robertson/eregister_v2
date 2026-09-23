@@ -3,6 +3,7 @@
 namespace App\Domains\ResaleCert\Livewire;
 
 use App\Domains\Business\Models\Business;
+use App\Domains\ResaleCert\ResaleFollowUp;
 use App\Domains\ResaleCert\Services\ResaleCertPaymentService;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
@@ -51,6 +52,11 @@ class SubscriptionCheckout extends Component
         }
 
         $this->business = $business;
+
+        // Opening checkout starts the "get your certificate" follow-ups. They
+        // stop on their own once the subscription is active.
+        rescue(fn () => ResaleFollowUp::onCheckout(Auth::user(), $business));
+
         $this->amountCents = $paymentService->price()->amount_cents ?? 29700;
 
         $this->initializePayment($paymentService);

@@ -5,8 +5,10 @@ namespace App\Domains\ResaleCert\Livewire;
 use App\Domains\ResaleCert\Livewire\Concerns\ResolvesResaleContext;
 use App\Domains\ResaleCert\Models\ResaleCertificate;
 use App\Domains\ResaleCert\Models\ResaleVendor;
+use App\Domains\ResaleCert\ResaleFollowUp;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -21,7 +23,13 @@ class Dashboard extends Component
 
     public function mount(): void
     {
-        $this->resolveBusiness();
+        if (! $this->resolveBusiness()) {
+            return;
+        }
+
+        // People who came for certificates and haven't subscribed get the
+        // follow-up emails. Rescued: email bookkeeping never breaks the page.
+        rescue(fn () => ResaleFollowUp::onDashboard(Auth::user(), $this->business));
     }
 
     #[Computed]

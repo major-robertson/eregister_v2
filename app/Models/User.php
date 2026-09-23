@@ -190,7 +190,8 @@ class User extends Authenticatable
     }
 
     /**
-     * Whether the user signed up from the resale certificates marketing page.
+     * Whether the user signed up from the resale certificate pages: the
+     * marketing page, a state page, or a Google Ads landing page.
      */
     public function signedUpFromResaleCerts(): bool
     {
@@ -200,6 +201,12 @@ class User extends Authenticatable
             return false;
         }
 
-        return $path === '/resale-certificates' || str_starts_with($path, '/resale-certificates/');
+        foreach (['/resale-certificates', '/lp/resale-certificate'] as $prefix) {
+            if ($path === $prefix || str_starts_with($path, $prefix.'/')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

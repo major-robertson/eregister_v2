@@ -82,6 +82,15 @@ class EmailSequence extends Model
             'email_prefix' => 'registration_unfinished_step',
             'unsubscribe_category' => null,
         ],
+        // Came for resale certificates and has not subscribed: 1 hour, then a
+        // day, then three days (the abandon_checkout cadence). Someone who
+        // turned off order reminders does not get these either.
+        'resale_started' => [
+            'steps' => 3,
+            'delays' => [60, 1440, 4320],
+            'email_prefix' => 'resale_started_step',
+            'unsubscribe_category' => EmailUnsubscribe::CATEGORY_ABANDON_CHECKOUT,
+        ],
     ];
 
     /** Sequence types with their own stop rules (see shouldSuppressWaiverNurture). */
@@ -171,6 +180,10 @@ class EmailSequence extends Model
 
         if ($this->sequence_type === 'registration_unfinished') {
             return $this->shouldSuppressUnfinishedRegistration();
+        }
+
+        if ($this->sequence_type === 'resale_started') {
+            return $this->shouldSuppressResaleStarted();
         }
 
         if ($this->trigger_status) {
@@ -288,6 +301,43 @@ class EmailSequence extends Model
 
         if (! $application->isPaid()) {
             return 'not_paid';
+        }
+
+        return $this->currentStep() === null ? 'all_steps_sent' : null;
+    }
+
+    /**
+     * Stop rules for the resale certificate follow-ups. Subscribing ends the
+     * series. So does paying for a sales tax registration: with no permit
+     * yet, the permit-approved email offers certificates once the number
+     * arrives. Opting out of order reminders stops it too.
+     */
+    protected function shouldSuppressResaleStarted(): ?string
+    {
+        $user = $this->user;
+
+        if ($user === null) {
+            return 'user_deleted';
+        }
+
+        if (EmailUnsubscribe::isUnsubscribed($user, EmailUnsubscribe::CATEGORY_ABANDON_CHECKOUT)) {
+            return 'unsubscribed';
+        }
+
+        $businesses = $user->businesses()->get();
+
+        if ($businesses->contains(fn (Business $business) => $business->subscribed(config('resale_cert.subscription_type')))) {
+            return 'subscribed';
+        }
+
+        $registrationPaid = FormApplication::query()
+            ->where('form_type', 'sales_tax_permit')
+            ->whereIn('business_id', $businesses->modelKeys())
+            ->whereNotNull('paid_at')
+            ->exists();
+
+        if ($registrationPaid) {
+            return 'registration_paid';
         }
 
         return $this->currentStep() === null ? 'all_steps_sent' : null;

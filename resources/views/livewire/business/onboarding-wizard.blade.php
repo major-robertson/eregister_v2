@@ -1,36 +1,5 @@
 @if ($justRegistered)
-@push('scripts')
-<!-- Enhanced conversions: the new user's email, hashed in the browser by the
-     Google tag, so the sign-up can be matched to its ad click. -->
-<script data-navigate-once>
-    window.gtag && gtag('set', 'user_data', { email: @js(auth()->user()->email) });
-</script>
-<!-- Google Ads Conversion Tracking - Create Account -->
-<script data-navigate-once>
-    gtag('event', 'conversion', {
-        send_to: "AW-984288380/XDg5CMWk_7oZEPyYrNUD"
-    });
-</script>
-<!-- GA4 funnel: sign_up (landing_path says which product page brought them) -->
-<script data-navigate-once>
-    window.gtag && gtag('event', 'sign_up', {
-        method: 'email',
-        landing_path: @js(auth()->user()->signup_landing_path)
-    });
-</script>
-<!-- Reddit Pixel Conversion - Create Account -->
-<script data-navigate-once>
-    rdt('track', 'SignUp', {
-        conversionId: @js('signup-' . auth()->id())
-    });
-</script>
-<!-- OpenAI Ads Conversion - Create Account -->
-<script data-navigate-once>
-    oaiq("measure", "registration_completed", {
-        type: "customer_action"
-    }, { event_id: @js('signup-' . auth()->id()) });
-</script>
-@endpush
+    @include('livewire.business._signup-conversion')
 @endif
 
 <div class="w-full max-w-lg">

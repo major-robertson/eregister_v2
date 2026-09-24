@@ -44,21 +44,29 @@ return [
             'template' => 'documents.lien.waivers.bodies.nv-conditional-progress',
             'title' => 'Conditional Waiver and Release Upon Progress Payment',
             'template_version' => 1,
+            // NRS 108.2457 prints no owner blank; the wizard doesn't ask for one.
+            'prints_owner' => false,
         ],
         'unconditional_progress' => [
             'template' => 'documents.lien.waivers.bodies.nv-unconditional-progress',
             'title' => 'Unconditional Waiver and Release Upon Progress Payment',
             'template_version' => 1,
+            // NRS 108.2457 prints no owner blank; the wizard doesn't ask for one.
+            'prints_owner' => false,
         ],
         'conditional_final' => [
             'template' => 'documents.lien.waivers.bodies.nv-conditional-final',
             'title' => 'Conditional Waiver and Release Upon Final Payment',
             'template_version' => 1,
+            // NRS 108.2457 prints no owner blank; the wizard doesn't ask for one.
+            'prints_owner' => false,
         ],
         'unconditional_final' => [
             'template' => 'documents.lien.waivers.bodies.nv-unconditional-final',
             'title' => 'Unconditional Waiver and Release Upon Final Payment',
             'template_version' => 1,
+            // NRS 108.2457 prints no owner blank; the wizard doesn't ask for one.
+            'prints_owner' => false,
         ],
     ],
     'landing' => [

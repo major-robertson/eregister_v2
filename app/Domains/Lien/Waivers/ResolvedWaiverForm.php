@@ -29,5 +29,10 @@ final class ResolvedWaiverForm
         public readonly array $extraClauses = [],
         /** True when the form is invalid without a formal legal description (MO § 429.016.27). */
         public readonly bool $requiresLegalDescription = false,
+        /**
+         * False when the body has no owner blank (NV's verbatim forms, MO's
+         * residential final), so the wizard doesn't demand one.
+         */
+        public readonly bool $printsOwner = true,
     ) {}
 }

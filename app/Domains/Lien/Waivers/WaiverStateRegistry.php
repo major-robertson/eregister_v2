@@ -44,6 +44,9 @@ namespace App\Domains\Lien\Waivers;
  *           'requires_legal_description' => false, // form invalid without a formal legal
  *                                                  // description (street address insufficient)
  *           'residential_requires_legal_description' => null, // override when the residential body is used
+ *           'prints_owner' => true,         // false when the body has no owner blank (NV): the
+ *                                           // wizard then doesn't ask for one
+ *           'residential_prints_owner' => null, // override when the residential body is used
  *       ],
  *       …one entry per canonical kind…
  *   ],
@@ -137,6 +140,8 @@ class WaiverStateRegistry
                 'residential_title' => null,
                 'requires_legal_description' => false,
                 'residential_requires_legal_description' => null,
+                'prints_owner' => true,
+                'residential_prints_owner' => null,
             ];
         }
 

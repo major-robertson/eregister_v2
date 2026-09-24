@@ -54,6 +54,9 @@ return [
             // 17(2)(c)) — a street address alone does not track the form. The
             // address still prints as "commonly known as".
             'residential_requires_legal_description' => true,
+            // The statutory body names the claimant, the property and the
+            // payment, never the owner, so the wizard doesn't ask for one.
+            'residential_prints_owner' => false,
         ],
     ],
     'landing' => [

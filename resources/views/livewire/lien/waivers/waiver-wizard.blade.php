@@ -43,6 +43,8 @@
             </div>
         @endforeach
     </div>
+    {{-- Phones hide the labels above; name the current step instead. --}}
+    <p class="-mt-5 mb-6 text-sm font-medium text-text-secondary md:hidden">Step {{ $step }} of {{ $totalSteps }} &middot; {{ $stepTitles[$step] }}</p>
 
     {{-- Step Content --}}
     @if ($step === 4)
@@ -113,77 +115,208 @@
                 </section>
             @endif
 
-            {{-- Property owner: every waiver form identifies who owns the
-                 property, so the project must carry an owner party. --}}
+            {{-- Property owner: typed here and saved to the project's owner
+                 party when the step is left. Asked for only when the state's
+                 form prints the owner (NV's verbatim forms and MO's
+                 residential final don't). --}}
+            @php $printsOwner = $form?->printsOwner ?? true; @endphp
             <section class="rounded-2xl border border-border bg-white p-6 shadow-xs">
                 <h2 class="text-base font-bold text-text-primary">Property owner</h2>
-                <p class="mt-0.5 text-sm text-text-secondary">Who owns the property this waiver covers.</p>
+                <p class="mt-0.5 text-sm text-text-secondary">
+                    {{ $printsOwner ? 'The form names who owns the property this waiver covers.' : 'This form has no owner line, so this is optional.' }}
+                </p>
 
-                @php $ownerParty = $project?->ownerParty(); @endphp
-                <div class="mt-4 space-y-2">
-                    @if ($ownerParty)
-                        <div class="flex items-center gap-3 rounded-xl border border-border bg-bg-light p-4">
-                            <flux:icon name="home-modern" class="size-6 shrink-0 text-zinc-400" />
-                            <div class="min-w-0 flex-1">
-                                <p class="text-sm font-semibold text-text-primary">{{ $ownerParty->displayName() }}</p>
-                                @if ($ownerParty->addressLine() !== '')
-                                    <p class="text-xs text-text-secondary">{{ $ownerParty->addressLine() }}</p>
-                                @endif
-                            </div>
-                            <flux:button wire:click="editOwner" size="sm" variant="ghost" icon="pencil-square" class="shrink-0">
-                                Edit
-                            </flux:button>
-                        </div>
-                    @else
-                        <button
-                            type="button"
-                            wire:click="openOwnerModal"
-                            class="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 p-3 text-sm font-semibold text-primary transition hover:border-primary hover:bg-primary/5"
-                        >
-                            <span class="text-lg leading-none">+</span> Add the property owner
-                        </button>
-                    @endif
-                    <flux:error name="owner" />
+                <div class="mt-4 space-y-3">
+                    <flux:field>
+                        <flux:label>Owner name @unless ($printsOwner)<span class="font-normal text-zinc-400">(optional)</span>@endunless</flux:label>
+                        <flux:input wire:model="owner_name" placeholder="Person or company that owns the property" />
+                        <flux:error name="owner_name" />
+                    </flux:field>
+
+                    <flux:accordion>
+                        <flux:accordion.item>
+                            <flux:accordion.heading>
+                                <span class="text-sm font-semibold text-text-secondary">Owner's mailing address <span class="font-normal text-zinc-400">(optional)</span></span>
+                            </flux:accordion.heading>
+                            <flux:accordion.content>
+                                <div class="space-y-4 pt-2 pb-2">
+                                    <flux:field>
+                                        <flux:label>Street address</flux:label>
+                                        <flux:input wire:model="owner_address1" placeholder="Start typing to search..."
+                                            autocomplete="off" data-places-autocomplete data-places-method="updateOwnerAddressFromAutocomplete" />
+                                        <flux:error name="owner_address1" />
+                                    </flux:field>
+
+                                    <flux:field>
+                                        <flux:label>Address line 2</flux:label>
+                                        <flux:input wire:model="owner_address2" placeholder="Suite, unit, etc." />
+                                        <flux:error name="owner_address2" />
+                                    </flux:field>
+
+                                    <div class="grid gap-4 sm:grid-cols-3">
+                                        <flux:field>
+                                            <flux:label>City</flux:label>
+                                            <flux:input wire:model="owner_city" />
+                                            <flux:error name="owner_city" />
+                                        </flux:field>
+
+                                        <flux:field>
+                                            <flux:label>State</flux:label>
+                                            <flux:select variant="combobox" clearable placeholder="Select..." wire:model="owner_state">
+                                                @foreach (config('states') as $code => $name)
+                                                    <flux:select.option value="{{ $code }}">{{ $name }}</flux:select.option>
+                                                @endforeach
+                                            </flux:select>
+                                            <flux:error name="owner_state" />
+                                        </flux:field>
+
+                                        <flux:field>
+                                            <flux:label>ZIP</flux:label>
+                                            <flux:input wire:model="owner_zip" />
+                                            <flux:error name="owner_zip" />
+                                        </flux:field>
+                                    </div>
+
+                                    <flux:field>
+                                        <flux:label>County</flux:label>
+                                        <flux:input wire:model="owner_county" placeholder="Fills in from the address" />
+                                        <flux:error name="owner_county" />
+                                    </flux:field>
+                                </div>
+                            </flux:accordion.content>
+                        </flux:accordion.item>
+                    </flux:accordion>
                 </div>
             </section>
 
-            {{-- Counterparty: contact picker (they sign collect waivers) --}}
+            {{-- The other party: a saved contact, or one typed right here and
+                 saved when the step is left. They sign collect waivers, but
+                 their email is only asked for when the waiver is sent. --}}
             <section class="rounded-2xl border border-border bg-white p-6 shadow-xs">
                 @if ($direction === 'collect')
-                    <h2 class="text-base font-bold text-text-primary">Who signs this waiver?</h2>
-                    <p class="mt-0.5 text-sm text-text-secondary">We'll email them a signature request.</p>
+                    <h2 class="text-base font-bold text-text-primary">Who is giving you this waiver?</h2>
+                    <p class="mt-0.5 text-sm text-text-secondary">The sub or vendor you're paying. Their email is only needed to send it for e-signature.</p>
                 @else
                     <h2 class="text-base font-bold text-text-primary">Who receives this waiver?</h2>
+                    <p class="mt-0.5 text-sm text-text-secondary">The customer paying you. Their name prints in the form's customer blank.</p>
                 @endif
 
-                <div class="mt-4 space-y-2">
-                    <flux:select variant="combobox" clearable placeholder="Select a contact..." wire:model.live="contactId">
-                        @foreach ($contacts as $contactOption)
-                            <flux:select.option value="{{ $contactOption->id }}">{{ $contactOption->displayName() }}</flux:select.option>
-                        @endforeach
-                    </flux:select>
-                    <flux:error name="contactId" />
-
-                    @php $selectedContactModel = $contactId !== '' ? $this->selectedContact() : null; @endphp
-                    @if ($direction === 'collect' && $selectedContactModel && blank($selectedContactModel->email))
-                        {{-- Missing email blocks collect waivers; fix it in place. --}}
-                        <div class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50/70 px-3.5 py-2.5">
-                            <p class="text-[13px] text-amber-800">This contact has no email address — we need one to send the signature request.</p>
-                            <flux:button wire:click="editSelectedContact" size="sm" variant="primary">Add email</flux:button>
-                        </div>
-                    @elseif ($selectedContactModel)
-                        <flux:button wire:click="editSelectedContact" size="sm" variant="ghost" icon="pencil-square">
-                            Edit contact
-                        </flux:button>
+                @php $selectedContactModel = $contactId !== '' ? $this->selectedContact() : null; @endphp
+                <div class="mt-4 space-y-3">
+                    @if ($contacts->isNotEmpty())
+                        <flux:select variant="combobox" clearable placeholder="Choose a saved contact..." wire:model.live="contactId">
+                            @foreach ($contacts as $contactOption)
+                                <flux:select.option value="{{ $contactOption->id }}">{{ $contactOption->displayName() }}</flux:select.option>
+                            @endforeach
+                        </flux:select>
+                        <flux:error name="contactId" />
                     @endif
 
-                    <button
-                        type="button"
-                        wire:click="openContactModal"
-                        class="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-300 p-3 text-sm font-semibold text-primary transition hover:border-primary hover:bg-primary/5"
-                    >
-                        <span class="text-lg leading-none">+</span> Add a new contact
-                    </button>
+                    @if ($selectedContactModel)
+                        <div class="flex items-center gap-3 rounded-xl border border-border bg-bg-light p-4">
+                            <flux:icon name="building-office-2" class="size-6 shrink-0 text-zinc-400" />
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-semibold text-text-primary">{{ $selectedContactModel->displayName() }}</p>
+                                <p class="text-xs text-text-secondary">{{ $selectedContactModel->email ?: 'No email yet' }}</p>
+                            </div>
+                            <flux:button wire:click="editSelectedContact" size="sm" variant="ghost" icon="pencil-square" class="shrink-0">
+                                Edit
+                            </flux:button>
+                        </div>
+                        @if ($direction === 'collect' && blank($selectedContactModel->email))
+                            <p class="text-[13px] text-text-secondary">No email yet: we ask for one when you send it for e-signature. Downloading and printing works without it.</p>
+                        @endif
+                    @else
+                        @if ($contacts->isNotEmpty())
+                            <p class="text-[13px] font-medium text-text-secondary">Or add a new one:</p>
+                        @endif
+
+                        <flux:field>
+                            <flux:label>Company or name</flux:label>
+                            <flux:input wire:model="contact_company" placeholder="ABC Construction" />
+                            <flux:error name="contact_company" />
+                        </flux:field>
+
+                        <flux:field>
+                            <flux:label>Email <span class="font-normal text-zinc-400">({{ $direction === 'collect' ? 'needed to send it for e-signature' : 'optional' }})</span></flux:label>
+                            <flux:input type="email" wire:model="contact_email" placeholder="name@company.com" />
+                            <flux:error name="contact_email" />
+                        </flux:field>
+
+                        <flux:accordion>
+                            <flux:accordion.item>
+                                <flux:accordion.heading>
+                                    <span class="text-sm font-semibold text-text-secondary">Contact person, phone and address <span class="font-normal text-zinc-400">(optional)</span></span>
+                                </flux:accordion.heading>
+                                <flux:accordion.content>
+                                    <div class="space-y-4 pt-2 pb-2">
+                                        <div class="grid gap-4 sm:grid-cols-2">
+                                            <flux:field>
+                                                <flux:label>First name</flux:label>
+                                                <flux:input wire:model="contact_first_name" placeholder="John" />
+                                                <flux:error name="contact_first_name" />
+                                            </flux:field>
+
+                                            <flux:field>
+                                                <flux:label>Last name</flux:label>
+                                                <flux:input wire:model="contact_last_name" placeholder="Smith" />
+                                                <flux:error name="contact_last_name" />
+                                            </flux:field>
+                                        </div>
+
+                                        <flux:field>
+                                            <flux:label>Phone</flux:label>
+                                            <flux:input wire:model="contact_phone" />
+                                            <flux:error name="contact_phone" />
+                                        </flux:field>
+
+                                        <flux:field>
+                                            <flux:label>Street address</flux:label>
+                                            <flux:input wire:model="contact_address1" placeholder="Start typing to search..."
+                                                autocomplete="off" data-places-autocomplete data-places-method="updateContactAddressFromAutocomplete" />
+                                            <flux:error name="contact_address1" />
+                                        </flux:field>
+
+                                        <flux:field>
+                                            <flux:label>Address line 2</flux:label>
+                                            <flux:input wire:model="contact_address2" placeholder="Suite, unit, etc." />
+                                            <flux:error name="contact_address2" />
+                                        </flux:field>
+
+                                        <div class="grid gap-4 sm:grid-cols-3">
+                                            <flux:field>
+                                                <flux:label>City</flux:label>
+                                                <flux:input wire:model="contact_city" />
+                                                <flux:error name="contact_city" />
+                                            </flux:field>
+
+                                            <flux:field>
+                                                <flux:label>State</flux:label>
+                                                <flux:select variant="combobox" clearable placeholder="Select..." wire:model="contact_state">
+                                                    @foreach (config('states') as $code => $name)
+                                                        <flux:select.option value="{{ $code }}">{{ $name }}</flux:select.option>
+                                                    @endforeach
+                                                </flux:select>
+                                                <flux:error name="contact_state" />
+                                            </flux:field>
+
+                                            <flux:field>
+                                                <flux:label>ZIP</flux:label>
+                                                <flux:input wire:model="contact_zip" />
+                                                <flux:error name="contact_zip" />
+                                            </flux:field>
+                                        </div>
+
+                                        <flux:field>
+                                            <flux:label>County</flux:label>
+                                            <flux:input wire:model="contact_county" placeholder="Fills in from the address" />
+                                            <flux:error name="contact_county" />
+                                        </flux:field>
+                                    </div>
+                                </flux:accordion.content>
+                            </flux:accordion.item>
+                        </flux:accordion>
+                    @endif
                 </div>
             </section>
 
@@ -301,12 +434,6 @@
                         <flux:error name="project_address1" />
                     </flux:field>
 
-                    <flux:field>
-                        <flux:label>Address line 2 <span class="font-normal text-zinc-400">(optional)</span></flux:label>
-                        <flux:input wire:model="project_address2" placeholder="Suite, unit, building" />
-                        <flux:error name="project_address2" />
-                    </flux:field>
-
                     <div class="grid gap-4 sm:grid-cols-3">
                         <flux:field>
                             <flux:label>City</flux:label>
@@ -331,29 +458,15 @@
                         </flux:field>
                     </div>
 
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <flux:field>
-                            <flux:label>County <span class="font-normal text-zinc-400">(optional)</span></flux:label>
-                            <flux:input wire:model="project_county" placeholder="Fills in from the address" />
-                            <flux:error name="project_county" />
-                        </flux:field>
-
-                        <flux:field>
-                            <flux:label>Property type</flux:label>
-                            <flux:select wire:model="project_property_class">
-                                <option value="">Select...</option>
-                                <option value="residential">Residential</option>
-                                <option value="commercial">Commercial</option>
-                                <option value="government">Government / Public</option>
-                            </flux:select>
-                            <flux:error name="project_property_class" />
-                        </flux:field>
-                    </div>
-
                     <flux:field>
-                        <flux:label>Project name <span class="font-normal text-zinc-400">(optional)</span></flux:label>
-                        <flux:input wire:model="project_name" placeholder="Defaults to the jobsite address" />
-                        <flux:error name="project_name" />
+                        <flux:label>Property type</flux:label>
+                        <flux:select wire:model="project_property_class">
+                            <option value="">Select...</option>
+                            <option value="residential">Residential</option>
+                            <option value="commercial">Commercial</option>
+                            <option value="government">Government / Public</option>
+                        </flux:select>
+                        <flux:error name="project_property_class" />
                     </flux:field>
 
                     <div>
@@ -386,14 +499,47 @@
                         <flux:error name="project_role" class="mt-2" />
                     </div>
 
-                    {{-- Optional, and last: it never blocks the waiver. With it the
-                         project can show a real notice deadline for this job. --}}
-                    <flux:field>
-                        <flux:label>First day on this job <span class="font-normal text-zinc-400">(optional)</span></flux:label>
-                        <flux:date-picker wire:model="project_first_furnish_date" />
-                        <flux:description>The day you started work or first delivered materials. We use it to calculate your lien deadlines. Free.</flux:description>
-                        <flux:error name="project_first_furnish_date" />
-                    </flux:field>
+                    {{-- Nothing in here blocks the waiver, so it's folded to
+                         keep the screen short on a phone. The first day lets
+                         the project show a real notice deadline for this job. --}}
+                    <flux:accordion>
+                        <flux:accordion.item>
+                            <flux:accordion.heading>
+                                <span class="flex flex-col py-1 text-left">
+                                    <span class="text-[15px] font-bold text-text-primary">More details</span>
+                                    <span class="mt-0.5 text-[13px] font-normal text-text-secondary">Suite, county, project name, first day on the job &mdash; all optional</span>
+                                </span>
+                            </flux:accordion.heading>
+                            <flux:accordion.content>
+                                <div class="space-y-4 border-t border-border pt-4 pb-2">
+                                    <flux:field>
+                                        <flux:label>Address line 2</flux:label>
+                                        <flux:input wire:model="project_address2" placeholder="Suite, unit, building" />
+                                        <flux:error name="project_address2" />
+                                    </flux:field>
+
+                                    <flux:field>
+                                        <flux:label>County</flux:label>
+                                        <flux:input wire:model="project_county" placeholder="Fills in from the address" />
+                                        <flux:error name="project_county" />
+                                    </flux:field>
+
+                                    <flux:field>
+                                        <flux:label>Project name</flux:label>
+                                        <flux:input wire:model="project_name" placeholder="Defaults to the jobsite address" />
+                                        <flux:error name="project_name" />
+                                    </flux:field>
+
+                                    <flux:field>
+                                        <flux:label>First day on this job</flux:label>
+                                        <flux:date-picker wire:model="project_first_furnish_date" />
+                                        <flux:description>The day you started work or first delivered materials. We use it to calculate your lien deadlines. Free.</flux:description>
+                                        <flux:error name="project_first_furnish_date" />
+                                    </flux:field>
+                                </div>
+                            </flux:accordion.content>
+                        </flux:accordion.item>
+                    </flux:accordion>
 
                     <div class="flex flex-wrap items-center justify-end gap-3 border-t border-zinc-200 pt-5 dark:border-zinc-700">
                         @if ($projects->isNotEmpty())
@@ -402,7 +548,7 @@
                             </flux:button>
                         @endif
                         <flux:button wire:click="createProject" wire:loading.attr="disabled" variant="primary" icon-trailing="arrow-right">
-                            <span wire:loading.remove wire:target="createProject">Save project &amp; continue</span>
+                            <span wire:loading.remove wire:target="createProject">Continue</span>
                             <span wire:loading wire:target="createProject">Saving...</span>
                         </flux:button>
                     </div>
@@ -715,7 +861,12 @@
                                         ? 'We email the signed copy to '.$customer->displayName().' and save it to your project.'
                                         : 'We save the signed copy to your project.' }}
                                 @else
-                                    We email {{ $this->selectedContact()?->displayName() ?? 'the signer' }} a link to sign. We remind them until it's signed.
+                                    @php $signer = $this->selectedContact(); @endphp
+                                    @if ($signer && blank($signer->email))
+                                        We'll ask for {{ $signer->displayName() }}'s email address, then email them a link to sign. We remind them until it's signed.
+                                    @else
+                                        We email {{ $signer?->displayName() ?? 'the signer' }} a link to sign. We remind them until it's signed.
+                                    @endif
                                 @endif
                                 @unless ($canEsign)
                                     <span class="font-medium text-zinc-700 dark:text-zinc-300">Part of Pro: {{ $proMonthly }}/mo per seat. Cancel anytime.</span>
@@ -789,10 +940,12 @@
         </div>
     </div>
 
-    {{-- Add/edit-contact modal --}}
+    {{-- Edit-contact modal: the selected contact, mainly to add the email a
+         collect waiver needs at send time. New contacts are typed on the
+         details step itself. --}}
     <flux:modal wire:model="showContactModal" class="max-w-lg">
         <div class="space-y-4">
-            <flux:heading>{{ $editingContactId ? 'Edit Contact' : 'Add Contact' }}</flux:heading>
+            <flux:heading>Edit contact</flux:heading>
 
             <form wire:submit="saveContact" class="space-y-4">
                 {{-- No field is individually required: a contact needs a company
@@ -879,78 +1032,7 @@
                         Cancel
                     </flux:button>
                     <flux:button type="submit" variant="primary">
-                        {{ $editingContactId ? 'Save changes' : 'Add Contact' }}
-                    </flux:button>
-                </div>
-            </form>
-        </div>
-    </flux:modal>
-
-    {{-- Add/edit-owner modal: manages the project's owner party in place.
-         Only the name is required (a person or an entity goes in the same
-         blank); the address autofills via Google Places. --}}
-    <flux:modal wire:model="showOwnerModal" class="max-w-lg">
-        <div class="space-y-4">
-            <flux:heading>{{ $editingOwnerPartyId ? 'Edit Property Owner' : 'Add Property Owner' }}</flux:heading>
-
-            <form wire:submit="saveOwner" class="space-y-4">
-                <flux:field>
-                    <flux:label>Owner name *</flux:label>
-                    <flux:input wire:model="owner_name" placeholder="Person or entity that owns the property" />
-                    <flux:error name="owner_name" />
-                </flux:field>
-
-                <flux:separator text="Mailing address (optional)" />
-
-                <flux:field>
-                    <flux:label>Street address</flux:label>
-                    <flux:input wire:model="owner_address1" placeholder="Start typing to search..."
-                        autocomplete="off" data-places-autocomplete data-places-method="updateOwnerAddressFromAutocomplete" />
-                    <flux:error name="owner_address1" />
-                </flux:field>
-
-                <flux:field>
-                    <flux:label>Address line 2</flux:label>
-                    <flux:input wire:model="owner_address2" placeholder="Suite, unit, etc." />
-                    <flux:error name="owner_address2" />
-                </flux:field>
-
-                <div class="grid gap-4 sm:grid-cols-3">
-                    <flux:field>
-                        <flux:label>City</flux:label>
-                        <flux:input wire:model="owner_city" />
-                        <flux:error name="owner_city" />
-                    </flux:field>
-
-                    <flux:field>
-                        <flux:label>State</flux:label>
-                        <flux:select variant="combobox" clearable placeholder="Select..." wire:model="owner_state">
-                            @foreach (config('states') as $code => $name)
-                                <flux:select.option value="{{ $code }}">{{ $name }}</flux:select.option>
-                            @endforeach
-                        </flux:select>
-                        <flux:error name="owner_state" />
-                    </flux:field>
-
-                    <flux:field>
-                        <flux:label>ZIP</flux:label>
-                        <flux:input wire:model="owner_zip" />
-                        <flux:error name="owner_zip" />
-                    </flux:field>
-                </div>
-
-                <flux:field>
-                    <flux:label>County</flux:label>
-                    <flux:input wire:model="owner_county" placeholder="Fills in from the address" />
-                    <flux:error name="owner_county" />
-                </flux:field>
-
-                <div class="flex justify-end gap-3 pt-4">
-                    <flux:button type="button" wire:click="closeOwnerModal" variant="ghost">
-                        Cancel
-                    </flux:button>
-                    <flux:button type="submit" variant="primary">
-                        {{ $editingOwnerPartyId ? 'Save changes' : 'Add Owner' }}
+                        Save changes
                     </flux:button>
                 </div>
             </form>

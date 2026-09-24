@@ -16,9 +16,9 @@ use Livewire\Livewire;
 
 if (! function_exists('waiverWizardProject')) {
     /**
-     * A wizard-complete project with an owner party; the wizard only accepts
-     * completed projects and blocks the details step until the project has a
-     * property owner (every waiver form identifies the owner).
+     * A wizard-complete project, with an owner party unless told otherwise;
+     * the wizard only accepts completed projects, and on the details step it
+     * starts the owner field from the project's owner party.
      */
     function waiverWizardProject(Business $business, string $state = 'TX', bool $withOwner = true): LienProject
     {
@@ -154,9 +154,9 @@ describe('step progression', function () {
             ->assertSet('kind', 'conditional_progress')
             ->call('nextStep')
             ->assertSet('step', 4)
-            // Step 4 blocks until the amount, through date, and contact are entered.
+            // Step 4 blocks until the amount, through date, and other party are entered.
             ->call('nextStep')
-            ->assertHasErrors(['amount', 'through_date', 'contactId'])
+            ->assertHasErrors(['amount', 'through_date', 'contact_company'])
             ->assertSet('step', 4)
             ->set('amount', '2500')
             ->set('through_date', now()->format('Y-m-d'))
@@ -195,14 +195,16 @@ describe('step progression', function () {
             ->assertSet('step', 2);
     });
 
-    it('requires a contact with an email on the details step for collect waivers', function () {
+    it('builds a collect waiver without the contact\'s email and asks for it only when sending', function () {
+        Mail::fake();
+        waiverWizardSubscribe($this->business, $this->user);
         $project = waiverWizardProject($this->business);
         $noEmail = LienContact::create([
             'created_by_user_id' => $this->user->id,
             'company_name' => 'No Email LLC',
         ]);
 
-        Livewire::test(WaiverWizard::class)
+        $component = Livewire::test(WaiverWizard::class)
             ->call('selectDirection', 'collect')
             ->call('nextStep')
             ->set('projectId', $project->public_id)
@@ -212,15 +214,38 @@ describe('step progression', function () {
             ->assertSet('step', 4)
             ->set('amount', '1000')
             ->set('through_date', now()->format('Y-m-d'))
-            // The contact signs collect waivers, so one must be picked...
-            ->call('nextStep')
-            ->assertHasErrors('contactId')
-            ->assertSet('step', 4)
-            // ...and it needs an email for the signature request to go to.
             ->set('contactId', (string) $noEmail->id)
+            // The email is not needed to build or download the waiver.
+            ->assertSee('No email yet')
             ->call('nextStep')
-            ->assertHasErrors('contactId')
-            ->assertSet('step', 4);
+            ->assertHasNoErrors()
+            ->assertSet('step', 5);
+
+        expect(LienWaiver::count())->toBe(1);
+        expect(LienWaiver::firstOrFail()->status)->toBe(WaiverStatus::Generated);
+
+        // Sending is where the signer's email matters: the contact form opens
+        // on the email and nothing goes out.
+        $component->call('saveAndSend')
+            ->assertSet('showContactModal', true)
+            ->assertSet('editingContactId', $noEmail->id)
+            ->assertHasErrors('contact_email')
+            ->assertNoRedirect();
+        Mail::assertNothingQueued();
+
+        // Add it and send: the draft saved on review picks up the new email.
+        $component->set('contact_email', 'fixed@noemail.test')
+            ->call('saveContact')
+            ->assertSet('showContactModal', false)
+            ->assertSet('contactId', (string) $noEmail->id)
+            ->call('saveAndSend');
+
+        $waiver = LienWaiver::firstOrFail();
+        $component->assertRedirect(route('lien.waivers.show', $waiver));
+        expect($waiver->status)->toBe(WaiverStatus::AwaitingSignature);
+        expect($waiver->latestSignatureRequest()->signer_email_snapshot)->toBe('fixed@noemail.test');
+        expect(LienContact::count())->toBe(1);
+        Mail::assertQueued(WaiverSignatureInvitation::class, fn ($mail) => $mail->hasTo('fixed@noemail.test'));
     });
 
     it('resets the type selection when the project changes', function () {
@@ -518,7 +543,7 @@ describe('send for signature', function () {
 });
 
 describe('inline contact creation', function () {
-    it('creates a business-scoped contact from the modal and selects it', function () {
+    it('creates a business-scoped contact from the fields on the details step and selects it', function () {
         $project = waiverWizardProject($this->business, 'TX');
 
         $component = Livewire::test(WaiverWizard::class)
@@ -528,40 +553,42 @@ describe('inline contact creation', function () {
             ->call('nextStep')
             ->call('selectKind', 'conditional_progress')
             ->call('nextStep')
-            ->call('openContactModal')
-            ->assertSet('showContactModal', true)
+            ->set('amount', '1000')
+            ->set('through_date', now()->format('Y-m-d'))
             // Needs a company or a name — blank on both errors on company.
-            ->call('saveContact')
+            ->call('nextStep')
             ->assertHasErrors('contact_company')
-            // A first name alone is enough; no company required.
-            ->set('contact_first_name', 'Vera')
-            ->set('contact_last_name', 'Vendor')
+            ->assertSet('step', 4)
             ->set('contact_company', 'Vendor Concrete LLC')
             ->set('contact_email', 'vera@vendor.test')
             ->set('contact_state', 'tx')
-            ->call('saveContact')
+            ->call('nextStep')
             ->assertHasNoErrors()
-            ->assertSet('showContactModal', false);
+            ->assertSet('step', 5);
 
         $contact = LienContact::firstOrFail();
         expect($contact->business_id)->toBe($this->business->id);
         expect($contact->created_by_user_id)->toBe($this->user->id);
         expect($contact->company_name)->toBe('Vendor Concrete LLC');
+        expect($contact->email)->toBe('vera@vendor.test');
         expect($contact->state)->toBe('TX'); // uppercased on save
 
-        $component->assertSet('contactId', (string) $contact->id);
+        // Selected, fields cleared, and the draft records them as the counterparty.
+        $component->assertSet('contactId', (string) $contact->id)
+            ->assertSet('contact_company', null);
+        expect(LienWaiver::firstOrFail()->counterparty_company)->toBe('Vendor Concrete LLC');
     });
 });
 
 describe('inline contact editing', function () {
-    it('edits the selected contact in place to add the missing email a collect waiver needs', function () {
+    it('edits the selected contact in place and keeps the saved draft in step', function () {
         $project = waiverWizardProject($this->business, 'TX');
         $noEmail = LienContact::create([
             'created_by_user_id' => $this->user->id,
             'company_name' => 'No Email LLC',
         ]);
 
-        Livewire::test(WaiverWizard::class)
+        $component = Livewire::test(WaiverWizard::class)
             ->call('selectDirection', 'collect')
             ->call('nextStep')
             ->set('projectId', $project->public_id)
@@ -571,14 +598,15 @@ describe('inline contact editing', function () {
             ->set('amount', '1000')
             ->set('through_date', now()->format('Y-m-d'))
             ->set('contactId', (string) $noEmail->id)
-            // The inline warning points at the fix...
-            ->assertSee('This contact has no email address')
-            // ...and continuing is still blocked.
+            // The note says the email can wait, and continuing isn't blocked.
+            ->assertSee('No email yet')
             ->call('nextStep')
-            ->assertHasErrors('contactId')
-            ->assertSet('step', 4)
-            // Edit in place: the modal opens prefilled with the contact.
-            ->call('editSelectedContact')
+            ->assertSet('step', 5);
+
+        expect(LienWaiver::firstOrFail()->signer_email)->toBeNull();
+
+        // Edit in place: the modal opens prefilled with the contact.
+        $component->call('editSelectedContact')
             ->assertSet('showContactModal', true)
             ->assertSet('editingContactId', $noEmail->id)
             ->assertSet('contact_company', 'No Email LLC')
@@ -587,12 +615,12 @@ describe('inline contact editing', function () {
             ->assertHasNoErrors()
             ->assertSet('showContactModal', false)
             // Still the same selected contact — updated, not duplicated.
-            ->assertSet('contactId', (string) $noEmail->id)
-            ->call('nextStep')
-            ->assertSet('step', 5);
+            ->assertSet('contactId', (string) $noEmail->id);
 
         expect($noEmail->fresh()->email)->toBe('fixed@noemail.test');
         expect(LienContact::count())->toBe(1);
+        // The draft saved on review now carries the email a send needs.
+        expect(LienWaiver::firstOrFail()->signer_email)->toBe('fixed@noemail.test');
     });
 });
 
@@ -663,8 +691,8 @@ describe('project deep link', function () {
     });
 });
 
-describe('property owner requirement', function () {
-    it('blocks the details step until the project has an owner party', function () {
+describe('property owner', function () {
+    it('requires the owner on the details step when the form prints one', function () {
         $project = waiverWizardProject($this->business, 'TX', withOwner: false);
         $contact = waiverWizardCollectContact($this->user);
 
@@ -680,15 +708,31 @@ describe('property owner requirement', function () {
             ->set('through_date', now()->format('Y-m-d'))
             ->set('contactId', (string) $contact->id)
             ->call('nextStep')
-            ->assertHasErrors('owner')
+            ->assertHasErrors('owner_name')
             ->assertSet('step', 4);
     });
 
-    it('adds the owner party from the inline modal and unblocks the step', function () {
+    it('reports every gap on the details step at once', function () {
+        $project = waiverWizardProject($this->business, 'TX', withOwner: false);
+
+        Livewire::test(WaiverWizard::class)
+            ->call('selectDirection', 'collect')
+            ->call('nextStep')
+            ->set('projectId', $project->public_id)
+            ->call('nextStep')
+            ->call('selectKind', 'conditional_progress')
+            ->call('nextStep')
+            ->assertSet('step', 4)
+            ->call('nextStep')
+            ->assertHasErrors(['amount', 'through_date', 'contact_company', 'owner_name'])
+            ->assertSet('step', 4);
+    });
+
+    it('saves the owner typed on the details step to the project', function () {
         $project = waiverWizardProject($this->business, 'TX', withOwner: false);
         $contact = waiverWizardCollectContact($this->user);
 
-        $component = Livewire::test(WaiverWizard::class)
+        Livewire::test(WaiverWizard::class)
             ->call('selectDirection', 'provide')
             ->call('nextStep')
             ->set('projectId', $project->public_id)
@@ -698,48 +742,70 @@ describe('property owner requirement', function () {
             ->set('amount', '1000')
             ->set('through_date', now()->format('Y-m-d'))
             ->set('contactId', (string) $contact->id)
-            ->call('openOwnerModal')
-            // The owner needs at least a name (person or entity, one field).
-            ->call('saveOwner')
-            ->assertHasErrors('owner_name')
             ->set('owner_name', 'Sunset Development LLC')
             ->set('owner_city', 'Austin')
             ->set('owner_state', 'tx')
-            ->call('saveOwner')
-            ->assertHasNoErrors('owner_name')
-            ->assertSet('showOwnerModal', false);
+            ->call('nextStep')
+            ->assertHasNoErrors()
+            ->assertSet('step', 5);
 
         $owner = $project->refresh()->ownerParty();
         expect($owner)->not->toBeNull()
             ->and($owner->name)->toBe('Sunset Development LLC')
+            ->and($owner->city)->toBe('Austin')
             ->and($owner->state)->toBe('TX');
-
-        $component->call('nextStep')->assertSet('step', 5);
+        expect($project->parties()->where('role', 'owner')->count())->toBe(1);
     });
 
-    it('edits the existing owner party from the wizard, prefilled', function () {
+    it('starts from the project\'s existing owner and updates it in place', function () {
         $project = waiverWizardProject($this->business, 'TX');
+        $contact = waiverWizardCollectContact($this->user);
 
-        $component = Livewire::test(WaiverWizard::class)
+        Livewire::test(WaiverWizard::class)
             ->call('selectDirection', 'provide')
             ->call('nextStep')
             ->set('projectId', $project->public_id)
             ->call('nextStep')
             ->call('selectKind', 'conditional_progress')
             ->call('nextStep')
-            ->call('editOwner')
             // Prefilled from the existing party (displayName: company first).
-            ->assertSet('showOwnerModal', true)
             ->assertSet('owner_name', 'Owner Holdings LLC')
+            ->set('amount', '1000')
+            ->set('through_date', now()->format('Y-m-d'))
+            ->set('contactId', (string) $contact->id)
             ->set('owner_name', 'New Owner LLC')
-            ->call('saveOwner')
-            ->assertSet('showOwnerModal', false);
+            ->call('nextStep')
+            ->assertSet('step', 5);
 
         $owner = $project->refresh()->ownerParty();
         expect($project->parties()->where('role', 'owner')->count())->toBe(1)
             ->and($owner->name)->toBe('New Owner LLC')
             ->and($owner->company_name)->toBeNull()
             ->and($owner->displayName())->toBe('New Owner LLC');
+    });
+
+    it('does not ask for an owner on a form with no owner blank (Nevada)', function () {
+        $project = waiverWizardProject($this->business, 'NV', withOwner: false);
+        $contact = waiverWizardCollectContact($this->user);
+
+        Livewire::test(WaiverWizard::class)
+            ->call('selectDirection', 'provide')
+            ->call('nextStep')
+            ->set('projectId', $project->public_id)
+            ->call('nextStep')
+            ->call('selectKind', 'conditional_progress')
+            ->call('nextStep')
+            ->assertSet('step', 4)
+            ->assertSee('This form has no owner line')
+            ->set('amount', '1000')
+            ->set('through_date', now()->format('Y-m-d'))
+            ->set('contactId', (string) $contact->id)
+            ->call('nextStep')
+            ->assertHasNoErrors()
+            ->assertSet('step', 5);
+
+        expect($project->refresh()->ownerParty())->toBeNull();
+        expect(LienWaiver::count())->toBe(1);
     });
 });
 

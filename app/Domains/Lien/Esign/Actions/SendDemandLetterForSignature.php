@@ -38,7 +38,10 @@ class SendDemandLetterForSignature
         private readonly AppendSignatureEvent $events,
     ) {}
 
-    public function execute(LienFiling $filing, User $admin): SignatureRequest
+    /**
+     * @param  list<int>|null  $partyIds  Recipient parties to address a letter to; null sends to all of them.
+     */
+    public function execute(LienFiling $filing, User $admin, ?array $partyIds = null): SignatureRequest
     {
         $policy = DocumentSigningPolicy::for(DemandLetterSignable::DOCUMENT_TYPE);
 
@@ -72,6 +75,18 @@ class SendDemandLetterForSignature
         $descriptors = $signable->documents();
         if ($descriptors === []) {
             throw new EsignException('This filing has no recipient parties to address a demand letter to.');
+        }
+
+        if ($partyIds !== null) {
+            $picked = array_map('strval', $partyIds);
+            $descriptors = array_values(array_filter(
+                $descriptors,
+                fn (SignableDocument $descriptor): bool => in_array($descriptor->recipientRef, $picked, true),
+            ));
+
+            if ($descriptors === []) {
+                throw new EsignException('Pick at least one party to send a demand letter to.');
+            }
         }
 
         $request = $this->createRequest($filing, $signer, $signable->documentTypeKey(), $descriptors, $signable->snapshotMeta(), $policy);

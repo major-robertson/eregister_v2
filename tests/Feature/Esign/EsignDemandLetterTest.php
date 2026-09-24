@@ -352,6 +352,7 @@ describe('admin panel', function () {
 
         Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
             ->assertSee('Send for E-Sign')
+            ->call('confirmSendForEsign')
             ->call('sendForEsign')
             ->assertSee('E-Signature');
 
@@ -361,6 +362,47 @@ describe('admin panel', function () {
         Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing->fresh()])
             ->call('verifyChain')
             ->assertSee('Audit chain verified');
+    });
+
+    it('sends letters only to the parties the admin checks', function () {
+        Mail::fake();
+        $filing = esignDemandFiling();
+        $owner = $filing->project->parties->firstWhere('role', PartyRole::Owner);
+        $customer = $filing->project->parties->firstWhere('role', PartyRole::Customer);
+
+        $this->actingAs(esignAdmin());
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->call('confirmSendForEsign')
+            ->assertSet('esignPartyIds', [(string) $owner->id, (string) $customer->id])
+            ->assertSee('Olivia Owner')
+            ->set('esignPartyIds', [(string) $owner->id])
+            ->call('sendForEsign')
+            ->assertHasNoErrors();
+
+        $request = $filing->fresh()->signatureRequests()->sole();
+        expect($request->documents()->pluck('recipient_ref')->all())->toBe([(string) $owner->id]);
+        expect($filing->fresh()->status)->toBe(FilingStatus::AwaitingEsign);
+    });
+
+    it('requires at least one party to be checked', function () {
+        Mail::fake();
+        $filing = esignDemandFiling();
+
+        $this->actingAs(esignAdmin());
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->call('confirmSendForEsign')
+            ->set('esignPartyIds', [])
+            ->call('sendForEsign')
+            ->assertHasErrors('esignPartyIds');
+
+        expect($filing->fresh()->signatureRequests()->exists())->toBeFalse();
+
+        // The action refuses a pick that matches no recipient party.
+        expect(fn () => app(SendDemandLetterForSignature::class)->execute($filing->fresh(), esignAdmin(), [999999]))
+            ->toThrow(\App\Domains\Esign\Exceptions\EsignException::class, 'Pick at least one party');
+        expect($filing->fresh()->signatureRequests()->exists())->toBeFalse();
     });
 
     it('lets an admin download a signed document and logs the admin access', function () {

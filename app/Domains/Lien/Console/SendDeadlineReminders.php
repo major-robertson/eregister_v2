@@ -5,6 +5,7 @@ namespace App\Domains\Lien\Console;
 use App\Domains\Lien\Engine\StepStatusCalculator;
 use App\Domains\Lien\Enums\DeadlineStatus;
 use App\Domains\Lien\Enums\FilingStatus;
+use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienNotificationLog;
 use App\Domains\Lien\Models\LienProjectDeadline;
 use App\Domains\Lien\Notifications\DeadlineApproaching;
@@ -30,10 +31,11 @@ use RuntimeException;
  *
  * Other guards: the deadline's real status is computed (the stored column is
  * not kept up to date), so a step the customer already bought or finished is
- * skipped; the log row is written before the mail is queued, and its unique
- * index means a crash or an overlapping run can drop a reminder but never
- * repeat one; and a run that would send more than a sane number of emails
- * sends none and reports an error instead.
+ * skipped; a job with a refunded or canceled filing gets no more reminders at
+ * all, because the customer backed out of it; the log row is written before
+ * the mail is queued, and its unique index means a crash or an overlapping
+ * run can drop a reminder but never repeat one; and a run that would send
+ * more than a sane number of emails sends none and reports an error instead.
  */
 class SendDeadlineReminders extends Command
 {
@@ -54,6 +56,12 @@ class SendDeadlineReminders extends Command
     private const UNPAID_FILING_STATUSES = [
         FilingStatus::Draft,
         FilingStatus::AwaitingPayment,
+    ];
+
+    /** Filing states that mean the customer backed out of the job. */
+    private const BACKED_OUT_FILING_STATUSES = [
+        FilingStatus::Refunded,
+        FilingStatus::Canceled,
     ];
 
     public function handle(StepStatusCalculator $calculator): int
@@ -131,12 +139,26 @@ class SendDeadlineReminders extends Command
             ->with(['business', 'project', 'documentType', 'notificationLogs'])
             ->get();
 
+        // A refund or cancellation means the customer backed out of the job,
+        // so a "start your next filing" email there is the wrong thing to send.
+        // Deleted filings count: the refund still happened.
+        $backedOutProjectIds = LienFiling::withoutGlobalScope('business')
+            ->withTrashed()
+            ->whereIn('project_id', $candidates->pluck('project_id')->unique())
+            ->whereIn('status', self::BACKED_OUT_FILING_STATUSES)
+            ->pluck('project_id')
+            ->unique();
+
         $reminders = collect();
 
         foreach ($candidates as $deadline) {
             $business = $deadline->business;
 
             if ($business === null || $deadline->project === null || $deadline->documentType === null) {
+                continue;
+            }
+
+            if ($backedOutProjectIds->contains($deadline->project_id)) {
                 continue;
             }
 

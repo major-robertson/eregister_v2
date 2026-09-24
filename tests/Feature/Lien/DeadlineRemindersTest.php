@@ -2,6 +2,7 @@
 
 use App\Domains\Business\Models\Business;
 use App\Domains\Lien\Enums\FilingStatus;
+use App\Domains\Lien\Models\LienDeadlineRule;
 use App\Domains\Lien\Models\LienDocumentType;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienNotificationLog;
@@ -242,8 +243,6 @@ describe('skips steps the customer already handled', function () {
     })->with([
         'draft' => FilingStatus::Draft,
         'awaiting payment' => FilingStatus::AwaitingPayment,
-        'canceled' => FilingStatus::Canceled,
-        'refunded' => FilingStatus::Refunded,
     ]);
 
     it('says nothing for a step marked done elsewhere or not applicable', function () {
@@ -255,6 +254,73 @@ describe('skips steps the customer already handled', function () {
         $this->artisan('lien:send-deadline-reminders');
 
         Notification::assertNothingSent();
+    });
+});
+
+describe('skips jobs the customer backed out of', function () {
+    it('says nothing about any step on a job once a filing there was refunded or canceled', function (FilingStatus $status) {
+        [$business] = reminderBusiness();
+
+        // The lien was bought and then refunded; its deadline is 7 days out,
+        // and another step on the same job is 14 days out.
+        $lien = reminderDeadline($business, '2026-10-12', 'mechanics_lien');
+        $noi = LienDocumentType::where('slug', 'noi')->firstOrFail();
+        LienProjectDeadline::factory()->forProject($lien->project)->create([
+            'document_type_id' => $noi->id,
+            // A project holds one deadline per rule.
+            'deadline_rule_id' => LienDeadlineRule::where('document_type_id', $noi->id)->whereKeyNot($lien->deadline_rule_id)->value('id'),
+            'due_date' => '2026-10-19',
+        ]);
+
+        LienFiling::factory()->forProject($lien->project)->create([
+            'document_type_id' => $lien->document_type_id,
+            'project_deadline_id' => $lien->id,
+            'status' => $status,
+            'paid_at' => now()->subWeeks(3),
+        ]);
+
+        $this->artisan('lien:send-deadline-reminders')->assertSuccessful();
+
+        Notification::assertNothingSent();
+        expect(LienNotificationLog::count())->toBe(0);
+    })->with([
+        'refunded' => FilingStatus::Refunded,
+        'canceled' => FilingStatus::Canceled,
+    ]);
+
+    it('still says nothing after the refunded filing is deleted', function () {
+        [$business] = reminderBusiness();
+        $lien = reminderDeadline($business, '2026-10-12', 'mechanics_lien');
+
+        LienFiling::factory()->forProject($lien->project)->create([
+            'document_type_id' => $lien->document_type_id,
+            'project_deadline_id' => $lien->id,
+            'status' => FilingStatus::Refunded,
+            'paid_at' => now()->subWeeks(3),
+        ])->delete();
+
+        $this->artisan('lien:send-deadline-reminders');
+
+        Notification::assertNothingSent();
+    });
+
+    it("keeps reminding about the customer's other jobs", function () {
+        [$business, $owner] = reminderBusiness();
+        $refundedJob = reminderDeadline($business, '2026-10-12', 'mechanics_lien');
+        $otherJob = reminderDeadline($business, '2026-10-12', 'mechanics_lien');
+
+        LienFiling::factory()->forProject($refundedJob->project)->create([
+            'document_type_id' => $refundedJob->document_type_id,
+            'project_deadline_id' => $refundedJob->id,
+            'status' => FilingStatus::Refunded,
+            'paid_at' => now()->subWeeks(3),
+        ]);
+
+        $this->artisan('lien:send-deadline-reminders');
+
+        Notification::assertSentToTimes($owner, DeadlineApproaching::class, 1);
+        Notification::assertSentTo($owner, DeadlineApproaching::class,
+            fn (DeadlineApproaching $notification) => $notification->deadline->is($otherJob));
     });
 });
 

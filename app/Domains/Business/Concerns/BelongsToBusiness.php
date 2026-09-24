@@ -5,6 +5,7 @@ namespace App\Domains\Business\Concerns;
 use App\Domains\Business\Models\Business;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Livewire\Livewire;
 
 /**
  * Tenant scoping for business-owned domain models: a global scope pins
@@ -17,16 +18,37 @@ trait BelongsToBusiness
     protected static function bootBelongsToBusiness(): void
     {
         static::addGlobalScope('business', function (Builder $query): void {
+            if (static::inAdminArea()) {
+                return;
+            }
+
             if ($business = auth()->user()?->currentBusiness()) {
                 $query->where($query->getModel()->getTable().'.business_id', $business->id);
             }
         });
 
         static::creating(function ($model): void {
+            if (static::inAdminArea()) {
+                return;
+            }
+
             if (! $model->business_id && $business = auth()->user()?->currentBusiness()) {
                 $model->business_id = $business->id;
             }
         });
+    }
+
+    /**
+     * The admin area works across every business. An admin who also uses the
+     * portal has a customer business in their session, and scoping to it would
+     * hide every other business's records (404s, "Unknown" projects). Covers
+     * Livewire update requests too, via the page they were made from.
+     */
+    protected static function inAdminArea(): bool
+    {
+        $path = Livewire::originalPath();
+
+        return $path === 'admin' || str_starts_with($path, 'admin/');
     }
 
     public function business(): BelongsTo

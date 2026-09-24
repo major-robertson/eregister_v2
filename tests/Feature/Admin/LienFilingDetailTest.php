@@ -31,15 +31,23 @@ describe('access control', function () {
         $ownBusiness = Business::factory()->create();
         $admin->businesses()->attach($ownBusiness->id, ['role' => 'owner']);
 
-        $business = Business::factory()->create();
-        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        $business = Business::factory()->create(['name' => 'Faraway Framing LLC']);
+        $project = LienProject::factory()->create(['business_id' => $business->id, 'jobsite_city' => 'Tacoma']);
         $filing = LienFiling::factory()->forProject($project)->create();
 
+        // The page opens, and the scoped relations (project, business) load too.
         $this->actingAs($admin)
             ->withSession(['current_business_id' => $ownBusiness->id])
             ->get(route('admin.liens.show', $filing))
             ->assertSuccessful()
-            ->assertSee('Filing Detail');
+            ->assertSee('Filing Detail')
+            ->assertSee('Faraway Framing LLC')
+            ->assertSee('Tacoma');
+
+        // Outside the admin area the selected business still scopes queries.
+        $this->app->instance('request', \Illuminate\Http\Request::create('/portal'));
+        session(['current_business_id' => $ownBusiness->id]);
+        expect(LienFiling::whereKey($filing->id)->exists())->toBeFalse();
     });
 
     it('denies users without lien.view permission access', function () {

@@ -51,6 +51,13 @@ class LienFilingDetail extends Component
     public bool $showSendEsignModal = false;
 
     /**
+     * Parties checked in the Send for E-Sign dialog. Only these get a letter.
+     *
+     * @var list<string>
+     */
+    public array $esignPartyIds = [];
+
+    /**
      * Recording-detail form fields. Bound to the conditional sub-form inside
      * the status-change panel (when transitioning to SubmittedForRecording)
      * AND to the always-visible "Recording details" edit panel that appears
@@ -204,15 +211,14 @@ class LienFilingDetail extends Component
             ->latest('id')
             ->first();
 
-        // Every party except the claimant (the sender) gets its own letter.
+        // Every party except the claimant (the sender) can get its own letter.
         $demandRecipients = $this->lienFiling->isDemandLetter()
             ? ($this->lienFiling->project?->nonClaimantParties() ?? collect())
             : collect();
-        $recipientCount = $demandRecipients->count();
 
         $canSendEsign = ! $isDeleted
             && $this->lienFiling->isDemandLetter()
-            && $recipientCount > 0
+            && $demandRecipients->isNotEmpty()
             && $esignRequest?->isActive() !== true
             && $this->lienFiling->canTransitionTo(FilingStatus::AwaitingEsign)
             && auth()->user()->can('changeStatus', $this->lienFiling);
@@ -245,7 +251,6 @@ class LienFilingDetail extends Component
             'hasPriorEsign' => $signedEsignRequest !== null,
             'demandRecipients' => $demandRecipients,
             'signedLetters' => $signedEsignRequest?->documents->whereNotNull('signed_at')->values() ?? collect(),
-            'recipientCount' => $recipientCount,
             'canSendEsign' => $canSendEsign,
             'esignAwaiting' => $esignAwaiting,
             'esignReminders' => $esignReminders,
@@ -630,6 +635,12 @@ class LienFilingDetail extends Component
     public function confirmSendForEsign(): void
     {
         $this->authorize('changeStatus', $this->lienFiling);
+
+        // Start with every party checked; the admin unchecks any to skip.
+        $this->esignPartyIds = ($this->lienFiling->project?->nonClaimantParties() ?? collect())
+            ->map(fn ($party) => (string) $party->id)
+            ->all();
+
         $this->showSendEsignModal = true;
     }
 
@@ -641,8 +652,18 @@ class LienFilingDetail extends Component
     {
         $this->authorize('changeStatus', $this->lienFiling);
 
+        if ($this->esignPartyIds === []) {
+            $this->addError('esignPartyIds', 'Pick at least one party to send a demand letter to.');
+
+            return;
+        }
+
         try {
-            app(SendDemandLetterForSignature::class)->execute($this->lienFiling, auth()->user());
+            app(SendDemandLetterForSignature::class)->execute(
+                $this->lienFiling,
+                auth()->user(),
+                array_map('intval', $this->esignPartyIds),
+            );
 
             $this->showSendEsignModal = false;
             $this->afterEdit();

@@ -709,11 +709,25 @@
                     <div>
                         <flux:heading size="lg">{{ $hasPriorEsign ? 'Re-send for e-signature?' : 'Send for e-signature?' }}</flux:heading>
                         <flux:subheading class="mt-2">
-                            We'll generate and lock {{ $recipientCount }} demand letter{{ $recipientCount === 1 ? '' : 's' }},
+                            We'll generate and lock one demand letter for each party checked below,
                             then email {{ $filing->createdBy?->name ?? 'the filing creator' }}
                             (<span class="font-medium">{{ $filing->createdBy?->email }}</span>) a link to review and sign.
                             The filing status will change to <strong>Awaiting E-Signature</strong>.
                         </flux:subheading>
+                    </div>
+
+                    <div>
+                        <flux:checkbox.group wire:model="esignPartyIds" label="Send a letter to">
+                            @foreach ($demandRecipients as $party)
+                            <flux:checkbox
+                                wire:key="esign-party-{{ $party->id }}"
+                                value="{{ $party->id }}"
+                                label="{{ $party->displayName() ?: 'Unnamed party' }} ({{ $party->role?->label() ?? 'Recipient' }})"
+                                description="{{ $party->addressLine() ?: 'No address on file' }}"
+                            />
+                            @endforeach
+                        </flux:checkbox.group>
+                        <flux:error name="esignPartyIds" />
                     </div>
 
                     @if ($hasPriorEsign)

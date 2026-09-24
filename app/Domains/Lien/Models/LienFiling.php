@@ -111,6 +111,20 @@ class LienFiling extends Model implements HasMedia
         return 'public_id';
     }
 
+    /**
+     * Admin pages open any business's filing. Without this, the business scope
+     * 404s every other business's filing whenever the admin also has one of
+     * their own customer businesses selected in the session.
+     */
+    public function resolveRouteBindingQuery($query, $value, $field = null)
+    {
+        if (request()->routeIs('admin.*')) {
+            $query = $query->withoutGlobalScope('business');
+        }
+
+        return parent::resolveRouteBindingQuery($query, $value, $field);
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('attachments')

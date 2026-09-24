@@ -24,6 +24,24 @@ describe('access control', function () {
             ->assertSee('Filing Detail');
     });
 
+    it('opens another business\'s filing while the admin has a customer business selected', function () {
+        $admin = User::factory()->create();
+        $admin->givePermissionTo('lien.view');
+
+        $ownBusiness = Business::factory()->create();
+        $admin->businesses()->attach($ownBusiness->id, ['role' => 'owner']);
+
+        $business = Business::factory()->create();
+        $project = LienProject::factory()->create(['business_id' => $business->id]);
+        $filing = LienFiling::factory()->forProject($project)->create();
+
+        $this->actingAs($admin)
+            ->withSession(['current_business_id' => $ownBusiness->id])
+            ->get(route('admin.liens.show', $filing))
+            ->assertSuccessful()
+            ->assertSee('Filing Detail');
+    });
+
     it('denies users without lien.view permission access', function () {
         $user = User::factory()->create();
 

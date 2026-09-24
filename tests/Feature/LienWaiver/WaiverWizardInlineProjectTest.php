@@ -44,6 +44,8 @@ it('opens on the project step with the inline form when the starter chose a dire
         ->assertSet('intentKind', 'conditional_progress')
         ->assertSee('Where is the job?')
         ->assertSee('Your role on this job')
+        // The optional fields sit behind one fold so the screen stays short.
+        ->assertSee('More details')
         ->assertDontSee('Create a project first');
 
     // Consumed: a later wizard visit starts clean.
@@ -128,7 +130,7 @@ it('lets a business with projects add another one without leaving the wizard', f
         ->assertDontSee(route('lien.projects.create'))
         ->call('startNewProject')
         ->assertSet('creatingProject', true)
-        ->assertSee('Save project')
+        ->assertSee('Where is the job?')
         ->call('cancelNewProject')
         ->assertSet('creatingProject', false);
 });

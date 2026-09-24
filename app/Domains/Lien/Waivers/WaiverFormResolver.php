@@ -26,11 +26,13 @@ class WaiverFormResolver
         $template = $entry['template'];
         $title = $entry['title'];
         $requiresLegalDescription = (bool) ($entry['requires_legal_description'] ?? false);
+        $printsOwner = (bool) ($entry['prints_owner'] ?? true);
 
         if ($propertyClass === 'residential' && ! empty($entry['residential_template'])) {
             $template = $entry['residential_template'];
             $title = $entry['residential_title'] ?? $title;
             $requiresLegalDescription = (bool) ($entry['residential_requires_legal_description'] ?? $requiresLegalDescription);
+            $printsOwner = (bool) ($entry['residential_prints_owner'] ?? $printsOwner);
         }
 
         // Invariant: in-person execution (notary or witness) rules out
@@ -56,6 +58,7 @@ class WaiverFormResolver
             uiNotes: $rules['ui_notes'] ?? [],
             extraClauses: $rules['extra_clauses'] ?? [],
             requiresLegalDescription: $requiresLegalDescription,
+            printsOwner: $printsOwner,
         );
     }
 

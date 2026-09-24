@@ -287,7 +287,8 @@ describe('register page after the starter', function () {
 
         $this->get(route('register'))
             ->assertSuccessful()
-            ->assertSee('Step 1 of 3')
+            // Account, business, the job, the waiver details.
+            ->assertSee('Step 1 of 4')
             ->assertSee('Create your free account to finish your Texas lien waiver')
             ->assertSee('Free. No credit card.')
             ->assertSee('Create my free account')
@@ -299,7 +300,7 @@ describe('register page after the starter', function () {
             ->assertSuccessful()
             ->assertSee('Create an account')
             ->assertSee('Enter your details below')
-            ->assertDontSee('Step 1 of 3');
+            ->assertDontSee('Step 1 of');
     });
 
     it('lets a team invitation explain itself instead', function () {
@@ -319,7 +320,7 @@ describe('register page after the starter', function () {
         $this->get(route('register'))
             ->assertSuccessful()
             ->assertSee('Acme Contracting')
-            ->assertDontSee('Step 1 of 3');
+            ->assertDontSee('Step 1 of');
     });
 });
 

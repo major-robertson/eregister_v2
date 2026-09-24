@@ -1,9 +1,121 @@
+@if ($justRegistered)
+    @include('livewire.business._signup-conversion')
+@endif
+
 <div class="w-full max-w-lg">
-    @if ($businesses->isEmpty())
+    @if ($businesses->isEmpty() && $oneScreenSetup)
+        {{-- Waiver sign-ups: name and address on one screen, then straight
+             into the wizard. Both print on the waiver. --}}
+        <div class="text-center">
+            <p class="text-sm font-medium text-text-secondary">Step 2 of 4</p>
+            <h1 class="mt-1 text-3xl font-bold tracking-tight text-text-primary sm:text-4xl">
+                Your business
+            </h1>
+            <p class="mt-4 text-lg text-text-secondary">
+                Its name and address go on your waiver.
+            </p>
+        </div>
+
+        <form wire:submit="createBusiness" class="mt-10 space-y-6">
+            <div>
+                <label class="mb-2 block text-sm font-medium text-text-secondary">Business name</label>
+                <input
+                    type="text"
+                    wire:model="newBusinessName"
+                    placeholder="Your company, or your own name"
+                    autofocus
+                    class="w-full border-0 border-b-2 border-border bg-transparent px-0 py-3 text-xl font-medium text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none focus:ring-0"
+                />
+                @error('newBusinessName')
+                    <p class="mt-2 text-sm text-danger">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Street address with Google Places autocomplete (delegated;
+                 the geo fields come from the server-side geocode on save). --}}
+            <div>
+                <label class="mb-2 block text-sm font-medium text-text-secondary">Street address</label>
+                <input
+                    type="text"
+                    wire:model="businessAddress.line1"
+                    placeholder="123 Main Street"
+                    autocomplete="off"
+                    data-places-autocomplete
+                    data-places-method="updateAddressFromAutocomplete"
+                    class="w-full border-0 border-b-2 border-border bg-transparent px-0 py-3 text-xl font-medium text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none focus:ring-0"
+                />
+                @error('businessAddress.line1')
+                    <p class="mt-2 text-sm text-danger">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div>
+                <label class="mb-2 block text-sm font-medium text-text-secondary">Suite / Unit <span class="text-text-tertiary">(optional)</span></label>
+                <input
+                    type="text"
+                    wire:model="businessAddress.line2"
+                    placeholder="Suite 100"
+                    class="w-full border-0 border-b-2 border-border bg-transparent px-0 py-3 text-xl font-medium text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none focus:ring-0"
+                />
+            </div>
+
+            <div class="grid grid-cols-6 gap-6">
+                <div class="col-span-3">
+                    <label class="mb-2 block text-sm font-medium text-text-secondary">City</label>
+                    <input
+                        type="text"
+                        wire:model="businessAddress.city"
+                        placeholder="City"
+                        class="w-full border-0 border-b-2 border-border bg-transparent px-0 py-3 text-xl font-medium text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none focus:ring-0"
+                    />
+                    @error('businessAddress.city')
+                        <p class="mt-2 text-sm text-danger">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="col-span-1">
+                    <label class="mb-2 block text-sm font-medium text-text-secondary">State</label>
+                    <select
+                        wire:model="businessAddress.state"
+                        class="w-full border-0 border-b-2 border-border bg-transparent px-0 py-3 text-xl font-medium text-text-primary focus:border-primary focus:outline-none focus:ring-0"
+                    >
+                        <option value="">--</option>
+                        @foreach (config('states') as $code => $name)
+                            <option value="{{ $code }}">{{ $code }}</option>
+                        @endforeach
+                    </select>
+                    @error('businessAddress.state')
+                        <p class="mt-2 text-sm text-danger">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="col-span-2">
+                    <label class="mb-2 block text-sm font-medium text-text-secondary">ZIP Code</label>
+                    <input
+                        type="text"
+                        wire:model="businessAddress.zip"
+                        placeholder="12345"
+                        class="w-full border-0 border-b-2 border-border bg-transparent px-0 py-3 text-xl font-medium text-text-primary placeholder:text-text-secondary/50 focus:border-primary focus:outline-none focus:ring-0"
+                    />
+                    @error('businessAddress.zip')
+                        <p class="mt-2 text-sm text-danger">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-4">
+                <flux:button type="submit" variant="primary" icon-trailing="arrow-right">
+                    Continue
+                </flux:button>
+            </div>
+        </form>
+
+        @include('livewire.lien._places-autocomplete')
+    @elseif ($businesses->isEmpty())
         {{-- No businesses - show create form (typeform style) --}}
 
         {{-- Progress dots: 4 dots if from liens (continuous flow into lien
-             onboarding), 2 dots otherwise — waiver signups skip lien onboarding. --}}
+             onboarding), 2 dots otherwise. --}}
         @php $isFromLiens = auth()->user()->signedUpFromLiens() && ! auth()->user()->signedUpFromWaivers(); @endphp
         <div class="mb-16 flex justify-center gap-2">
             <div class="h-2 w-2 rounded-full bg-primary"></div>

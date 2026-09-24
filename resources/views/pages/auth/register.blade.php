@@ -25,8 +25,9 @@
 <x-layouts::auth title="Create an Account">
     <div class="flex flex-col gap-6">
         @if ($forWaiver)
+            {{-- Account, business, the job, the waiver details. --}}
             <div class="flex w-full flex-col text-center">
-                <p class="text-sm font-medium text-text-secondary">Step 1 of 3</p>
+                <p class="text-sm font-medium text-text-secondary">Step 1 of 4</p>
                 <flux:heading size="xl" class="mt-1">Create your free account to finish your {{ $waiverStateName ? $waiverStateName.' ' : '' }}lien waiver</flux:heading>
                 <flux:subheading>Free. No credit card.</flux:subheading>
             </div>

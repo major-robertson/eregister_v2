@@ -6,6 +6,7 @@ use App\Domains\Business\Concerns\BelongsToBusiness;
 use App\Domains\Lien\Enums\ClaimantType;
 use App\Domains\Lien\Enums\NocStatus;
 use App\Domains\Lien\Enums\PartyRole;
+use App\Enums\PaymentStatus;
 use App\Models\User;
 use Database\Factories\Lien\LienProjectFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -119,6 +120,27 @@ class LienProject extends Model
     public function filings(): HasMany
     {
         return $this->hasMany(LienFiling::class, 'project_id');
+    }
+
+    /**
+     * Whether any filing on this project was paid for or has a payment going
+     * through, counting filings an admin soft-deleted. Deleting the project
+     * would destroy those orders: lien_filings.project_id cascades in the
+     * database, past the filings' soft deletes.
+     */
+    public function hasPaidFilings(): bool
+    {
+        return $this->filings()
+            ->withoutGlobalScopes()
+            ->where(fn ($query) => $query
+                ->whereNotNull('paid_at')
+                // A payment held for manual review succeeds without marking the filing paid.
+                ->orWhereHas('payments', fn ($payments) => $payments->whereIn('status', [
+                    PaymentStatus::Succeeded,
+                    PaymentStatus::Processing,
+                    PaymentStatus::Refunded,
+                ])))
+            ->exists();
     }
 
     /**

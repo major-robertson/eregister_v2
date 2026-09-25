@@ -24,11 +24,17 @@ use App\Domains\Lien\Enums\DeadlineStatus;
                         Edit
                     </flux:menu.item>
                     <flux:menu.separator />
-                    <flux:menu.item wire:click="deleteProject"
-                        wire:confirm="Are you sure you want to delete this project? This action cannot be undone."
-                        variant="danger" icon="trash">
-                        Delete
-                    </flux:menu.item>
+                    @can('delete', $project)
+                        <flux:menu.item wire:click="deleteProject"
+                            wire:confirm="Delete this project? Its unpaid filings and its waivers are deleted too. This can't be undone."
+                            variant="danger" icon="trash">
+                            Delete
+                        </flux:menu.item>
+                    @else
+                        <flux:menu.item icon="trash" disabled>
+                            Delete (has paid filings)
+                        </flux:menu.item>
+                    @endcan
                 </flux:menu>
             </flux:dropdown>
         </x-slot:actions>

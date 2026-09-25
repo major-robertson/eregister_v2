@@ -40,11 +40,12 @@ class LienProjectPolicy
     }
 
     /**
-     * Determine if the user can delete the project.
+     * Determine if the user can delete the project. Never while it has a paid
+     * filing: deleting the project deletes its filings too.
      */
     public function delete(User $user, LienProject $project): bool
     {
-        return $this->belongsToBusiness($user, $project);
+        return $this->belongsToBusiness($user, $project) && ! $project->hasPaidFilings();
     }
 
     /**

@@ -14,6 +14,7 @@ use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienProjectDeadline;
 use App\Domains\Lien\Models\LienStateRule;
 use App\Mail\AttorneyReferral;
+use App\Models\EmailSequence;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -128,30 +129,65 @@ class FilingWizard extends Component
         $this->project = $project;
         $this->deadline = $deadline;
 
-        // Find or create draft filing
-        $existing = $project->filings()
+        $filings = $project->filings()
             ->where('project_deadline_id', $deadline->id)
-            ->whereIn('status', [FilingStatus::Draft, FilingStatus::AwaitingPayment])
-            ->first();
+            ->latest('id')
+            ->get();
 
-        if ($existing) {
-            $this->filing = $existing;
-        } else {
-            $this->filing = LienFiling::create([
-                'public_id' => Str::ulid()->toBase32(),
-                'business_id' => $project->business_id,
-                'project_id' => $project->id,
-                'document_type_id' => $deadline->document_type_id,
-                'project_deadline_id' => $deadline->id,
-                'jurisdiction_state' => $project->jobsite_state,
-                'jurisdiction_county' => $project->jobsite_county,
-                'status' => FilingStatus::Draft,
-                'created_by_user_id' => auth()->id(),
-            ]);
+        // Already paid for: an old link (history, a bookmark, a stale project
+        // page) opens that order, never a blank second one. Canceled and
+        // refunded orders don't count, so those customers can start over.
+        $paid = $filings->first(fn (LienFiling $filing): bool => ! in_array($filing->status, [
+            FilingStatus::Draft,
+            FilingStatus::AwaitingPayment,
+            FilingStatus::Canceled,
+            FilingStatus::Refunded,
+        ], true));
+
+        if ($paid) {
+            session()->flash('message', "You've already paid for this filing. Here's where it stands.");
+            $this->redirect(route('lien.filings.show', $paid));
+
+            return;
         }
+
+        // Resume the order furthest along, or start a new draft.
+        $this->filing = $filings->first(fn (LienFiling $filing): bool => $filing->status === FilingStatus::AwaitingPayment)
+            ?? $filings->first(fn (LienFiling $filing): bool => $filing->status === FilingStatus::Draft)
+            ?? $this->startDraft();
 
         $this->populateFromProject();
         $this->populateFromFiling();
+    }
+
+    /**
+     * Every way into a filing lands here (the project page's buttons, the
+     * deadline email's link, old links), so every new draft gets the
+     * "finish your filing" emails.
+     */
+    private function startDraft(): LienFiling
+    {
+        $filing = LienFiling::create([
+            'public_id' => Str::ulid()->toBase32(),
+            'business_id' => $this->project->business_id,
+            'project_id' => $this->project->id,
+            'document_type_id' => $this->deadline->document_type_id,
+            'project_deadline_id' => $this->deadline->id,
+            'jurisdiction_state' => $this->project->jobsite_state,
+            'jurisdiction_county' => $this->project->jobsite_county,
+            'status' => FilingStatus::Draft,
+            'created_by_user_id' => auth()->id(),
+        ]);
+
+        EmailSequence::startFor(
+            'abandon_checkout',
+            $filing,
+            auth()->user(),
+            $this->project->business,
+            route('lien.filings.start', ['project' => $this->project, 'deadline' => $this->deadline])
+        );
+
+        return $filing;
     }
 
     private function populateFromProject(): void

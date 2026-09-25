@@ -5,17 +5,14 @@ namespace App\Domains\Lien\Livewire;
 use App\Domains\Lien\Engine\DeadlineCalculator;
 use App\Domains\Lien\Engine\StepStatusCalculator;
 use App\Domains\Lien\Enums\DeadlineStatus;
-use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Enums\WaiverKind;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienProjectDeadline;
 use App\Domains\Lien\Models\LienWaiver;
-use App\Models\EmailSequence;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Str;
 use Livewire\Component;
 
 class ProjectShow extends Component
@@ -37,42 +34,10 @@ class ProjectShow extends Component
     {
         $deadline = LienProjectDeadline::findOrFail($deadlineId);
 
-        // Check if there's an existing draft filing for this deadline
-        $existingFiling = $this->project->filings()
-            ->where('project_deadline_id', $deadline->id)
-            ->where('status', FilingStatus::Draft)
-            ->first();
-
-        if ($existingFiling) {
-            $this->redirect(route('lien.filings.start', [
-                'project' => $this->project,
-                'deadline' => $deadline,
-            ]));
-
-            return;
-        }
-
-        // Create a new draft filing
-        $filing = LienFiling::create([
-            'public_id' => Str::ulid()->toBase32(),
-            'business_id' => $this->project->business_id,
-            'project_id' => $this->project->id,
-            'document_type_id' => $deadline->document_type_id,
-            'project_deadline_id' => $deadline->id,
-            'jurisdiction_state' => $this->project->jobsite_state,
-            'jurisdiction_county' => $this->project->jobsite_county,
-            'status' => FilingStatus::Draft,
-            'created_by_user_id' => auth()->id(),
-        ]);
-
-        EmailSequence::startFor(
-            'abandon_checkout',
-            $filing,
-            auth()->user(),
-            $this->project->business,
-            route('lien.filings.start', ['project' => $this->project, 'deadline' => $deadline])
-        );
-
+        // The wizard decides: resume the draft or unpaid order, open a filing
+        // that's already paid for, or start a new draft. Deciding here as
+        // well made a second draft beside an unpaid order ("Complete
+        // Payment") and beside paid orders on stale pages.
         $this->redirect(route('lien.filings.start', [
             'project' => $this->project,
             'deadline' => $deadline,

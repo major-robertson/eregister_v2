@@ -4,9 +4,11 @@ use App\Domains\Business\Models\Business;
 use App\Domains\Lien\Enums\ClaimantType;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Livewire\FilingWizard;
+use App\Domains\Lien\Livewire\ProjectShow;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
+use App\Models\EmailSequence;
 use App\Models\User;
 use Livewire\Livewire;
 
@@ -463,5 +465,85 @@ describe('Filing Wizard party address requirement', function () {
                 'partyState' => 'required',
                 'partyZip' => 'required',
             ]);
+    });
+});
+
+describe('Filing Wizard entry', function () {
+    it('opens a paid filing from an old link instead of a blank draft', function () {
+        $this->business->update(['onboarding_completed_at' => now()]);
+        $this->filing->update(['status' => FilingStatus::InFulfillment, 'paid_at' => now()]);
+
+        $this->get(route('lien.filings.start', ['project' => $this->project, 'deadline' => $this->deadline]))
+            ->assertRedirect(route('lien.filings.show', $this->filing))
+            ->assertSessionHas('message');
+
+        expect(LienFiling::where('project_deadline_id', $this->deadline->id)->count())->toBe(1);
+    });
+
+    it('opens the paid filing even with a stray draft beside it', function () {
+        $paid = LienFiling::factory()->forProject($this->project)->create([
+            'document_type_id' => $this->deadline->document_type_id,
+            'project_deadline_id' => $this->deadline->id,
+            'status' => FilingStatus::InFulfillment,
+            'paid_at' => now(),
+        ]);
+
+        Livewire::test(FilingWizard::class, [
+            'project' => $this->project,
+            'deadline' => $this->deadline,
+        ])->assertRedirect(route('lien.filings.show', $paid));
+    });
+
+    it('resumes an unpaid order before a stray draft', function () {
+        $unpaid = LienFiling::factory()->forProject($this->project)->create([
+            'document_type_id' => $this->deadline->document_type_id,
+            'project_deadline_id' => $this->deadline->id,
+            'status' => FilingStatus::AwaitingPayment,
+        ]);
+
+        Livewire::test(FilingWizard::class, [
+            'project' => $this->project,
+            'deadline' => $this->deadline,
+        ])->assertNoRedirect()
+            ->assertSet('filing.id', $unpaid->id);
+    });
+
+    it('starts a new draft with the finish-your-filing emails', function () {
+        $this->filing->forceDelete();
+
+        Livewire::test(FilingWizard::class, [
+            'project' => $this->project,
+            'deadline' => $this->deadline,
+        ])->assertNoRedirect();
+
+        $draft = LienFiling::where('project_deadline_id', $this->deadline->id)->sole();
+        $sequence = EmailSequence::where('sequence_type', 'abandon_checkout')
+            ->where('sequenceable_type', 'lien_filing')
+            ->where('sequenceable_id', $draft->id)
+            ->sole();
+
+        expect($draft->status)->toBe(FilingStatus::Draft)
+            ->and($sequence->resume_url)->toBe(route('lien.filings.start', ['project' => $this->project, 'deadline' => $this->deadline]));
+    });
+
+    it('lets a refunded customer start over', function () {
+        $this->filing->update(['status' => FilingStatus::Refunded, 'paid_at' => now()]);
+
+        Livewire::test(FilingWizard::class, [
+            'project' => $this->project,
+            'deadline' => $this->deadline,
+        ])->assertNoRedirect();
+
+        expect(LienFiling::where('project_deadline_id', $this->deadline->id)->where('status', FilingStatus::Draft)->count())->toBe(1);
+    });
+
+    it('leaves the draft to the wizard when the project page button is clicked', function () {
+        $this->filing->update(['status' => FilingStatus::AwaitingPayment]);
+
+        Livewire::test(ProjectShow::class, ['project' => $this->project])
+            ->call('startFiling', $this->deadline->id)
+            ->assertRedirect(route('lien.filings.start', ['project' => $this->project, 'deadline' => $this->deadline]));
+
+        expect(LienFiling::where('project_deadline_id', $this->deadline->id)->count())->toBe(1);
     });
 });

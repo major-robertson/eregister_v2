@@ -7,6 +7,7 @@ use App\Domains\Lien\Services\LienStripeWebhookHandler;
 use App\Domains\ResaleCert\Services\ResaleCertStripeWebhookHandler;
 use App\Domains\SalesTax\Services\TaxStripeWebhookHandler;
 use App\Models\StripeWebhookEvent;
+use App\Services\StripeRefundRecorder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -80,6 +81,15 @@ class StripeWebhookController
             ]);
 
             return response('No object', 200);
+        }
+
+        // Refunds apply to every product and are matched to our payment by
+        // payment intent or charge id: charges don't carry the app_domain
+        // metadata the domain handlers route on.
+        if ($event->type === 'charge.refunded') {
+            $outcome = app(StripeRefundRecorder::class)->fromCharge($object);
+
+            return response($outcome !== null ? "Refund {$outcome}" : 'Charge not ours', 200);
         }
 
         $domain = $this->resolveDomain($event, $object);

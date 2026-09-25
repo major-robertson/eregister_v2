@@ -300,7 +300,8 @@ class EmailSequence extends Model
     /**
      * Stop rules for "finish the questions": the sequence lives while the
      * registration is paid and still open. Submitting it (the wizard locks
-     * it) ends the series; so does a payment that went away.
+     * it) ends the series; so does a payment that went away or was refunded
+     * (a refund leaves paid_at set on the application).
      */
     protected function shouldSuppressUnfinishedRegistration(): ?string
     {
@@ -316,6 +317,10 @@ class EmailSequence extends Model
 
         if (! $application->isPaid()) {
             return 'not_paid';
+        }
+
+        if ($application->payments()->where('status', PaymentStatus::Refunded)->exists()) {
+            return 'refunded';
         }
 
         return $this->currentStep() === null ? 'all_steps_sent' : null;

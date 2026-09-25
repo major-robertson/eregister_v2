@@ -10,7 +10,11 @@ use App\Domains\Marketing\Models\MarketingCampaignStep;
 use App\Domains\Marketing\Models\MarketingLead;
 use App\Domains\Marketing\Models\MarketingLeadCampaign;
 use App\Domains\Marketing\Models\MarketingMailing;
+use App\Domains\Marketing\Services\MailResult;
+use App\Domains\Marketing\Services\PostGridMailProvider;
+use App\Domains\Marketing\Services\QrCodeService;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     $this->lead = MarketingLead::create([
@@ -183,4 +187,87 @@ it('marks enrollment as completed after last step', function () {
     expect($enrollment->status)->toBe(LeadCampaignStatus::Completed);
     expect($enrollment->completed_at)->not->toBeNull();
     expect($enrollment->next_action_at)->toBeNull();
+});
+
+it('mails a due step once when two copies of the job run', function () {
+    Storage::fake('s3');
+    $this->mock(PostGridMailProvider::class, function ($mock) {
+        $mock->shouldReceive('sendLetter')->once()->andReturn(MailResult::success('letter_1', 'ready'));
+    });
+
+    $enrollment = MarketingLeadCampaign::create([
+        'lead_id' => $this->lead->id,
+        'campaign_id' => $this->campaign->id,
+        'status' => LeadCampaignStatus::Pending,
+        'current_step_order' => 1,
+        'next_action_at' => now()->subMinute(),
+        'enrolled_at' => now(),
+    ]);
+
+    // Two scheduler runs each queue a copy before either copy runs.
+    $first = new SendCampaignMailing($enrollment);
+    $second = new SendCampaignMailing($enrollment);
+
+    $first->handle(app(QrCodeService::class));
+    $second->handle(app(QrCodeService::class));
+
+    expect(MarketingMailing::count())->toBe(1);
+    expect($enrollment->fresh()->current_step_order)->toBe(2);
+});
+
+it('does not mail the next step early when that step has no delay', function () {
+    Storage::fake('s3');
+    $this->step2->update(['delay_days' => 0]);
+    $this->mock(PostGridMailProvider::class, function ($mock) {
+        $mock->shouldReceive('sendLetter')->once()->andReturn(MailResult::success('letter_1', 'ready'));
+    });
+
+    $enrollment = MarketingLeadCampaign::create([
+        'lead_id' => $this->lead->id,
+        'campaign_id' => $this->campaign->id,
+        'status' => LeadCampaignStatus::Pending,
+        'current_step_order' => 1,
+        'next_action_at' => now()->subMinute(),
+        'enrolled_at' => now(),
+    ]);
+
+    $first = new SendCampaignMailing($enrollment);
+    $second = new SendCampaignMailing($enrollment);
+
+    $first->handle(app(QrCodeService::class));
+
+    // Step 2 is due now as well, but the second copy was queued for step 1.
+    $this->travel(5)->minutes();
+    $second->handle(app(QrCodeService::class));
+
+    expect(MarketingMailing::count())->toBe(1);
+    expect($enrollment->fresh()->current_step_order)->toBe(2);
+});
+
+it('still sends the step when a retry follows a failed attempt', function () {
+    Storage::fake('s3');
+    $this->mock(PostGridMailProvider::class, function ($mock) {
+        $mock->shouldReceive('sendLetter')->twice()->andReturn(
+            MailResult::failure('PostGrid timed out', retryable: true),
+            MailResult::success('letter_1', 'ready'),
+        );
+    });
+
+    $enrollment = MarketingLeadCampaign::create([
+        'lead_id' => $this->lead->id,
+        'campaign_id' => $this->campaign->id,
+        'status' => LeadCampaignStatus::Pending,
+        'current_step_order' => 1,
+        'next_action_at' => now()->subMinute(),
+        'enrolled_at' => now(),
+    ]);
+
+    $job = new SendCampaignMailing($enrollment);
+
+    expect(fn () => $job->handle(app(QrCodeService::class)))->toThrow(Exception::class, 'PostGrid timed out');
+
+    $job->handle(app(QrCodeService::class));
+
+    expect(MarketingMailing::whereNotNull('executed_at')->count())->toBe(1);
+    expect($enrollment->fresh()->current_step_order)->toBe(2);
 });

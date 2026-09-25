@@ -26,9 +26,17 @@ class SendCampaignMailing implements ShouldQueue
 
     public int $backoff = 60;
 
+    /**
+     * The step the enrollment was on when this job was queued. Null for jobs
+     * queued before this property existed.
+     */
+    public ?int $stepOrder = null;
+
     public function __construct(
         public MarketingLeadCampaign $enrollment
-    ) {}
+    ) {
+        $this->stepOrder = $enrollment->current_step_order;
+    }
 
     /**
      * Execute the job.
@@ -39,6 +47,20 @@ class SendCampaignMailing implements ShouldQueue
 
         if (! $enrollment) {
             Log::warning('SendCampaignMailing: Enrollment not found');
+
+            return;
+        }
+
+        // A second copy of this job (two scheduler runs queued it before the
+        // first copy ran, or a retry after the first copy already sent) finds
+        // the enrollment advanced, and sending would mail the next step early.
+        // Only the step this job was queued for may go out, and only while due.
+        if (! $enrollment->isDue() || ($this->stepOrder !== null && $enrollment->current_step_order !== $this->stepOrder)) {
+            Log::info('SendCampaignMailing: Skipping - step not due or already sent', [
+                'enrollment_id' => $enrollment->id,
+                'queued_step_order' => $this->stepOrder,
+                'current_step_order' => $enrollment->current_step_order,
+            ]);
 
             return;
         }

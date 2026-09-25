@@ -92,7 +92,7 @@ it('does not leak registrations from other businesses', function () {
 
     Livewire::test(Dashboard::class)
         ->assertSee('No sales tax registrations yet')
-        ->assertDontSee('NY');
+        ->assertDontSeeText('NY');
 });
 
 it('uses View label for paid/submitted registrations and locks editing', function () {
@@ -157,7 +157,7 @@ it('ignores form applications of other types', function () {
 
     Livewire::test(Dashboard::class)
         ->assertSee('No sales tax registrations yet')
-        ->assertDontSee('DE');
+        ->assertDontSeeText('DE');
 });
 
 it('renders the sales tax state selector inside the unified portal sidebar', function () {

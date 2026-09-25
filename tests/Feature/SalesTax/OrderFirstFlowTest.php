@@ -72,8 +72,11 @@ beforeEach(function () {
 
 describe('order before the questions', function () {
     it('sends a new draft to the order screen instead of the wizard', function () {
+        // Set the selection outright: the picker preselects the business's
+        // own state (a random factory state), so toggling CA would clear it
+        // whenever that state happens to be CA.
         $component = Livewire::test(StateSelector::class, ['formType' => 'sales_tax_permit'])
-            ->call('toggleState', 'CA')
+            ->set('selectedStates', ['CA'])
             ->call('proceed');
 
         $application = FormApplication::where('business_id', $this->business->id)->latest('id')->first();

@@ -113,12 +113,12 @@
         </div>
     </div>
 
-    <!-- Edit User Roles Modal -->
-    @if ($editingUserId)
-        @php
-            $editingUser = \App\Models\User::find($editingUserId);
-        @endphp
-        <flux:modal name="edit-roles-modal" class="max-w-md" :show="true">
+    <!-- Edit User Roles Modal (opened by showEditModal) -->
+    <flux:modal name="edit-roles-modal" wire:model="showEditModal" class="max-w-md">
+        @if ($editingUserId)
+            @php
+                $editingUser = \App\Models\User::find($editingUserId);
+            @endphp
             <div class="space-y-6">
                 <div>
                     <flux:heading size="lg">Edit Roles</flux:heading>
@@ -149,80 +149,78 @@
                     </flux:button>
                 </div>
             </div>
-        </flux:modal>
-    @endif
+        @endif
+    </flux:modal>
 
-    <!-- Assign Role Modal -->
-    @if ($showAssignModal)
-        <flux:modal name="assign-role-modal" class="max-w-md" :show="true">
-            <div class="space-y-6">
-                <div>
-                    <flux:heading size="lg">Assign Role to User</flux:heading>
-                    <flux:text class="mt-1">Search for a user and select a role to assign.</flux:text>
-                </div>
-
-                <div class="space-y-4">
-                    <!-- User Search -->
-                    <div class="space-y-2">
-                        <flux:field>
-                            <flux:label>Search User</flux:label>
-                            <flux:input
-                                type="search"
-                                placeholder="Search by name or email..."
-                                wire:model.live.debounce.300ms="assignUserSearch"
-                                icon="magnifying-glass"
-                            />
-                        </flux:field>
-
-                        @if ($this->searchableUsers->isNotEmpty())
-                            <div class="rounded-lg border border-border divide-y divide-border max-h-48 overflow-y-auto">
-                                @foreach ($this->searchableUsers as $user)
-                                    <button
-                                        type="button"
-                                        class="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-50 text-left {{ $selectedUserId === $user->id ? 'bg-blue-50' : '' }}"
-                                        wire:click="selectUser({{ $user->id }})"
-                                    >
-                                        <flux:avatar :initials="$user->initials()" size="sm" />
-                                        <div>
-                                            <flux:text class="font-medium text-sm">{{ $user->name }}</flux:text>
-                                            <flux:text class="text-xs text-gray-500">{{ $user->email }}</flux:text>
-                                        </div>
-                                        @if ($selectedUserId === $user->id)
-                                            <flux:icon name="check" class="size-4 text-blue-600 ml-auto" />
-                                        @endif
-                                    </button>
-                                @endforeach
-                            </div>
-                        @endif
-                    </div>
-
-                    <!-- Role Selection -->
-                    <flux:field>
-                        <flux:label>Role</flux:label>
-                        <flux:select wire:model="selectedRole">
-                            <flux:select.option value="">Select a role...</flux:select.option>
-                            @foreach ($allRoles as $roleName)
-                                <flux:select.option value="{{ $roleName }}">
-                                    {{ str_replace('_', ' ', ucfirst($roleName)) }}
-                                </flux:select.option>
-                            @endforeach
-                        </flux:select>
-                    </flux:field>
-                </div>
-
-                <div class="flex justify-end gap-3">
-                    <flux:button variant="ghost" wire:click="closeAssignModal">
-                        Cancel
-                    </flux:button>
-                    <flux:button
-                        variant="primary"
-                        wire:click="assignRole"
-                        :disabled="!$selectedUserId || !$selectedRole"
-                    >
-                        Assign Role
-                    </flux:button>
-                </div>
+    <!-- Assign Role Modal (opened by showAssignModal) -->
+    <flux:modal name="assign-role-modal" wire:model="showAssignModal" class="max-w-md">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg">Assign Role to User</flux:heading>
+                <flux:text class="mt-1">Search for a user and select a role to assign.</flux:text>
             </div>
-        </flux:modal>
-    @endif
+
+            <div class="space-y-4">
+                <!-- User Search -->
+                <div class="space-y-2">
+                    <flux:field>
+                        <flux:label>Search User</flux:label>
+                        <flux:input
+                            type="search"
+                            placeholder="Search by name or email..."
+                            wire:model.live.debounce.300ms="assignUserSearch"
+                            icon="magnifying-glass"
+                        />
+                    </flux:field>
+
+                    @if ($this->searchableUsers->isNotEmpty())
+                        <div class="rounded-lg border border-border divide-y divide-border max-h-48 overflow-y-auto">
+                            @foreach ($this->searchableUsers as $user)
+                                <button
+                                    type="button"
+                                    class="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-50 text-left {{ $selectedUserId === $user->id ? 'bg-blue-50' : '' }}"
+                                    wire:click="selectUser({{ $user->id }})"
+                                >
+                                    <flux:avatar :initials="$user->initials()" size="sm" />
+                                    <div>
+                                        <flux:text class="font-medium text-sm">{{ $user->name }}</flux:text>
+                                        <flux:text class="text-xs text-gray-500">{{ $user->email }}</flux:text>
+                                    </div>
+                                    @if ($selectedUserId === $user->id)
+                                        <flux:icon name="check" class="size-4 text-blue-600 ml-auto" />
+                                    @endif
+                                </button>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Role Selection (live, so the Assign button enables on pick) -->
+                <flux:field>
+                    <flux:label>Role</flux:label>
+                    <flux:select wire:model.live="selectedRole">
+                        <flux:select.option value="">Select a role...</flux:select.option>
+                        @foreach ($allRoles as $roleName)
+                            <flux:select.option value="{{ $roleName }}">
+                                {{ str_replace('_', ' ', ucfirst($roleName)) }}
+                            </flux:select.option>
+                        @endforeach
+                    </flux:select>
+                </flux:field>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <flux:button variant="ghost" wire:click="closeAssignModal">
+                    Cancel
+                </flux:button>
+                <flux:button
+                    variant="primary"
+                    wire:click="assignRole"
+                    :disabled="!$selectedUserId || !$selectedRole"
+                >
+                    Assign Role
+                </flux:button>
+            </div>
+        </div>
+    </flux:modal>
 </div>

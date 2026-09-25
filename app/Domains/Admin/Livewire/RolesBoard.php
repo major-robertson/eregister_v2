@@ -16,6 +16,8 @@ class RolesBoard extends Component
 
     public ?int $editingUserId = null;
 
+    public bool $showEditModal = false;
+
     /** @var array<string, bool> */
     public array $userRoles = [];
 
@@ -79,6 +81,7 @@ class RolesBoard extends Component
     public function openEditModal(int $userId): void
     {
         $this->editingUserId = $userId;
+        $this->showEditModal = true;
         $user = User::findOrFail($userId);
 
         // Initialize role toggles
@@ -93,6 +96,7 @@ class RolesBoard extends Component
      */
     public function closeEditModal(): void
     {
+        $this->showEditModal = false;
         $this->editingUserId = null;
         $this->userRoles = [];
     }
@@ -203,13 +207,16 @@ class RolesBoard extends Component
             return;
         }
 
-        $user->assignRole($this->selectedRole);
+        $role = $this->selectedRole;
+
+        $user->assignRole($role);
 
         // Clear cache
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
+        // Closing clears selectedRole, so the toast uses the copy above.
         $this->closeAssignModal();
 
-        Flux::toast(text: "Role '{$this->selectedRole}' assigned to {$user->name}.", variant: 'success');
+        Flux::toast(text: "Role '{$role}' assigned to {$user->name}.", variant: 'success');
     }
 }

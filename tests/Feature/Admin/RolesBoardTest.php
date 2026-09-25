@@ -140,6 +140,40 @@ describe('assigning roles', function () {
             ->assertSet('showAssignModal', true);
     });
 
+    it('binds the assign dialog to showAssignModal so it actually opens', function () {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $this->actingAs($admin);
+
+        // Flux's modal has no "show" prop; wire:model is what opens it (EREG-31).
+        Livewire::test(RolesBoard::class)
+            ->assertSeeHtml('wire:model.self="showAssignModal"')
+            ->assertSeeHtml('wire:model.live="selectedRole"');
+    });
+
+    it('enables the Assign button once a user and a role are picked', function () {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $targetUser = User::factory()->create();
+
+        $this->actingAs($admin);
+
+        $assignButton = function ($component): string {
+            preg_match('/<button[^>]*wire:click="assignRole"[^>]*>/', $component->html(), $match);
+
+            return $match[0] ?? '';
+        };
+
+        $component = Livewire::test(RolesBoard::class)->call('openAssignModal');
+        expect($assignButton($component))->toContain('disabled="disabled"');
+
+        $component->call('selectUser', $targetUser->id)->set('selectedRole', 'lien_agent');
+        expect($assignButton($component))->not->toBe('')
+            ->not->toContain('disabled="disabled"');
+    });
+
     it('can search for users in the assign modal', function () {
         $admin = User::factory()->create();
         $admin->assignRole('admin');
@@ -177,7 +211,7 @@ describe('assigning roles', function () {
             ->set('selectedRole', 'lien_agent')
             ->call('assignRole')
             ->assertSet('showAssignModal', false)
-            ->assertDispatched('toast-show');
+            ->assertDispatched('toast-show', slots: ['text' => "Role 'lien_agent' assigned to {$targetUser->name}."], dataset: ['variant' => 'success']);
 
         expect($targetUser->fresh()->hasRole('lien_agent'))->toBeTrue();
     });
@@ -227,6 +261,25 @@ describe('editing user roles', function () {
             ->assertSet('editingUserId', $lienAgent->id)
             ->assertSet('userRoles.lien_agent', true)
             ->assertSet('userRoles.admin', false);
+    });
+
+    it('opens and closes the edit dialog through showEditModal', function () {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $lienAgent = User::factory()->create();
+        $lienAgent->assignRole('lien_agent');
+
+        $this->actingAs($admin);
+
+        Livewire::test(RolesBoard::class)
+            ->assertSeeHtml('wire:model.self="showEditModal"')
+            ->call('openEditModal', $lienAgent->id)
+            ->assertSet('showEditModal', true)
+            ->assertSeeText("Manage roles for {$lienAgent->name}")
+            ->call('closeEditModal')
+            ->assertSet('showEditModal', false)
+            ->assertSet('editingUserId', null);
     });
 
     it('can update user roles', function () {

@@ -90,7 +90,7 @@ it('does not leak formations from other businesses', function () {
 
     Livewire::test(Dashboard::class)
         ->assertSee('No formations yet')
-        ->assertDontSee('NV');
+        ->assertDontSeeText('NV');
 });
 
 it('does not show sales tax applications under formations', function () {
@@ -110,7 +110,7 @@ it('does not show sales tax applications under formations', function () {
 
     Livewire::test(Dashboard::class)
         ->assertSee('No formations yet')
-        ->assertDontSee('CA');
+        ->assertDontSeeText('CA');
 });
 
 it('uses View label for paid/submitted formations', function () {

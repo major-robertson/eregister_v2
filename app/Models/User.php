@@ -209,4 +209,25 @@ class User extends Authenticatable
 
         return false;
     }
+
+    /**
+     * Whether the user signed up from the sales tax registration pages: the
+     * marketing page or a Google Ads landing page.
+     */
+    public function signedUpFromSalesTax(): bool
+    {
+        $path = $this->signup_landing_path;
+
+        if (! $path) {
+            return false;
+        }
+
+        foreach (['/sales-tax-registration', '/lp/sales-tax'] as $prefix) {
+            if ($path === $prefix || str_starts_with($path, $prefix.'/')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

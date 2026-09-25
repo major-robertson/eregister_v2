@@ -315,7 +315,7 @@
                 <div class="bg-zinc-900 px-8 py-8 text-center text-white">
                     <p class="text-sm font-medium uppercase tracking-wider text-zinc-400">Complete LLC Package</p>
                     <div class="mt-4 flex items-baseline justify-center gap-2">
-                        <span class="text-5xl font-extrabold">$297</span>
+                        <span class="text-5xl font-extrabold">{{ $membershipPrice }}</span>
                         <span class="text-xl text-zinc-400">/year</span>
                     </div>
                     <p class="mt-2 text-sm text-zinc-400">Plus state filing fees</p>
@@ -439,7 +439,7 @@
                     <tr class="border-t-2 border-blue-200 bg-blue-50">
                         <td class="px-6 py-4 text-sm font-semibold text-zinc-900">Total (first year)</td>
                         <td class="px-6 py-4 text-center font-semibold text-zinc-500">$400-$900+</td>
-                        <td class="px-6 py-4 text-center text-xl font-bold text-blue-600">$297</td>
+                        <td class="px-6 py-4 text-center text-xl font-bold text-blue-600">{{ $membershipPrice }}</td>
                     </tr>
                 </tbody>
             </table>

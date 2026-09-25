@@ -8,6 +8,7 @@ use App\Http\Controllers\PostGridWebhookController;
 use App\Http\Controllers\PostmarkWebhookController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StripeWebhookController;
+use App\Models\Price;
 use Illuminate\Support\Facades\Route;
 
 // Stripe webhook (no auth, CSRF excluded in bootstrap/app.php)
@@ -58,7 +59,15 @@ Route::view('refund-policy', 'pages.refund-policy')->name('refund-policy');
 Route::view('contact', 'pages.contact')->name('contact');
 
 Route::get('/llc', function () {
-    return view('llc');
+    // Show the membership price the LLC checkout charges.
+    try {
+        $membership = Price::resolve('formation', 'llc', 'membership', 'subscription');
+        $membershipPrice = '$'.number_format($membership->amount_cents / 100);
+    } catch (\Throwable) {
+        $membershipPrice = '$299';
+    }
+
+    return view('llc', ['membershipPrice' => $membershipPrice]);
 })->name('llc');
 
 // Form a Business - Register

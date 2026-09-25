@@ -116,14 +116,18 @@ class StateSelector extends Component
     }
 
     /**
-     * Start with the state the visitor picked on the marketing page, or the
-     * business's own state. One state is what most customers need; "Select
-     * All" used to send two dozen people into a 46-state application they
-     * never finished.
+     * Start with the state in the link (a reminder email carries the one
+     * they picked on the marketing page), the state the visitor picked on
+     * the marketing page, or the business's own state. One state is what
+     * most customers need; "Select All" used to send two dozen people into
+     * a 46-state application they never finished.
      */
     private function preselectState(): void
     {
+        $linkState = request()->query('state');
+
         $candidates = [
+            is_string($linkState) ? strtoupper($linkState) : null,
             SignupIntent::state(),
             strtoupper((string) ($this->business->business_address['state'] ?? '')),
         ];

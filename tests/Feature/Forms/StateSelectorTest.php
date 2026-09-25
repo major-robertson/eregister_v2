@@ -113,6 +113,25 @@ describe('StateSelector', function () {
         ])->assertSet('selectedStates', ['NY']);
     });
 
+    it('preselects the state in a reminder link over the marketing page and business state', function () {
+        $this->business->update(['business_address' => ['line1' => '1 Main St', 'city' => 'Austin', 'state' => 'TX', 'zip' => '78701']]);
+        \App\Support\SignupIntent::store(['product' => 'sales-tax', 'state' => 'ny']);
+        $this->actingAs($this->user);
+
+        Livewire::withQueryParams(['state' => 'fl'])
+            ->test(StateSelector::class, ['formType' => 'sales_tax_permit'])
+            ->assertSet('selectedStates', ['FL']);
+    });
+
+    it('ignores a link state it cannot register', function () {
+        $this->business->update(['business_address' => ['line1' => '1 Main St', 'city' => 'Austin', 'state' => 'TX', 'zip' => '78701']]);
+        $this->actingAs($this->user);
+
+        Livewire::withQueryParams(['state' => 'or'])
+            ->test(StateSelector::class, ['formType' => 'sales_tax_permit'])
+            ->assertSet('selectedStates', ['TX']);
+    });
+
     it('does not preselect a state that is excluded, blocked, or unknown', function () {
         $this->business->update(['business_address' => ['line1' => '1 Main St', 'city' => 'Portland', 'state' => 'OR', 'zip' => '97201']]);
         \App\Support\SignupIntent::store(['product' => 'sales-tax', 'state' => 'ZZ']);

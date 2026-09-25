@@ -9,6 +9,7 @@ use App\Domains\Lien\Enums\WaiverStatus;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienWaiver;
 use App\Domains\Lien\Waivers\WaiverEntitlements;
+use App\Domains\SalesTax\SalesTaxFollowUp;
 use App\Enums\PaymentStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -89,6 +90,16 @@ class EmailSequence extends Model
             'steps' => 3,
             'delays' => [60, 1440, 4320],
             'email_prefix' => 'resale_started_step',
+            'unsubscribe_category' => EmailUnsubscribe::CATEGORY_ABANDON_CHECKOUT,
+        ],
+        // Signed up through a sales tax door and has not picked a state: 1
+        // hour, then a day, then three days (the abandon_checkout cadence,
+        // which takes over on the order screen). Someone who turned off order
+        // reminders does not get these either.
+        'sales_tax_started' => [
+            'steps' => 3,
+            'delays' => [60, 1440, 4320],
+            'email_prefix' => 'sales_tax_started_step',
             'unsubscribe_category' => EmailUnsubscribe::CATEGORY_ABANDON_CHECKOUT,
         ],
     ];
@@ -184,6 +195,10 @@ class EmailSequence extends Model
 
         if ($this->sequence_type === 'resale_started') {
             return $this->shouldSuppressResaleStarted();
+        }
+
+        if ($this->sequence_type === 'sales_tax_started') {
+            return $this->shouldSuppressSalesTaxStarted();
         }
 
         if ($this->trigger_status) {
@@ -338,6 +353,30 @@ class EmailSequence extends Model
 
         if ($registrationPaid) {
             return 'registration_paid';
+        }
+
+        return $this->currentStep() === null ? 'all_steps_sent' : null;
+    }
+
+    /**
+     * Stop rules for the sales tax follow-ups. Picking a state ends the
+     * series: it creates the application and opens the order screen, whose
+     * own reminders take over. Opting out of order reminders stops it too.
+     */
+    protected function shouldSuppressSalesTaxStarted(): ?string
+    {
+        $user = $this->user;
+
+        if ($user === null) {
+            return 'user_deleted';
+        }
+
+        if (EmailUnsubscribe::isUnsubscribed($user, EmailUnsubscribe::CATEGORY_ABANDON_CHECKOUT)) {
+            return 'unsubscribed';
+        }
+
+        if (SalesTaxFollowUp::hasApplication($user)) {
+            return 'order_started';
         }
 
         return $this->currentStep() === null ? 'all_steps_sent' : null;

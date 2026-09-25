@@ -6,6 +6,7 @@ use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Domains\Lien\Waivers\WaiverNurture;
 use App\Domains\ResaleCert\ResaleFollowUp;
+use App\Domains\SalesTax\SalesTaxFollowUp;
 use App\Mail\WelcomeEmail;
 use App\Models\User;
 use App\Rules\Recaptcha;
@@ -54,6 +55,10 @@ class CreateNewUser implements CreatesNewUsers
         // Resale certificate signups get "get your certificate" follow-ups
         // until they subscribe.
         rescue(fn () => ResaleFollowUp::onSignup($user));
+
+        // Sales tax signups get "get your permit" follow-ups until they pick
+        // a state and reach the order screen, which has its own reminders.
+        rescue(fn () => SalesTaxFollowUp::onSignup($user));
 
         Mail::to($user)->queue(
             (new WelcomeEmail($user))->delay(now()->addMinutes(7))

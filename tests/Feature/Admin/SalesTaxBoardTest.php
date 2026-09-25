@@ -4,6 +4,8 @@ use App\Domains\Business\Models\Business;
 use App\Domains\Forms\Enums\FormApplicationStateAdminStatus;
 use App\Domains\Forms\Models\FormApplication;
 use App\Domains\Forms\Models\FormApplicationState;
+use App\Enums\PaymentStatus;
+use App\Models\Payment;
 use App\Models\User;
 
 function makeSalesTaxApplication(Business $business, User $creator, array $states): FormApplication
@@ -181,5 +183,32 @@ describe('search', function () {
         \Livewire\Livewire::test(\App\Domains\Forms\Admin\Livewire\SalesTaxBoard::class)
             ->set('search', 'Searchable')
             ->assertSee('Searchable Holdings');
+    });
+});
+
+describe('refunded orders', function () {
+    beforeEach(function () {
+        $this->admin = User::factory()->create();
+        $this->admin->givePermissionTo('tax.view');
+
+        $refunded = makeSalesTaxApplication(Business::factory()->create(['name' => 'Refunded Co']), $this->admin, ['TX']);
+        Payment::factory()->forPurchasable($refunded)->create(['status' => PaymentStatus::Refunded, 'refunded_at' => now()]);
+
+        $paid = makeSalesTaxApplication(Business::factory()->create(['name' => 'Still Paid Co']), $this->admin, ['CA']);
+        Payment::factory()->forPurchasable($paid)->succeeded()->create();
+    });
+
+    it('takes a refunded registration off the board', function () {
+        $this->actingAs($this->admin)
+            ->get(route('admin.sales-tax.board'))
+            ->assertSee('Still Paid Co')
+            ->assertDontSee('Refunded Co');
+    });
+
+    it('takes a refunded registration off the all-statuses board too', function () {
+        $this->actingAs($this->admin)
+            ->get(route('admin.sales-tax.board-all'))
+            ->assertSee('Still Paid Co')
+            ->assertDontSee('Refunded Co');
     });
 });

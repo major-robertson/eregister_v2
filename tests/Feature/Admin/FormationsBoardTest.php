@@ -6,6 +6,8 @@ use App\Domains\Forms\Admin\Livewire\FormationsBoard;
 use App\Domains\Forms\Admin\Livewire\FormationsBoardAll;
 use App\Domains\Forms\Models\FormApplication;
 use App\Domains\Forms\Models\FormApplicationState;
+use App\Enums\PaymentStatus;
+use App\Models\Payment;
 use App\Models\User;
 use Livewire\Livewire;
 
@@ -191,5 +193,33 @@ describe('comments', function () {
             ->assertForbidden();
 
         expect($state->transitions()->count())->toBe(0);
+    });
+});
+
+describe('refunded orders', function () {
+    beforeEach(function () {
+        $this->admin = User::factory()->create();
+        $this->admin->assignRole('admin');
+    });
+
+    it('takes a refunded formation off the board', function () {
+        $refunded = paidLlcFormationState('new', 'Refunded LLC Co');
+        Payment::factory()->forPurchasable($refunded->application)->create(['status' => PaymentStatus::Refunded, 'refunded_at' => now()]);
+        paidLlcFormationState('new', 'Kept LLC Co');
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.formations.board'))
+            ->assertSee('Kept LLC Co')
+            ->assertDontSee('Refunded LLC Co');
+    });
+
+    it('keeps a formation when only a later payment was refunded', function () {
+        $state = paidLlcFormationState('new', 'Renewal Refunded Co');
+        Payment::factory()->forPurchasable($state->application)->succeeded()->create();
+        Payment::factory()->forPurchasable($state->application)->create(['status' => PaymentStatus::Refunded, 'refunded_at' => now()]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.formations.board'))
+            ->assertSee('Renewal Refunded Co');
     });
 });

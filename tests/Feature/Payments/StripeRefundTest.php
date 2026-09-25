@@ -209,3 +209,31 @@ describe('catching up older refunds', function () {
             ->and($this->payment->fresh()->status)->toBe(PaymentStatus::Succeeded);
     });
 });
+
+describe('refunded applications', function () {
+    it('counts an application as refunded only when no payment still stands', function () {
+        $application = FormApplication::create([
+            'business_id' => $this->business->id,
+            'form_type' => 'sales_tax_permit',
+            'definition_version' => 1,
+            'selected_states' => ['TX'],
+            'status' => 'submitted',
+            'current_phase' => 'review',
+            'core_data' => [],
+            'created_by_user_id' => $this->user->id,
+            'paid_at' => now(),
+        ]);
+
+        // Paid with no payment rows (older data): not refunded.
+        expect($application->isRefunded())->toBeFalse();
+
+        Payment::factory()->forPurchasable($application)->create(['status' => PaymentStatus::Refunded]);
+        expect($application->isRefunded())->toBeTrue()
+            ->and(FormApplication::query()->notRefunded()->whereKey($application->id)->exists())->toBeFalse();
+
+        // Another payment still stands (an LLC renewal refunded on its own, say).
+        Payment::factory()->forPurchasable($application)->succeeded()->create();
+        expect($application->isRefunded())->toBeFalse()
+            ->and(FormApplication::query()->notRefunded()->whereKey($application->id)->exists())->toBeTrue();
+    });
+});

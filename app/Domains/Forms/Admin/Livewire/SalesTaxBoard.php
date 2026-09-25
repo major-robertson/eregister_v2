@@ -89,6 +89,7 @@ class SalesTaxBoard extends Component
             ->whereIn('current_admin_status', $columnValues)
             ->whereHas('application', fn ($q) => $q
                 ->whereNotNull('paid_at')
+                ->notRefunded()
                 ->whereIn('form_type', $formTypes))
             ->with([
                 'application:id,business_id,form_type,created_by_user_id,paid_at,submitted_at,locked_at,status,rush_requested_at,selected_states',

@@ -10,6 +10,7 @@ use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienProjectDeadline;
 use App\Domains\Lien\Models\LienWaiver;
+use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
@@ -46,6 +47,19 @@ class ProjectShow extends Component
 
     public function deleteProject(): void
     {
+        Gate::authorize('view', $this->project);
+
+        // A paid filing is an order we owe work and records on, and deleting
+        // the project would delete it too.
+        if ($this->project->hasPaidFilings()) {
+            Flux::toast(
+                text: "This project has paid filings, so it can't be deleted. Contact us if you need it removed.",
+                variant: 'warning',
+            );
+
+            return;
+        }
+
         Gate::authorize('delete', $this->project);
 
         $this->project->delete();

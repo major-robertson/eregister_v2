@@ -3,6 +3,7 @@
 namespace App\Domains\Forms\Models;
 
 use App\Domains\Business\Models\Business;
+use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -61,6 +62,16 @@ class FormApplication extends Model
             fn (string $column): string => $this->qualifyColumn($column),
             self::LIST_COLUMNS,
         ));
+    }
+
+    /**
+     * Leave out refunded orders (see isRefunded()), e.g. from the admin boards.
+     */
+    public function scopeNotRefunded(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $q) => $q
+            ->whereDoesntHave('payments', fn (Builder $payments) => $payments->where('status', PaymentStatus::Refunded))
+            ->orWhereHas('payments', fn (Builder $payments) => $payments->where('status', PaymentStatus::Succeeded)));
     }
 
     protected $fillable = [
@@ -153,6 +164,17 @@ class FormApplication extends Model
     public function isPaid(): bool
     {
         return $this->paid_at !== null;
+    }
+
+    /**
+     * Whether the order was refunded: a payment was refunded and none still
+     * stands. A refund leaves paid_at set. A paid application with no
+     * payment rows, or an LLC whose renewal alone was refunded, isn't.
+     */
+    public function isRefunded(): bool
+    {
+        return $this->payments()->where('status', PaymentStatus::Refunded)->exists()
+            && ! $this->payments()->where('status', PaymentStatus::Succeeded)->exists();
     }
 
     public function isLocked(): bool

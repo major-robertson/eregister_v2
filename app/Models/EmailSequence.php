@@ -319,7 +319,7 @@ class EmailSequence extends Model
             return 'not_paid';
         }
 
-        if ($application->payments()->where('status', PaymentStatus::Refunded)->exists()) {
+        if ($application->isRefunded()) {
             return 'refunded';
         }
 

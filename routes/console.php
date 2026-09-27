@@ -30,3 +30,10 @@ Schedule::command('report:sales-tax-funnel --email')
 Schedule::command('resale-cert:check-expiring --send-emails')
     ->dailyAt('13:00')
     ->withoutOverlapping();
+
+// Google review requests, 2 days after a lien is recorded or a sales tax state
+// is approved - daily at 10 AM Eastern
+Schedule::command('email:send-review-requests')
+    ->dailyAt('10:00')
+    ->timezone('America/New_York')
+    ->withoutOverlapping();

@@ -29,11 +29,10 @@
     $selectedKind = (string) ($kind ?? old('kind', ''));
     $from = $from ?? request()->getPathInfo();
 
-    // Collect first, matching the wizard's direction step.
-    $directions = [
-        'collect' => ['Collect a waiver from someone I pay', 'I need a signed waiver back from a sub or vendor before I cut the check.'],
-        'provide' => ['Send a waiver to get paid', 'A customer wants a signed waiver before releasing my payment.'],
-    ];
+    // Collect first, worded exactly like the wizard's direction step.
+    $directions = collect(\App\Domains\Lien\Enums\WaiverDirection::cases())
+        ->mapWithKeys(fn ($direction) => [$direction->value => [$direction->choice(), $direction->description()]])
+        ->all();
 
     $kinds = [
         'conditional_progress' => ['Conditional', 'Progress payment'],
@@ -76,7 +75,7 @@
         </label>
 
         <fieldset>
-            <legend class="text-sm font-semibold text-zinc-900">What do you need to do?</legend>
+            <legend class="text-sm font-semibold text-zinc-900">Are you paying or getting paid?</legend>
             <div class="mt-2 grid gap-2 sm:grid-cols-2">
                 @foreach ($directions as $value => [$label, $hint])
                     <label

@@ -104,7 +104,7 @@ class WaiverLandingController extends Controller
      * and owners who collect waivers from subs and vendors on every draw.
      * Same page and starter as lp(), but the promise is the paid product
      * (send, remind, track, store) with its price in plain sight, and the
-     * starter opens on "Collect a waiver".
+     * starter opens on "I'm paying someone" (collect).
      */
     public function lpSoftware(): View
     {

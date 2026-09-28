@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Lien\Enums\WaiverDirection;
 use App\Domains\Lien\Enums\WaiverStatus;
 use App\Domains\Lien\Livewire\Waivers\WaiverWizard;
 use App\Domains\Lien\Models\LienContact;
@@ -8,6 +9,7 @@ use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienWaiver;
 use App\Domains\Lien\Waivers\WaiverEntitlements;
+use App\Domains\Lien\Waivers\WaiverSelfPartyCheck;
 use App\Mail\WaiverSignatureInvitation;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
@@ -69,6 +71,23 @@ if (! function_exists('waiverWizardCollectContact')) {
             'last_name' => 'Vendor',
             'email' => 'vera@vendor.test',
         ]);
+    }
+}
+
+if (! function_exists('waiverWizardAtDetails')) {
+    /** Drive the wizard onto the details step with the payment filled in. */
+    function waiverWizardAtDetails(LienProject $project, string $direction)
+    {
+        return Livewire::test(WaiverWizard::class)
+            ->call('selectDirection', $direction)
+            ->call('nextStep')
+            ->set('projectId', $project->public_id)
+            ->call('nextStep')
+            ->call('selectKind', 'conditional_progress')
+            ->call('nextStep')
+            ->assertSet('step', 4)
+            ->set('amount', '1000')
+            ->set('through_date', now()->format('Y-m-d'));
     }
 }
 
@@ -621,6 +640,135 @@ describe('inline contact editing', function () {
         expect(LienContact::count())->toBe(1);
         // The draft saved on review now carries the email a send needs.
         expect(LienWaiver::firstOrFail()->signer_email)->toBe('fixed@noemail.test');
+    });
+});
+
+describe('other party is the user', function () {
+    it('matches the user\'s business names, own name and email, company first', function () {
+        $this->business->update(['name' => 'Rural Concrete Creations LLC', 'legal_name' => 'RCC Holdings Inc', 'dba_name' => 'Rural Concrete']);
+        $this->user->update(['first_name' => 'Heather', 'last_name' => 'Example']);
+        $check = fn (?string $company, ?string $person = null, ?string $email = null) => WaiverSelfPartyCheck::match($this->user, $this->business, $company, $person, $email);
+
+        expect($check('rural concrete creations'))->toBe(WaiverSelfPartyCheck::COMPANY)
+            ->and($check('RCC Holdings'))->toBe(WaiverSelfPartyCheck::COMPANY)
+            ->and($check('Rural Concrete, LLC'))->toBe(WaiverSelfPartyCheck::COMPANY)
+            ->and($check('Heather Example'))->toBe(WaiverSelfPartyCheck::COMPANY)
+            ->and($check(null, 'Heather Example'))->toBe(WaiverSelfPartyCheck::COMPANY)
+            ->and($check('Rural Concrete Creations', null, $this->user->email))->toBe(WaiverSelfPartyCheck::COMPANY)
+            ->and($check('Vendor Concrete LLC', 'Vera Vendor', ' '.strtoupper($this->user->email)))->toBe(WaiverSelfPartyCheck::EMAIL)
+            ->and($check('Vendor Concrete LLC', 'Vera Vendor', 'vera@vendor.test'))->toBeNull()
+            ->and($check(null, '', null))->toBeNull();
+    });
+
+    it('stops "Continue to review" once when a collect waiver names the user\'s own company', function () {
+        $this->business->update(['name' => 'Rural Concrete Creations LLC']);
+        $project = waiverWizardProject($this->business);
+
+        $component = waiverWizardAtDetails($project, 'collect')
+            ->set('contact_company', 'rural concrete creations')
+            ->set('contact_email', 'office@rural.test')
+            // Shows as soon as the name is in, with the way out.
+            ->assertSee('your own company')
+            ->assertSeeHtml('wire:click="switchDirection"')
+            ->call('nextStep')
+            ->assertHasNoErrors()
+            ->assertSet('step', 4)
+            ->assertSet('selfPartyWarned', true)
+            ->assertSee('press Continue to review again');
+
+        // Nothing was saved by the stop.
+        expect(LienContact::count())->toBe(0);
+
+        // Continuing again goes on: it's a warning, not a block.
+        $component->call('nextStep')->assertSet('step', 5);
+
+        expect(LienWaiver::firstOrFail()->direction)->toBe(WaiverDirection::Collect);
+    });
+
+    it('switches a collect waiver to "I\'m getting paid", keeping the job details and clearing the other party', function () {
+        $this->business->update(['name' => 'Rural Concrete Creations']);
+        $project = waiverWizardProject($this->business);
+        $ownCompany = LienContact::create([
+            'created_by_user_id' => $this->user->id,
+            'company_name' => 'Rural concrete creations',
+            'email' => $this->user->email,
+        ]);
+
+        waiverWizardAtDetails($project, 'collect')
+            // A saved contact shows the warning as soon as it's picked.
+            ->set('contactId', (string) $ownCompany->id)
+            ->assertSee('your own company')
+            ->call('switchDirection')
+            ->assertSet('direction', 'provide')
+            ->assertSet('step', 4)
+            ->assertSet('contactId', '')
+            ->assertSet('kind', 'conditional_progress')
+            ->assertSet('amount', '1,000.00')
+            ->assertDontSee('your own company')
+            ->assertSee('Who is paying you?')
+            ->set('contact_company', 'Hank Homeowner')
+            // The customer is someone else now, so nothing stops the step.
+            ->call('nextStep')
+            ->assertSet('step', 5);
+
+        $waiver = LienWaiver::firstOrFail();
+        expect($waiver->direction)->toBe(WaiverDirection::Provide)
+            ->and($waiver->counterparty_company)->toBe('Hank Homeowner')
+            ->and($waiver->signer_email)->toBe($this->user->email);
+    });
+
+    it('offers "I\'m paying someone" when a provide waiver names the user\'s own company as the customer', function () {
+        $this->business->update(['name' => 'Acme Framing Inc.']);
+        $project = waiverWizardProject($this->business);
+
+        waiverWizardAtDetails($project, 'provide')
+            ->set('contact_company', 'ACME FRAMING')
+            ->call('nextStep')
+            ->assertSet('step', 4)
+            ->assertSee('your own company')
+            ->call('switchDirection')
+            ->assertSet('direction', 'collect')
+            ->assertSet('selfPartyWarned', false)
+            ->assertSet('contact_company', null)
+            ->assertSee('Who are you paying?');
+    });
+
+    it('warns about the user\'s own email on a collect waiver, with no switch offered', function () {
+        $project = waiverWizardProject($this->business);
+
+        waiverWizardAtDetails($project, 'collect')
+            ->set('contact_company', 'Vendor Concrete LLC')
+            ->set('contact_email', strtoupper($this->user->email))
+            ->assertSee('your own email')
+            ->assertDontSeeHtml('wire:click="switchDirection"')
+            ->call('nextStep')
+            ->assertSet('step', 4)
+            ->call('nextStep')
+            ->assertSet('step', 5);
+    });
+
+    it('goes straight to review when the other party is someone else', function () {
+        $project = waiverWizardProject($this->business);
+
+        waiverWizardAtDetails($project, 'collect')
+            ->set('contact_company', 'Vendor Concrete LLC')
+            ->set('contact_email', 'vera@vendor.test')
+            ->assertDontSee('your own company')
+            ->assertDontSee('your own email')
+            ->call('nextStep')
+            ->assertSet('selfPartyWarned', false)
+            ->assertSet('step', 5);
+    });
+
+    it('names both sides on review the way the form prints them', function () {
+        $this->business->update(['name' => 'Rural Concrete Creations']);
+        $project = waiverWizardProject($this->business);
+
+        waiverWizardAtReview($project, 'provide')
+            ->assertSeeInOrder(['Signs the waiver', 'You (Rural Concrete Creations)', 'Customer', 'Counterparty Builders LLC']);
+
+        waiverWizardAtReview($project, 'collect')
+            ->assertSeeInOrder(['Signs the waiver', 'Counterparty Builders LLC', 'Customer', 'Your company (Rural Concrete Creations)']);
     });
 });
 

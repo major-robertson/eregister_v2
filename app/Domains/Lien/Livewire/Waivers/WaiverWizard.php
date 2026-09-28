@@ -23,6 +23,7 @@ use App\Domains\Lien\Waivers\WaiverFormResolver;
 use App\Domains\Lien\Waivers\WaiverFormUnavailable;
 use App\Domains\Lien\Waivers\WaiverIntent;
 use App\Domains\Lien\Waivers\WaiverNurture;
+use App\Domains\Lien\Waivers\WaiverSelfPartyCheck;
 use App\Domains\Lien\Waivers\WaiverStateRegistry;
 use App\Services\GooglePlacesService;
 use App\Support\Analytics\Gtag;
@@ -137,6 +138,12 @@ class WaiverWizard extends Component
     public ?string $contact_county = null;
 
     public ?string $contact_zip = null;
+
+    /**
+     * Set when "Continue to review" stopped because the other party is the
+     * user (see selfPartyMatch). The warning shows; the next click goes on.
+     */
+    public bool $selfPartyWarned = false;
 
     // Property owner, typed on the details step and saved to the project's
     // owner party when the step is left. Only the name is asked for, and only
@@ -298,6 +305,16 @@ class WaiverWizard extends Component
     public function nextStep(): void
     {
         $this->validateStep();
+
+        // The other party is the user's own company or email. That almost
+        // always means the wrong side of the payment was picked, so stop once
+        // and show the warning. Clicking again goes on.
+        if ($this->step === 4 && ! $this->selfPartyWarned && $this->selfPartyMatch() !== null) {
+            $this->selfPartyWarned = true;
+            $this->js("document.getElementById('waiver-other-party')?.scrollIntoView({ behavior: 'smooth', block: 'center' })");
+
+            return;
+        }
 
         // Leaving details: the other party and the owner typed on the page
         // become a contact and the project's owner party.
@@ -600,6 +617,23 @@ class WaiverWizard extends Component
         }
 
         $this->direction = $direction;
+        $this->selfPartyWarned = false;
+    }
+
+    /**
+     * The warning's fix, from the details step: flip to the other side of the
+     * payment. The project, waiver type, amount and owner stay. The other
+     * party is cleared, because what was entered there was the user's own.
+     */
+    public function switchDirection(): void
+    {
+        $this->direction = $this->direction === WaiverDirection::Collect->value
+            ? WaiverDirection::Provide->value
+            : WaiverDirection::Collect->value;
+
+        $this->contactId = '';
+        $this->resetContactForm();
+        $this->selfPartyWarned = false;
     }
 
     // ------------------------------------------------------------------
@@ -944,6 +978,24 @@ class WaiverWizard extends Component
         }
 
         return LienContact::query()->find($this->contactId);
+    }
+
+    /**
+     * Whether the other party (the saved contact picked, or the one typed on
+     * the page) is the user: WaiverSelfPartyCheck::COMPANY, ::EMAIL, or null.
+     */
+    public function selfPartyMatch(): ?string
+    {
+        $user = Auth::user();
+        $contact = $this->selectedContact();
+
+        return WaiverSelfPartyCheck::match(
+            $user,
+            $user->currentBusiness(),
+            $contact !== null ? $contact->company_name : $this->contact_company,
+            $contact !== null ? $contact->personName() : trim($this->contact_first_name.' '.$this->contact_last_name),
+            $contact !== null ? $contact->email : $this->contact_email,
+        );
     }
 
     /**
@@ -1431,6 +1483,9 @@ class WaiverWizard extends Component
             'stateRules' => $this->stateRules(),
             'kinds' => $this->availableKinds(),
             'form' => $this->resolvedForm(),
+            'selfParty' => $this->step === 4 ? $this->selfPartyMatch() : null,
+            // The user's side of the waiver as the form prints it (WaiverGenerator).
+            'ownCompany' => $this->step === 5 ? ($project?->claimantParty()?->company_name ?: $business->name) : null,
             'canSave' => WaiverEntitlements::canSaveWaiver($business, Auth::user()),
             'canEsign' => WaiverEntitlements::canUseEsign($business, Auth::user()),
             'proMonthly' => '$'.number_format(config('lien_waivers.prices.monthly.amount_cents') / 100),

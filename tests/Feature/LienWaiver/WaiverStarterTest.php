@@ -261,7 +261,9 @@ describe('starter form', function () {
     it('lists collect before send, and offers "not sure" as an always-visible default instead of a pop-in', function () {
         $this->get('/lp/lien-waiver/tx')
             ->assertSuccessful()
-            ->assertSeeInOrder(['Collect a waiver from someone I pay', 'Send a waiver to get paid'])
+            // Asked as the side of the payment, in the wizard's words.
+            ->assertSee('Are you paying or getting paid?')
+            ->assertSeeInOrder(["I'm paying someone", "I'm getting paid"])
             ->assertSeeInOrder(['Unconditional', 'Final payment', 'Not sure — help me choose'])
             // The "not sure" choice is a real option with an empty value...
             ->assertSee('name="kind" value=""', false)

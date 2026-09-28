@@ -191,14 +191,17 @@
 
             {{-- The other party: a saved contact, or one typed right here and
                  saved when the step is left. They sign collect waivers, but
-                 their email is only asked for when the waiver is sent. --}}
-            <section class="rounded-2xl border border-border bg-white p-6 shadow-xs">
+                 their email is only asked for when the waiver is sent. Asked
+                 as who pays whom: under "Who is giving you this waiver?",
+                 contractors who were getting paid typed their own company
+                 (EREG-85). --}}
+            <section id="waiver-other-party" class="scroll-mt-24 rounded-2xl border border-border bg-white p-6 shadow-xs">
                 @if ($direction === 'collect')
-                    <h2 class="text-base font-bold text-text-primary">Who is giving you this waiver?</h2>
-                    <p class="mt-0.5 text-sm text-text-secondary">The sub or vendor you're paying. Their email is only needed to send it for e-signature.</p>
+                    <h2 class="text-base font-bold text-text-primary">Who are you paying?</h2>
+                    <p class="mt-0.5 text-sm text-text-secondary">This is the sub or supplier who signs the waiver. Your company is already on it.</p>
                 @else
-                    <h2 class="text-base font-bold text-text-primary">Who receives this waiver?</h2>
-                    <p class="mt-0.5 text-sm text-text-secondary">The customer paying you. Their name prints in the form's customer blank.</p>
+                    <h2 class="text-base font-bold text-text-primary">Who is paying you?</h2>
+                    <p class="mt-0.5 text-sm text-text-secondary">This is your customer. Their name prints as the customer on the waiver.</p>
                 @endif
 
                 @php $selectedContactModel = $contactId !== '' ? $this->selectedContact() : null; @endphp
@@ -231,15 +234,16 @@
                             <p class="text-[13px] font-medium text-text-secondary">Or add a new one:</p>
                         @endif
 
+                        {{-- On blur, so the "that's you" warning shows as soon as they move on. --}}
                         <flux:field>
-                            <flux:label>Company or name</flux:label>
-                            <flux:input wire:model="contact_company" placeholder="ABC Construction" />
+                            <flux:label>Their company or name</flux:label>
+                            <flux:input wire:model.blur="contact_company" placeholder="ABC Construction" />
                             <flux:error name="contact_company" />
                         </flux:field>
 
                         <flux:field>
-                            <flux:label>Email <span class="font-normal text-zinc-400">({{ $direction === 'collect' ? 'needed to send it for e-signature' : 'optional' }})</span></flux:label>
-                            <flux:input type="email" wire:model="contact_email" placeholder="name@company.com" />
+                            <flux:label>Their email <span class="font-normal text-zinc-400">({{ $direction === 'collect' ? 'needed to send it for e-signature' : 'optional' }})</span></flux:label>
+                            <flux:input type="email" wire:model.blur="contact_email" placeholder="name@company.com" />
                             <flux:error name="contact_email" />
                         </flux:field>
 
@@ -317,6 +321,42 @@
                             </flux:accordion.item>
                         </flux:accordion>
                     @endif
+
+                    {{-- The other party is the user. "Continue to review" stops
+                         once on this (WaiverWizard::nextStep). --}}
+                    @if ($selfParty === \App\Domains\Lien\Waivers\WaiverSelfPartyCheck::COMPANY)
+                        @php $otherDirection = $direction === 'collect' ? \App\Domains\Lien\Enums\WaiverDirection::Provide : \App\Domains\Lien\Enums\WaiverDirection::Collect; @endphp
+                        <flux:callout color="amber" icon="exclamation-triangle" role="alert">
+                            <flux:callout.heading>That's your own company</flux:callout.heading>
+                            @if ($direction === 'collect')
+                                <flux:callout.text>This spot is for the sub or supplier you're paying. They sign the waiver.</flux:callout.text>
+                                <flux:callout.text>Are you the one getting paid? Then switch below. You'll sign the waiver, and your customer gets it.</flux:callout.text>
+                            @else
+                                <flux:callout.text>This spot is for the customer who pays you. Their name prints as the customer.</flux:callout.text>
+                                <flux:callout.text>Are you the one paying? Then switch below. The sub or supplier you pay will sign it.</flux:callout.text>
+                            @endif
+                            @if ($selfPartyWarned)
+                                <flux:callout.text>If it's right as it is, press Continue to review again.</flux:callout.text>
+                            @endif
+                            <x-slot:actions>
+                                <flux:button wire:click="switchDirection" size="sm" variant="primary">
+                                    Switch to "{{ $otherDirection->choice() }}"
+                                </flux:button>
+                            </x-slot:actions>
+                        </flux:callout>
+                    @elseif ($selfParty === \App\Domains\Lien\Waivers\WaiverSelfPartyCheck::EMAIL)
+                        <flux:callout color="amber" icon="exclamation-triangle" role="alert">
+                            <flux:callout.heading>That's your own email</flux:callout.heading>
+                            <flux:callout.text>
+                                {{ $direction === 'collect'
+                                    ? 'Enter the email of the person who signs. We send the signing link there.'
+                                    : 'Enter your customer\'s email, or leave it blank. We send the signed copy there.' }}
+                            </flux:callout.text>
+                            @if ($selfPartyWarned)
+                                <flux:callout.text>If it's right as it is, press Continue to review again.</flux:callout.text>
+                            @endif
+                        </flux:callout>
+                    @endif
                 </div>
             </section>
 
@@ -377,8 +417,8 @@
     @else
     <x-ui.card>
         @if ($step === 1)
-            {{-- Step 1: Direction fork --}}
-            <x-slot:header>What do you need to do?</x-slot:header>
+            {{-- Step 1: Direction fork, asked as the side of the payment. --}}
+            <x-slot:header>Are you paying or getting paid?</x-slot:header>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 @foreach ($directions as $dir)
@@ -408,7 +448,7 @@
                                 <flux:icon name="check-circle" class="size-5 text-blue-600 dark:text-blue-400" />
                             @endif
                         </div>
-                        <span class="font-semibold text-zinc-900 dark:text-white">{{ $dir->label() }}</span>
+                        <span class="font-semibold text-zinc-900 dark:text-white">{{ $dir->choice() }}</span>
                         <span class="text-sm text-zinc-600 dark:text-zinc-400">{{ $dir->description() }}</span>
                     </button>
                 @endforeach
@@ -749,9 +789,6 @@
                     <x-ui.info-list.item label="Form">
                         {{ $kinds[$kind]['title'] ?? \App\Domains\Lien\Enums\WaiverKind::tryFrom($kind)?->label() }}
                     </x-ui.info-list.item>
-                    <x-ui.info-list.item label="Direction">
-                        {{ \App\Domains\Lien\Enums\WaiverDirection::tryFrom($direction)?->label() }}
-                    </x-ui.info-list.item>
                     <x-ui.info-list.item label="Project">
                         {{ $project?->name }}
                     </x-ui.info-list.item>
@@ -774,13 +811,18 @@
                             {{ $legal_description ?: '-' }}
                         </x-ui.info-list.item>
                     @endif
-                    <x-ui.info-list.item label="Counterparty">
-                        {{ $this->selectedContact()?->displayName() ?? '-' }}
+                    {{-- Both sides as the form prints them, so a waiver with the
+                         user on both sides is plain to see before it's used. --}}
+                    @php
+                        $otherParty = $this->selectedContact()?->displayName() ?: '-';
+                        $you = $ownCompany ? "You ({$ownCompany})" : 'You';
+                        $yourCompany = $ownCompany ? "Your company ({$ownCompany})" : 'Your company';
+                    @endphp
+                    <x-ui.info-list.item label="Signs the waiver">
+                        {{ $direction === 'provide' ? $you : $otherParty }}
                     </x-ui.info-list.item>
-                    <x-ui.info-list.item label="Signer">
-                        {{ $direction === 'provide'
-                            ? auth()->user()->name
-                            : ($this->selectedContact()?->contact_name ?: $this->selectedContact()?->company_name) }}
+                    <x-ui.info-list.item label="Customer">
+                        {{ $direction === 'provide' ? $otherParty : $yourCompany }}
                     </x-ui.info-list.item>
                     @if ($this->isConditionalKind() && ($check_maker || $check_number))
                         <x-ui.info-list.item label="Check">

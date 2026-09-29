@@ -95,8 +95,20 @@ class LienServiceDocumentGenerator
     }
 
     /**
+     * "{Claimant} {Title} package {YYYY-MM-DD}.zip" for the whole set.
+     */
+    public function zipFilename(LienFiling $filing, ResolvedLienDocument $form): string
+    {
+        $main = pathinfo($this->documents->filename($filing, $form), PATHINFO_FILENAME);
+        $date = now()->eastern()->format('Y-m-d');
+        $stem = substr($main, 0, -strlen(' '.$date));
+
+        return "{$stem} package {$date}.zip";
+    }
+
+    /**
      * Label text: each recipient followed by an eRegister return label, each
-     * clamped to five lines because DOMPDF will not clip a table cell.
+     * clamped to five lines because nothing on the sheet clips.
      *
      * @param  array<string, mixed>  $doc
      * @return list<list<string>>

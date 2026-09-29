@@ -1044,6 +1044,11 @@
                     </a>
                     @endforeach
                 </div>
+                @if ($documentPackage->zipUrl())
+                <flux:button size="sm" icon="archive-box-arrow-down" class="mt-3 w-full" :href="$documentPackage->zipUrl()">
+                    Download the package ({{ count($documentPackage->items) }} files)
+                </flux:button>
+                @endif
                 <flux:text class="mt-3 text-xs text-gray-500">Drafts are built from the filing's current details each time. Fix the data and regenerate; never mark up a signed copy.</flux:text>
                 @endif
                 @endif

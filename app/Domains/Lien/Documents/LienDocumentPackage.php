@@ -104,6 +104,19 @@ final class LienDocumentPackage
     }
 
     /**
+     * The one-click ZIP of the whole package, once there is more than the
+     * main document to bundle.
+     */
+    public function zipUrl(): ?string
+    {
+        if (! $this->isAvailable() || count($this->items) < 2) {
+            return null;
+        }
+
+        return route('admin.liens.documents.zip', $this->filing->public_id);
+    }
+
+    /**
      * The rule strip: where it files, how it is signed, who gets served.
      *
      * @return list<array{label: string, value: string}>

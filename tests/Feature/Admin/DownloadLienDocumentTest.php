@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Lien\Admin\Actions\UpdateLienFilingRecipient;
 use App\Domains\Lien\Admin\Livewire\LienFilingDetail;
 use App\Domains\Lien\Documents\LienDocumentRegistry;
 use App\Domains\Lien\Enums\ClaimantType;
@@ -163,6 +164,63 @@ describe('main document download', function () {
 
         $this->actingAs(User::factory()->create());
         $this->get($url)->assertForbidden();
+    });
+});
+
+describe('package zip', function () {
+    it('bundles every piece into one archive', function () {
+        $project = liendocDownloadProject();
+        $filing = liendocDownloadFiling($project, 'mechanics_lien');
+        $owner = LienParty::where('project_id', $project->id)->where('role', PartyRole::Owner->value)->firstOrFail();
+        app(UpdateLienFilingRecipient::class)->add($filing, $owner);
+
+        $this->actingAs(liendocAdmin());
+
+        $response = $this->get(route('admin.liens.documents.zip', $filing->public_id));
+
+        $response->assertOk();
+        expect($response->headers->get('content-type'))->toContain('application/zip');
+        expect($response->headers->get('content-disposition'))->toContain('Yard-Nique Inc Claim of Lien package');
+
+        $path = $response->baseResponse->getFile()->getPathname();
+        $zip = new ZipArchive;
+        expect($zip->open($path))->toBeTrue();
+
+        $names = [];
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $names[] = $zip->getNameIndex($i);
+            expect(substr((string) $zip->getFromIndex($i), 0, 4))->toBe('%PDF');
+        }
+        $zip->close();
+        @unlink($path);
+
+        $date = now()->eastern()->format('Y-m-d');
+        expect($names)->toBe([
+            "Yard-Nique Inc Claim of Lien {$date}.pdf",
+            "Yard-Nique Inc Claim of Lien Proof of Service JO-ASH Bells Ferry LLC {$date}.pdf",
+            "Yard-Nique Inc Claim of Lien Cover Letter JO-ASH Bells Ferry LLC {$date}.pdf",
+            "Yard-Nique Inc Claim of Lien Labels {$date}.pdf",
+        ]);
+    });
+
+    it('404s when nothing can be generated and hides the button until there is a package', function () {
+        $project = liendocDownloadProject();
+        $filing = liendocDownloadFiling($project, 'mechanics_lien');
+        $hawaii = liendocDownloadFiling(liendocDownloadProject('HI', 'Honolulu'), 'mechanics_lien');
+
+        $this->actingAs(liendocAdmin());
+
+        $this->get(route('admin.liens.documents.zip', $hawaii->public_id))->assertNotFound();
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->assertDontSee('Download the package');
+
+        $owner = LienParty::where('project_id', $project->id)->where('role', PartyRole::Owner->value)->firstOrFail();
+        app(UpdateLienFilingRecipient::class)->add($filing, $owner);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing->fresh()])
+            ->assertSee('Download the package (4 files)')
+            ->assertSeeHtml(route('admin.liens.documents.zip', $filing->public_id));
     });
 });
 

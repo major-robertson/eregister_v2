@@ -24,6 +24,9 @@ return [
         ],
         'index_block' => true,
         'index_roles' => ['grantor' => 'owner', 'grantee' => 'claimant'],
+        // "Does not contain a 3" vertical space": nothing at all in the top
+        // three inches, so the preparer block prints below the rule.
+        'preparer_in_space' => false,
         'fee_note' => '$21 for the first page plus $3 per additional page (2026).',
     ],
     'notes' => [

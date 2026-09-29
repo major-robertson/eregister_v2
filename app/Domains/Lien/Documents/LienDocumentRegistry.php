@@ -31,6 +31,7 @@ use App\Domains\Lien\Waivers\WaiverStateRegistry;
  *       'index_line' => true,              // compact claimant / owner / amount / parcel line on page 1
  *       'index_block' => false,            // MO-style grantor/grantee recording block on page 1
  *       'index_roles' => null,             // e.g. ['grantor' => 'owner', 'grantee' => 'claimant']
+ *       'preparer_in_space' => true,       // preparer block in the left half of the page-1 space (false: below it, MO)
  *       'cover_sheet' => false,            // mail-in office wants eRegister's filing cover sheet
  *       'parcel_label' => 'Parcel ID',     // APN / PIN / Prop ID / Tax ID / PCN / Folio
  *       'fee_note' => null, 'adds_cover_page' => false,
@@ -40,6 +41,8 @@ use App\Domains\Lien\Waivers\WaiverStateRegistry;
  *       'verification' => 'sworn|verified|acknowledged|none',
  *       'notary' => true, 'notary_form' => 'jurat|acknowledgment|null',
  *       'notary_variant' => null,          // 'fl' | 'ca' | 'nc' for state-specific certificate wording
+ *       'statement' => true,               // print the sworn/verified statement above the signature
+ *                                          // (false when the body is itself the sworn statement, FL)
  *       'witness' => false,
  *   ],
  *   'service' => [                        // defaults for every kind; a kind may override
@@ -57,7 +60,7 @@ use App\Domains\Lien\Waivers\WaiverStateRegistry;
  *           'template_version' => 1,
  *           'sections' => [...],           // see defaults(); toggles for the generic bodies
  *           'clauses' => ['notice_box' => null, 'bold_statement' => null, 'after_property' => [],
- *                         'before_signature' => [], 'affirmations' => [], 'demand' => null],
+ *                         'before_signature' => [], 'affirmations' => [], 'after_execution' => [], 'demand' => null],
  *           // a clause is a plain paragraph string, or a view name when it has structure
  *           'execution' => [], 'service' => [], // per-kind overrides of the state-level blocks
  *           'attachments' => [], 'notes' => [],
@@ -181,6 +184,7 @@ class LienDocumentRegistry
             'notary' => $notary,
             'notary_form' => $notaryForm,
             'notary_variant' => null,
+            'statement' => true,
             'witness' => false,
         ];
 
@@ -205,6 +209,7 @@ class LienDocumentRegistry
             'notary' => false,
             'notary_form' => null,
             'notary_variant' => null,
+            'statement' => true,
             'witness' => false,
         ];
 
@@ -258,6 +263,7 @@ class LienDocumentRegistry
                 'index_line' => true,
                 'index_block' => false,
                 'index_roles' => null,
+                'preparer_in_space' => true,
                 'cover_sheet' => false,
                 'parcel_label' => 'Parcel ID',
                 'fee_note' => null,
@@ -310,6 +316,7 @@ class LienDocumentRegistry
                 'after_property' => [],
                 'before_signature' => [],
                 'affirmations' => [],
+                'after_execution' => [],    // e.g. NC's "Filed this ___ day of ___ / Clerk of Superior Court" lines
                 'demand' => null,           // NOI demand paragraph override
             ],
             'execution' => $execution,

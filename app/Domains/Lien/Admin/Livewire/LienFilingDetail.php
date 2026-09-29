@@ -16,6 +16,7 @@ use App\Domains\Lien\Admin\Actions\UpdateLienParties;
 use App\Domains\Lien\Admin\Actions\UpdateLienProjectDetails;
 use App\Domains\Lien\Admin\Actions\UpdateRecordingDetails;
 use App\Domains\Lien\Admin\Enums\KanbanColumn;
+use App\Domains\Lien\Documents\LienDocumentPackage;
 use App\Domains\Lien\Enums\DeadlineStatus;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Enums\PartyRole;
@@ -216,6 +217,13 @@ class LienFilingDetail extends Component
             ? ($this->lienFiling->project?->nonClaimantParties() ?? collect())
             : collect();
 
+        // The generated document package for the other kinds (prelim notice,
+        // NOI, lien, release): the state and county rules, pre-flight
+        // warnings and download links, or why there is nothing to download.
+        $documentPackage = $this->lienFiling->hasGeneratedDocuments()
+            ? LienDocumentPackage::forFiling($this->lienFiling)
+            : null;
+
         $canSendEsign = ! $isDeleted
             && $this->lienFiling->isDemandLetter()
             && $demandRecipients->isNotEmpty()
@@ -250,6 +258,7 @@ class LienFilingDetail extends Component
             'esignRequest' => $esignRequest,
             'hasPriorEsign' => $signedEsignRequest !== null,
             'demandRecipients' => $demandRecipients,
+            'documentPackage' => $documentPackage,
             'signedLetters' => $signedEsignRequest?->documents->whereNotNull('signed_at')->values() ?? collect(),
             'canSendEsign' => $canSendEsign,
             'esignAwaiting' => $esignAwaiting,

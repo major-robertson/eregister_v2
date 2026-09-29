@@ -254,4 +254,24 @@ class Business extends Model implements HasMedia
 
         return implode(', ', $parts);
     }
+
+    /**
+     * The business address as stacked mailing-block lines: street, optional
+     * unit, then "City, State Zip". Each part is optional.
+     *
+     * @return list<string>
+     */
+    public function addressLines(): array
+    {
+        $address = $this->business_address ?? [];
+
+        $cityState = implode(', ', array_filter([$address['city'] ?? null, $address['state'] ?? null]));
+        $cityStateZip = trim($cityState.' '.($address['zip'] ?? ''));
+
+        return array_values(array_filter([
+            $address['line1'] ?? null,
+            $address['line2'] ?? null,
+            $cityStateZip,
+        ]));
+    }
 }

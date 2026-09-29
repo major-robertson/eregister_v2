@@ -51,6 +51,10 @@ return [
                 'prior_notice' => true,
                 'gc' => false,
             ],
+            // The statutory form opens "Before me, the undersigned notary public,
+            // personally appeared …, who was duly sworn and says", so the body is
+            // the sworn statement and the execution block prints only the jurat.
+            'execution' => ['statement' => false],
             'clauses' => [
                 // § 713.08(3): the claim "includes the following warning".
                 'notice_box' => 'WARNING! THIS LEGAL DOCUMENT REFLECTS THAT A CONSTRUCTION LIEN HAS BEEN PLACED ON THE REAL PROPERTY LISTED HEREIN. UNLESS THE OWNER OF SUCH PROPERTY TAKES ACTION TO SHORTEN THE TIME PERIOD, THIS LIEN MAY REMAIN VALID FOR ONE YEAR FROM THE DATE OF RECORDING, AND SHALL EXPIRE AND BECOME NULL AND VOID THEREAFTER UNLESS LEGAL PROCEEDINGS HAVE BEEN COMMENCED TO FORECLOSE OR TO DISCHARGE THIS LIEN.',

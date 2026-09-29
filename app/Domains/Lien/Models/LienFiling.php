@@ -4,6 +4,7 @@ namespace App\Domains\Lien\Models;
 
 use App\Domains\Business\Concerns\BelongsToBusiness;
 use App\Domains\Esign\Models\SignatureRequest;
+use App\Domains\Lien\Documents\LienDocumentRegistry;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Enums\RecordingMethod;
 use App\Domains\Lien\Enums\ServiceLevel;
@@ -238,6 +239,26 @@ class LienFiling extends Model implements HasMedia
     public function isDemandLetter(): bool
     {
         return $this->documentType?->slug === 'demand_letter';
+    }
+
+    /**
+     * The registry kind this filing's generated document renders through
+     * (prelim_notice, noi, mechanics_lien, lien_release), or null for demand
+     * letters and anything else without one.
+     */
+    public function documentKind(): ?string
+    {
+        $slug = $this->documentType?->slug;
+
+        return in_array($slug, LienDocumentRegistry::KINDS, true) ? $slug : null;
+    }
+
+    /**
+     * Whether the admin page shows the Documents card for this filing.
+     */
+    public function hasGeneratedDocuments(): bool
+    {
+        return $this->documentKind() !== null;
     }
 
     /**

@@ -9,6 +9,7 @@ use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienFilingRecipient;
 use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
+use App\Domains\Lien\Waivers\WaiverStateRegistry;
 use Illuminate\Support\Carbon;
 
 /**
@@ -56,6 +57,11 @@ final class LienDocumentPayload
                 'amount_cents' => $amountCents,
                 'amount' => self::money($amountCents),
                 'amount_words' => $amountCents === null ? null : MoneyWords::dollars($amountCents),
+                // Preliminary notices state an estimate of the total price: Document
+                // details first, then the contract with its change orders, then the claim.
+                'estimate' => $details['estimated_price']
+                    ?? self::money($project?->base_contract_amount_cents === null ? null : $project->base_contract_amount_cents + ($project->change_orders_cents ?? 0))
+                    ?? self::money($amountCents),
                 'description_of_work' => self::text($filing->description_of_work),
                 'recording' => [
                     'method' => $filing->recording_method?->label(),
@@ -73,7 +79,10 @@ final class LienDocumentPayload
             'details' => $details,
             'original_lien' => self::originalLien($filing, $form, $details),
             'preparer' => self::preparer(),
-            'server' => ['state' => (string) config('lien.documents.server_state', 'KY')],
+            'server' => [
+                'state' => $serverState = strtoupper((string) config('lien.documents.server_state', 'KY')),
+                'state_name' => WaiverStateRegistry::STATE_NAMES[$serverState] ?? $serverState,
+            ],
             'recipients' => self::recipients($filing),
         ];
     }
@@ -218,6 +227,7 @@ final class LienDocumentPayload
         $state = self::text($party?->state) ?? self::text($business?->business_address['state'] ?? null);
 
         return [
+            'id' => $party?->id,
             'role' => $party?->role?->value ?? PartyRole::Claimant->value,
             'role_label' => $party?->role?->label() ?? PartyRole::Claimant->label(),
             'name' => $name,
@@ -326,13 +336,7 @@ final class LienDocumentPayload
             return $fromDetails + ['title' => $title, 'source' => 'details', 'amount' => null];
         }
 
-        $recorded = $filing->project?->filings()
-            ->withoutGlobalScope('business')
-            ->whereKeyNot($filing->getKey())
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
-            ->where(fn ($q) => $q->whereNotNull('recorded_at')->orWhereNotNull('recording_reference'))
-            ->orderByDesc('recorded_at')
-            ->first();
+        $recorded = $filing->project?->latestRecordedLien($filing);
 
         return [
             'title' => $title,

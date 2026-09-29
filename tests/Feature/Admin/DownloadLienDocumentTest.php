@@ -126,18 +126,28 @@ describe('main document download', function () {
         $this->get(route('admin.liens.documents.download', [$filing->public_id, 'main']))->assertOk();
     });
 
-    it('404s for a demand letter, an attorney-only state, a letter kind without a layout yet, and the service pieces', function () {
+    it('streams a notice through the letter layout', function () {
+        $filing = liendocDownloadFiling(liendocDownloadProject(), 'prelim_notice');
+
+        $this->actingAs(liendocAdmin());
+
+        $response = $this->get(route('admin.liens.documents.download', [$filing->public_id, 'main']));
+
+        $response->assertOk();
+        expect($response->headers->get('content-disposition'))->toContain('Yard-Nique Inc Notice to Contractor');
+        expect(substr(liendocPdfBytes($response), 0, 4))->toBe('%PDF');
+    });
+
+    it('404s for a demand letter, an attorney-only state, and the service pieces', function () {
         $project = liendocDownloadProject();
         $demand = liendocDownloadFiling($project, 'demand_letter');
         $lien = liendocDownloadFiling($project, 'mechanics_lien');
-        $prelim = liendocDownloadFiling($project, 'prelim_notice');
         $hawaii = liendocDownloadFiling(liendocDownloadProject('HI', 'Honolulu'), 'mechanics_lien');
 
         $this->actingAs(liendocAdmin());
 
         $this->get(route('admin.liens.documents.download', [$demand->public_id, 'main']))->assertNotFound();
         $this->get(route('admin.liens.documents.download', [$hawaii->public_id, 'main']))->assertNotFound();
-        $this->get(route('admin.liens.documents.download', [$prelim->public_id, 'main']))->assertNotFound();
         $this->get(route('admin.liens.documents.download', [$lien->public_id, 'labels']))->assertNotFound();
         $this->get(route('admin.liens.documents.download', [$lien->public_id, 'proof-of-service', 1]))->assertNotFound();
         $this->get(route('admin.liens.documents.download', [$lien->public_id, 'main', 1]))->assertNotFound();

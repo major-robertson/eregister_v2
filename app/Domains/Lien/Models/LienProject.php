@@ -117,6 +117,22 @@ class LienProject extends Model
         return $this->hasMany(LienProjectDeadline::class, 'project_id');
     }
 
+    /**
+     * The project's most recently recorded mechanics lien filing (one with a
+     * recording date or reference), which a release refers to. Ignores the
+     * business scope so admin pages and generators see it too.
+     */
+    public function latestRecordedLien(?LienFiling $except = null): ?LienFiling
+    {
+        return $this->filings()
+            ->withoutGlobalScope('business')
+            ->when($except !== null, fn ($query) => $query->whereKeyNot($except->getKey()))
+            ->whereHas('documentType', fn ($query) => $query->where('slug', 'mechanics_lien'))
+            ->where(fn ($query) => $query->whereNotNull('recorded_at')->orWhereNotNull('recording_reference'))
+            ->orderByDesc('recorded_at')
+            ->first();
+    }
+
     public function filings(): HasMany
     {
         return $this->hasMany(LienFiling::class, 'project_id');

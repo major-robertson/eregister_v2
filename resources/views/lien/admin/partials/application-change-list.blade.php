@@ -41,6 +41,31 @@
         'jurisdiction_state' => 'Jurisdiction state',
         'jurisdiction_county' => 'Jurisdiction county',
         'service_level' => 'Service level',
+        // document details
+        'signer_name' => 'Signer',
+        'signer_title' => 'Signer title',
+        'license_number' => 'License number',
+        'contract_date' => 'Contract date',
+        'contract_type' => 'Contract type',
+        'estimated_price_cents' => 'Estimated price',
+        'owner_interest' => 'Owner interest',
+        'block' => 'Block',
+        'lot' => 'Lot',
+        'notice_served_at' => 'Prior notice served',
+        'notice_served_method' => 'Prior notice served by',
+        'months_of_work' => 'Months of work',
+        'attachments_note' => 'Attachments',
+        'original_lien.recording_reference' => 'Original lien reference',
+        'original_lien.book' => 'Original lien book',
+        'original_lien.page' => 'Original lien page',
+        'original_lien.county' => 'Original lien county',
+        'original_lien.recorded_at' => 'Original lien recorded',
+        'original_lien.amount_received_cents' => 'Amount received',
+        // recipient service facts
+        'delivery_method' => 'Delivery method',
+        'tracking_number' => 'Tracking number',
+        'sent_at' => 'Sent',
+        'delivered_at' => 'Delivered',
         // party
         'role' => 'Role',
         'company_name' => 'Company name',
@@ -78,8 +103,21 @@
         if ($field === 'role') {
             return \App\Domains\Lien\Enums\PartyRole::tryFrom((string) $value)?->label() ?? $value;
         }
+        if ($field === 'contract_type') {
+            return ucfirst((string) $value);
+        }
+        if ($field === 'notice_served_method' || $field === 'delivery_method') {
+            return \App\Domains\Lien\Documents\LienDocumentPayload::deliveryLabel((string) $value) ?? $value;
+        }
+        if ($field === 'sent_at' || $field === 'delivered_at') {
+            try {
+                return \Illuminate\Support\Carbon::parse($value)->eastern()->format('M j, Y g:i A');
+            } catch (\Throwable) {
+                return $value;
+            }
+        }
 
-        if (str_ends_with($field, '_date') || $field === 'noc_recorded_at') {
+        if (str_ends_with($field, '_date') || in_array($field, ['noc_recorded_at', 'notice_served_at', 'original_lien.recorded_at'], true)) {
             try {
                 return \Illuminate\Support\Carbon::parse($value)->format('M j, Y');
             } catch (\Throwable) {

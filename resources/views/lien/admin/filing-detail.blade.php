@@ -617,6 +617,60 @@
                 <flux:text class="text-gray-500">No parties yet.</flux:text>
                 @endforelse
             </div>
+
+            {{-- Recipients: who this filing's document is served on. Added one at a
+                 time (the party's address is snapshotted as of that moment) and
+                 updated with the delivery method, tracking and sent / delivered
+                 times once it goes out. The proofs of service and labels read
+                 these snapshots. --}}
+            @if ($filing->hasGeneratedDocuments())
+            <div class="rounded-lg border border-border bg-white p-6">
+                <flux:heading size="lg" class="mb-4">Recipients</flux:heading>
+
+                @forelse ($filing->recipients as $recipient)
+                <div wire:key="recipient-{{ $recipient->id }}" class="mb-3 rounded-lg border border-gray-200 p-3 last:mb-0">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <flux:badge size="sm" color="zinc">{{ $recipient->party?->role?->label() ?? 'Recipient' }}</flux:badge>
+                            <flux:text class="mt-1 font-medium">{{ $recipient->snapshotName() }}</flux:text>
+                            <flux:text class="text-sm text-gray-500">{{ $recipient->snapshotAddressLine() ?: 'No address in the snapshot' }}</flux:text>
+                            <flux:text class="mt-1 text-xs text-gray-500">
+                                {{ ucfirst(\App\Domains\Lien\Documents\LienDocumentPayload::deliveryLabel($recipient->delivery_method) ?? 'delivery method not set') }}
+                                @if ($recipient->tracking_number) &middot; {{ $recipient->tracking_number }} @endif
+                                @if ($recipient->sent_at) &middot; Sent {{ $recipient->sent_at->eastern()->format('M j, Y g:i A') }} @else &middot; Not sent yet @endif
+                                @if ($recipient->delivered_at) &middot; Delivered {{ $recipient->delivered_at->eastern()->format('M j, Y g:i A') }} @endif
+                            </flux:text>
+                        </div>
+                        @if ($canUpdate)
+                        <flux:button size="xs" variant="ghost" icon="pencil-square" wire:click="editRecipient({{ $recipient->id }})" />
+                        @endif
+                    </div>
+                </div>
+                @empty
+                <flux:text class="text-sm text-gray-500">No recipients yet. Add the parties this document is served on.</flux:text>
+                @endforelse
+
+                @if ($canUpdate)
+                @php
+                    $recipientPartyIds = $filing->recipients->pluck('party_id')->all();
+                    $addableParties = $filing->project->parties
+                        ->reject(fn ($party) => $party->role === \App\Domains\Lien\Enums\PartyRole::Claimant || in_array($party->id, $recipientPartyIds, true));
+                @endphp
+                @if ($addableParties->isNotEmpty())
+                <div class="mt-4 border-t border-gray-200 pt-3">
+                    <flux:text class="mb-2 text-xs text-gray-500">Add as recipient (snapshots the party's current address):</flux:text>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach ($addableParties as $party)
+                        <flux:button wire:key="add-recipient-{{ $party->id }}" size="xs" variant="filled" icon="plus" wire:click="addRecipient({{ $party->id }})">
+                            {{ $party->displayName() ?: 'Unnamed' }} ({{ $party->role->label() }})
+                        </flux:button>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+                @endif
+            </div>
+            @endif
             @endif
         </div>
 
@@ -994,6 +1048,63 @@
                 @endif
                 @endif
             </div>
+
+            {{-- Document details: the facts the generated documents need that the
+                 application never asked for (signer, license, contract, prior notice,
+                 the lien a release refers to). Stored on the filing and audited; not
+                 part of payload_json. --}}
+            <div class="rounded-lg border border-border bg-white p-6">
+                <div class="mb-4 flex items-center justify-between">
+                    <flux:heading size="lg">Document details</flux:heading>
+                    @if ($canUpdate)
+                    <flux:button size="sm" variant="ghost" icon="pencil-square" wire:click="editDocumentDetails">Edit</flux:button>
+                    @endif
+                </div>
+
+                @php
+                    $documentDetails = $filing->document_details_json ?? [];
+                    $originalLien = $documentDetails['original_lien'] ?? [];
+                    $money = fn ($cents) => $cents === null ? null : '$'.number_format(((int) $cents) / 100, 2);
+                    $day = fn ($date) => $date ? \Illuminate\Support\Carbon::parse($date)->format('M j, Y') : null;
+                    $documentRows = array_filter([
+                        'Signer' => trim(implode(', ', array_filter([$documentDetails['signer_name'] ?? null, $documentDetails['signer_title'] ?? null]))) ?: null,
+                        'License number' => $documentDetails['license_number'] ?? null,
+                        'Contract' => trim(implode(', ', array_filter([
+                            isset($documentDetails['contract_type']) ? ucfirst($documentDetails['contract_type']) : null,
+                            $day($documentDetails['contract_date'] ?? null),
+                        ]))) ?: null,
+                        'Estimated price' => $money($documentDetails['estimated_price_cents'] ?? null),
+                        'Notice served' => trim(implode(' by ', array_filter([
+                            $day($documentDetails['notice_served_at'] ?? null),
+                            \App\Domains\Lien\Documents\LienDocumentPayload::deliveryLabel($documentDetails['notice_served_method'] ?? null),
+                        ]))) ?: null,
+                        'Months of work' => $documentDetails['months_of_work'] ?? null,
+                        'Owner interest' => $documentDetails['owner_interest'] ?? null,
+                        'Block / lot' => trim(implode(' / ', array_filter([$documentDetails['block'] ?? null, $documentDetails['lot'] ?? null]))) ?: null,
+                        'Original lien' => trim(implode(', ', array_filter([
+                            $originalLien['recording_reference'] ?? null,
+                            isset($originalLien['book']) || isset($originalLien['page']) ? 'Book '.($originalLien['book'] ?? '—').' Page '.($originalLien['page'] ?? '—') : null,
+                            isset($originalLien['county']) ? $originalLien['county'].' County' : null,
+                            $day($originalLien['recorded_at'] ?? null),
+                        ]))) ?: null,
+                        'Amount received' => $money($originalLien['amount_received_cents'] ?? null),
+                        'Attachments' => $documentDetails['attachments_note'] ?? null,
+                    ]);
+                @endphp
+
+                @if ($documentRows === [])
+                <flux:text class="text-sm text-gray-500">Nothing set yet. Until then the documents use the business's lien signer and the project's dates.</flux:text>
+                @else
+                <dl class="space-y-1.5 text-sm">
+                    @foreach ($documentRows as $label => $value)
+                    <div class="flex gap-2">
+                        <dt class="w-28 shrink-0 text-gray-500">{{ $label }}</dt>
+                        <dd class="min-w-0 flex-1 text-gray-800">{{ $value }}</dd>
+                    </div>
+                    @endforeach
+                </dl>
+                @endif
+            </div>
             @endif
 
             {{-- Recording Details Card: appears once recording_method has been set on this filing.
@@ -1279,6 +1390,44 @@
                             <flux:icon name="pencil-square" class="mt-0.5 size-4 shrink-0 text-indigo-500" />
                             <div class="min-w-0">
                                 <flux:text class="text-sm font-medium text-indigo-700">Filing details updated</flux:text>
+                                @include('lien.admin.partials.application-change-list', ['changes' => $event->payload_json['changes'] ?? []])
+                                <flux:text class="text-xs text-gray-400">
+                                    {{ $event->created_at->eastern()->format('M j, g:i A') }}
+                                    @if ($event->creator) &middot; {{ $event->creator->name }} @endif
+                                </flux:text>
+                            </div>
+                        </div>
+                        @elseif ($event->event_type === 'document_details_updated')
+                        <div class="flex items-start gap-2">
+                            <flux:icon name="pencil-square" class="mt-0.5 size-4 shrink-0 text-indigo-500" />
+                            <div class="min-w-0">
+                                <flux:text class="text-sm font-medium text-indigo-700">Document details updated</flux:text>
+                                @include('lien.admin.partials.application-change-list', ['changes' => $event->payload_json['changes'] ?? []])
+                                <flux:text class="text-xs text-gray-400">
+                                    {{ $event->created_at->eastern()->format('M j, g:i A') }}
+                                    @if ($event->creator) &middot; {{ $event->creator->name }} @endif
+                                </flux:text>
+                            </div>
+                        </div>
+                        @elseif ($event->event_type === 'recipient_added')
+                        <div class="flex items-start gap-2">
+                            <flux:icon name="user-plus" class="mt-0.5 size-4 shrink-0 text-indigo-500" />
+                            <div class="min-w-0">
+                                <flux:text class="text-sm font-medium text-indigo-700">Recipient added: {{ $event->payload_json['recipient']['name'] ?? 'Unnamed' }}</flux:text>
+                                @if (! empty($event->payload_json['recipient']['address']))
+                                <flux:text class="text-xs text-gray-600">{{ $event->payload_json['recipient']['address'] }}</flux:text>
+                                @endif
+                                <flux:text class="text-xs text-gray-400">
+                                    {{ $event->created_at->eastern()->format('M j, g:i A') }}
+                                    @if ($event->creator) &middot; {{ $event->creator->name }} @endif
+                                </flux:text>
+                            </div>
+                        </div>
+                        @elseif ($event->event_type === 'recipient_updated')
+                        <div class="flex items-start gap-2">
+                            <flux:icon name="paper-airplane" class="mt-0.5 size-4 shrink-0 text-indigo-500" />
+                            <div class="min-w-0">
+                                <flux:text class="text-sm font-medium text-indigo-700">Recipient updated: {{ $event->payload_json['recipient']['name'] ?? 'Unnamed' }}</flux:text>
                                 @include('lien.admin.partials.application-change-list', ['changes' => $event->payload_json['changes'] ?? []])
                                 <flux:text class="text-xs text-gray-400">
                                     {{ $event->created_at->eastern()->format('M j, g:i A') }}
@@ -1814,6 +1963,198 @@
             </div>
         </form>
     </flux:modal>
+
+    {{-- Edit Document Details --}}
+    @if ($documentPackage !== null)
+    <flux:modal wire:model="showDocumentModal" class="max-w-lg">
+        <form wire:submit="updateDocumentDetails" class="space-y-5">
+            <div>
+                <flux:heading size="lg">Edit Document Details</flux:heading>
+                <flux:subheading>Facts the generated documents print. Blank fields fall back to the business and project.</flux:subheading>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:field>
+                    <flux:label>Signer name</flux:label>
+                    <flux:input wire:model="documentForm.signer_name" />
+                    <flux:error name="documentForm.signer_name" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Signer title</flux:label>
+                    <flux:input wire:model="documentForm.signer_title" placeholder="President, Owner, Manager" />
+                    <flux:error name="documentForm.signer_title" />
+                </flux:field>
+            </div>
+            <flux:field>
+                <flux:label>Contractor license number</flux:label>
+                <flux:input wire:model="documentForm.license_number" />
+                <flux:error name="documentForm.license_number" />
+            </flux:field>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:field>
+                    <flux:label>Contract date</flux:label>
+                    <flux:input type="date" wire:model="documentForm.contract_date" />
+                    <flux:error name="documentForm.contract_date" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Contract type</flux:label>
+                    <flux:select wire:model="documentForm.contract_type">
+                        <flux:select.option value="">Use the project's answer</flux:select.option>
+                        <flux:select.option value="written">Written</flux:select.option>
+                        <flux:select.option value="oral">Oral</flux:select.option>
+                    </flux:select>
+                    <flux:error name="documentForm.contract_type" />
+                </flux:field>
+            </div>
+
+            @if ($filing->documentKind() === 'prelim_notice')
+            <flux:field>
+                <flux:label>Estimated total price (USD)</flux:label>
+                <flux:input type="number" step="0.01" wire:model="documentForm.estimated_price" />
+                <flux:error name="documentForm.estimated_price" />
+            </flux:field>
+            @endif
+
+            @if ($filing->documentKind() === 'mechanics_lien')
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:field>
+                    <flux:label>Prior notice served on</flux:label>
+                    <flux:input type="date" wire:model="documentForm.notice_served_at" />
+                    <flux:description>Blank uses the project's preliminary notice date.</flux:description>
+                    <flux:error name="documentForm.notice_served_at" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Served by</flux:label>
+                    <flux:select wire:model="documentForm.notice_served_method">
+                        <flux:select.option value="">Not set</flux:select.option>
+                        @foreach (\App\Domains\Lien\Admin\Actions\UpdateLienDocumentDetails::NOTICE_METHODS as $method)
+                        <flux:select.option value="{{ $method }}">{{ ucfirst(\App\Domains\Lien\Documents\LienDocumentPayload::deliveryLabel($method)) }}</flux:select.option>
+                        @endforeach
+                    </flux:select>
+                    <flux:error name="documentForm.notice_served_method" />
+                </flux:field>
+            </div>
+            <flux:field>
+                <flux:label>Months of work (Texas)</flux:label>
+                <flux:input wire:model="documentForm.months_of_work" placeholder="May 2026 - June 2026" />
+                <flux:error name="documentForm.months_of_work" />
+            </flux:field>
+            <div class="grid gap-4 sm:grid-cols-3">
+                <flux:field>
+                    <flux:label>Owner interest (NY)</flux:label>
+                    <flux:input wire:model="documentForm.owner_interest" placeholder="fee simple" />
+                    <flux:error name="documentForm.owner_interest" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Block</flux:label>
+                    <flux:input wire:model="documentForm.block" />
+                    <flux:error name="documentForm.block" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Lot</flux:label>
+                    <flux:input wire:model="documentForm.lot" />
+                    <flux:error name="documentForm.lot" />
+                </flux:field>
+            </div>
+            <flux:field>
+                <flux:label>Attachments note</flux:label>
+                <flux:input wire:model="documentForm.attachments_note" placeholder="Copy of contract; statement of account" />
+                <flux:error name="documentForm.attachments_note" />
+            </flux:field>
+            @endif
+
+            @if ($filing->documentKind() === 'lien_release')
+            <flux:separator text="Lien being released" />
+            <flux:field>
+                <flux:label>Recording reference (instrument or file number)</flux:label>
+                <flux:input wire:model="documentForm.original_lien.recording_reference" />
+                <flux:error name="documentForm.original_lien.recording_reference" />
+            </flux:field>
+            <div class="grid gap-4 sm:grid-cols-3">
+                <flux:field>
+                    <flux:label>Book</flux:label>
+                    <flux:input wire:model="documentForm.original_lien.book" />
+                    <flux:error name="documentForm.original_lien.book" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Page</flux:label>
+                    <flux:input wire:model="documentForm.original_lien.page" />
+                    <flux:error name="documentForm.original_lien.page" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Recorded on</flux:label>
+                    <flux:input type="date" wire:model="documentForm.original_lien.recorded_at" />
+                    <flux:error name="documentForm.original_lien.recorded_at" />
+                </flux:field>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:field>
+                    <flux:label>County of record</flux:label>
+                    <flux:input wire:model="documentForm.original_lien.county" />
+                    <flux:error name="documentForm.original_lien.county" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Amount received (USD)</flux:label>
+                    <flux:input type="number" step="0.01" wire:model="documentForm.original_lien.amount_received" />
+                    <flux:error name="documentForm.original_lien.amount_received" />
+                </flux:field>
+            </div>
+            @endif
+
+            <div class="flex justify-end gap-2">
+                <flux:modal.close>
+                    <flux:button variant="filled" type="button">Cancel</flux:button>
+                </flux:modal.close>
+                <flux:button type="submit" variant="primary">Save Document Details</flux:button>
+            </div>
+        </form>
+    </flux:modal>
+
+    {{-- Edit Recipient (service facts) --}}
+    <flux:modal wire:model="showRecipientModal" class="max-w-lg">
+        <form wire:submit="updateRecipient" class="space-y-5">
+            <div>
+                <flux:heading size="lg">Edit Recipient</flux:heading>
+                <flux:subheading>How and when the copy went out. Times are Eastern.</flux:subheading>
+            </div>
+
+            <flux:field>
+                <flux:label>Delivery method</flux:label>
+                <flux:select wire:model="recipientForm.delivery_method">
+                    <flux:select.option value="">Not set</flux:select.option>
+                    @foreach (\App\Domains\Lien\Admin\Actions\UpdateLienFilingRecipient::DELIVERY_METHODS as $method)
+                    <flux:select.option value="{{ $method }}">{{ ucfirst(\App\Domains\Lien\Documents\LienDocumentPayload::deliveryLabel($method)) }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                <flux:error name="recipientForm.delivery_method" />
+            </flux:field>
+            <flux:field>
+                <flux:label>Tracking or article number</flux:label>
+                <flux:input wire:model="recipientForm.tracking_number" placeholder="7018 1830 0000 4535 9376" />
+                <flux:error name="recipientForm.tracking_number" />
+            </flux:field>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:field>
+                    <flux:label>Sent at</flux:label>
+                    <flux:input type="datetime-local" wire:model="recipientForm.sent_at" />
+                    <flux:error name="recipientForm.sent_at" />
+                </flux:field>
+                <flux:field>
+                    <flux:label>Delivered at</flux:label>
+                    <flux:input type="datetime-local" wire:model="recipientForm.delivered_at" />
+                    <flux:error name="recipientForm.delivered_at" />
+                </flux:field>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <flux:modal.close>
+                    <flux:button variant="filled" type="button">Cancel</flux:button>
+                </flux:modal.close>
+                <flux:button type="submit" variant="primary">Save Recipient</flux:button>
+            </div>
+        </form>
+    </flux:modal>
+    @endif
 
     {{-- Add / Edit Party --}}
     <flux:modal wire:model="showPartyModal" class="max-w-lg">

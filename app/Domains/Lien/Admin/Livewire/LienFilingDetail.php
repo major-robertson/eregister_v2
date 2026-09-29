@@ -11,11 +11,14 @@ use App\Domains\Lien\Admin\Actions\AddFilingComment;
 use App\Domains\Lien\Admin\Actions\ChangeFilingStatus;
 use App\Domains\Lien\Admin\Actions\RefundPayment;
 use App\Domains\Lien\Admin\Actions\SyncResult;
+use App\Domains\Lien\Admin\Actions\UpdateLienDocumentDetails;
 use App\Domains\Lien\Admin\Actions\UpdateLienFilingDetails;
+use App\Domains\Lien\Admin\Actions\UpdateLienFilingRecipient;
 use App\Domains\Lien\Admin\Actions\UpdateLienParties;
 use App\Domains\Lien\Admin\Actions\UpdateLienProjectDetails;
 use App\Domains\Lien\Admin\Actions\UpdateRecordingDetails;
 use App\Domains\Lien\Admin\Enums\KanbanColumn;
+use App\Domains\Lien\Documents\LienCountyKey;
 use App\Domains\Lien\Documents\LienDocumentPackage;
 use App\Domains\Lien\Enums\DeadlineStatus;
 use App\Domains\Lien\Enums\FilingStatus;
@@ -84,8 +87,28 @@ class LienFilingDetail extends Component
     /** @var array<string, mixed> */
     public array $filingForm = [];
 
+    /**
+     * Document details form (lien_filings.document_details_json): the facts
+     * the generated documents need that the application never asked for.
+     *
+     * @var array<string, mixed>
+     */
+    public array $documentForm = [];
+
     /** @var array<string, mixed> */
     public array $partyForm = [];
+
+    /**
+     * Recipient service form (delivery method, tracking, sent / delivered
+     * times) for the recipient being edited.
+     *
+     * @var array<string, mixed>
+     */
+    public array $recipientForm = [];
+
+    public ?int $editingRecipientId = null;
+
+    public bool $showRecipientModal = false;
 
     public ?int $editingPartyId = null;
 
@@ -94,6 +117,8 @@ class LienFilingDetail extends Component
     public bool $showProjectModal = false;
 
     public bool $showFilingModal = false;
+
+    public bool $showDocumentModal = false;
 
     public bool $showPartyModal = false;
 
@@ -108,6 +133,7 @@ class LienFilingDetail extends Component
     private const ACTIVITY_EVENT_TYPES = [
         'status_changed', 'note_added', 'payment_refunded', 'recording_details_updated',
         'application_project_updated', 'application_filing_updated', 'application_parties_updated',
+        'document_details_updated', 'recipient_added', 'recipient_updated',
         'esign_sent', 'esign_reminder_sent', 'esign_completed',
     ];
 
@@ -140,6 +166,7 @@ class LienFilingDetail extends Component
             'project.parties',
             'project.deadlines.rule',
             'project.deadlines.documentType',
+            'recipients' => fn ($q) => $q->withoutGlobalScope('business')->with('party'),
             'documentType',
             'events' => fn ($q) => $q->whereIn('event_type', self::ACTIVITY_EVENT_TYPES)->latest()->limit(50),
             'events.creator',
@@ -814,6 +841,103 @@ class LienFilingDetail extends Component
         $this->flashSyncResult($result, 'Filing details updated.');
     }
 
+    public function editDocumentDetails(): void
+    {
+        $this->authorize('update', $this->lienFiling);
+        $this->loadDocumentForm();
+        $this->resetErrorBag();
+        $this->showDocumentModal = true;
+    }
+
+    /**
+     * Save the document details. No snapshot re-sync: nothing here is part
+     * of payload_json; the documents render from the live filing.
+     */
+    public function updateDocumentDetails(): void
+    {
+        $this->authorize('update', $this->lienFiling);
+        $this->validate($this->documentRules());
+
+        $input = $this->documentForm;
+        $input['estimated_price_cents'] = $this->dollarsToCents($this->documentForm['estimated_price'] ?? null);
+        $input['original_lien'] = $this->documentForm['original_lien'] ?? [];
+        $input['original_lien']['amount_received_cents'] = $this->dollarsToCents($this->documentForm['original_lien']['amount_received'] ?? null);
+
+        app(UpdateLienDocumentDetails::class)->execute($this->lienFiling, $input);
+
+        $this->afterEdit();
+        $this->showDocumentModal = false;
+        session()->flash('success', 'Document details updated.');
+    }
+
+    // ------------------------------------------------------------------
+    // Recipients: who the document is served on, added one at a time by
+    // an admin (never automatically), with the address snapshotted as of
+    // that moment, plus the service facts once it has gone out.
+    // ------------------------------------------------------------------
+
+    public function addRecipient(int $partyId): void
+    {
+        $this->authorize('update', $this->lienFiling);
+
+        $party = $this->lienFiling->project?->parties->firstWhere('id', $partyId);
+        abort_if($party === null, 404);
+
+        try {
+            app(UpdateLienFilingRecipient::class)->add($this->lienFiling, $party);
+        } catch (\InvalidArgumentException $e) {
+            session()->flash('error', $e->getMessage());
+
+            return;
+        }
+
+        $this->afterEdit();
+        session()->flash('success', ($party->displayName() ?: 'Party').' added as a recipient.');
+    }
+
+    public function editRecipient(int $recipientId): void
+    {
+        $this->authorize('update', $this->lienFiling);
+
+        $recipient = $this->lienFiling->recipients->firstWhere('id', $recipientId);
+        abort_if($recipient === null, 404);
+
+        $this->editingRecipientId = $recipient->id;
+        // Shown and edited in the display timezone; parsed back from it on save.
+        $this->recipientForm = [
+            'delivery_method' => $recipient->delivery_method,
+            'tracking_number' => $recipient->tracking_number,
+            'sent_at' => $recipient->sent_at?->eastern()->format('Y-m-d\TH:i'),
+            'delivered_at' => $recipient->delivered_at?->eastern()->format('Y-m-d\TH:i'),
+        ];
+        $this->resetErrorBag();
+        $this->showRecipientModal = true;
+    }
+
+    public function updateRecipient(): void
+    {
+        $this->authorize('update', $this->lienFiling);
+        $this->validate($this->recipientRules());
+
+        $recipient = $this->lienFiling->recipients->firstWhere('id', $this->editingRecipientId);
+        abort_if($recipient === null, 404);
+
+        $timestamp = fn (?string $value) => filled($value)
+            ? Carbon::parse($value, config('app.display_timezone'))->utc()
+            : null;
+
+        app(UpdateLienFilingRecipient::class)->update($this->lienFiling, $recipient, [
+            'delivery_method' => $this->recipientForm['delivery_method'] ?? null,
+            'tracking_number' => $this->recipientForm['tracking_number'] ?? null,
+            'sent_at' => $timestamp($this->recipientForm['sent_at'] ?? null),
+            'delivered_at' => $timestamp($this->recipientForm['delivered_at'] ?? null),
+        ]);
+
+        $this->afterEdit();
+        $this->showRecipientModal = false;
+        session()->flash('success', 'Recipient updated.');
+    }
+
     public function addParty(): void
     {
         $this->authorize('update', $this->lienFiling);
@@ -949,6 +1073,51 @@ class LienFilingDetail extends Component
     }
 
     /**
+     * Stored details first; the signer, license and (for a release) the
+     * recorded lien prefill from the business and the project so the usual
+     * case is a one-click confirm. Contract type and notice date stay blank
+     * because the documents already fall back to the project's values.
+     */
+    private function loadDocumentForm(): void
+    {
+        $filing = $this->lienFiling;
+        $details = $filing->document_details_json ?? [];
+        $original = $details['original_lien'] ?? [];
+        $business = $filing->project?->business;
+
+        $signer = collect($business?->responsible_people ?? [])
+            ->first(fn (array $person) => ! empty($person['can_sign_liens']) && ! empty($person['name']));
+
+        $recordedLien = $filing->documentKind() === 'lien_release' && empty($original['recording_reference']) && empty($original['recorded_at'])
+            ? $filing->project?->latestRecordedLien($filing)
+            : null;
+
+        $this->documentForm = [
+            'signer_name' => $details['signer_name'] ?? $signer['name'] ?? null,
+            'signer_title' => $details['signer_title'] ?? $signer['title'] ?? null,
+            'license_number' => $details['license_number'] ?? $business?->contractor_license_number,
+            'contract_date' => $details['contract_date'] ?? null,
+            'contract_type' => $details['contract_type'] ?? null,
+            'estimated_price' => $this->centsToDollars($details['estimated_price_cents'] ?? null),
+            'owner_interest' => $details['owner_interest'] ?? null,
+            'block' => $details['block'] ?? null,
+            'lot' => $details['lot'] ?? null,
+            'notice_served_at' => $details['notice_served_at'] ?? null,
+            'notice_served_method' => $details['notice_served_method'] ?? null,
+            'months_of_work' => $details['months_of_work'] ?? null,
+            'attachments_note' => $details['attachments_note'] ?? null,
+            'original_lien' => [
+                'recording_reference' => $original['recording_reference'] ?? $recordedLien?->recording_reference,
+                'book' => $original['book'] ?? null,
+                'page' => $original['page'] ?? null,
+                'county' => $original['county'] ?? LienCountyKey::displayName($recordedLien?->jurisdiction_county),
+                'recorded_at' => $original['recorded_at'] ?? $recordedLien?->recorded_at?->eastern()->format('Y-m-d'),
+                'amount_received' => $this->centsToDollars($original['amount_received_cents'] ?? null),
+            ],
+        ];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function blankPartyForm(): array
@@ -1013,6 +1182,47 @@ class LienFilingDetail extends Component
             'filingForm.jurisdiction_state' => ['nullable', 'string', 'size:2'],
             'filingForm.jurisdiction_county' => ['nullable', 'string', 'max:255'],
             'filingForm.service_level' => ['required', 'in:self_serve,full_service'],
+        ];
+    }
+
+    /**
+     * @return array<string, list<mixed>>
+     */
+    private function documentRules(): array
+    {
+        return [
+            'documentForm.signer_name' => ['nullable', 'string', 'max:255'],
+            'documentForm.signer_title' => ['nullable', 'string', 'max:255'],
+            'documentForm.license_number' => ['nullable', 'string', 'max:100'],
+            'documentForm.contract_date' => ['nullable', 'date', 'before_or_equal:today'],
+            'documentForm.contract_type' => ['nullable', Rule::in(UpdateLienDocumentDetails::CONTRACT_TYPES)],
+            'documentForm.estimated_price' => ['nullable', 'numeric', 'min:0'],
+            'documentForm.owner_interest' => ['nullable', 'string', 'max:255'],
+            'documentForm.block' => ['nullable', 'string', 'max:50'],
+            'documentForm.lot' => ['nullable', 'string', 'max:50'],
+            'documentForm.notice_served_at' => ['nullable', 'date', 'before_or_equal:today'],
+            'documentForm.notice_served_method' => ['nullable', Rule::in(UpdateLienDocumentDetails::NOTICE_METHODS)],
+            'documentForm.months_of_work' => ['nullable', 'string', 'max:255'],
+            'documentForm.attachments_note' => ['nullable', 'string', 'max:1000'],
+            'documentForm.original_lien.recording_reference' => ['nullable', 'string', 'max:255'],
+            'documentForm.original_lien.book' => ['nullable', 'string', 'max:50'],
+            'documentForm.original_lien.page' => ['nullable', 'string', 'max:50'],
+            'documentForm.original_lien.county' => ['nullable', 'string', 'max:255'],
+            'documentForm.original_lien.recorded_at' => ['nullable', 'date', 'before_or_equal:today'],
+            'documentForm.original_lien.amount_received' => ['nullable', 'numeric', 'min:0'],
+        ];
+    }
+
+    /**
+     * @return array<string, list<mixed>>
+     */
+    private function recipientRules(): array
+    {
+        return [
+            'recipientForm.delivery_method' => ['nullable', Rule::in(UpdateLienFilingRecipient::DELIVERY_METHODS)],
+            'recipientForm.tracking_number' => ['nullable', 'string', 'max:100'],
+            'recipientForm.sent_at' => ['nullable', 'date'],
+            'recipientForm.delivered_at' => ['nullable', 'date', 'after_or_equal:recipientForm.sent_at'],
         ];
     }
 

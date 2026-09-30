@@ -61,6 +61,14 @@ describe('Indiana sworn statement and notice of intention to hold mechanic\'s li
         expect(strpos($text, 'This instrument was prepared by'))->toBeGreaterThan($affirmation);
         expect($pdf->getHtml())->toContain('This instrument was prepared by <span class="fill fill-mid">&nbsp;</span>, eRegister.');
 
+        // The shared execution partial keeps the signature and the whole certificate together:
+        // its keep div opens at the signature table and runs past the county-of-commission line.
+        $html = $pdf->getHtml();
+        $keep = strpos($html, '<div class="keep">');
+        expect(substr($html, $keep, strpos($html, 'I affirm, under the penalties for perjury') - $keep))
+            ->toMatch('/^<div class="keep">\s*<table class="sig-table">/')
+            ->toContain('Notary\'s county of commission');
+
         // IC 36-2-11-16.5(b)(2): 2in top and bottom, 1in sides, no page number in the margin,
         // and a 1in recorder space under the 2in margin so the rule still sits 3in down page 1.
         expect($pdf->getHtml())

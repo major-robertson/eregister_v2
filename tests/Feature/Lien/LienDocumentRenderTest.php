@@ -189,7 +189,7 @@ describe('Florida claim of lien', function () {
 });
 
 describe('generic bodies', function () {
-    it('renders Georgia with the 12-point bold expiry statement, the contest notice and the cancellation block', function () {
+    it('renders Georgia in the § 44-14-361.1 form with the 12-point bold expiry statement, the contest notice and the cancellation block', function () {
         $project = liendocRenderProject('GA', 'Cherokee');
         $filing = liendocRenderFiling($project, 'mechanics_lien');
 
@@ -200,24 +200,44 @@ describe('generic bodies', function () {
             ->toContain('CLAIM OF LIEN')
             ->toContain('O.C.G.A. § 44-14-361.1')
             ->toContain('This claim of lien expires and is void 395 days from the date of filing of the claim of lien if no notice of commencement of lien action is filed in that time period.')
-            ->toContain('right to contest this claim of lien')
-            ->toContain('S G Roser Construction LLC ("Claimant") claims a lien under O.C.G.A. § 44-14-361.1')
-            ->toContain('Claimant furnished the labor, services, equipment or materials described below as a subcontractor.')
-            ->toContain('Owner or reputed owner of the property. Mike Stuntz')
-            ->toContain('Person who contracted with Claimant. Ken Walker Builders')
-            ->toContain('Property subject to the lien. 9025 Baywood Park Dr, Seminole, GA 33777 (Cherokee County, Georgia)')
+            ->toContain('S G Roser Construction LLC, a subcontractor, claims a lien in the amount of $4,213.75 on the building, structure and improvements and the premises or real estate on which they are erected or built, of Mike Stuntz, described as follows:')
+            ->toContain('9025 Baywood Park Dr, Seminole, GA 33777 (Cherokee County, Georgia)')
             ->toContain('Tax Parcel ID: 35-30-15-05699-000-0250')
-            ->toContain('First furnished: June 30, 2026')
-            ->toContain('After deducting all just credits and offsets, the amount claimed is $4,213.75.')
+            ->toContain('for satisfaction of a claim which became due on July 10, 2026 (the last date the labor, services or materials were supplied to the premises) for Removal of drywall, replacement of drywall, and damage repair throughout the home.')
+            ->toContain('furnished at the instance of Ken Walker Builders, 13700 58th St N Ste 204, Clearwater, FL 33760.')
             ->toContain('Contract amount')
-            ->toContain('Prior notice. Claimant served its Notice to Contractor on August 7, 2026')
+            ->toContain('right to contest this claim of lien')
             ->toContain('being first duly sworn')
             ->toContain('Subscribed and sworn to (or affirmed) before me')
             ->toContain('by Steven Roser, President of S G Roser Construction LLC')
             ->toContain('CANCELLATION OF CLAIM OF LIEN');
 
+        // § 44-14-367: "in at least 12 point bold font" on the face of the lien.
         expect($pdf->getHtml())->toContain('class="bold-statement"')
             ->toContain('.bold-statement { font-size: 12pt; font-weight: bold;');
+        expect(strpos($text, 'This claim of lien expires'))->toBeLessThan(strpos($text, 'claims a lien in the amount'));
+    });
+
+    it('renders the generic lien body for a state without a prescribed form', function () {
+        $project = liendocRenderProject('OH', 'Franklin');
+        $filing = liendocRenderFiling($project, 'mechanics_lien');
+
+        $text = liendocText(app(LienDocumentGenerator::class)->render($filing));
+
+        expect($text)
+            ->toContain('CLAIM OF LIEN')
+            ->toContain('STATE OF OHIO')
+            ->toContain('COUNTY OF FRANKLIN')
+            ->toContain('S G Roser Construction LLC ("Claimant") claims a lien upon the real property')
+            ->toContain('Claimant furnished the labor, services, equipment or materials described below as a subcontractor.')
+            ->toContain('Owner or reputed owner of the property. Mike Stuntz')
+            ->toContain('Person who contracted with Claimant. Ken Walker Builders')
+            ->toContain('Property subject to the lien. 9025 Baywood Park Dr, Seminole, OH 33777 (Franklin County, Ohio)')
+            ->toContain('First furnished: June 30, 2026')
+            ->toContain('After deducting all just credits and offsets, the amount claimed is $4,213.75.')
+            ->toContain('Prior notice. Claimant served its Preliminary Notice on August 7, 2026')
+            ->toContain('being first duly sworn')
+            ->toContain('Subscribed and sworn to (or affirmed) before me');
 
         // The GC is the hiring party here, so it is not listed twice.
         expect(substr_count($text, 'Ken Walker Builders'))->toBe(1);

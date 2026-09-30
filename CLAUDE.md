@@ -24,7 +24,7 @@ The other pages cover local dev and tests, production and ops, product invariant
 - `form_applications` queries that sort must use `forList()`. Otherwise MySQL error 1038 takes down dashboards.
 - For user-facing times, call `->eastern()` before `->format()`. Timestamps are stored in UTC.
 - Generated PDFs use spatie/laravel-pdf with `->driver('dompdf')` (CSS 2.1 only). Resale certificates are the one exception: they stamp official state PDFs with FPDI. Don't migrate them.
-- Never edit the lien waiver statutory text (`resources/views/documents/lien/waivers/bodies/`) or the shell's type sizes without re-checking the statute.
+- Never edit the lien waiver statutory text (`resources/views/documents/lien/waivers/bodies/`) or the shell's type sizes without re-checking the statute. The same goes for the lien document clauses and bodies (`database/data/lien_documents/`, `database/data/lien_counties/`, `resources/views/documents/lien/`).
 - Never edit price amounts in place. Add new price variants and retire the old ones, because payments reference `price_id`.
 - `lien_project_deadlines.status` is not maintained. Compute it with `StepStatusCalculator`.
 - Deadline reminders only ever go forward. Simulate any change that widens who gets them on prod first.

@@ -31,35 +31,49 @@
  * name and the Social Security number affirmation at the conclusion of the
  * instrument, verbatim in clauses/in-recording-affirmation), IC 36-2-11-16
  * (printed names beneath signatures), IC 36-2-11-16.5 (clean margins of at
- * least 2 inches top and bottom on the first and last pages; see the notes),
- * IC 36-2-7-10 (fees). Notarial certificates: IC 33-42-9-12 (no statutory
- * short form; the certificate shows the county and state of the act, the
- * officer's title, the commission expiration date and the Indiana county of
- * the commission). Verified against the 2026 Indiana Code as published by the
- * Indiana General Assembly (iga.in.gov/ic/2026/Title_32.html, Title_36.html,
- * Title_33.html and Title_22.html) on 2026-09-30.
+ * least 2 inches top and bottom and 1/2 inch on the sides of the first and
+ * last pages: every page prints with 2-inch top and bottom margins, 1-inch
+ * sides and no page number), IC 36-2-7-10 (fees). Notarial certificates:
+ * IC 33-42-9-12 (no statutory short form; the certificate shows the county
+ * and state of the act, the officer's title, the commission expiration date
+ * and the Indiana county of the commission, which gets its own line through
+ * execution.notary_county_line). Verified against the 2026 Indiana Code as
+ * published by the Indiana General Assembly (iga.in.gov/ic/2026/Title_32.html,
+ * Title_36.html, Title_33.html and Title_22.html) on 2026-09-30.
  */
 
 return [
     'state' => 'IN',
     'state_name' => 'Indiana',
     'recording' => [
-        'filing_office' => ['label' => 'County Recorder (county where the real estate is located)', 'method' => 'erecord'],
+        'filing_office' => ['label' => 'County Recorder', 'method' => 'erecord'],
+        // IC 36-2-11-16.5(b)(2): clean margins of at least 2 inches at the top and
+        // bottom of the first and last pages and 1/2 inch on the sides. Every page
+        // prints 2 inches top and bottom and 1 inch on the sides, with no page
+        // number in the margin; page 1 still keeps 3 inches clear above the rule.
+        'top_margin_in' => 3.0,
+        'other_margin_in' => 2.0,
+        'side_margin_in' => 1.0,
+        'page_numbers' => false,
         'parcel_label' => 'Parcel Number',
-        // IC 36-2-11-16.5(b)(2)(A) wants the first page's top two inches clean,
-        // so the preparer / return-to block prints below the recorder's rule.
+        // The one-inch space under the two-inch margin is too short for the
+        // preparer / return-to block, and the recorder stamps there, so the
+        // block prints below the rule.
         'preparer_in_space' => false,
         'fee_note' => '$25 per instrument plus any fee the county adds by ordinance (IC 36-2-7-10).',
         'notes' => [
-            'File the lien in the recorder\'s office of the county not later than 60 days after performing labor or furnishing materials or machinery for a Class 2 structure (a townhouse, or a building with one or two dwelling units, and its outbuildings: IC 22-12-1-5) or an improvement on the same real estate auxiliary to one, and not later than 90 days after in any other case (IC 32-28-3-3(a), (b)).',
+            'File the lien with the recorder of the county where the real estate is located, not later than 60 days after performing labor or furnishing materials or machinery for a Class 2 structure (a townhouse, or a building with one or two dwelling units, and its outbuildings: IC 22-12-1-5) or an improvement on the same real estate auxiliary to one, and not later than 90 days after in any other case (IC 32-28-3-3(a), (b)).',
             'A complaint to foreclose must be filed not later than one year after the lien is recorded, or the lien is void (IC 32-28-3-6).',
-            'IC 36-2-11-16.5: the recorder may receive an instrument if it is on white paper of at least 20-pound weight, no larger than 8 1/2 by 14 inches, typed in black ink of at least 10 point, with clean margins of at least 2 inches at the top and bottom and 1/2 inch on each side on the first and last pages (1/2 inch all around on other pages). The generated instrument keeps the top 3 inches of page 1 clean, but its bottom margins are 1 inch with the page number in them and its last page has a 1-inch top; confirm the recorder accepts it.',
+            'The instrument prints two-inch top and bottom margins on every page (page 1 is clear for three inches), one-inch sides and no page numbers, which meets the margin rule in IC 36-2-11-16.5(b)(2). It is letter size in black type of at least 10 point; print it on white paper of at least 20-pound weight.',
         ],
     ],
     'execution' => [
         'verification' => 'sworn',
         'notary' => true,
         'notary_form' => 'jurat',
+        // IC 33-42-9-12(a)(5)(B): an Indiana notary's certificate shows the Indiana
+        // county of the notary's commission; the official seal need not (IC 33-42-10-2).
+        'notary_county_line' => true,
     ],
     'service' => [
         'recipients' => ['owner'],
@@ -92,9 +106,8 @@ return [
                 'The owner\'s address on the lien must be the owner\'s latest address as shown on the county property tax records (IC 32-28-3-3(c)): edit the Owner party\'s address to match before generating. The owner\'s name and the legal description are sufficient if they are substantially as set forth in the latest entry in the county auditor\'s transfer books.',
                 'File the statement in duplicate. The recorder mails one duplicate to the owner, first class, within three business days after recording, to the address in the statement, and collects $2 from the claimant for it (IC 32-28-3-3(d)); staff still mail the owner a copy with the notice-of-recording letter.',
                 'The Social Security number affirmation and the "This instrument was prepared by" statement print after the notary block (IC 36-2-11-15). Set config(\'lien.documents.preparer.attention\') to the staff member who prepares Indiana instruments; until then a blank prints where the name goes.',
-                'An Indiana notary\'s certificate must also show the Indiana county of the notary\'s commission (IC 33-42-9-12(a)(5)(B)); the generic certificate has no line for it, so the notary writes or stamps it.',
-                'Open question for Major: the prior-notice item prints for every claimant who did not contract with the owner, but Indiana requires that notice only on owner-occupied single or double family dwellings (IC 32-28-3-1(h), (i)); should it print on other jobs?',
-                'Open question for Major: IC 32-28-3-3 names an attorney in good standing as the one who may verify and file the statement on a client\'s behalf; confirm eRegister may prepare and e-record it for a claimant who signs and swears to it.',
+                'Undecided: whether the prior-notice item should print on jobs other than owner-occupied single or double family dwellings. It prints for every claimant who did not contract with the owner, but Indiana requires that notice only on those dwellings (IC 32-28-3-1(h), (i)).',
+                'Undecided: whether eRegister may prepare and e-record the statement for a claimant who signs and swears to it. IC 32-28-3-3 names an attorney in good standing as the one who may verify and file it on a client\'s behalf.',
             ],
         ],
         'lien_release' => [
@@ -113,7 +126,6 @@ return [
                 'Once the debt is paid, the lienholder must release, discharge and satisfy the lien of record (IC 32-28-1-1(b)) within 15 days after the owner demands it, or owe the owner the greater of actual damages or $10 a day (IC 32-28-6-1). If it has not released the lien 15 days after receiving a written demand sent by registered or certified mail, it also forfeits up to $500 plus costs and reasonable attorney\'s fees (IC 32-28-1-2).',
                 'This template is a full release. A partial release must say on its face that it is a partial release and describe what part of the lien it releases (IC 32-28-1-1(c)).',
                 'The Social Security number affirmation and the "This instrument was prepared by" statement print after the notary block (IC 36-2-11-15). Set config(\'lien.documents.preparer.attention\') to the staff member who prepares Indiana instruments; until then a blank prints where the name goes.',
-                'An Indiana notary\'s certificate must also show the Indiana county of the notary\'s commission (IC 33-42-9-12(a)(5)(B)); the generic certificate has no line for it, so the notary writes or stamps it.',
             ],
         ],
         'prelim_notice' => [
@@ -141,7 +153,7 @@ return [
                 'Use only for an owner-occupied single or double family dwelling, when the claimant sold or furnished materials, labor or machinery on credit to anyone other than the occupying owner. Alteration or repair: furnish the notice to the occupying owner not later than 30 days after the first delivery or labor performed (IC 32-28-3-1(h)).',
                 'Original construction of a single or double family dwelling for the owner\'s intended occupancy: furnish the notice to the owner named in the latest entry in the county auditor\'s transfer books, and file a copy in the recorder\'s office of the county, both not later than 60 days after the first delivery or labor performed (IC 32-28-3-1(i)).',
                 'Furnishing the notice (and, for original construction, filing it) is a condition precedent to the lien. The statute names no delivery method; certified mail, return receipt requested, proves receipt.',
-                'Open question for Major: will recorders take this letter (1-inch margins, no IC 36-2-11-15 statements) as the IC 32-28-3-1(i) recorder copy, given the 2-inch top and bottom margins IC 36-2-11-16.5 asks for on the first and last pages?',
+                'Undecided: whether recorders will take this letter as the IC 32-28-3-1(i) recorder copy. It has 1-inch margins and no IC 36-2-11-15 statements, while IC 36-2-11-16.5 asks for 2-inch top and bottom margins on the first and last pages.',
             ],
         ],
         'noi' => [

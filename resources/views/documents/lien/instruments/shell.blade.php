@@ -25,8 +25,10 @@
       preparer.*, server.state, recipients[]
 
     Typography is a recorder rule, not a style choice: 1in margins (the
-    state file can widen the page-1 top), nothing under 10pt, DejaVu Serif
-    11pt body. The title and any .bold-statement are 12pt bold, the largest
+    state file can widen the page-1 top, and set recording.side_margin_in
+    when the sides differ from the top and bottom: Indiana prints 2in top
+    and bottom, 1in sides), nothing under 10pt, DejaVu Serif 11pt body.
+    The title and any .bold-statement are 12pt bold, the largest
     type on the page, because Georgia wants its 395-day statement in at least
     12-point bold type. Missing values print as ruled blanks (.fill), never
     "N/A" or a dash. DOMPDF: plain HTML + inline CSS, no flex/grid.
@@ -35,6 +37,7 @@
     $form = $doc['form'];
     $rec = $form['recording'];
     $margin = (float) ($rec['other_margin_in'] ?? 1.0);
+    $side = (float) ($rec['side_margin_in'] ?? $margin);
     $space = (float) ($form['recorder_space_in'] ?? 2.0);
     $claimantName = $doc['parties']['claimant']['display_name'] ?? 'Claimant';
 @endphp
@@ -47,7 +50,8 @@
     <meta name="author" content="eRegister">
     <meta name="keywords" content="{{ $form['title'] }} ({{ $form['state'] }}); template v{{ $form['template_version'] }}; generated {{ $doc['generated_at'] }}; filing {{ $doc['filing']['public_id'] }}">
     <style>
-        @page { margin: {{ $margin }}in; }
+        {{-- Top and bottom, then the sides only when they differ, so the default stays "margin: 1in". --}}
+        @page { margin: {{ $margin }}in{{ $side !== $margin ? ' '.$side.'in' : '' }}; }
         @include('documents.lien._parts.base-styles')
 
         .recorder-space { height: {{ $space }}in; overflow: hidden; }

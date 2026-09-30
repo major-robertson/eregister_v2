@@ -11,7 +11,8 @@
           each under the boxed § 1189(a)(1) notice
       nc  N.C.G.S. § 10B-41 acknowledgment / § 10B-43 jurat
       —   a generic certificate with blank venue lines (the client notarizes in
-          their own county, never the property's)
+          their own county, never the property's); execution.notary_county_line
+          adds a "Notary's county of commission" line (Indiana, IC 33-42-9-12(a)(5)(B))
     Statutory certificates are verbatim; never edit them without re-checking
     the statute (verified 2026-09-29).
 --}}
@@ -119,7 +120,7 @@
                 @else
                     <p>Subscribed and sworn to (or affirmed) before me on this <span class="fill fill-short">&nbsp;</span> day of <span class="fill fill-mid">&nbsp;</span>, 20<span class="fill fill-short">&nbsp;</span>, by @if ($signerName){{ $signerName }}@else<span class="fill fill-wide">&nbsp;</span>@endif, {{ $capacity }}, who is personally known to me or who produced <span class="fill fill-mid">&nbsp;</span> as identification.</p>
                 @endif
-                @include('documents.lien._parts.notary-lines')
+                @include('documents.lien._parts.notary-lines', ['countyLine' => ! empty($execution['notary_county_line'])])
             @endif
         </div>
     @endif

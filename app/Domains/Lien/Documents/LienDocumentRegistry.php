@@ -27,6 +27,7 @@ use App\Domains\Lien\Waivers\WaiverStateRegistry;
  *       'filing_office' => ['label' => 'Clerk of the Circuit Court', 'method' => 'erecord|mail|either',
  *                           'address_lines' => [], 'vendor' => null],
  *       'top_margin_in' => 3.0, 'other_margin_in' => 1.0, 'min_font_pt' => 10, 'page_numbers' => true,
+ *       'side_margin_in' => null,          // left/right margins; null = other_margin_in (Indiana: 2in top/bottom, 1in sides)
  *       'caption' => 'state_county|docket', // PA files with a court docket caption
  *       'index_line' => true,              // compact claimant / owner / amount / parcel line on page 1
  *       'index_block' => false,            // MO-style grantor/grantee recording block on page 1
@@ -42,6 +43,7 @@ use App\Domains\Lien\Waivers\WaiverStateRegistry;
  *       'verification' => 'sworn|verified|acknowledged|none',
  *       'notary' => true, 'notary_form' => 'jurat|acknowledgment|null',
  *       'notary_variant' => null,          // 'fl' | 'ca' | 'nc' for state-specific certificate wording
+ *       'notary_county_line' => false,     // generic certificate adds a "Notary's county of commission" line (IN)
  *       'statement' => true,               // print the sworn/verified statement above the signature
  *                                          // (false when the body is itself the sworn statement, FL)
  *       'witness' => false,
@@ -188,6 +190,7 @@ class LienDocumentRegistry
             'notary' => $notary,
             'notary_form' => $notaryForm,
             'notary_variant' => null,
+            'notary_county_line' => false,
             'statement' => true,
             'witness' => false,
         ];
@@ -215,6 +218,7 @@ class LienDocumentRegistry
             'notary' => false,
             'notary_form' => null,
             'notary_variant' => null,
+            'notary_county_line' => false,
             'statement' => true,
             'witness' => false,
         ];
@@ -263,6 +267,7 @@ class LienDocumentRegistry
                 ],
                 'top_margin_in' => 3.0,
                 'other_margin_in' => 1.0,
+                'side_margin_in' => null,
                 'min_font_pt' => 10,
                 'page_numbers' => true,
                 'caption' => 'state_county',

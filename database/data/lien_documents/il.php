@@ -111,11 +111,13 @@ return [
             'sections' => [
                 'amount' => 'breakdown',
                 'gc' => true,
-                // With the amount breakdown, the § 60/7(a) "brief statement of the claimant's
-                // contract": with whom, when, written or oral, for what, at what price.
+                // The parties, the contract date, the description of work and the amount breakdown
+                // are the § 60/7(a) "brief statement of the claimant's contract".
                 'hiring_party' => true,
                 'contract_date' => true,
-                'contract_type' => true,
+                // No written-or-oral line: its "a copy is attached" would record the contract,
+                // which Illinois does not require.
+                'contract_type' => false,
                 // Every subcontractor must have served the § 60/24 notice; a blank date means it is missing.
                 'prior_notice' => true,
             ],
@@ -134,11 +136,8 @@ return [
                     'The lien extends to every estate, right of redemption or other interest the owner had in the land when the contract was made or acquires later, and it attaches as of the date of the contract (770 ILCS 60/1(a)).',
                 ],
             ],
-            'attachments' => [
-                'A copy of the written contract, when the claim says the contract was written.',
-            ],
             'notes' => [
-                'The claim must be sworn by the claimant or its agent or employee and give a brief statement of the claimant\'s contract, the balance due after allowing all credits, and a description of the land that identifies it (770 ILCS 60/7(a)). The contract date and whether the contract was written or oral come from Document details.',
+                'The claim must be sworn by the claimant or its agent or employee and give a brief statement of the claimant\'s contract, the balance due after allowing all credits, and a description of the land that identifies it (770 ILCS 60/7(a)). The contract date comes from Document details.',
                 'A subcontractor files the same claim under the same time limits as a contractor (770 ILCS 60/28), so one title serves both.',
                 'A contractor improving an owner-occupied single-family residence must give the owner written notice within 10 days after recording, or the lien is lost to the extent the owner is harmed by the delay (770 ILCS 60/7(d)); this does not apply to subcontractors. Mail every owner a copy within 10 days anyway.',
                 'For a subcontractor, the prior-notice line names the Subcontractor\'s Notice of Claim (90-Day Notice) with its service date and method; fill both in Document details.',

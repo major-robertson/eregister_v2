@@ -39,9 +39,8 @@ describe('Illinois claim for lien', function () {
             'PIN 35-30-15-05699-000-0250',
             'S G Roser Construction LLC ("Claimant") claims a lien under 770 ILCS 60/7 and 60/28 upon the real property and improvements described below',
             'Claimant furnished the labor, services, equipment or materials described below as a subcontractor.',
-            // The 770 ILCS 60/7(a) "brief statement of the claimant's contract": with whom, written or oral, when, for what, at what price.
+            // The 770 ILCS 60/7(a) "brief statement of the claimant's contract": with whom, when, for what, at what price.
             'Person who contracted with Claimant. Ken Walker Builders',
-            'The contract was written; a copy is attached.',
             'Date of the contract: January 16, 2026',
             'Property subject to the lien. 9025 Baywood Park Dr, Seminole, IL 33777 (Clinton County, Illinois)',
             'Legal description: BAYWOOD PARK LOT 25',
@@ -65,6 +64,9 @@ describe('Illinois claim for lien', function () {
 
         // "Verified by the affidavit" (770 ILCS 60/7(a)): no acknowledgment, no best-knowledge formula.
         expect($text)->not->toContain('best of')->not->toContain('acknowledged before me')->not->toContain('N/A');
+
+        // Illinois does not require the contract to be recorded: no written-or-oral line, even when Document details say written.
+        expect($text)->not->toContain('The contract was')->not->toContain('a copy is attached');
 
         // Clinton County wants 3 inches wide by 4 high in the top right corner: page 1 is blank
         // across its top four inches, and the preparer block prints below the rule.
@@ -114,7 +116,7 @@ describe('Illinois claim for lien', function () {
         expect($clintonRules['Fee'])->toBe('$70 per lien or release as a standard land document; $85 if non-standard (effective February 1, 2025).');
         expect($clintonRules['Signing'])->toBe('Sworn to and signed before a notary (jurat)');
         expect($clintonRules['Serve'])->toBe('The owner by certified mail, return receipt requested within 10 days after recording.');
-        expect($clintonRules['Attach'])->toBe('A copy of the written contract, when the claim says the contract was written.');
+        expect($clintonRules->has('Attach'))->toBeFalse();
         expect($sangamonRules['File with'])->toBe('County Recorder, e-recording');
         expect($sangamonRules->has('Fee'))->toBeFalse();
 
@@ -136,7 +138,7 @@ describe('Illinois claim for lien', function () {
         expect($text)
             ->toContain('as a direct contractor in contract with the owner.')
             ->toContain('Claimant contracted directly with the owner named above.')
-            ->toContain('The contract was oral, on the following terms, time given and conditions:')
+            ->not->toContain('The contract was')
             ->not->toContain('Prior notice.')
             ->not->toContain('Original (general) contractor.');
     });
@@ -272,11 +274,11 @@ describe('Illinois rules', function () {
             'statute' => '770 ILCS 60/7 and 60/28',
             'body' => 'documents.lien.instruments.bodies.generic-lien',
         ]);
-        expect($lien['sections'])->toMatchArray(['amount' => 'breakdown', 'gc' => true, 'hiring_party' => true, 'contract_date' => true, 'contract_type' => true, 'prior_notice' => true]);
+        expect($lien['sections'])->toMatchArray(['amount' => 'breakdown', 'gc' => true, 'hiring_party' => true, 'contract_date' => true, 'contract_type' => false, 'prior_notice' => true]);
         expect($lien['execution'])->toMatchArray(['verification' => 'sworn', 'notary' => true, 'notary_form' => 'jurat', 'notary_variant' => null, 'statement' => true]);
         expect($lien['service'])->toMatchArray(['recipients' => ['owner'], 'days_after' => 10, 'method' => 'certified_mail']);
         expect($lien['clauses']['affirmations'])->toHaveCount(4);
-        expect($lien['attachments'])->toBe(['A copy of the written contract, when the claim says the contract was written.']);
+        expect($lien['attachments'])->toBe([]);
 
         expect($release)->toMatchArray([
             'title' => 'Release and Satisfaction of Mechanic\'s Lien',

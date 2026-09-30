@@ -94,8 +94,12 @@ return [
                 'proof' => 'declaration',
             ],
             'clauses' => [
-                // § 33-992.01(D), verbatim.
-                'notice_box' => 'documents.lien.letters.clauses.az-notice-to-property-owner',
+                // § 33-992.01(D) prescribes the order of the form, so the body renders the
+                // "Notice to Property Owner" (letters/clauses/az-notice-to-property-owner)
+                // itself, after the parties and the estimate, and the § 33-992.02
+                // acknowledgment of receipt follows the signature.
+                'notice_box' => null,
+                'after_execution' => ['documents.lien.letters.clauses.az-acknowledgment-of-receipt'],
             ],
             'notes' => [
                 'Serve within 20 days after first furnishing on the owner, the original contractor, the construction lender (if any) and the person with whom the claimant contracted (A.R.S. § 33-992.01(B)-(C)); a later notice covers only the 20 days before service (§ 33-992.01(E)).',

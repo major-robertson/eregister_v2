@@ -51,6 +51,9 @@ use App\Domains\Lien\Waivers\WaiverStateRegistry;
  *       'method' => 'certified_mail',
  *       'proof' => 'declaration|affidavit', // affidavit = notarized proof of service
  *       'certificate_on_instrument' => false, // CA: proof of service printed with the lien
+ *       'perjury_state' => null,           // state whose law the proof of service is declared under
+ *                                          // (null: where staff sign it, config lien.documents.server_state;
+ *                                          // CA: 'CA', since CCP § 2015.5 declarations recite California law)
  *   ],
  *   'kinds' => [
  *       'mechanics_lien' => [
@@ -194,6 +197,7 @@ class LienDocumentRegistry
             'method' => $rule?->prelim_delivery_method ?: 'certified_mail',
             'proof' => 'declaration',
             'certificate_on_instrument' => false,
+            'perjury_state' => null,
         ];
 
         $noticeService = [
@@ -202,6 +206,7 @@ class LienDocumentRegistry
             'method' => $rule?->prelim_delivery_method ?: 'certified_mail',
             'proof' => 'declaration',
             'certificate_on_instrument' => false,
+            'perjury_state' => null,
         ];
 
         $noticeExecution = [

@@ -41,6 +41,8 @@ return [
         'method' => 'certified_mail',
         'proof' => 'declaration',
         'certificate_on_instrument' => true,
+        // A declaration executed outside California must still recite California law (CCP § 2015.5).
+        'perjury_state' => 'CA',
     ],
     'kinds' => [
         'mechanics_lien' => [

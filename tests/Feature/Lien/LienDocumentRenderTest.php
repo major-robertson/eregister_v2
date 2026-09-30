@@ -419,12 +419,12 @@ describe('package warnings', function () {
         expect($hawaiiPackage->form)->toBeNull();
         expect($hawaiiPackage->unavailableReason)->toContain('attorney');
 
-        // The letter layout lands in PR 4: the rules show, the download does not.
         $prelimPackage = LienDocumentPackage::forFiling($prelim);
-        expect($prelimPackage->isAvailable())->toBeFalse();
+        expect($prelimPackage->isAvailable())->toBeTrue();
         expect($prelimPackage->form?->title)->toBe('Notice to Owner');
-        expect($prelimPackage->unavailableReason)->toBe("The Florida Notice to Owner template isn't built yet.");
-        expect($prelimPackage->rules())->not->toBeEmpty();
+        expect($prelimPackage->items[0]['label'])->toBe('Notice to Owner');
+        expect(collect($prelimPackage->rules())->pluck('value', 'label')['Serve'])
+            ->toBe('The owner, the general contractor and the construction lender by certified mail, return receipt requested within 45 days after first furnishing.');
     });
 
     it('describes the rules in plain words', function () {
@@ -436,6 +436,132 @@ describe('package warnings', function () {
         expect($rules['Fee'])->toContain('$10 for the first page');
         expect($rules['Signing'])->toBe('Sworn to and signed before a notary (jurat)');
         expect($rules['Serve'])->toBe('The owner by certified mail, return receipt requested within 15 days after recording.');
+    });
+});
+
+describe('notice letters', function () {
+    it('renders the Florida Notice to Owner with the statutory warning, sentence and protection paragraphs', function () {
+        $filing = liendocRenderFiling(liendocRenderProject('FL', 'Pinellas'), 'prelim_notice');
+
+        $pdf = app(LienDocumentGenerator::class)->render($filing);
+        $text = liendocText($pdf);
+
+        foreach ([
+            'S G Roser Construction LLC 4200 Lakeland Hwy Lakeland, FL 33801 863-555-0100',
+            'Via certified mail, return receipt requested',
+            'To: Owner or reputed owner Mike Stuntz',
+            'To: Original (direct) contractor Ken Walker Builders',
+            'Re: Notice to Owner',
+            'WARNING! FLORIDA\'S CONSTRUCTION LIEN LAW ALLOWS SOME UNPAID CONTRACTORS, SUBCONTRACTORS, AND MATERIAL SUPPLIERS TO FILE LIENS AGAINST YOUR PROPERTY EVEN IF YOU HAVE MADE PAYMENT IN FULL.',
+            'NOTICE TO OWNER',
+            'Fla. Stat. § 713.06',
+            'The undersigned hereby informs you that he or she has furnished or is furnishing services or materials as follows:',
+            'Removal of drywall, replacement of drywall, and damage repair throughout the home for the improvement of the real property identified as 9025 Baywood Park Dr, Seminole, FL 33777; BAYWOOD PARK LOT 25; Parcel ID 35-30-15-05699-000-0250 under an order given by Ken Walker Builders.',
+            'Florida law prescribes the serving of this notice and restricts your right to make payments under your contract in accordance with Section 713.06, Florida Statutes.',
+            'IMPORTANT INFORMATION FOR YOUR PROTECTION',
+            'PROTECT YOURSELF:',
+            '—RECOGNIZE that this Notice to Owner may result in a lien against your property unless all those supplying a Notice to Owner have been paid.',
+            'CLAIMANT: S G Roser Construction LLC',
+            'Steven Roser',
+        ] as $fragment) {
+            expect($text)->toContain($fragment);
+        }
+
+        expect($text)->not->toContain('My commission expires')->not->toContain('N/A');
+        expect($pdf->getHtml())->toContain('<strong>IMPORTANT INFORMATION FOR YOUR PROTECTION</strong>');
+    });
+
+    it('renders the California preliminary notice with the § 8202 statement and the estimate', function () {
+        $filing = liendocRenderFiling(liendocRenderProject('CA', 'Los Angeles'), 'prelim_notice');
+
+        $text = liendocText(app(LienDocumentGenerator::class)->render($filing));
+
+        expect($text)
+            ->toContain('CALIFORNIA PRELIMINARY NOTICE')
+            ->toContain('NOTICE TO PROPERTY OWNER EVEN THOUGH YOU HAVE PAID YOUR CONTRACTOR IN FULL, if the person or firm that has given you this notice is not paid in full')
+            ->toContain('You are not required to send the notice if you are a residential homeowner of a dwelling containing four or fewer units.')
+            ->toContain('THIS IS NOT A LIEN.')
+            ->toContain('Direct contractor Ken Walker Builders')
+            ->toContain('Construction lender, if any')
+            ->toContain('Relationship to the parties: subcontractor')
+            ->toContain('Estimate of the total price of the work provided and to be provided $4,213.75');
+    });
+
+    it('renders the Arizona twenty day notice in the statutory order with the receipt', function () {
+        $filing = liendocRenderFiling(liendocRenderProject('AZ', 'Maricopa'), 'prelim_notice');
+
+        $text = liendocText(app(LienDocumentGenerator::class)->render($filing));
+
+        foreach ([
+            'ARIZONA PRELIMINARY TWENTY DAY LIEN NOTICE',
+            'In accordance with Arizona Revised Statutes section 33-992.01, this is not a lien.',
+            'The name and address of the owner or reputed owner are: Mike Stuntz',
+            'This preliminary lien notice has been completed by (name and address of claimant): S G Roser Construction LLC',
+            'And situated on that certain lot(s) or parcel(s) of land in Maricopa County, Arizona, described as follows: BAYWOOD PARK LOT 25',
+            'An estimate of the total price of the labor, professional services, materials, machinery, fixtures or tools furnished or to be furnished is: $4,213.75',
+            'Notice to Property Owner If bills are not paid in full',
+            '3. Using any other method or device that is appropriate under the circumstances.',
+            'Within ten days after the receipt of this preliminary twenty day notice the owner or other interested party is required to furnish all information necessary to correct any inaccuracies',
+            'Acknowledgment of receipt of preliminary twenty day notice',
+            'Signature of person acknowledging receipt, with title if acknowledgment is made on behalf of another person',
+        ] as $fragment) {
+            expect($text)->toContain($fragment);
+        }
+
+        // The statutory order: parties and estimate, then the notice, then the ten-day paragraphs, then the signature and the receipt.
+        $positions = array_map(fn ($needle) => strpos($text, $needle), ['An estimate of the total price', 'Notice to Property Owner If bills', 'Within ten days after the receipt', 'By (signature)', 'Acknowledgment of receipt']);
+        $sorted = $positions;
+        sort($sorted);
+        expect($positions)->not->toContain(false)->toBe($sorted);
+    });
+
+    it('renders the Texas notice of claim as the § 53.056(a-2) form', function () {
+        $filing = liendocRenderFiling(liendocRenderProject('TX', 'Bexar'), 'prelim_notice');
+
+        $text = liendocText(app(LienDocumentGenerator::class)->render($filing));
+
+        expect($text)
+            ->toContain('NOTICE OF CLAIM FOR UNPAID LABOR OR MATERIALS')
+            ->toContain('Project description and/or address: Baywood Park drywall / 9025 Baywood Park Dr, Seminole, TX 33777')
+            ->toContain('Claimant\'s name: S G Roser Construction LLC')
+            ->toContain('Month(s) in which the labor or materials were provided:')
+            ->toContain('Original contractor\'s name: Ken Walker Builders')
+            ->toContain('Party with whom claimant contracted if different from original contractor: Same as the original contractor')
+            ->toContain('Claim amount: $4,213.75')
+            ->toContain('Claimant\'s contact person: Steven Roser, 863-555-0100')
+            ->toContain('Claimant\'s address: 4200 Lakeland Hwy, Lakeland, FL 33801');
+    });
+
+    it('renders the Georgia notice to contractor, the North Carolina notice to lien agent and the generic notices', function () {
+        $generator = app(LienDocumentGenerator::class);
+
+        $georgia = liendocText($generator->render(liendocRenderFiling(liendocRenderProject('GA', 'Cherokee'), 'prelim_notice')));
+        expect($georgia)
+            ->toContain('NOTICE TO CONTRACTOR')
+            ->toContain('O.C.G.A. § 44-14-361.5')
+            ->toContain('Name and location of the project (as set forth in the Notice of Commencement) Baywood Park drywall')
+            ->toContain('Contract price or anticipated value of the labor, services or materials to be furnished, or the amount claimed to be due $4,213.75');
+
+        $carolina = liendocText($generator->render(liendocRenderFiling(liendocRenderProject('NC', 'Mecklenburg'), 'prelim_notice')));
+        expect($carolina)
+            ->toContain('NOTICE TO LIEN AGENT')
+            ->toContain('(1) Potential lien claimant\'s name, mailing address, telephone number, fax number (if available), and email address (if available): S G Roser Construction LLC')
+            ->toContain('(4) I give notice of my right subsequently to pursue a claim of lien for improvements to the real property described in this notice.')
+            ->toContain('Lien agent (as designated on the Appointment of Lien Agent or the building permit):');
+
+        $ohio = liendocText($generator->render(liendocRenderFiling(liendocRenderProject('OH', 'Franklin'), 'prelim_notice')));
+        expect($ohio)
+            ->toContain('PRELIMINARY NOTICE')
+            ->toContain('THIS IS NOT A LIEN.')
+            ->toContain('Relationship to the project Subcontractor')
+            ->toContain('Estimated total price $4,213.75')
+            ->toContain('the claimant may claim a lien against the property');
+
+        $intent = liendocText($generator->render(liendocRenderFiling(liendocRenderProject('GA', 'Cherokee'), 'noi')));
+        expect($intent)
+            ->toContain('NOTICE OF INTENT TO FILE A CLAIM OF LIEN')
+            ->toContain('under a contract with Ken Walker Builders, and that $4,213.75 remains unpaid')
+            ->toContain('within 10 days after the date of this notice, Claimant intends to record a Claim of Lien against the property');
     });
 });
 

@@ -56,7 +56,7 @@ describe('registry', function () {
             expect($rules['recording']['filing_office'])->toHaveKeys(['label', 'method', 'address_lines', 'vendor']);
             expect($rules['recording']['top_margin_in'])->toBeGreaterThanOrEqual(1.0);
             expect($rules['execution'])->toHaveKeys(['verification', 'notary', 'notary_form', 'notary_variant', 'witness']);
-            expect($rules['service'])->toHaveKeys(['recipients', 'days_after', 'method', 'proof', 'certificate_on_instrument']);
+            expect($rules['service'])->toHaveKeys(['recipients', 'days_after', 'method', 'proof', 'certificate_on_instrument', 'perjury_state']);
 
             expect(array_keys($rules['kinds']))->toEqualCanonicalizing(LienDocumentRegistry::KINDS);
 
@@ -180,7 +180,9 @@ describe('registry', function () {
         expect($lien['attachments'])->toHaveCount(2);
         expect($az['kinds']['prelim_notice']['service']['recipients'])->toBe(['owner', 'gc', 'lender', 'customer']);
         expect($az['kinds']['prelim_notice']['service']['days_after'])->toBe(20);
-        expect($az['kinds']['prelim_notice']['clauses']['notice_box'])->toBe('documents.lien.letters.clauses.az-notice-to-property-owner');
+        // The body prints the Notice to Property Owner where § 33-992.01(D) puts it; the receipt follows the signature.
+        expect($az['kinds']['prelim_notice']['clauses']['notice_box'])->toBeNull();
+        expect($az['kinds']['prelim_notice']['clauses']['after_execution'])->toBe(['documents.lien.letters.clauses.az-acknowledgment-of-receipt']);
     });
 
     it('keeps the Georgia 395-day statement and the cancellation block', function () {
@@ -193,20 +195,23 @@ describe('registry', function () {
         expect($ga['kinds']['prelim_notice']['title'])->toBe('Notice to Contractor');
     });
 
-    it('every referenced instrument body and clause view exists', function () {
+    it('every referenced body and clause view exists', function () {
         foreach (LienDocumentRegistry::all() as $rules) {
-            foreach ($rules['kinds'] as $kind => $entry) {
-                // The letter layout and its bodies land in PR 4; drop this
-                // filter then.
-                if (! $entry['enabled'] || LienDocumentRegistry::FAMILIES[$kind] === 'letter') {
+            foreach ($rules['kinds'] as $entry) {
+                if (! $entry['enabled']) {
                     continue;
                 }
 
                 expect(view()->exists($entry['body']))->toBeTrue("missing view {$entry['body']}");
 
-                foreach (['notice_box'] as $clause) {
-                    $value = $entry['clauses'][$clause];
+                $referenced = array_merge(
+                    [$entry['clauses']['notice_box'] ?? null],
+                    (array) ($entry['clauses']['after_property'] ?? []),
+                    (array) ($entry['clauses']['before_signature'] ?? []),
+                    (array) ($entry['clauses']['after_execution'] ?? []),
+                );
 
+                foreach ($referenced as $value) {
                     if (is_string($value) && str_starts_with($value, 'documents.lien.')) {
                         expect(view()->exists($value))->toBeTrue("missing clause view {$value}");
                     }

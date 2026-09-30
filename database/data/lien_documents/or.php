@@ -75,7 +75,9 @@ return [
                 'amount' => 'breakdown',
                 'gc' => true,
                 'hiring_party' => true,
-                'prior_notice' => true,
+                // Not every claimant without privity gives the notice (ORS 87.021(3)(b) excuses some on
+                // commercial improvements), so no "served its notice on ___" item; the affirmation covers it.
+                'prior_notice' => false,
             ],
             'clauses' => [
                 'affirmations' => [
@@ -87,9 +89,8 @@ return [
             'notes' => [
                 'The claim is verified by oath (ORS 87.035(4)): the signer swears the statements are true of their own knowledge. The archived 2026 draft said "true and correct to the best of my knowledge, information, and belief", which is weaker; do not use that wording.',
                 'Within 20 days after filing, mail the owner and the mortgagee a notice that the claim was filed, with a copy of the claim attached (ORS 87.039(1), 87.018); a party who skips it gets no costs, disbursements or attorney fees (ORS 87.039(2)). The mortgagee is any lender named in a recorded mortgage or trust deed (ORS 87.005(6)); add it as the lender party so it is served.',
-                'A notice of right to a lien protects only what was provided after the date eight days before it was delivered or mailed, not counting Saturdays, Sundays and holidays (ORS 87.021(1)); claim only that part. Fill the notice date and method in Document details.',
+                'A notice of right to a lien protects only what was provided after the date eight days before it was delivered or mailed, not counting Saturdays, Sundays and holidays (ORS 87.021(1)); claim only that part.',
                 'Check eligibility first: an original contractor has no lien without a written contract that ORS 701.305 required (ORS 87.037), or on residential work over $2,000 without having delivered the Information Notice to Owner (ORS 87.093(6)); a subcontractor or supplier on a remodel of an owner-occupied home has none if the contractor it worked for was unlicensed when it first contracted or first delivered (ORS 87.036).',
-                'Undecided: whether the Prior notice item should print for a claimant on a commercial improvement that ORS 87.021(3)(b) excused from giving the notice; until counsel says otherwise, staff hold such a claim for review instead of signing it with that item blank.',
             ],
         ],
         'lien_release' => [

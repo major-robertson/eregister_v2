@@ -15,7 +15,7 @@ beforeEach(function () {
 afterEach(fn () => LienDocumentRegistry::flush());
 
 describe('Oregon claim of lien', function () {
-    it('renders the ORS 87.035 claim with the notice of right to a lien date, the affirmations and the oath', function () {
+    it('renders the ORS 87.035 claim with the affirmations and the oath, and no prior notice item', function () {
         $filing = lienFixtureFiling(lienFixtureProject('OR', 'Multnomah'), 'mechanics_lien', [
             'document_details_json' => ['notice_served_at' => '2026-07-02', 'notice_served_method' => 'certified_mail'],
         ]);
@@ -37,7 +37,6 @@ describe('Oregon claim of lien', function () {
             'Property subject to the lien. 9025 Baywood Park Dr, Seminole, OR 33777 (Multnomah County, Oregon)',
             'Parcel Number: 35-30-15-05699-000-0250',
             'After deducting all just credits and offsets, the amount claimed is $4,213.75.',
-            'Prior notice. Claimant served its Notice of Right to a Lien on July 2, 2026 by certified mail, return receipt requested.',
             'The amount claimed above is a true statement of Claimant\'s demand, after deducting all just credits and offsets (ORS 87.035(3)(a)).',
             'This claim of lien is filed not later than 75 days after Claimant ceased to provide labor, rent equipment or furnish materials, and not later than 75 days after completion of construction (ORS 87.035(1)).',
             'If Claimant did not contract with the owner, Claimant gave the owner any notice of right to a lien that ORS 87.021 requires.',
@@ -52,6 +51,8 @@ describe('Oregon claim of lien', function () {
 
         // ORS 87.035(4) wants an oath to the truth of the statements, not the archive draft's hedge.
         expect($text)->not->toContain('best of my knowledge')->not->toContain('N/A');
+        // ORS 87.021(3)(b) excuses some claimants from the notice, so even a recorded notice date prints no item.
+        expect($text)->not->toContain('Prior notice.')->not->toContain('July 2, 2026');
         // Multnomah rejected a claim whose amount started on page 2: the index line carries it above the body.
         expect(strpos($text, 'Amount claimed $4,213.75'))->toBeLessThan(strpos($text, '("Claimant") claims a lien'));
     });
@@ -98,6 +99,7 @@ describe('Oregon claim of lien', function () {
         expect($form->recipientRoles())->toBe(['owner', 'lender']);
         expect($form->service)->toMatchArray(['days_after' => 20, 'method' => 'certified_mail']);
         expect($form->execution)->toMatchArray(['verification' => 'sworn', 'notary' => true, 'notary_form' => 'jurat']);
+        expect($form->sections)->toMatchArray(['amount' => 'breakdown', 'gc' => true, 'hiring_party' => true, 'prior_notice' => false]);
 
         $rules = collect(LienDocumentPackage::forFiling($filing)->rules())->pluck('value', 'label');
 

@@ -86,7 +86,7 @@ describe('South Carolina notice and certificate of mechanic\'s lien', function (
 
         expect($greenville->countyKey)->toBe('greenville');
         expect($greenville->recording['adds_cover_page'])->toBeFalse();
-        expect($greenville->recording['filing_office'])->toMatchArray(['label' => 'Register of Deeds or Clerk of Court (county where the property is located)', 'method' => 'either']);
+        expect($greenville->recording['filing_office'])->toMatchArray(['label' => 'Register of Deeds or Clerk of Court', 'method' => 'either']);
 
         // § 8-21-310 sets one fee statewide, so every county shows the state's note.
         foreach ([$berkeley, $charleston, $greenville] as $doc) {

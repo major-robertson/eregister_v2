@@ -51,13 +51,13 @@ return [
     'state' => 'SC',
     'state_name' => 'South Carolina',
     'recording' => [
-        'filing_office' => ['label' => 'Register of Deeds or Clerk of Court (county where the property is located)', 'method' => 'either'],
+        'filing_office' => ['label' => 'Register of Deeds or Clerk of Court', 'method' => 'either'],
         'parcel_label' => 'TMS Number',
         'fee_note' => '$25 to file a notice of mechanic\'s lien and $10 to record a release, the same in every county (S.C. Code Ann. § 8-21-310).',
         'notes' => [
             'Serve the owner and file the statement within 90 days after the claimant last furnished labor or materials (S.C. Code Ann. § 29-5-90); if the owner cannot be found, serve the person in possession.',
             'The lien is dissolved unless suit is started and a notice of pendency is filed within six months after the claimant last furnished labor or materials (S.C. Code Ann. § 29-5-120(A)).',
-            'Twenty-four counties have a Register of Deeds; in the others the Clerk of Court keeps the land records and takes the filing (S.C. Code Ann. § 30-5-10(A)).',
+            'File with the Register of Deeds or Clerk of Court of the county where the property is located (S.C. Code Ann. § 29-5-90). Twenty-four counties have a Register of Deeds; in the others the Clerk of Court keeps the land records and takes the filing (S.C. Code Ann. § 30-5-10(A)).',
         ],
     ],
     'execution' => [
@@ -99,7 +99,7 @@ return [
                 'The Verified Statement of Account prints on its own page after the lien and has its own jurat, as in the Berkeley County clerk\'s sample; the claimant signs and swears twice.',
                 'A contractor that must be licensed or registered in South Carolina records its license or registration number on the lien (S.C. Code Ann. § 29-5-15(A)); the line prints the business\'s number unless Document details sets another.',
                 'If neither the owner nor the person in possession can be found after a diligent search, file the statement with an affidavit of the sheriff or a deputy saying so (S.C. Code Ann. § 29-5-90).',
-                'Open question for Major: § 29-5-90 does not say how the owner must be served; is certified mail, return receipt requested, enough, or should the statement be served in person?',
+                'Undecided: § 29-5-90 does not say how the owner must be served; until counsel says otherwise, serve by certified mail, return receipt requested.',
             ],
         ],
         'lien_release' => [
@@ -117,7 +117,7 @@ return [
             ],
             'notes' => [
                 'Record the release where the lien statement is recorded; the fee is $10 (S.C. Code Ann. §§ 29-5-430, 8-21-310(B)(17)).',
-                'Open question for Major: the release is acknowledged before a notary without witnesses (S.C. Code Ann. § 30-5-30(A)(2)); will the registers record it without the two witnesses that § 30-5-30(B) describes?',
+                'Undecided: the release is acknowledged before a notary without the two witnesses that S.C. Code Ann. § 30-5-30(B) describes (§ 30-5-30(A)(2)); until counsel says otherwise, record it with the acknowledgment alone.',
             ],
         ],
         'prelim_notice' => [

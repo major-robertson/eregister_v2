@@ -142,12 +142,12 @@ return [
         'preparer' => [
             'name' => 'eRegister',
             'attention' => null,
-            'address_lines' => ['4869 Brownsboro Rd STE 101-R', 'Louisville, KY 40207'],
+            'address_lines' => ['4869 Brownsboro Rd STE 101-E', 'Louisville, KY 40207'],
             'phone' => null,
             'email' => null,
         ],
         'server_state' => 'KY',
-        'return_label_lines' => ['eRegister', '4869 Brownsboro Rd STE 101-R', 'Louisville, KY 40207'],
+        'return_label_lines' => ['eRegister', '4869 Brownsboro Rd STE 101-E', 'Louisville, KY 40207'],
     ],
 
     /*

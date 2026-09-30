@@ -50,7 +50,7 @@ describe('registry', function () {
 
             expect($rules['recording'])->toHaveKeys([
                 'filing_office', 'top_margin_in', 'other_margin_in', 'min_font_pt', 'page_numbers',
-                'caption', 'index_line', 'index_block', 'index_roles', 'cover_sheet', 'parcel_label',
+                'caption', 'index_line', 'index_block', 'index_roles', 'preparer_in_space', 'cover_sheet', 'parcel_label',
                 'fee_note', 'adds_cover_page', 'notes',
             ]);
             expect($rules['recording']['filing_office'])->toHaveKeys(['label', 'method', 'address_lines', 'vendor']);
@@ -193,10 +193,12 @@ describe('registry', function () {
         expect($ga['kinds']['prelim_notice']['title'])->toBe('Notice to Contractor');
     });
 
-    it('every referenced body and clause view exists', function () {
+    it('every referenced instrument body and clause view exists', function () {
         foreach (LienDocumentRegistry::all() as $rules) {
-            foreach ($rules['kinds'] as $entry) {
-                if (! $entry['enabled']) {
+            foreach ($rules['kinds'] as $kind => $entry) {
+                // The letter layout and its bodies land in PR 4; drop this
+                // filter then.
+                if (! $entry['enabled'] || LienDocumentRegistry::FAMILIES[$kind] === 'letter') {
                     continue;
                 }
 
@@ -211,7 +213,7 @@ describe('registry', function () {
                 }
             }
         }
-    })->skip('Bodies and clause views land with the instrument and letter layouts (PR 2 and PR 4).');
+    });
 });
 
 describe('county files', function () {

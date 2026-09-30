@@ -126,6 +126,32 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Generated Lien Documents
+    |--------------------------------------------------------------------------
+    |
+    | Facts printed on every generated lien document (see
+    | App\Domains\Lien\Documents). `preparer` is the "prepared by and return
+    | to" block on recordable instruments; leave address_lines empty and the
+    | CAN-SPAM postal address (MAIL_POSTAL_ADDRESS) is used instead.
+    | `server_state` is where staff sign proofs of service, so it is the
+    | perjury jurisdiction on staff-executed declarations. Values are
+    | recorded with the instrument: check them before the first PDF ships.
+    |
+    */
+    'documents' => [
+        'preparer' => [
+            'name' => 'eRegister',
+            'attention' => null,
+            'address_lines' => [],
+            'phone' => null,
+            'email' => null,
+        ],
+        'server_state' => 'KY',
+        'return_label_lines' => [],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Upload Constraints
     |--------------------------------------------------------------------------
     |

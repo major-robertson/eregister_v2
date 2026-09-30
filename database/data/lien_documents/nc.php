@@ -55,6 +55,9 @@ return [
                 'gc' => true,
                 'lien_agent' => true,
             ],
+            // The statutory form is signed by the lien claimant and carries no
+            // verification of its own; the notary jurat is the only execution text.
+            'execution' => ['statement' => false],
             'clauses' => [
                 // § 44A-12(c), verbatim from the statutory form.
                 'affirmations' => [
@@ -63,6 +66,8 @@ return [
                 'before_signature' => [
                     'This Claim of Lien on Real Property is filed within 120 days after the last furnishing of labor or materials at the site of the improvement (G.S. 44A-12(b)). An action to enforce this claim of lien must be commenced within 180 days after the last furnishing of labor or materials (G.S. 44A-13).',
                 ],
+                // The form's closing lines for the clerk.
+                'after_execution' => ['documents.lien.instruments.clauses.nc-clerk-filing-line'],
             ],
             'notes' => [
                 'The statutory form ends with "Filed this ____ day of ____ / Clerk of Superior Court"; the clerk fills that line.',

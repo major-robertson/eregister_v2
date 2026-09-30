@@ -18,11 +18,13 @@ use App\Domains\Forms\Admin\Livewire\SalesTaxApplicationStateDetail;
 use App\Domains\Forms\Admin\Livewire\SalesTaxBoard;
 use App\Domains\Forms\Admin\Livewire\SalesTaxBoardAll;
 use App\Domains\Lien\Admin\Http\Controllers\DemandLetterController;
+use App\Domains\Lien\Admin\Http\Controllers\LienDocumentController;
 use App\Domains\Lien\Admin\Http\Controllers\SignedDocumentController;
 use App\Domains\Lien\Admin\Livewire\LienBoard;
 use App\Domains\Lien\Admin\Livewire\LienBoardAll;
 use App\Domains\Lien\Admin\Livewire\LienFilingDetail;
 use App\Domains\Lien\Admin\Livewire\LienRulesOverview;
+use App\Domains\Lien\Enums\LienPackageDocument;
 use App\Domains\ResaleCert\Admin\Http\Controllers\SampleCertificateController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -66,6 +68,13 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
             Route::get('/lien-rules-overview', LienRulesOverview::class)->name('lien-rules-overview');
             Route::get('/{publicId}/demand-letters', [DemandLetterController::class, 'downloadAll'])->name('demand-letters');
             Route::get('/{publicId}/demand-letter/{party}', [DemandLetterController::class, 'download'])->name('demand-letter');
+            // Generated lien documents (prelim notice, NOI, lien, release and their
+            // service set); {recipient} is a lien_filing_recipients id for the
+            // per-recipient pieces.
+            Route::get('/{publicId}/documents/{document}/{recipient?}', [LienDocumentController::class, 'download'])
+                ->whereIn('document', LienPackageDocument::values())
+                ->whereNumber('recipient')
+                ->name('documents.download');
             // Signed e-sign document download (kept before the {publicId} catch-all).
             Route::get('/esign/documents/{publicId}/download', [SignedDocumentController::class, 'download'])->name('esign.documents.download');
             Route::get('/{lienFiling:public_id}', LienFilingDetail::class)->name('show')->withTrashed();

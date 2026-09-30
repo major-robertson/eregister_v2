@@ -929,6 +929,73 @@
             </div>
             @endif
 
+            {{-- Generated documents for the other kinds (prelim notice, NOI, lien,
+                 release): the rule strip from the state and county data files,
+                 pre-flight warnings, and the download links. Drafts render from
+                 the filing's live data; nothing is stored. --}}
+            @if ($documentPackage !== null)
+            <div class="rounded-lg border border-border bg-white p-6">
+                <flux:heading size="lg" class="mb-4">Documents</flux:heading>
+
+                @if ($documentPackage->form === null)
+                <flux:text class="text-sm text-gray-500">{{ $documentPackage->unavailableReason }}</flux:text>
+                @else
+                <dl class="mb-4 space-y-1.5 text-sm">
+                    @foreach ($documentPackage->rules() as $rule)
+                    <div class="flex gap-2">
+                        <dt class="w-16 shrink-0 text-gray-500">{{ $rule['label'] }}</dt>
+                        <dd class="min-w-0 flex-1 text-gray-800">{{ $rule['value'] }}</dd>
+                    </div>
+                    @endforeach
+                </dl>
+
+                @if ($documentPackage->form->notes !== [])
+                <details class="mb-4 text-sm">
+                    <summary class="cursor-pointer text-gray-500">Filing notes ({{ count($documentPackage->form->notes) }})</summary>
+                    <ul class="mt-2 list-disc space-y-1 pl-5 text-gray-700">
+                        @foreach ($documentPackage->form->notes as $note)
+                        <li>{{ $note }}</li>
+                        @endforeach
+                    </ul>
+                </details>
+                @endif
+
+                @if ($documentPackage->warnings !== [])
+                <flux:callout variant="warning" icon="exclamation-triangle" class="mb-4">
+                    <flux:callout.heading>Check before generating</flux:callout.heading>
+                    <flux:callout.text>
+                        <ul class="list-disc space-y-1 pl-5">
+                            @foreach ($documentPackage->warnings as $warning)
+                            <li>{{ $warning }}</li>
+                            @endforeach
+                        </ul>
+                    </flux:callout.text>
+                </flux:callout>
+                @endif
+
+                @if (! $documentPackage->isAvailable())
+                <flux:text class="text-sm text-gray-500">{{ $documentPackage->unavailableReason }}</flux:text>
+                @else
+                <div class="space-y-2">
+                    @foreach ($documentPackage->items as $item)
+                    <a wire:key="document-{{ $item['document']->value }}-{{ $item['recipient'] ?? 'all' }}"
+                        href="{{ $item['url'] }}"
+                        class="flex items-center gap-3 rounded-lg border border-gray-200 p-2 hover:bg-gray-50">
+                        <flux:icon name="document-text" class="size-5 shrink-0 text-gray-400" />
+                        <div class="min-w-0 flex-1">
+                            <flux:text class="truncate text-sm font-medium">{{ $item['label'] }}</flux:text>
+                            <flux:text class="text-xs text-gray-500">{{ $item['sublabel'] }} · Draft for signing</flux:text>
+                        </div>
+                        <flux:icon name="arrow-down-tray" class="size-4 shrink-0 text-gray-400" />
+                    </a>
+                    @endforeach
+                </div>
+                <flux:text class="mt-3 text-xs text-gray-500">Drafts are built from the filing's current details each time. Fix the data and regenerate; never mark up a signed copy.</flux:text>
+                @endif
+                @endif
+            </div>
+            @endif
+
             {{-- Recording Details Card: appears once recording_method has been set on this filing.
                  Lets admins fill in or correct provider/reference/submitted_at after the SubmittedForRecording
                  transition without needing to re-run a status change. --}}

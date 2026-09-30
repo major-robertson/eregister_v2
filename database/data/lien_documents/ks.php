@@ -57,10 +57,10 @@ return [
     'state_name' => 'Kansas',
     'recording' => [
         // What K.S.A. 60-1102(a) says; see the first note and lien_counties/ks/johnson.php.
-        'filing_office' => ['label' => 'Clerk of the District Court (county where the property is located)', 'method' => 'mail'],
+        'filing_office' => ['label' => 'Clerk of the District Court', 'method' => 'mail'],
         'parcel_label' => 'Parcel ID',
         'notes' => [
-            'K.S.A. 60-1102(a) says the lien statement is filed with the clerk of the district court of the county where the property is located, but the archive\'s June 2026 Johnson County lien was e-recorded with the Register of Deeds under the eRegister MOU; Major must confirm with counsel which office perfects the lien before the next Kansas filing.',
+            'K.S.A. 60-1102(a) says the lien statement is filed with the clerk of the district court of the county where the property is located, but the archive\'s June 2026 Johnson County lien was e-recorded with the Register of Deeds under the eRegister MOU; confirm with counsel which office perfects the lien before the next Kansas filing.',
             'File within four months after the last furnishing for an original contractor (K.S.A. 60-1102(a)) and within three months for a subcontractor or supplier (K.S.A. 60-1103(a)(1)); on property other than residential property, a notice of extension filed within that time extends it to five months (K.S.A. 60-1102(c), 60-1103(e)).',
             'A suit to foreclose must be brought within one year after the statement is filed, or the lien is canceled by limitation of law (K.S.A. 60-1105(a), 60-1108).',
         ],
@@ -85,7 +85,9 @@ return [
                 'contract_date' => true,
                 'gc' => true,
                 'hiring_party' => true,
-                'prior_notice' => true,
+                // The warning statement exists only for residential property, where the
+                // K.S.A. 60-1103(a)(2) affidavit in attachments proves it was given.
+                'prior_notice' => false,
             ],
             'clauses' => [
                 // House wording for the K.S.A. 60-1102(a) and 60-1103(a)(1) contents, inside the verified statement.
@@ -144,7 +146,7 @@ return [
                 'Mail it to any one owner before the lien statement is filed (K.S.A. 60-1103a(b)(1)); there is no deadline, but the owner can still pay the contractor safely until it arrives (K.S.A. 60-1103(d)(2)), so send it early.',
                 'The statute only says "mailed"; certified mail gives the proof for the affidavit a subcontractor\'s or supplier\'s lien statement must attach (K.S.A. 60-1103(a)(2)).',
                 'Instead of the mailing, the claimant may keep a copy signed and dated by any one owner stating that the claimant or the general contractor gave the warning statement (K.S.A. 60-1103a(b)(2)); the owner\'s acknowledgment at the foot is for that.',
-                'Open question for Major: for a sub-subcontractor or a supplier to a subcontractor, the statement names the general contractor as "(name of contractor)" although the claimant\'s agreement is with a subcontractor; confirm with counsel which name belongs there.',
+                'Undecided: for a sub-subcontractor or a supplier to a subcontractor, "(name of contractor)" may mean the general contractor or the subcontractor the claimant\'s agreement is with (K.S.A. 60-1103a(c)); until counsel says otherwise the statement names the general contractor.',
             ],
         ],
         'noi' => [

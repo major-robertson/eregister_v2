@@ -35,7 +35,6 @@ describe('Kansas mechanic\'s lien statement', function () {
             'Property subject to the lien. 9025 Baywood Park Dr, Seminole, KS 33777 (Johnson County, Kansas)',
             'After deducting all just credits and offsets, the amount claimed is $4,213.75.',
             'Amount claimed, after deducting all just credits and offsets $ 4,213.75',
-            'Prior notice. Claimant served its Warning Statement (Notice to Owner) on August 7, 2026',
             // K.S.A. 60-1102(a) and 60-1103(a)(1) contents, inside the verified statement.
             "Claimant's address stated above is sufficient for service of process (K.S.A. 60-1102(a)(2)).",
             'A reasonably itemized statement of the claim, or a copy of the written instrument or promissory note that evidences it, is attached as Exhibit A and is part of this statement (K.S.A. 60-1102(a)(4)).',
@@ -54,6 +53,10 @@ describe('Kansas mechanic\'s lien statement', function () {
 
         // An acknowledgment or a best-knowledge verification does not verify a Kansas lien statement.
         expect($text)->not->toContain('best of')->not->toContain('acknowledged before me')->not->toContain('N/A');
+
+        // No prior-notice line: the warning statement exists only for residential property,
+        // where the K.S.A. 60-1103(a)(2) affidavit is attached instead.
+        expect($text)->not->toContain('Prior notice.')->not->toContain('served its Warning Statement');
 
         // Page 1's top three inches stay clear: the legend, then the preparer block, print below the rule.
         expect(strpos($text, 'Space above this line'))->toBeLessThan(strpos($text, 'Submitted electronically by eRegister'))
@@ -84,7 +87,7 @@ describe('Kansas mechanic\'s lien statement', function () {
         expect($sedgwick->recording['legend'])->toBeNull();
         expect($sedgwick->recording['preparer_in_space'])->toBeTrue();
         expect($sedgwick->recording['filing_office'])->toMatchArray([
-            'label' => 'Clerk of the District Court (county where the property is located)',
+            'label' => 'Clerk of the District Court',
             'method' => 'mail',
             'address_lines' => [],
         ]);
@@ -94,7 +97,7 @@ describe('Kansas mechanic\'s lien statement', function () {
 
         expect($johnsonRules['File with'])->toBe('Johnson County Register of Deeds, e-recording (111 S. Cherry St., Ste 1200, Olathe, KS 66061)');
         expect($johnsonRules['Signing'])->toBe('Sworn to and signed before a notary (jurat)');
-        expect($sedgwickRules['File with'])->toBe('Clerk of the District Court (county where the property is located), by mail');
+        expect($sedgwickRules['File with'])->toBe('Clerk of the District Court, by mail');
 
         $text = lienFixtureText(app(LienDocumentGenerator::class)->render($sedgwickFiling));
 
@@ -180,17 +183,19 @@ describe('Kansas rules', function () {
         $warning = $ks['kinds']['prelim_notice'];
 
         expect($ks['recording']['filing_office'])->toMatchArray([
-            'label' => 'Clerk of the District Court (county where the property is located)',
+            'label' => 'Clerk of the District Court',
             'method' => 'mail',
             'address_lines' => [],
         ]);
         expect($ks['recording']['notes'][0])
+            ->toContain('the clerk of the district court of the county where the property is located')
             ->toContain('e-recorded with the Register of Deeds under the eRegister MOU')
-            ->toContain('Major must confirm with counsel which office perfects the lien before the next Kansas filing');
+            ->toContain('; confirm with counsel which office perfects the lien before the next Kansas filing.')
+            ->not->toContain('Major');
 
         expect($lien['title'])->toBe('Mechanic\'s Lien Statement');
         expect($lien['body'])->toBe('documents.lien.instruments.bodies.generic-lien');
-        expect($lien['sections'])->toMatchArray(['amount' => 'itemized', 'license' => true, 'contract_date' => true, 'gc' => true, 'hiring_party' => true, 'prior_notice' => true]);
+        expect($lien['sections'])->toMatchArray(['amount' => 'itemized', 'license' => true, 'contract_date' => true, 'gc' => true, 'hiring_party' => true, 'prior_notice' => false]);
         expect($lien['execution'])->toMatchArray(['verification' => 'sworn', 'notary' => true, 'notary_form' => 'jurat', 'notary_variant' => null, 'statement' => true]);
         expect($lien['service'])->toMatchArray(['recipients' => ['owner'], 'method' => 'certified_mail']);
         expect($lien['clauses']['affirmations'])->toHaveCount(4);

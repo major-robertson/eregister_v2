@@ -299,8 +299,8 @@ describe('resolver', function () {
         $clay = app(LienDocumentResolver::class)->resolve(liendocFiling('mechanics_lien', 'MO', 'Clay County'));
 
         expect($clay->countyKey)->toBe('clay');
-        expect($clay->recording['index_block'])->toBeFalse();
-        expect($clay->recording['filing_office']['label'])->toBe('Clerk of the circuit court');
+        expect($clay->recording['preparer_in_space'])->toBeTrue();
+        expect($clay->recording['filing_office']['label'])->toBe('Clerk of the Circuit Court (county where the property is located)');
     });
 
     it('prefers the filing jurisdiction over the jobsite and warns when they differ', function () {

@@ -79,7 +79,7 @@ describe('Alabama verified statement of lien', function () {
         expect($pdf->getHtml())->toContain('class="fill fill-short"');
     });
 
-    it('files with the judge of probate, keeps the shared notary certificate off and mails the owner a copy', function () {
+    it('files with the judge of probate, is sworn before a notary through the form\'s own jurat and mails the owner a copy', function () {
         $filing = lienFixtureFiling(lienFixtureProject('AL', 'Baldwin'), 'mechanics_lien');
 
         $form = app(LienDocumentResolver::class)->resolve($filing);
@@ -90,7 +90,10 @@ describe('Alabama verified statement of lien', function () {
         expect($form->countyKey)->toBe('baldwin');
         expect($form->sections)->toMatchArray(['amount' => 'single', 'amount_in_words' => true, 'gc' => true, 'prior_notice' => false]);
         expect($form->clauses['after_execution'])->toBe(['documents.lien.instruments.clauses.al-affidavit']);
-        expect($form->execution)->toMatchArray(['verification' => 'sworn', 'notary' => false, 'notary_form' => null, 'statement' => false]);
+        // The shared certificate stays off (notary false) because the affidavit clause prints the
+        // statutory jurat (notary_in_body), so the statement still counts as notarized.
+        expect($form->execution)->toMatchArray(['verification' => 'sworn', 'notary' => false, 'notary_in_body' => true, 'notary_form' => null, 'statement' => false]);
+        expect($form->notaryRequired())->toBeTrue();
         expect($form->service)->toMatchArray(['recipients' => ['owner'], 'days_after' => null, 'method' => 'certified_mail']);
         expect($form->recording['filing_office'])->toMatchArray(['label' => 'Judge of Probate', 'method' => 'either']);
         expect($form->recording['parcel_label'])->toBe('Parcel Number');
@@ -108,6 +111,7 @@ describe('Alabama verified statement of lien', function () {
         $rules = collect(LienDocumentPackage::forFiling($filing)->rules())->pluck('value', 'label');
 
         expect($rules['File with'])->toBe('Judge of Probate, e-recording or mail');
+        expect($rules['Signing'])->toBe('Sworn to and signed before a notary (jurat)');
         expect($rules['Serve'])->toBe('The owner by certified mail, return receipt requested.');
     });
 });
@@ -133,12 +137,13 @@ describe('Alabama satisfaction of lien', function () {
             ->not->toContain('N/A');
         expect(substr_count($text, 'My commission expires'))->toBe(1);
 
-        $release = LienDocumentRegistry::for('AL')['kinds']['lien_release'];
+        $release = app(LienDocumentResolver::class)->resolve($filing);
 
-        expect($release['execution'])->toMatchArray(['verification' => 'acknowledged', 'notary' => true, 'notary_form' => 'acknowledgment']);
-        expect(LienDocumentPackage::executionLabel($release['execution']))->toBe('Signed and acknowledged before a notary');
-        expect($release['service'])->toMatchArray(['recipients' => ['owner'], 'days_after' => null, 'method' => 'certified_mail']);
-        expect(implode(' ', $release['notes']))->toContain('for at least $200 (Ala. Code § 35-11-231)');
+        expect($release->execution)->toMatchArray(['verification' => 'acknowledged', 'notary' => true, 'notary_in_body' => false, 'notary_form' => 'acknowledgment']);
+        expect($release->notaryRequired())->toBeTrue();
+        expect(LienDocumentPackage::executionLabel($release->execution))->toBe('Signed and acknowledged before a notary');
+        expect($release->service)->toMatchArray(['recipients' => ['owner'], 'days_after' => null, 'method' => 'certified_mail']);
+        expect(implode(' ', $release->notes))->toContain('for at least $200 (Ala. Code § 35-11-231)');
     });
 });
 

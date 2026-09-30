@@ -42,6 +42,7 @@ use App\Domains\Lien\Waivers\WaiverStateRegistry;
  *       'verification' => 'sworn|verified|acknowledged|none',
  *       'notary' => true, 'notary_form' => 'jurat|acknowledgment|null',
  *       'notary_variant' => null,          // 'fl' | 'ca' | 'nc' for state-specific certificate wording
+ *       'notary_in_body' => false,         // the body or a clause prints the statutory notarial certificate (AL): shared one off, still notarized
  *       'statement' => true,               // print the sworn/verified statement above the signature
  *                                          // (false when the body is itself the sworn statement, FL)
  *       'witness' => false,
@@ -188,6 +189,7 @@ class LienDocumentRegistry
             'notary' => $notary,
             'notary_form' => $notaryForm,
             'notary_variant' => null,
+            'notary_in_body' => false,
             'statement' => true,
             'witness' => false,
         ];
@@ -215,6 +217,7 @@ class LienDocumentRegistry
             'notary' => false,
             'notary_form' => null,
             'notary_variant' => null,
+            'notary_in_body' => false,
             'statement' => true,
             'witness' => false,
         ];

@@ -51,9 +51,13 @@ final class ResolvedLienDocument
         return $this->family === 'letter';
     }
 
+    /**
+     * Signed before a notary: the shared certificate (execution.notary) or a
+     * statutory one the body or a clause prints itself (execution.notary_in_body).
+     */
     public function notaryRequired(): bool
     {
-        return (bool) ($this->execution['notary'] ?? false);
+        return (bool) ($this->execution['notary'] ?? false) || (bool) ($this->execution['notary_in_body'] ?? false);
     }
 
     public function section(string $key, mixed $default = null): mixed

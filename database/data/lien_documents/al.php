@@ -57,11 +57,13 @@ return [
     // The § 35-11-213 form carries its own affidavit and jurat
     // (clauses/al-affidavit), so the shared sworn statement and notary
     // certificate stay off and the execution block prints only the
-    // claimant's signature. The satisfaction overrides this with an
-    // acknowledgment.
+    // claimant's signature; notary_in_body keeps the statement marked as
+    // signed before a notary. The satisfaction overrides this with the
+    // shared acknowledgment.
     'execution' => [
         'verification' => 'sworn',
         'notary' => false,
+        'notary_in_body' => true,
         'notary_form' => null,
         'statement' => false,
     ],
@@ -88,7 +90,7 @@ return [
             ],
             'notes' => [
                 'The signer is the affiant: the claimant\'s officer or another person with personal knowledge of the facts (Ala. Code § 35-11-213). Outside Alabama, any officer who takes acknowledgments there may give the oath (Ala. Code § 35-11-214).',
-                'The affiant signs the affidavit before a notary public, who completes the jurat and seals it; the Signing line says no notary only because the form prints its own jurat instead of the shared certificate.',
+                'The affiant signs the affidavit before a notary public, who completes the jurat and seals it (Ala. Code § 36-20-72).',
                 'Undecided: whether interest should run from the last furnishing date, which the statement uses, or from a later due date in the contract; until counsel says otherwise, staff use the last furnishing date.',
                 'Outside a city or town the lien reaches the land under the building plus one acre, which the claimant may select before filing (Ala. Code §§ 35-11-210, 35-11-217); describe that acre in the legal description.',
                 'Alabama requires no service of the filed statement; staff mail the owner a copy with the notice-of-recording letter.',
@@ -100,6 +102,7 @@ return [
             'execution' => [
                 'verification' => 'acknowledged',
                 'notary' => true,
+                'notary_in_body' => false,
                 'notary_form' => 'acknowledgment',
             ],
             'clauses' => [

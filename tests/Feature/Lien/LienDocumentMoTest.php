@@ -107,7 +107,7 @@ describe('Missouri statement of mechanic\'s lien', function () {
 
         // The county file keeps what the Recorder of Deeds accepted; the state names the circuit clerk (RSMo § 429.080).
         expect($jackson->recording['filing_office'])->toMatchArray(['label' => 'Jackson County Recorder of Deeds', 'method' => 'erecord', 'vendor' => 'CSC (ep.erecording.com)']);
-        expect($clay->recording['filing_office'])->toMatchArray(['label' => 'Clerk of the Circuit Court (county where the property is located)', 'method' => 'mail']);
+        expect($clay->recording['filing_office'])->toMatchArray(['label' => 'Clerk of the Circuit Court', 'method' => 'mail']);
 
         expect(implode(' ', $jackson->notes))
             ->toContain('RSMo § 429.080 says the lien is filed with the clerk of the circuit court')
@@ -122,7 +122,7 @@ describe('Missouri statement of mechanic\'s lien', function () {
 
         $rules = collect(LienDocumentPackage::forFiling($filing)->rules())->pluck('value', 'label');
 
-        expect($rules['File with'])->toBe('Clerk of the Circuit Court (county where the property is located), by mail');
+        expect($rules['File with'])->toBe('Clerk of the Circuit Court, by mail');
         expect($rules['Signing'])->toBe('Sworn to and signed before a notary (jurat)');
         expect($rules['Serve'])->toBe('The owner by certified mail, return receipt requested.');
         expect($rules['Attach'])->toBe('Exhibit A: itemized account of the labor and materials furnished and the balance unpaid (RSMo § 429.080)');
@@ -210,7 +210,7 @@ describe('Missouri release', function () {
             ->toContain('Grantee (mailing address) Mike Stuntz, 9025 Baywood Park Dr, Seminole, MO 33777')
             ->toContain("Reference Statement of Mechanic's Lien recorded July 22, 2026 as Instrument 2026E0071234")
             ->toContain("is the claimant under that certain Statement of Mechanic's Lien recorded on July 22, 2026 as Instrument 2026E0071234 in the official records of Clay County, Missouri")
-            ->toContain('authorizes and directs the Clerk of the Circuit Court (county where the property is located) to cancel it of record.')
+            ->toContain('authorizes and directs the Clerk of the Circuit Court to cancel it of record.')
             ->toContain("This release is Claimant's acknowledgment of satisfaction of the lien under RSMo § 429.120.")
             ->toContain('before me, the undersigned notary public, personally appeared Steven Roser, President of S G Roser Construction LLC')
             ->toContain('acknowledged that he or she executed it in that capacity on behalf of S G Roser Construction LLC for the purposes stated in it.')

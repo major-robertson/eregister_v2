@@ -300,7 +300,7 @@ describe('resolver', function () {
 
         expect($clay->countyKey)->toBe('clay');
         expect($clay->recording['preparer_in_space'])->toBeTrue();
-        expect($clay->recording['filing_office']['label'])->toBe('Clerk of the Circuit Court (county where the property is located)');
+        expect($clay->recording['filing_office']['label'])->toBe('Clerk of the Circuit Court');
     });
 
     it('prefers the filing jurisdiction over the jobsite and warns when they differ', function () {

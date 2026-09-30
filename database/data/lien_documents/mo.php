@@ -41,14 +41,14 @@ return [
     'state_name' => 'Missouri',
     'recording' => [
         // § 429.080 names the circuit clerk; the county file records where Jackson actually took it.
-        'filing_office' => ['label' => 'Clerk of the Circuit Court (county where the property is located)', 'method' => 'mail'],
+        'filing_office' => ['label' => 'Clerk of the Circuit Court', 'method' => 'mail'],
         // § 59.310.2: title, date, grantor and grantee names, addresses and legal description on page 1.
         'index_block' => true,
         'index_roles' => ['grantor' => 'owner', 'grantee' => 'claimant'],
         'notes' => [
-            'Filing office is an open question: the July 2026 Jackson County lien was e-recorded with the Recorder of Deeds through CSC, but RSMo § 429.080 says the lien is filed with the clerk of the circuit court (so do §§ 429.090 and 429.120, and § 478.483 for Kaw township in Jackson County); Major must confirm with counsel which office perfects the lien before the next Missouri filing.',
+            'Filing office is an open question: the July 2026 Jackson County lien was e-recorded with the Recorder of Deeds through CSC, but RSMo § 429.080 says the lien is filed with the clerk of the circuit court of the county where the property is located (so do §§ 429.090 and 429.120, and § 478.483 for Kaw township in Jackson County); confirm with counsel which office perfects the lien before the next Missouri filing.',
             'RSMo § 59.310 wants a 3-inch top margin reserved for the recorder and, on page 1 below it, the title, date, grantor and grantee names, statutory addresses and legal description (a recorder may refuse a document that does not comply, or record it for $25 more); the index block prints them on every Missouri lien and release, but not the grantor\'s marital status, which § 59.310.2(3) also lists.',
-            'RSMo § 59.310.1(6) reserves the whole 3-inch top margin for the recorder, and Jackson County rejected a document whose top 3 inches were not clear; Major should decide whether the preparer block moves below the rule statewide.',
+            'Whether the preparer block should move below the rule statewide is undecided; RSMo § 59.310.1(6) reserves the whole 3-inch top margin for the recorder, and Jackson County wanted the top three inches clear.',
         ],
     ],
     'execution' => [
@@ -96,7 +96,7 @@ return [
                 'The lien of an original contractor (one who contracted with the owner) depends on the § 429.012 notice to owner, given before any payment (RSMo § 429.012.2).',
                 'On a repair, remodel or addition to owner-occupied residential property of four units or less, anyone other than the original contractor must attach a copy of the Consent of Owner signed by an owner (RSMo § 429.013.3); eRegister does not generate it.',
                 'Chapter 429 does not require serving the filed lien on the owner; staff mail a copy with the notice-of-recording letter.',
-                'Missouri notaries use the jurat form in RSMo § 486.755 (or any certificate with the § 486.740 elements: signature, seal, state and county, date and the facts sworn); the generic jurat prints those elements, and Major should decide whether to add Missouri-worded certificates.',
+                'Missouri-worded certificates under RSMo §§ 486.750 and 486.755 are not added yet; the generic jurat prints the § 486.740 elements (signature, seal, state and county, date and the facts sworn).',
             ],
         ],
         'lien_release' => [
@@ -114,7 +114,7 @@ return [
             ],
             'notes' => [
                 'Once the debt is paid, the claimant must file an acknowledgment of satisfaction with the clerk of the circuit court when asked (RSMo § 429.120); refusing for ten days after payment and a request makes the claimant liable for the resulting injury (§ 429.130).',
-                'Missouri notaries use the acknowledgment form in RSMo § 486.750 (or any certificate with the § 486.740 elements); the generic acknowledgment prints those elements, and Major should decide whether to add Missouri-worded certificates.',
+                'Missouri-worded certificates under RSMo §§ 486.750 and 486.755 are not added yet; the generic acknowledgment prints the § 486.740 elements.',
             ],
         ],
         'prelim_notice' => [
@@ -159,10 +159,11 @@ return [
             ],
             'notes' => [
                 'Every claimant except the original contractor serves this notice on the owner or the owner\'s agent at least ten days before filing the lien (RSMo § 429.100); do not file until ten full days after service.',
-                'RSMo § 429.100 lets an officer who serves civil process, or any person who would be a competent witness, serve the notice, and proves service by the officer\'s return or the server\'s affidavit; the proof of service here is the server\'s notarized affidavit, and Major should decide whether certified mail alone is enough or the notice must be hand delivered.',
+                'RSMo § 429.100 lets an officer who serves civil process, or any person who would be a competent witness, serve the notice, and proves service by the officer\'s return or the server\'s affidavit.',
+                'Whether certified mail alone satisfies § 429.100 is undecided; until counsel says otherwise, have a competent adult serve it and sign the notarized affidavit of service.',
                 'The ten days run before filing, which the service days field (days after recording) does not model, so it is left empty.',
                 'If the owner lives outside Missouri with no agent in the county, or cannot be found, the notice may be recorded with the county recorder of deeds instead, with the same effect as service (RSMo § 429.110).',
-                'RSMo § 429.016.14 excuses this notice for some residential property; send it anyway unless Major says otherwise.',
+                'RSMo § 429.016.14 excuses this notice for some residential property; send it anyway unless told otherwise.',
             ],
         ],
     ],

@@ -71,6 +71,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
             // Generated lien documents (prelim notice, NOI, lien, release and their
             // service set); {recipient} is a lien_filing_recipients id for the
             // per-recipient pieces.
+            Route::get('/{publicId}/documents.zip', [LienDocumentController::class, 'zip'])->name('documents.zip');
             Route::get('/{publicId}/documents/{document}/{recipient?}', [LienDocumentController::class, 'download'])
                 ->whereIn('document', LienPackageDocument::values())
                 ->whereNumber('recipient')

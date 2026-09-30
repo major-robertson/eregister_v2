@@ -48,24 +48,72 @@ final class LienDocumentPackage
 
         $payload = LienDocumentPayload::fromFiling($filing, $form);
 
-        $items = [[
-            'document' => LienPackageDocument::Main,
-            'recipient' => null,
-            'label' => $form->title,
-            'sublabel' => implode(' · ', array_filter([
-                $form->stateName,
-                $form->countyName ? "{$form->countyName} County" : null,
-                "template v{$form->templateVersion}",
-            ])),
-            'url' => route('admin.liens.documents.download', [$filing->public_id, LienPackageDocument::Main->value]),
-        ]];
+        return new self($filing, $form, null, $payload, self::items($filing, $form, $payload), self::warnings($form, $payload));
+    }
 
-        return new self($filing, $form, null, $payload, $items, self::warnings($form, $payload));
+    /**
+     * The main document, then the service set: a proof of service and a
+     * cover letter per recipient, the label sheet once there is anyone to
+     * mail to, and the filing cover sheet for mail-in offices.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return list<array{document: LienPackageDocument, recipient: int|null, label: string, sublabel: string|null, url: string}>
+     */
+    private static function items(LienFiling $filing, ResolvedLienDocument $form, array $payload): array
+    {
+        $item = fn (LienPackageDocument $document, string $label, ?string $sublabel, ?int $recipient = null) => [
+            'document' => $document,
+            'recipient' => $recipient,
+            'label' => $label,
+            'sublabel' => $sublabel,
+            'url' => route('admin.liens.documents.download', array_filter([$filing->public_id, $document->value, $recipient])),
+        ];
+
+        $items = [$item(LienPackageDocument::Main, $form->title, implode(' · ', array_filter([
+            $form->stateName,
+            $form->countyName ? "{$form->countyName} County" : null,
+            "template v{$form->templateVersion}",
+        ])))];
+
+        foreach ($payload['recipients'] as $recipient) {
+            $who = $recipient['display_name'] ?? 'Unnamed recipient';
+            $status = implode(' · ', array_filter([
+                $recipient['role_label'],
+                $recipient['sent_at'] ? "sent {$recipient['sent_at']}" : 'not sent yet',
+            ]));
+
+            $items[] = $item(LienPackageDocument::ProofOfService, ($form->service['proof'] ?? 'declaration') === 'affidavit' ? "Affidavit of service: {$who}" : "Proof of service: {$who}", $status, $recipient['id']);
+            $items[] = $item(LienPackageDocument::CoverLetter, "Cover letter: {$who}", $status, $recipient['id']);
+        }
+
+        if ($payload['recipients'] !== []) {
+            $count = count($payload['recipients']);
+            $items[] = $item(LienPackageDocument::Labels, 'Mailing labels (Avery 5160)', "{$count} ".($count === 1 ? 'recipient' : 'recipients').', each with a return label');
+        }
+
+        if ($form->isInstrument() && ! empty($form->recording['cover_sheet'])) {
+            $items[] = $item(LienPackageDocument::FilingCoverSheet, 'Filing cover sheet', (string) ($form->recording['filing_office']['label'] ?? 'mail-in filing'));
+        }
+
+        return $items;
     }
 
     public function isAvailable(): bool
     {
         return $this->unavailableReason === null;
+    }
+
+    /**
+     * The one-click ZIP of the whole package, once there is more than the
+     * main document to bundle.
+     */
+    public function zipUrl(): ?string
+    {
+        if (! $this->isAvailable() || count($this->items) < 2) {
+            return null;
+        }
+
+        return route('admin.liens.documents.zip', $this->filing->public_id);
     }
 
     /**
@@ -192,15 +240,34 @@ final class LienDocumentPackage
             $warnings[] = 'The owner party has no mailing address.';
         }
 
+        $recipientPartyIds = array_filter(array_column($payload['recipients'], 'party_id'));
+
         foreach ($form->recipientRoles() as $role) {
-            if ($role !== 'owner' && ($parties[$role] ?? null) === null) {
-                $label = match ($role) {
-                    'gc' => 'general contractor',
-                    'lender' => 'construction lender',
-                    'customer' => 'hiring party',
-                    default => str_replace('_', ' ', $role),
-                };
-                $warnings[] = "{$form->stateName} serves the {$label}; the project has no {$label} party.";
+            $label = match ($role) {
+                'owner' => 'owner',
+                'gc' => 'general contractor',
+                'lender' => 'construction lender',
+                'customer' => 'hiring party',
+                default => str_replace('_', ' ', $role),
+            };
+            $party = $role === 'customer' ? $parties['hiring'] : ($parties[$role] ?? null);
+
+            if ($party === null) {
+                if ($role !== 'owner') {
+                    $warnings[] = "{$form->stateName} serves the {$label}; the project has no {$label} party.";
+                }
+
+                continue;
+            }
+
+            if ($party['id'] !== null && ! in_array($party['id'], $recipientPartyIds, true)) {
+                $warnings[] = "The {$label} ({$party['display_name']}) is not a recipient yet; add them under Recipients for the proof of service and labels.";
+            }
+        }
+
+        foreach ($payload['recipients'] as $recipient) {
+            if ($recipient['address_lines'] === []) {
+                $warnings[] = "Recipient {$recipient['display_name']} has no address in its snapshot; fix the party, then remove and re-add the recipient.";
             }
         }
 

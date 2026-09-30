@@ -15,6 +15,9 @@ pest()->extend(Tests\TestCase::class)
     ->use(Illuminate\Foundation\Testing\LazilyRefreshDatabase::class)
     ->in('Feature');
 
+// Shared builders for the generated lien document tests (one file per state).
+require_once __DIR__.'/Support/LienDocumentFixtures.php';
+
 /*
 |--------------------------------------------------------------------------
 | Expectations

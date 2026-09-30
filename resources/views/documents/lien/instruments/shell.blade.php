@@ -54,6 +54,7 @@
         .preparer { font-size: 10pt; line-height: 1.3; width: 3.4in; }
         .preparer-below { margin: 4pt 0 10pt 0; }
         .recorder-rule { border-top: 1px solid #000; font-size: 10pt; text-align: right; padding-top: 1pt; margin: 0 0 10pt 0; }
+        .recorder-legend { font-size: 10pt; text-align: right; margin: -6pt 0 10pt 0; }
 
         .caption { width: 100%; border-collapse: collapse; margin: 0 0 10pt 0; }
         .caption td { vertical-align: top; padding: 0; }

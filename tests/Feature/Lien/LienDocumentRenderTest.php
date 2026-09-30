@@ -100,11 +100,7 @@ if (! function_exists('liendocRenderProject')) {
     /** The rendered document as plain text, one space between words, without the head. */
     function liendocText(PdfBuilder $pdf): string
     {
-        $html = (string) preg_replace('/<head>.*?<\/head>/s', '', $pdf->getHtml());
-        $html = (string) preg_replace('/<(br|\/p|\/div|\/td|\/tr|\/li|\/table)[^>]*>/i', ' ', $html);
-        $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-        return trim((string) preg_replace('/\s+/u', ' ', $text));
+        return lienFixtureText($pdf);
     }
 }
 

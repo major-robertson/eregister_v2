@@ -3,6 +3,7 @@
     itself the sworn statement), the claimant's signature with printed name
     and title under it (recorders reject signatures without printed names),
     optional witness lines, and the notary certificate.
+    The signature and the certificate stay on one page; the statement above them may flow.
 
     Certificate wording by execution.notary_variant:
       fl  Fla. Stat. § 117.05(13)(a) jurat / (13)(c) representative acknowledgment
@@ -11,7 +12,8 @@
           each under the boxed § 1189(a)(1) notice
       nc  N.C.G.S. § 10B-41 acknowledgment / § 10B-43 jurat
       —   a generic certificate with blank venue lines (the client notarizes in
-          their own county, never the property's)
+          their own county, never the property's); execution.notary_county_line
+          adds a "Notary's county of commission" line (Indiana, IC 33-42-9-12(a)(5)(B))
     Statutory certificates are verbatim; never edit them without re-checking
     the statute (verified 2026-09-29).
 --}}
@@ -33,7 +35,7 @@
     // "Steven Roser, President of Roser Construction LLC" for the North Carolina acknowledgment.
     $signerAndCapacity = $blank($signerName, 'fill fill-wide').($signerTitle && $company ? ', '.e($signerTitle).' of '.e($company) : '');
 @endphp
-<div class="execution keep">
+<div class="execution">
     @if ($statement && $verification === 'sworn')
         <p>The undersigned, being first duly sworn, states that he or she is the {{ $capacity }}, the claimant named above; that he or she is authorized to make this {{ $title }} on its behalf; that he or she has read it and knows its contents; and that the statements in it are true of his or her own knowledge.</p>
     @elseif ($statement && $verification === 'verified')
@@ -41,6 +43,7 @@
         <p>Executed on <span class="fill fill-mid">&nbsp;</span>, at <span class="fill fill-wide">&nbsp;</span>.</p>
     @endif
 
+    <div class="keep">
     <table class="sig-table">
         <tr>
             <td style="width: 58%;">
@@ -119,8 +122,9 @@
                 @else
                     <p>Subscribed and sworn to (or affirmed) before me on this <span class="fill fill-short">&nbsp;</span> day of <span class="fill fill-mid">&nbsp;</span>, 20<span class="fill fill-short">&nbsp;</span>, by @if ($signerName){{ $signerName }}@else<span class="fill fill-wide">&nbsp;</span>@endif, {{ $capacity }}, who is personally known to me or who produced <span class="fill fill-mid">&nbsp;</span> as identification.</p>
                 @endif
-                @include('documents.lien._parts.notary-lines')
+                @include('documents.lien._parts.notary-lines', ['countyLine' => ! empty($execution['notary_county_line'])])
             @endif
         </div>
     @endif
+    </div>
 </div>

@@ -1,6 +1,6 @@
 {{--
     Notary signature, printed name, commission expiry and seal lines. Every
-    one of these was a rejection reason somewhere (Kansas K.S.A. 53-508,
+    one of these was a rejection reason somewhere (Kansas K.S.A. 53-5a16,
     Oregon "incomplete notary acknowledgement"). Vars: $signatureCaption,
     $nameCaption, $sealCaption (all optional).
 --}}

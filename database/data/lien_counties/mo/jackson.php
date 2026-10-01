@@ -32,5 +32,6 @@ return [
     'notes' => [
         'A sequential e-recording batch is rejected as a whole when any document in it fails; submit the affidavit of service as its own document.',
         'The recorder wants the grantor (owner) and grantee (claimant) named on page 1 exactly as they are indexed.',
+        'Circuit clerk question: RSMo § 429.080 says to file the lien with the clerk of the circuit court, here the 16th Judicial Circuit (liens on Kaw township property go to the clerk at Kansas City, § 478.483); the $21 clerk fee in the staff research note is not verified, and the court\'s civil fee schedule (16thcircuit.org/civil_fees, September 2026) lists only "Mechanic Lien $5.00" under Execution/Garnishment.',
     ],
 ];

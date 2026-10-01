@@ -346,7 +346,7 @@ describe('North Carolina claim of lien', function () {
 });
 
 describe('county files and blanks', function () {
-    it('prints the Missouri index block and moves the preparer below the rule for Jackson County only', function () {
+    it('prints the Missouri index block statewide and moves the preparer below the rule for Jackson County only', function () {
         $jackson = liendocRenderFiling(liendocRenderProject('MO', 'Jackson County'), 'mechanics_lien');
         $clay = liendocRenderFiling(liendocRenderProject('MO', 'Clay'), 'mechanics_lien');
         $generator = app(LienDocumentGenerator::class);
@@ -359,7 +359,7 @@ describe('county files and blanks', function () {
             ->toContain('Grantee (mailing address) S G Roser Construction LLC, 4200 Lakeland Hwy');
         expect(strpos($jacksonText, 'Space above this line'))->toBeLessThan(strpos($jacksonText, 'Prepared by, recording requested by'));
 
-        expect($clayText)->not->toContain('Grantor (mailing address)');
+        expect($clayText)->toContain('Grantor (mailing address) Mike Stuntz');
         expect(strpos($clayText, 'Prepared by, recording requested by'))->toBeLessThan(strpos($clayText, 'Space above this line'));
     });
 

@@ -5,6 +5,7 @@ namespace App\Domains\Lien\Seo;
 use App\Domains\Lien\Models\LienStateRule;
 use App\Support\Seo\States;
 use App\Support\Seo\Text;
+use App\Support\Seo\Urls;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -76,7 +77,7 @@ final class LienStatePage
 
     public function url(): string
     {
-        return route('liens.state', ['state' => $this->slug]);
+        return Urls::absolute(route('liens.state', ['state' => $this->slug], absolute: false));
     }
 
     public function title(): string

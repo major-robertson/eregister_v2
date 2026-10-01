@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Domains\Lien\Waivers\WaiverFormPreview;
 use App\Domains\Lien\Waivers\WaiverIntent;
 use App\Domains\Lien\Waivers\WaiverStateRegistry;
+use App\Support\Seo\Text;
+use App\Support\Seo\Urls;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -49,12 +51,13 @@ class WaiverLandingController extends Controller
             'code' => $code,
             'rules' => $rules,
             'stateName' => $stateName,
+            'article' => Text::article($stateName),
             'nearbyStates' => $this->nearbyStates($code),
             // Under 60 characters for every state (North Carolina = 49), so
             // Google shows the whole title instead of rewriting it.
             'pageTitle' => $stateName.' Lien Waiver Forms (Free Generator)',
             'metaDescription' => $this->metaDescription($stateName, $rules),
-            'canonicalUrl' => route('liens.lien-waivers.state', ['state' => strtolower($code)]),
+            'canonicalUrl' => Urls::absolute(route('liens.lien-waivers.state', ['state' => strtolower($code)], absolute: false)),
         ]);
     }
 
@@ -126,18 +129,36 @@ class WaiverLandingController extends Controller
     /**
      * Unique per-state meta description. States with a prescribed statutory
      * form lead with the statute cite; everyone else leads with the four
-     * house forms. Kept under ~165 characters so search results don't
-     * truncate mid-clause.
+     * house forms. Long state names and statute cites would overrun 160
+     * characters, so the first variant that fits wins instead of cutting
+     * the sentence mid-clause.
      *
      * @param  array<string, mixed>  $rules
      */
     private function metaDescription(string $stateName, array $rules): string
     {
         if (($rules['compliance_standard'] ?? 'generic') !== 'generic' && ! empty($rules['statute'])) {
-            return "Generate {$stateName} lien waiver forms free — the exact statutory text of {$rules['statute']}, plus {$stateName} rules for notarization, witnesses, and e-signature.";
+            $statute = $rules['statute'];
+            $variants = [
+                "Generate {$stateName} lien waiver forms free — the exact statutory text of {$statute}, plus {$stateName} rules for notarization, witnesses, and e-signature.",
+                "Generate {$stateName} lien waiver forms free — the exact statutory text of {$statute}, plus {$stateName} signing rules.",
+                "Generate {$stateName} lien waiver forms free, with the exact statutory text of {$statute}.",
+            ];
+        } else {
+            $variants = [
+                "Generate {$stateName} lien waiver forms free — conditional and unconditional waivers for progress and final payments, with {$stateName} signing and e-signature rules.",
+                "Generate {$stateName} lien waiver forms free — conditional and unconditional waivers for progress and final payments, with {$stateName} signing rules.",
+                "Generate {$stateName} lien waiver forms free: conditional and unconditional, progress and final.",
+            ];
         }
 
-        return "Generate {$stateName} lien waiver forms free — conditional and unconditional waivers for progress and final payments, with {$stateName} signing and e-signature rules.";
+        foreach ($variants as $variant) {
+            if (mb_strlen($variant) <= 160) {
+                return $variant;
+            }
+        }
+
+        return end($variants);
     }
 
     /**

@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Lien\Seo\LienStatePage;
+use App\Domains\Lien\Waivers\WaiverStateRegistry;
 use App\Domains\ResaleCert\Seo\ResaleStatePage;
 use App\Support\Seo\States;
 
@@ -86,5 +87,104 @@ describe('state slugs', function () {
             ->and(States::codeFromSlug('nowhere'))->toBeNull()
             ->and(States::neighbours('AL'))->toHaveCount(4)
             ->and(States::neighbours('WY'))->toHaveCount(4)->not->toHaveKey('WY');
+    });
+});
+
+describe('cached state pages', function () {
+    // Tests run on the array cache store, which never serializes; prod uses
+    // the database store, so the cached object must survive a round trip.
+    it('survive a serialize round trip', function () {
+        foreach ([LienStatePage::forCode('TX'), ResaleStatePage::forCode('FL')] as $page) {
+            $copy = unserialize(serialize($page));
+
+            expect($copy->title())->toBe($page->title())
+                ->and($copy->metaDescription())->toBe($page->metaDescription())
+                ->and($copy->keyFacts())->toBe($page->keyFacts());
+        }
+    });
+
+    it('caches under versioned keys', function () {
+        expect(LienStatePage::cacheKey('tx'))->toBe('seo.lien-state.v2.TX')
+            ->and(ResaleStatePage::cacheKey('fl'))->toBe('seo.resale-state.v2.FL')
+            ->and(ResaleStatePage::statesCacheKey())->toBe('seo.resale-states.v2');
+    });
+});
+
+describe('state page titles and descriptions', function () {
+    it('composes every resale description within budget without truncating', function () {
+        foreach (array_keys(ResaleStatePage::availableStates()) as $code) {
+            $page = ResaleStatePage::forCode($code);
+            $description = $page->metaDescription();
+
+            expect(mb_strlen($description))->toBeGreaterThanOrEqual(70, "{$code}: {$description}")
+                ->toBeLessThanOrEqual(165, "{$code}: {$description}")
+                ->and($description)->not->toEndWith('...')
+                ->toContain($page->name)
+                ->toContain('Generate signed certificates')
+                ->and(mb_strlen($page->title()))->toBeLessThanOrEqual(70, $page->title());
+        }
+    });
+
+    it('keeps every waiver page title and description within budget', function () {
+        foreach (array_keys(WaiverStateRegistry::STATE_NAMES) as $code) {
+            $html = $this->get('/liens/lien-waivers/'.strtolower($code))->assertOk()->getContent();
+
+            preg_match('/<title>(.*?)<\/title>/s', $html, $title);
+            preg_match('/<meta name="description" content="([^"]*)"/', $html, $description);
+            $title = html_entity_decode($title[1] ?? '', ENT_QUOTES);
+            $description = html_entity_decode($description[1] ?? '', ENT_QUOTES);
+
+            expect(mb_strlen($title))->toBeLessThanOrEqual(60, "{$code}: {$title}")
+                ->and(mb_strlen($description))->toBeGreaterThanOrEqual(70, "{$code}: {$description}")
+                ->toBeLessThanOrEqual(160, "{$code}: {$description}")
+                ->and($description)->not->toEndWith('...');
+        }
+    });
+});
+
+describe('indefinite articles', function () {
+    it('never says "a Alabama" on any state page set', function () {
+        $paths = [];
+        foreach (['AL', 'OH', 'ID', 'OR'] as $code) {
+            $slug = States::slug(States::name($code));
+            $paths[] = "/liens/{$slug}";
+            $paths[] = '/liens/lien-waivers/'.strtolower($code);
+            // Oregon has no sales tax, so no resale page.
+            if (isset(ResaleStatePage::availableStates()[$code])) {
+                $paths[] = "/resale-certificates/{$slug}";
+            }
+        }
+
+        foreach ($paths as $path) {
+            $html = $this->get($path)->assertOk()->getContent();
+            $text = html_entity_decode(strip_tags($html), ENT_QUOTES);
+
+            expect(preg_match('/\ba (?:Alabama|Ohio|Idaho|Oregon)\b/', $text, $match))
+                ->toBe(0, "{$path}: \"".($match[0] ?? '').'"');
+        }
+    });
+
+    it('uses "an" for Alabama on the resale page copy', function () {
+        $this->get('/resale-certificates/alabama')
+            ->assertOk()
+            ->assertSee('an Alabama resale certificate', escape: false);
+    });
+});
+
+describe('lien page details', function () {
+    it('sends attorney-referral states to the attorney CTA with no price or Offer', function () {
+        $html = $this->get('/liens/delaware')->assertOk()->getContent();
+
+        expect($html)->not->toContain('"@type":"Offer"')
+            ->not->toContain('$99')
+            ->toContain('Get matched with a Delaware lien attorney')
+            ->toContain('Request a Delaware lien attorney');
+    });
+
+    it('keeps the Texas monthly deadline wording and the counsel disclaimer', function () {
+        $this->get('/liens/texas')
+            ->assertOk()
+            ->assertSee('15th day of the 3rd month', escape: false)
+            ->assertSee('Confirm with counsel', escape: false);
     });
 });

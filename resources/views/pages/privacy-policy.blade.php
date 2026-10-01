@@ -1,6 +1,7 @@
 @extends('layouts.landing')
 
 @section('title', 'Privacy Policy - ' . config('app.name', 'eRegister'))
+@section('description', 'How eRegister collects, uses and protects your personal information, the choices you have, and how to make a privacy request.')
 
 @section('content')
 <div class="bg-white py-16 lg:py-24">
@@ -219,8 +220,8 @@
             <p>
                 If you sign up for marketing emails or if permitted by law, we may send you updates about products,
                 services, and promotions.
-                You can opt out at any time by using the "unsubscribe" link in our emails or contacting us at
-                contact@eregister.com.
+                You can opt out at any time by using the "unsubscribe" link in our emails or
+                <a href="{{ route('contact') }}">contacting us</a>.
             </p>
 
             <h2 class="mt-14 font-bold">8. Subscriptions, Auto-Renewal, and Cancellation</h2>
@@ -230,7 +231,7 @@
                 subscriptions automatically renew until you cancel.
             </p>
             <p>
-                You can cancel at any time through your account dashboard or by emailing contact@eregister.com. If you
+                You can cancel at any time through your account dashboard or by <a href="{{ route('contact') }}">contacting us</a>. If you
                 cancel, your subscription will remain active
                 until the end of the current billing period unless otherwise required by law or stated at checkout.
             </p>
@@ -276,8 +277,8 @@
 
             <p>To make a request, contact us at:</p>
             <ul>
-                <li>Email: contact@eregister.com</li>
-                <li>Mail: 4869 Brownsboro Rd Ste 101-R, Louisville, KY 40207</li>
+                <li>Contact form: <a href="{{ route('contact') }}">eregister.com/contact</a></li>
+                <li>Mail: 4869 Brownsboro Rd STE 101-E, Louisville, KY 40207</li>
             </ul>
             <p>
                 We may need to verify your identity before fulfilling certain requests.
@@ -293,15 +294,15 @@
                 We do not sell personal information for money.
             </p>
             <p>
-                If your state provides an appeal right and we deny your request, you may appeal by contacting
-                contact@eregister.com with the subject line "Privacy Appeal."
+                If your state provides an appeal right and we deny your request, you may appeal through our
+                <a href="{{ route('contact') }}">contact page</a>. Start your message with "Privacy Appeal."
             </p>
 
             <h2 class="mt-14 font-bold">12. Children's Privacy</h2>
             <p>
                 The Site and Services are not directed to children under 13 (or under 16 where applicable), and we do
                 not knowingly collect personal information from children.
-                If you believe a child has provided information to us, contact us at contact@eregister.com.
+                If you believe a child has provided information to us, <a href="{{ route('contact') }}">contact us</a>.
             </p>
 
             <h2 class="mt-14 font-bold">13. International Users</h2>
@@ -324,8 +325,8 @@
             </p>
             <p>
                 eRegister<br>
-                4869 Brownsboro Rd Ste 101-R, Louisville, KY 40207<br>
-                contact@eregister.com
+                4869 Brownsboro Rd STE 101-E, Louisville, KY 40207<br>
+                <a href="{{ route('contact') }}">eregister.com/contact</a>
             </p>
             <p>
                 Privacy Policy URL: <a href="https://eregister.com/privacy-policy"

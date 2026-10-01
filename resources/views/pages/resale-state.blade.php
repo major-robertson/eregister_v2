@@ -9,6 +9,7 @@
     /** @var \App\Domains\ResaleCert\Seo\ResaleStatePage $page */
     $name = $page->name;
     $rule = $page->rule;
+    $a = $page->article;
 @endphp
 
 <x-seo.service
@@ -30,11 +31,11 @@
             <span class="bg-gradient-to-r from-emerald-300 to-teal-400 bg-clip-text text-transparent">Rules, Form &amp; Expiration</span>
         </h1>
         <p class="mt-6 max-w-2xl text-lg text-zinc-400">
-            What a {{ $name }} resale certificate has to say, who can sign one, how long it lasts, and how to produce a signed copy for every vendor in minutes.
+            What {{ $a }} {{ $name }} resale certificate has to say, who can sign one, how long it lasts, and how to produce a signed copy for every vendor in minutes.
         </p>
         <div class="mt-10 flex flex-wrap gap-4">
             <a href="{{ route('register') }}" class="group inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#B91C1C]">
-                Generate a {{ $name }} certificate
+                Generate {{ $a }} {{ $name }} certificate
                 <svg class="h-4 w-4 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
@@ -67,7 +68,7 @@
     <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div class="grid gap-12 lg:grid-cols-2">
             <div>
-                <h2 class="text-3xl font-bold tracking-tight text-zinc-900">What a {{ $name }} resale certificate must include</h2>
+                <h2 class="text-3xl font-bold tracking-tight text-zinc-900">What {{ $a }} {{ $name }} resale certificate must include</h2>
                 <ul class="mt-6 space-y-3 text-zinc-600">
                     <li class="flex gap-3"><span class="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500"></span>The buyer's legal name, business address, and {{ $rule->accepts_out_of_state ? 'sales tax registration number from '.$name.' or their home state' : $name.' sales tax permit number' }}.</li>
                     <li class="flex gap-3"><span class="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500"></span>The seller's name and address.</li>
@@ -100,7 +101,7 @@
         </p>
         <div class="mt-8 flex flex-wrap justify-center gap-4">
             <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:bg-[#B91C1C]">Start generating certificates</a>
-            <a href="{{ route('sales-tax-registration') }}" class="inline-flex items-center gap-2 rounded-lg border border-zinc-300 px-8 py-4 text-base font-semibold text-zinc-800 transition hover:bg-zinc-50">Need a {{ $name }} sales tax permit first?</a>
+            <a href="{{ route('sales-tax-registration') }}" class="inline-flex items-center gap-2 rounded-lg border border-zinc-300 px-8 py-4 text-base font-semibold text-zinc-800 transition hover:bg-zinc-50">Need {{ $a }} {{ $name }} sales tax permit first?</a>
         </div>
     </div>
 </section>

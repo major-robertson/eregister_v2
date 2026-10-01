@@ -8,9 +8,27 @@
 
 return [
 
-    // The business was formed on 2017-10-19. Lien services started much
-    // later, so say "in business since 2017", never "liens since 2017".
-    'in_business_since' => 2017,
+    // In business since 2013 (confirmed by the owner 2026-09-24; this
+    // supersedes the earlier "formed 2017-10-19" note). Lien services
+    // started much later, so say it about the company ("in business since
+    // 2013"), never "liens since 2013".
+    'in_business_since' => 2013,
+
+    // Lifetime sales tax registrations in the TaxResaleCertificate production
+    // database plus eRegister's own paid orders, counted by hand. Refresh by
+    // hand; never query the old database at request time. Render rounded down.
+    'businesses_helped' => 13000,
+    'businesses_helped_as_of' => '2026-09-15',
+
+    // Mailing address (confirmed 2026-09-30). No phone or email: public pages
+    // link to /contact instead so the inbox is not scraped.
+    'address' => [
+        'street' => '4869 Brownsboro Rd STE 101-E',
+        'locality' => 'Louisville',
+        'region' => 'KY',
+        'postal_code' => '40207',
+        'country' => 'US',
+    ],
 
     'google_reviews' => [
         'url' => 'https://maps.app.goo.gl/knY7FTPFt6txVE6PA',

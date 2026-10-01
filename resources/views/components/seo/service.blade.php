@@ -19,8 +19,8 @@
         '@type' => 'Service',
         'name' => $name,
         'description' => $description,
-        'url' => $url ?? url()->current(),
-        'provider' => ['@id' => url('/').'#organization'],
+        'url' => $url ?? \App\Support\Seo\Urls::absolute(request()->path()),
+        'provider' => ['@id' => \App\Support\Seo\Urls::absolute('/').'#organization'],
         'areaServed' => ['@type' => 'Country', 'name' => 'United States'],
         'serviceType' => $category ?? $name,
     ];
@@ -31,7 +31,7 @@
             'price' => number_format((float) $price, 2, '.', ''),
             'priceCurrency' => 'USD',
             'availability' => 'https://schema.org/InStock',
-            'url' => $url ?? url()->current(),
+            'url' => $url ?? \App\Support\Seo\Urls::absolute(request()->path()),
         ];
         if ($priceUnit) {
             $offer['priceSpecification'] = [

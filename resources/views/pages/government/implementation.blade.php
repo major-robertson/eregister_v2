@@ -1,6 +1,6 @@
 @extends('layouts.government')
 
-@section('title', 'Government Implementation Services | Discovery, Build, Training, Go-Live')
+@section('title', 'Government Implementation Services | Discovery to Go-Live')
 
 @section('meta')
 <meta name="description"

@@ -4,6 +4,8 @@ namespace App\Domains\ResaleCert\Seo;
 
 use App\Domains\ResaleCert\Models\ResaleStateRule;
 use App\Support\Seo\States;
+use App\Support\Seo\Text;
+use App\Support\Seo\Urls;
 
 /**
  * Plain-English view model for "/resale-certificates/{state}", built from
@@ -17,6 +19,9 @@ final class ResaleStatePage
 
     public readonly string $slug;
 
+    /** "a" or "an", for "an Alabama resale certificate" / "a Texas resale certificate". */
+    public readonly string $article;
+
     /** @var array<string, mixed> */
     public readonly array $config;
 
@@ -26,7 +31,21 @@ final class ResaleStatePage
     ) {
         $this->name = $rule->state_name;
         $this->slug = States::slug($this->name);
+        $this->article = Text::article($this->name);
         $this->config = config("resale_cert.states.{$this->code}", []);
+    }
+
+    /** Bump when the shape of this object or the page copy changes: the cached instances are replaced on the next request. */
+    public const CACHE_VERSION = 2;
+
+    public static function cacheKey(string $code): string
+    {
+        return 'seo.resale-state.v'.self::CACHE_VERSION.'.'.strtoupper($code);
+    }
+
+    public static function statesCacheKey(): string
+    {
+        return 'seo.resale-states.v'.self::CACHE_VERSION;
     }
 
     /**
@@ -55,7 +74,7 @@ final class ResaleStatePage
 
     public function url(): string
     {
-        return route('resale-certificates.state', ['state' => $this->slug]);
+        return Urls::absolute(route('resale-certificates.state', ['state' => $this->slug], absolute: false));
     }
 
     public function title(): string
@@ -63,18 +82,31 @@ final class ResaleStatePage
         return "{$this->name} Resale Certificate | Rules, Forms & Expiration";
     }
 
+    /**
+     * At most 165 characters, composed rather than cut: clauses are dropped
+     * from the least important up until the sentence fits, so a search
+     * result never ends mid-clause or in "...".
+     */
     public function metaDescription(): string
     {
-        $bits = [
-            "{$this->name} resale certificate rules: ".($this->hasOfficialForm() ? 'the official state form' : 'the accepted certificate form'),
-            $this->rule->accepts_mtc ? 'MTC uniform certificate accepted' : 'MTC uniform certificate not accepted',
-            $this->rule->accepts_out_of_state ? 'out-of-state permits accepted' : 'in-state permit required',
-            $this->expirationPhrase(),
+        $lead = "{$this->name} resale certificate rules: ";
+        $cta = '. Generate signed certificates in minutes.';
+
+        // Listed in page order; the key is the drop priority (highest drops first).
+        $clauses = [
+            0 => $this->hasOfficialForm() ? 'the official state form' : 'the accepted certificate form',
+            2 => $this->rule->accepts_mtc ? 'MTC uniform certificate accepted' : 'MTC uniform certificate not accepted',
+            3 => $this->rule->accepts_out_of_state ? 'out-of-state permits accepted' : 'in-state permit required',
+            1 => $this->expirationPhrase(),
         ];
 
-        $text = implode(', ', array_filter($bits)).'. Generate signed certificates in minutes.';
+        $compose = fn (array $kept) => $lead.implode(', ', $kept).$cta;
 
-        return mb_strlen($text) > 165 ? mb_substr($text, 0, 162).'...' : $text;
+        while (count($clauses) > 1 && mb_strlen($compose($clauses)) > 165) {
+            unset($clauses[max(array_keys($clauses))]);
+        }
+
+        return $compose($clauses);
     }
 
     public function hasOfficialForm(): bool
@@ -127,7 +159,7 @@ final class ResaleStatePage
                 'value' => $r->accepts_out_of_state ? 'Home-state permit accepted' : "{$this->name} permit required",
                 'detail' => $r->accepts_out_of_state
                     ? 'A reseller registered in another state can generally use that registration number.'
-                    : "Buyers usually need a {$this->name} sales tax registration to buy tax-free here.",
+                    : "Buyers usually need {$this->article} {$this->name} sales tax registration to buy tax-free here.",
             ],
             [
                 'label' => 'Blanket certificates',
@@ -153,7 +185,7 @@ final class ResaleStatePage
 
         $items = [
             [
-                'q' => "What form do I use for a {$this->name} resale certificate?",
+                'q' => "What form do I use for {$this->article} {$this->name} resale certificate?",
                 'a' => $this->hasOfficialForm()
                     ? "{$this->name} publishes its own resale certificate form, and vendors expect to see it. Our generator completes the official form with your business, permit, and purchase details and produces a signed PDF."
                     : "{$this->name} does not require one specific form. Any certificate that includes the buyer's name, address, permit number, a description of the property, and a signed statement that it is purchased for resale is accepted. Our generator produces one with every required element.",
@@ -167,8 +199,8 @@ final class ResaleStatePage
             [
                 'q' => "Can an out-of-state business use a resale certificate in {$this->name}?",
                 'a' => $r->accepts_out_of_state
-                    ? "Yes. {$this->name} accepts a valid sales tax registration number from another state on a resale certificate, so you do not need a {$this->name} permit purely to buy inventory tax-free."
-                    : "Generally not. {$this->name} expects the buyer to hold a {$this->name} sales tax permit, so out-of-state resellers who buy here regularly should register with the state first.",
+                    ? "Yes. {$this->name} accepts a valid sales tax registration number from another state on a resale certificate, so you do not need {$this->article} {$this->name} permit purely to buy inventory tax-free."
+                    : "Generally not. {$this->name} expects the buyer to hold {$this->article} {$this->name} sales tax permit, so out-of-state resellers who buy here regularly should register with the state first.",
             ],
             [
                 'q' => "Can I give a vendor one blanket resale certificate in {$this->name}?",
@@ -177,9 +209,9 @@ final class ResaleStatePage
                     : "No. {$this->name} expects a certificate for each purchase rather than one standing certificate.",
             ],
             [
-                'q' => "How long is a {$this->name} resale certificate valid?",
+                'q' => "How long is {$this->article} {$this->name} resale certificate valid?",
                 'a' => $r->expiration_months
-                    ? "A {$this->name} resale certificate is ".$this->expirationPhrase().'. Vendors are responsible for keeping a current certificate on file, so expect to reissue it on that schedule.'
+                    ? ucfirst($this->article)." {$this->name} resale certificate is ".$this->expirationPhrase().'. Vendors are responsible for keeping a current certificate on file, so expect to reissue it on that schedule.'
                     : "{$this->name} does not put a fixed expiration on resale certificates. They remain valid as long as the buyer's permit is active and the information on the certificate is still accurate.",
             ],
         ];

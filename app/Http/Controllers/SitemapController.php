@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Domains\Lien\Models\LienStateRule;
 use App\Domains\Lien\Waivers\WaiverStateRegistry;
 use App\Domains\ResaleCert\Seo\ResaleStatePage;
 use App\Support\Seo\States;
+use App\Support\Seo\Urls;
 use Carbon\Carbon;
 use Illuminate\Http\Response;
+use RuntimeException;
 use Spatie\Sitemap\Sitemap;
 use Spatie\Sitemap\Tags\Url;
 
@@ -87,7 +90,12 @@ class SitemapController extends Controller
             self::fileModified(database_path('seeders/data/lien_state_rules.json')),
             self::fileModified(database_path('seeders/data/lien_deadline_rules.json')),
         );
-        foreach (States::names() as $name) {
+        // Only states with a rule row have a page (forCode() 404s the rest).
+        $lienStates = LienStateRule::query()->pluck('state')
+            ->mapWithKeys(fn (string $code) => [$code => States::name($code)])
+            ->filter()
+            ->sort();
+        foreach ($lienStates as $name) {
             $entries[] = self::entry('/liens/'.States::slug($name), 'monthly', '0.7', $lienModified);
         }
 
@@ -116,15 +124,18 @@ class SitemapController extends Controller
             );
         }
 
+        // Identical for every visitor, so shared caches may hold it; the
+        // route runs without the session middleware, so no cookies are set.
         return response($sitemap->render())
-            ->header('Content-Type', 'application/xml');
+            ->header('Content-Type', 'application/xml')
+            ->header('Cache-Control', 'public, max-age=3600');
     }
 
     /** @return array{loc: string, changefreq: string, priority: string, lastmod: string} */
     private static function entry(string $path, string $changefreq, string $priority, int $modified): array
     {
         return [
-            'loc' => url($path),
+            'loc' => Urls::absolute($path),
             'changefreq' => $changefreq,
             'priority' => $priority,
             'lastmod' => Carbon::createFromTimestamp($modified)->toDateString(),
@@ -136,9 +147,14 @@ class SitemapController extends Controller
         return self::fileModified(resource_path('views/'.str_replace('.', '/', $view).'.blade.php'));
     }
 
+    /** A missing source would otherwise stamp today's date on every entry without anyone noticing. */
     private static function fileModified(string $path): int
     {
-        return is_file($path) ? (int) filemtime($path) : time();
+        if (! is_file($path)) {
+            throw new RuntimeException("Sitemap lastmod source is missing: {$path}");
+        }
+
+        return (int) filemtime($path);
     }
 
     private static function directoryModified(string $path): int

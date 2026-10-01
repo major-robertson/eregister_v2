@@ -1,6 +1,7 @@
 @extends('layouts.landing')
 
 @section('title', 'Refund Policy - ' . config('app.name', 'eRegister'))
+@section('description', 'When eRegister refunds an order, how to cancel a subscription renewal, and what to do if you see a charge you do not recognize.')
 
 @section('content')
 <div class="bg-white py-16 lg:py-24">
@@ -86,8 +87,7 @@
                 Because our services often begin quickly, cancellation requests must be made quickly.
             </p>
             <p>
-                If you want to cancel, you must email
-                <a href="mailto:contact@eregister.com">contact@eregister.com</a> with:
+                If you want to cancel, <a href="{{ route('contact') }}">contact us</a> with:
             </p>
             <ul>
                 <li>the account email,</li>
@@ -136,8 +136,8 @@
 
             <h2 class="mt-14 font-bold">6. Duplicate or Unauthorized Charges</h2>
             <p>
-                If you believe you were charged in error (duplicate charge) or have an unauthorized transaction, contact
-                <a href="mailto:contact@eregister.com">contact@eregister.com</a> within 7 days of the charge date.
+                If you believe you were charged in error (duplicate charge) or have an unauthorized transaction, <a href="{{ route('contact') }}">contact us</a>
+                within 7 days of the charge date.
             </p>
             <p>
                 If we confirm the charge was our billing error, we will refund the duplicate/erroneous amount to the
@@ -150,8 +150,8 @@
                 selected. All subscriptions automatically renew unless canceled.
             </p>
             <ul>
-                <li>You may cancel renewal at any time through your account dashboard (if available) or by emailing
-                    <a href="mailto:contact@eregister.com">contact@eregister.com</a>.</li>
+                <li>You may cancel renewal at any time through your account dashboard (if available) or through our
+                    <a href="{{ route('contact') }}">contact page</a>.</li>
                 <li>Cancellation stops FUTURE renewals only and does not retroactively refund prior
                     charges.</li>
                 <li>No prorated refunds are provided for partial billing periods.</li>
@@ -161,8 +161,8 @@
 
             <h2 class="mt-14 font-bold">8. Chargebacks and Payment Disputes</h2>
             <p>
-                Before initiating a chargeback or bank dispute, you agree to contact us at
-                <a href="mailto:contact@eregister.com">contact@eregister.com</a> and give us a reasonable opportunity
+                Before initiating a chargeback or bank dispute, you agree to
+                <a href="{{ route('contact') }}">contact us</a> and give us a reasonable opportunity
                 to investigate and resolve the issue.
             </p>
             <p>
@@ -198,8 +198,8 @@
                 Questions about this Policy must be sent to:
             </p>
             <ul>
-                <li>Email: <a href="mailto:contact@eregister.com">contact@eregister.com</a></li>
-                <li>Address: 4869 Brownsboro Rd Ste 101-R, Louisville, KY 40207</li>
+                <li>Contact form: <a href="{{ route('contact') }}">eregister.com/contact</a></li>
+                <li>Address: 4869 Brownsboro Rd STE 101-E, Louisville, KY 40207</li>
             </ul>
 
             <h2 class="mt-14 font-bold">12. Governing Law</h2>

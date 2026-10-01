@@ -195,18 +195,20 @@
         <div class="mt-10 rounded-2xl border border-amber-200 bg-amber-50 p-6">
             <h3 class="font-semibold text-amber-900">Practitioner notes for {{ $name }}</h3>
             <p class="mt-3 text-sm leading-relaxed text-amber-900/80">{{ $page->publicNotes }}</p>
-            <p class="mt-3 text-xs text-amber-900/70">These notes summarize the statute as we read it. Deadlines turn on facts specific to your project, so confirm with counsel before relying on them.</p>
+            <p class="mt-3 text-xs text-amber-900/70">These notes summarize the statute as we read it.</p>
         </div>
         @endif
 
-        @if ($page->statutes)
+        {{-- The disclaimer prints on every state page, with or without notes. --}}
         <p class="mt-8 text-sm text-zinc-500">
+            @if ($page->statutes)
             Statutory sources: {{ implode('; ', $page->statutes) }}.
             @if ($rule->statute_url)
             <a href="{{ $rule->statute_url }}" rel="noopener" target="_blank" class="font-medium text-zinc-700 underline">Read the {{ $name }} lien statute</a>.
             @endif
+            @endif
+            Deadlines turn on facts specific to your project. Confirm with counsel before relying on them.
         </p>
-        @endif
     </div>
 </section>
 

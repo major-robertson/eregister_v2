@@ -1,6 +1,7 @@
 @extends('layouts.landing')
 
 @section('title', 'Terms of Service - ' . config('app.name', 'eRegister'))
+@section('description', 'The terms that govern your use of eRegister: accounts, orders, subscriptions and renewals, cancellations, and the limits of our services.')
 
 @section('content')
 <div class="bg-white py-16 lg:py-24">
@@ -125,8 +126,8 @@
                 method on a recurring basis at the then-current rate disclosed at renewal, unless you cancel.
             </p>
             <p>
-                How to cancel: You may cancel through your account dashboard or by emailing
-                <a href="mailto:contact@eregister.com">contact@eregister.com</a>.
+                How to cancel: You may cancel through your account dashboard or through our
+                <a href="{{ route('contact') }}">contact page</a>.
                 Cancellation stops future renewals; it does not retroactively refund amounts already paid unless our
                 Refund Policy expressly provides otherwise.
             </p>
@@ -189,8 +190,8 @@
             <h2 class="mt-14 font-bold">12. Contact Information</h2>
             <p>If you have any questions about these Terms of Service, please contact us at:</p>
             <ul>
-                <li>Email: <a href="mailto:contact@eregister.com">contact@eregister.com</a></li>
-                <li>Address: 4869 Brownsboro Rd Ste 101-R, Louisville, KY 40207</li>
+                <li>Contact form: <a href="{{ route('contact') }}">eregister.com/contact</a></li>
+                <li>Address: 4869 Brownsboro Rd STE 101-E, Louisville, KY 40207</li>
             </ul>
 
             <h3 class="mt-8 font-bold">12.1 Related Policies</h3>

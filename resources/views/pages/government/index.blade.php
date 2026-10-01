@@ -1,6 +1,6 @@
 @extends('layouts.government')
 
-@section('title', 'Government Digital Services | Website Redesign, CMS, Accessibility & Hosting')
+@section('title', 'Government Website Design & Digital Services')
 
 @section('meta')
 <meta name="description"
@@ -51,7 +51,7 @@
             </a>
         </div>
 
-        <div class="mt-14 grid grid-cols-2 gap-6 text-left sm:grid-cols-4">
+        <div class="mt-14 grid grid-cols-2 gap-6 text-left sm:grid-cols-3">
             <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
                 <p class="text-2xl font-bold text-white">Nationwide</p>
                 <p class="mt-1 text-xs text-slate-400">Service coverage</p>
@@ -59,10 +59,6 @@
             <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
                 <p class="text-2xl font-bold text-white">WCAG AA</p>
                 <p class="mt-1 text-xs text-slate-400">Accessibility baseline</p>
-            </div>
-            <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-                <p class="text-2xl font-bold text-white">99.9%</p>
-                <p class="mt-1 text-xs text-slate-400">Hosting uptime target</p>
             </div>
             <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
                 <p class="text-2xl font-bold text-white">U.S.-based</p>

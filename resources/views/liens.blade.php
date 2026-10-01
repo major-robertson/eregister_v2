@@ -41,11 +41,11 @@
 
         <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400 sm:text-xl">
             @if (!empty($lead) && $lead->business_name)
-            {{ $lead->business_name }}, file a mechanics lien on property with confidence. Our construction lien filing
+            {{ $lead->business_name }}, file a mechanics lien on property with confidence. Our lien filing
             services help contractors, subcontractors, and suppliers protect their payment rights with state-compliant
             forms.
             @else
-            File a mechanics lien on property with confidence. Our construction lien filing services help contractors,
+            File a mechanics lien on property with confidence. Our lien filing services help contractors,
             subcontractors, and suppliers protect their payment rights with state-compliant forms.
             @endif
         </p>
@@ -140,8 +140,7 @@
                         <div class="mt-1 text-3xl font-bold text-zinc-900">$247K</div>
                     </div>
                     <div class="rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 p-4 text-white shadow-sm">
-                        <div class="text-xs font-medium uppercase tracking-wider text-amber-100">Construction Lien
-                            Deadline</div>
+                        <div class="text-xs font-medium uppercase tracking-wider text-amber-100">Lien Deadline</div>
                         <div class="mt-1 text-xl font-bold">Jan 28</div>
                         <div class="mt-1 text-sm text-amber-100">TX Mechanics Lien Filing</div>
                     </div>
@@ -151,7 +150,7 @@
                 <div class="space-y-3 lg:col-span-2">
                     <div class="rounded-xl bg-white p-4 shadow-sm">
                         <div class="mb-4 flex items-center justify-between">
-                            <div class="font-semibold text-zinc-900">Recent Construction Lien Filings</div>
+                            <div class="font-semibold text-zinc-900">Recent Lien Filings</div>
                             <div class="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600">View all
                             </div>
                         </div>
@@ -315,9 +314,8 @@
                     Professional construction lien filing services
                 </h2>
                 <p class="mt-4 text-lg text-zinc-600">
-                    Stop chasing payments. Whether you need to file a mechanics lien on property or file a construction
-                    lien for unpaid work, our platform gives you everything you need to protect your rights and get
-                    paid.
+                    Stop chasing payments. Whether you need to file a mechanics lien or send a notice for unpaid work,
+                    our platform gives you what you need to protect your rights and get paid.
                 </p>
             </div>
 
@@ -343,9 +341,8 @@
                                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
-                    <h3 class="font-semibold text-zinc-900">Construction lien deadlines</h3>
-                    <p class="mt-1 text-sm text-zinc-600">Never miss a construction lien filing deadline with smart
-                        reminders</p>
+                    <h3 class="font-semibold text-zinc-900">Lien deadlines</h3>
+                    <p class="mt-1 text-sm text-zinc-600">Never miss a filing deadline, with smart reminders</p>
                 </div>
 
                 <div class="group">
@@ -357,8 +354,7 @@
                         </svg>
                     </div>
                     <h3 class="font-semibold text-zinc-900">State-compliant forms</h3>
-                    <p class="mt-1 text-sm text-zinc-600">Contractor lien on property forms updated to match current
-                        laws</p>
+                    <p class="mt-1 text-sm text-zinc-600">Lien forms updated to match current law</p>
                 </div>
 
                 <div class="group">
@@ -370,7 +366,7 @@
                         </svg>
                     </div>
                     <h3 class="font-semibold text-zinc-900">Project & lien tracking</h3>
-                    <p class="mt-1 text-sm text-zinc-600">Manage all your mechanics lien filings in one place</p>
+                    <p class="mt-1 text-sm text-zinc-600">Manage all your lien filings in one place</p>
                 </div>
             </div>
         </div>
@@ -382,66 +378,51 @@
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div class="text-center">
             <h2 class="text-3xl font-bold text-zinc-900">Complete construction lien services</h2>
-            <p class="mt-3 text-zinc-600">File a construction lien or any related document in minutes with our mechanics
-                lien filing platform</p>
+            <p class="mt-3 text-zinc-600">File a lien or any related document from one platform</p>
         </div>
 
-        <div class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div
+        <div class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <a href="#pricing"
                 class="rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-amber-300 hover:shadow-md">
                 <div class="text-2xl">📋</div>
                 <div class="mt-3 font-semibold text-zinc-900">Mechanics Lien Filing</div>
                 <div class="mt-1 text-sm text-zinc-500">File a mechanics lien on property to secure payment</div>
-            </div>
+            </a>
 
-            <div
+            <a href="{{ route('liens.preliminary-notice') }}"
                 class="rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-amber-300 hover:shadow-md">
                 <div class="text-2xl">📨</div>
                 <div class="mt-3 font-semibold text-zinc-900">Preliminary Notice</div>
-                <div class="mt-1 text-sm text-zinc-500">Preserve your construction lien rights early</div>
-            </div>
+                <div class="mt-1 text-sm text-zinc-500">Preserve your lien rights early</div>
+            </a>
 
-            <div
-                class="rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-amber-300 hover:shadow-md">
-                <div class="text-2xl">📬</div>
-                <div class="mt-3 font-semibold text-zinc-900">Notice to Owner</div>
-                <div class="mt-1 text-sm text-zinc-500">Notify property owners of your work</div>
-            </div>
-
-            <div
+            <a href="{{ route('liens.notice-of-intent-to-lien') }}"
                 class="rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-amber-300 hover:shadow-md">
                 <div class="text-2xl">⚠️</div>
-                <div class="mt-3 font-semibold text-zinc-900">Intent to Lien</div>
-                <div class="mt-1 text-sm text-zinc-500">Warn before you file a construction lien</div>
-            </div>
+                <div class="mt-3 font-semibold text-zinc-900">Notice of Intent to Lien</div>
+                <div class="mt-1 text-sm text-zinc-500">Give notice before you file a lien</div>
+            </a>
 
-            <div
+            <a href="{{ route('liens.payment-demand-letter') }}"
+                class="rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-amber-300 hover:shadow-md">
+                <div class="text-2xl">✉️</div>
+                <div class="mt-3 font-semibold text-zinc-900">Payment Demand Letter</div>
+                <div class="mt-1 text-sm text-zinc-500">Ask for payment in writing</div>
+            </a>
+
+            <a href="{{ route('liens.lien-waivers') }}"
                 class="rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-amber-300 hover:shadow-md">
                 <div class="text-2xl">🔓</div>
-                <div class="mt-3 font-semibold text-zinc-900">Lien Waiver</div>
-                <div class="mt-1 text-sm text-zinc-500">Release contractor lien on property upon payment</div>
-            </div>
+                <div class="mt-3 font-semibold text-zinc-900">Lien Waivers</div>
+                <div class="mt-1 text-sm text-zinc-500">Waive lien rights when you are paid</div>
+            </a>
 
-            <div
+            <a href="{{ route('liens.lien-release') }}"
                 class="rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-amber-300 hover:shadow-md">
                 <div class="text-2xl">✅</div>
                 <div class="mt-3 font-semibold text-zinc-900">Lien Release</div>
-                <div class="mt-1 text-sm text-zinc-500">Remove filed mechanics liens from property</div>
-            </div>
-
-            <div
-                class="rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-amber-300 hover:shadow-md">
-                <div class="text-2xl">🏛️</div>
-                <div class="mt-3 font-semibold text-zinc-900">Bond Claim</div>
-                <div class="mt-1 text-sm text-zinc-500">Public project payment claims</div>
-            </div>
-
-            <div
-                class="rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-amber-300 hover:shadow-md">
-                <div class="text-2xl">🏁</div>
-                <div class="mt-3 font-semibold text-zinc-900">Notice of Completion</div>
-                <div class="mt-1 text-sm text-zinc-500">Document project completion</div>
-            </div>
+                <div class="mt-1 text-sm text-zinc-500">Release a filed lien once you are paid</div>
+            </a>
         </div>
     </div>
 </section>
@@ -451,7 +432,7 @@
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div class="text-center">
             <h2 class="text-3xl font-bold text-zinc-900">How to file a mechanics lien in three steps</h2>
-            <p class="mt-3 text-zinc-600">Our construction lien filing process is simple and fast</p>
+            <p class="mt-3 text-zinc-600">Our filing process is simple</p>
         </div>
 
         <div class="relative mt-16">
@@ -465,8 +446,8 @@
                         class="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-xl font-bold text-white">
                         1</div>
                     <h3 class="mt-6 text-xl font-semibold text-zinc-900">Enter property & project details</h3>
-                    <p class="mt-2 text-zinc-600">Provide the property address, owner info, and amount owed for your
-                        mechanics lien on property. Takes 2 minutes.</p>
+                    <p class="mt-2 text-zinc-600">Provide the property address, owner info, and the amount you are
+                        owed.</p>
                 </div>
 
                 <div class="relative text-center">
@@ -474,17 +455,17 @@
                         class="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-zinc-900 text-xl font-bold text-white">
                         2</div>
                     <h3 class="mt-6 text-xl font-semibold text-zinc-900">Select your state</h3>
-                    <p class="mt-2 text-zinc-600">We automatically use the correct construction lien filing form for
-                        your state's specific requirements.</p>
+                    <p class="mt-2 text-zinc-600">We use the correct lien form for your state's
+                        requirements.</p>
                 </div>
 
                 <div class="text-center">
                     <div
                         class="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-xl font-bold text-white">
                         3</div>
-                    <h3 class="mt-6 text-xl font-semibold text-zinc-900">We file your construction lien</h3>
-                    <p class="mt-2 text-zinc-600">Receive your documents within 1-3 business days, or let us handle
-                        everything and file your contractor lien on property for you.</p>
+                    <h3 class="mt-6 text-xl font-semibold text-zinc-900">We prepare or file your lien</h3>
+                    <p class="mt-2 text-zinc-600">Sign and record the lien yourself, or let us record it with the
+                        county and serve every required party for you.</p>
                 </div>
             </div>
         </div>
@@ -521,8 +502,8 @@
                 <div class="mt-1 text-sm text-zinc-400">States' lien rules</div>
             </div>
             <div>
-                <div class="text-4xl font-bold text-white">2 min</div>
-                <div class="mt-1 text-sm text-zinc-400">Average filing time</div>
+                <div class="text-4xl font-bold text-white">{{ number_format(config('company.google_reviews.rating'), 1) }}</div>
+                <div class="mt-1 text-sm text-zinc-400">Rating on Google</div>
             </div>
             <div>
                 <div class="text-4xl font-bold text-white">Free</div>
@@ -542,8 +523,7 @@
         <div class="text-center">
             <h2 class="text-3xl font-bold text-zinc-900">Who can file a mechanics lien on property?</h2>
             <p class="mx-auto mt-4 max-w-2xl text-lg text-zinc-600">
-                Our construction lien services help anyone in the construction industry protect their payment rights by
-                filing a mechanics lien.
+                We help anyone in the construction industry protect their payment rights with a mechanics lien.
             </p>
         </div>
 
@@ -557,8 +537,7 @@
                     </svg>
                 </div>
                 <h3 class="text-lg font-semibold text-zinc-900">General Contractors</h3>
-                <p class="mt-2 text-zinc-600">File a contractor lien on property when clients don't pay for completed
-                    construction work.</p>
+                <p class="mt-2 text-zinc-600">File a lien when clients don't pay for completed work.</p>
             </div>
 
             <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-6">
@@ -570,8 +549,8 @@
                     </svg>
                 </div>
                 <h3 class="text-lg font-semibold text-zinc-900">Subcontractors</h3>
-                <p class="mt-2 text-zinc-600">File a construction lien to secure payment even when working under a
-                    general contractor.</p>
+                <p class="mt-2 text-zinc-600">File a lien to secure payment, even when you work under a general
+                    contractor.</p>
             </div>
 
             <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-6">
@@ -583,8 +562,7 @@
                     </svg>
                 </div>
                 <h3 class="text-lg font-semibold text-zinc-900">Material Suppliers</h3>
-                <p class="mt-2 text-zinc-600">Use mechanics lien filing to protect payment for materials supplied to
-                    construction projects.</p>
+                <p class="mt-2 text-zinc-600">Protect payment for materials you supplied to a project.</p>
             </div>
 
             <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-6">
@@ -596,8 +574,7 @@
                     </svg>
                 </div>
                 <h3 class="text-lg font-semibold text-zinc-900">Equipment Rental</h3>
-                <p class="mt-2 text-zinc-600">File a mechanics lien on property for unpaid equipment rentals used on
-                    construction sites.</p>
+                <p class="mt-2 text-zinc-600">File a lien for unpaid rentals of equipment used on the job.</p>
             </div>
 
             <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-6">
@@ -609,8 +586,8 @@
                     </svg>
                 </div>
                 <h3 class="text-lg font-semibold text-zinc-900">Architects & Engineers</h3>
-                <p class="mt-2 text-zinc-600">Construction lien filing services for design professionals owed for plans
-                    and specifications.</p>
+                <p class="mt-2 text-zinc-600">Lien filing for design professionals owed for plans and
+                    specifications.</p>
             </div>
 
             <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-6">
@@ -651,9 +628,9 @@
                 </summary>
                 <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">
                     A mechanics lien (also called a construction lien or contractor lien) is a legal claim against a
-                    property that secures payment for work performed or materials supplied. When you file a mechanics
-                    lien on property, it creates a security interest that remains until you're paid. Our mechanics lien
-                    filing services handle the entire process, from document preparation to recording with the county.
+                    property that secures payment for work performed or materials supplied. Filing one creates a security
+                    interest in the property. Our full service handles the whole process, from document preparation to
+                    recording with the county.
                 </div>
             </details>
 
@@ -669,8 +646,8 @@
                 <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">
                     Anyone who provides labor, materials, or services to improve real property can file a mechanics
                     lien. This includes general contractors, subcontractors, material suppliers, equipment rental
-                    companies, architects, engineers, and laborers. Our construction lien services help all construction
-                    industry professionals file a contractor lien on property when payment is overdue.
+                    companies, architects, engineers, and laborers. We help all of them file a lien when payment is
+                    overdue.
                 </div>
             </details>
 
@@ -684,11 +661,9 @@
                     </svg>
                 </summary>
                 <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">
-                    To file a construction lien, you'll need to: (1) Send preliminary notices if required by your state,
-                    (2) Prepare the mechanics lien document with property and project details, (3) Record the lien with
-                    the county recorder, and (4) Serve notice to the property owner. Our construction lien filing
-                    services handle all these steps for you, ensuring your mechanics lien filing is done correctly and
-                    on time.
+                    To file one, you'll need to: (1) Send preliminary notices if your state requires them, (2) Prepare the
+                    lien with property and project details, (3) Record it with the county recorder, and (4) Serve notice
+                    on the property owner. We can handle these steps for you.
                 </div>
             </details>
 
@@ -702,27 +677,24 @@
                     </svg>
                 </summary>
                 <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">
-                    Construction lien filing deadlines vary by state, typically ranging from 30-120 days after you last
-                    provided labor or materials. Missing these deadlines means losing your right to file a mechanics
-                    lien on property. Our platform automatically tracks all deadlines for your mechanics lien filing to
-                    ensure you never miss a critical date.
+                    Lien deadlines vary by state. They typically fall 30 to 120 days after you last provided labor or
+                    materials. If you miss the deadline, you lose your right to file. Our platform tracks these dates
+                    for you and sends reminders before they pass.
                 </div>
             </details>
 
             <details class="group rounded-xl border border-zinc-200 bg-white">
                 <summary
                     class="flex cursor-pointer items-center justify-between p-5 font-medium text-zinc-900 [&::-webkit-details-marker]:hidden">
-                    Are construction lien forms different in each state?
+                    Are lien forms different in each state?
                     <svg class="h-5 w-5 shrink-0 text-zinc-400 transition group-open:rotate-180" fill="none"
                         viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </summary>
                 <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">
-                    Yes, every state has different mechanics lien laws and requirements. Some states require specific
-                    language, notarization, or preliminary notices before you can file a construction lien. Our
-                    construction lien services automatically use the correct state-specific forms, so your mechanics
-                    lien filing meets all legal requirements.
+                    Yes. Every state has its own mechanics lien laws. Some require specific language, notarization, or
+                    preliminary notices before you can file. We use the correct form for your state.
                 </div>
             </details>
 
@@ -735,11 +707,21 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </summary>
+                @php
+                    // Lowest price per service level, from config/lien.php (default
+                    // price and any state override), so the FAQ matches checkout.
+                    $lienFromPrice = fn (string $level) => '$'.number_format(collect(config('lien.state_pricing', []))
+                        ->map(fn (array $types) => $types['mechanics_lien'][$level] ?? null)
+                        ->filter()
+                        ->push(config("lien.pricing.mechanics_lien.{$level}"))
+                        ->min() / 100);
+                @endphp
                 <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">
-                    The cost to file a mechanics lien on property includes our service fee plus county recording fees,
-                    which vary by location. Our construction lien filing services provide transparent, upfront pricing
-                    with no hidden fees. The cost is typically far less than the amount you'll recover by filing a
-                    contractor lien on property.
+                    Self-serve starts at {{ $lienFromPrice('self_serve') }}. We prepare your mechanics lien, and you
+                    sign it and record it with the county yourself, so you also pay the county's recording fee. Full
+                    service starts at {{ $lienFromPrice('full_service') }}. We prepare the lien, record it with the
+                    county, and serve every required party, with standard recording fees included. Unusually high
+                    county fees may cost extra, and we'll tell you before you pay.
                 </div>
             </details>
 
@@ -753,10 +735,9 @@
                     </svg>
                 </summary>
                 <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">
-                    Mechanics lien and construction lien are different terms for the same legal tool. Some states call
-                    it a "mechanic's lien," others use "construction lien" or "contractor lien on property." Regardless
-                    of the name, the purpose is the same: to secure payment for work performed on real property. Our
-                    mechanics lien filing and construction lien services cover all variations.
+                    They are different names for the same legal tool. Some states call it a "mechanic's lien," others a
+                    "construction lien" or "contractor's lien." Whatever the name, it secures payment for work
+                    performed on real property. We handle all of them.
                 </div>
             </details>
 
@@ -770,10 +751,9 @@
                     </svg>
                 </summary>
                 <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">
-                    Yes, subcontractors absolutely can file a mechanics lien on property, even if they don't have a
-                    direct contract with the property owner. This is one of the most powerful protections in
-                    construction law. Our construction lien filing services help subcontractors file a construction lien
-                    to secure payment, even when working under a general contractor who hasn't paid.
+                    Yes. Subcontractors can file a mechanics lien even without a direct contract with the property owner.
+                    It is one of the strongest protections in construction law. We help subcontractors file a lien when
+                    the general contractor hasn't paid.
                 </div>
             </details>
         </div>
@@ -786,8 +766,7 @@
         <div class="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
             <h2 class="text-3xl font-bold text-white sm:text-4xl">Ready to file a mechanics lien?</h2>
             <p class="mt-4 text-lg text-zinc-400">
-                Use our construction lien filing services to protect your payment rights. File a mechanics lien on
-                property in under 5 minutes.
+                Protect your payment rights. Start your mechanics lien online today.
             </p>
             <div class="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <a href="{{ !empty($lead) ? route('register', ['lead' => $lead->public_id]) : route('register') }}"
@@ -799,7 +778,7 @@
                     </svg>
                 </a>
             </div>
-            <p class="mt-6 text-sm text-zinc-500">No credit card required. Trusted by 10,000+ contractors and suppliers.
+            <p class="mt-6 text-sm text-zinc-500">No credit card required. Rated {{ number_format(config('company.google_reviews.rating'), 1) }} on Google.
             </p>
         </div>
     </div>
@@ -811,8 +790,7 @@
         <div class="text-center">
             <h2 class="text-3xl font-bold text-zinc-900">Why choose our mechanics lien filing services?</h2>
             <p class="mx-auto mt-4 max-w-2xl text-lg text-zinc-600">
-                When you need to file a mechanics lien on property, having the right construction lien services makes
-                all the difference.
+                When you need to file a mechanics lien, the right help makes all the difference.
             </p>
         </div>
 
@@ -827,8 +805,7 @@
                 </div>
                 <h3 class="text-xl font-bold text-zinc-900">Expert Construction Lien Filing</h3>
                 <p class="mt-3 text-zinc-600">
-                    Whether you're a contractor looking to place a contractor lien on property or a subcontractor
-                    needing construction lien filing assistance, our team has the expertise to help.
+                    Whether you're a general contractor or a subcontractor, our team can help you file a lien.
                 </p>
             </div>
 
@@ -842,8 +819,7 @@
                 </div>
                 <h3 class="text-xl font-bold text-zinc-900">All 50 States Covered</h3>
                 <p class="mt-3 text-zinc-600">
-                    File a construction lien in any state with confidence. Our mechanics lien filing platform uses
-                    state-specific forms and follows each jurisdiction's unique requirements.
+                    File a lien in any state. We use state-specific forms that follow each state's requirements.
                 </p>
             </div>
 
@@ -857,8 +833,7 @@
                 </div>
                 <h3 class="text-xl font-bold text-zinc-900">Complete Lien Services</h3>
                 <p class="mt-3 text-zinc-600">
-                    Our construction lien services include document preparation, deadline tracking, and full filing
-                    support to ensure your mechanics lien on property is valid and enforceable.
+                    Our lien services include document preparation, deadline tracking, and full filing support.
                 </p>
             </div>
         </div>
@@ -866,8 +841,7 @@
         <div class="mt-12 rounded-2xl bg-zinc-900 p-8 text-center lg:p-12">
             <p class="text-lg text-zinc-300">
                 Don't let unpaid invoices hurt your business. <span class="font-semibold text-white">File a mechanics
-                    lien today</span> and secure the payment you've earned. Our platform helps you file a contractor
-                lien on property quickly and correctly.
+                    lien today</span> and secure the payment you've earned.
             </p>
             <a href="{{ !empty($lead) ? route('register', ['lead' => $lead->public_id]) : route('register') }}"
                 class="mt-6 inline-flex items-center gap-2 rounded-full bg-amber-500 px-8 py-4 font-semibold text-zinc-900 shadow-lg transition hover:scale-105 hover:bg-amber-400 hover:shadow-xl">

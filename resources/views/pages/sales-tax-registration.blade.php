@@ -221,8 +221,8 @@
         <div class="mx-auto grid max-w-6xl grid-cols-3 divide-x divide-slate-100 px-6 py-8 text-center">
             @foreach ([
                 ['number' => 'All', 'label' => 'Applicable states'],
-                ['number' => '10 min', 'label' => 'Average to apply'],
-                ['number' => '100%', 'label' => 'Filings reviewed'],
+                ['number' => number_format(config('company.businesses_helped')).'+', 'label' => 'Registrations filed'],
+                ['number' => (string) config('company.in_business_since'), 'label' => 'In business since'],
             ] as $stat)
                 <div class="px-3">
                     <div class="font-display text-2xl font-bold text-[var(--ink)] sm:text-3xl">{{ $stat['number'] }}</div>
@@ -281,7 +281,7 @@
                     <p class="mt-5 text-lg leading-relaxed text-slate-500">
                         Every state does sales tax registration differently. Different forms,
                         different logins, different traps. Get one wrong and you're looking at
-                        delays or penalties. We've done it thousands of times, so you don't have to learn it once.
+                        delays or penalties. We have filed more than {{ number_format(config('company.businesses_helped')) }} sales tax registrations, so you don't have to learn it once.
                     </p>
                     <div class="mt-8 rounded-xl border-l-4 bg-slate-50 p-5" style="border-color: var(--stamp)">
                         <div class="flex items-start gap-3">

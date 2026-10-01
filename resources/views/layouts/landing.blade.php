@@ -382,6 +382,9 @@
                     <div>
                         <p class="text-sm text-zinc-500">&copy; {{ date('Y') }} {{ config('app.name', 'eRegister') }}. All
                             rights reserved.</p>
+                        @if ($footerAddress = config('company.address'))
+                            <p class="mt-2 text-sm text-zinc-500">{{ $footerAddress['street'] }}, {{ $footerAddress['locality'] }}, {{ $footerAddress['region'] }} {{ $footerAddress['postal_code'] }}</p>
+                        @endif
                         <p class="mt-2 max-w-xl text-xs text-zinc-600">{{ config('app.name', 'eRegister') }} is a private document preparation and filing service. It is not a government agency and is not affiliated with or endorsed by any government agency.</p>
                     </div>
                 </div>

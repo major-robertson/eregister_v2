@@ -59,6 +59,9 @@ describe('resale certificate state pages', function () {
             ->assertOk()
             ->assertSee('Florida Resale Certificate', escape: false)
             ->assertSee('MTC uniform certificate', escape: false)
+            ->assertSee('Form DR-13', escape: false)
+            ->assertSee('Florida Department of Revenue', escape: false)
+            ->assertSee('Florida rules in plain English', escape: false)
             ->assertSee('"@type":"FAQPage"', escape: false)
             ->assertSee('<link rel="canonical" href="'.url('/resale-certificates/florida').'" />', escape: false);
     });
@@ -105,8 +108,8 @@ describe('cached state pages', function () {
 
     it('caches under versioned keys', function () {
         expect(LienStatePage::cacheKey('tx'))->toBe('seo.lien-state.v3.TX')
-            ->and(ResaleStatePage::cacheKey('fl'))->toBe('seo.resale-state.v2.FL')
-            ->and(ResaleStatePage::statesCacheKey())->toBe('seo.resale-states.v2');
+            ->and(ResaleStatePage::cacheKey('fl'))->toBe('seo.resale-state.v3.FL')
+            ->and(ResaleStatePage::statesCacheKey())->toBe('seo.resale-states.v3');
     });
 });
 

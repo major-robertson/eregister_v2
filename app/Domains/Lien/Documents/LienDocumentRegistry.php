@@ -32,6 +32,7 @@ use App\Domains\Lien\Waivers\WaiverStateRegistry;
  *       'index_block' => false,            // MO-style grantor/grantee recording block on page 1
  *       'index_roles' => null,             // e.g. ['grantor' => 'owner', 'grantee' => 'claimant']
  *       'preparer_in_space' => true,       // preparer block in the left half of the page-1 space (false: below it, MO)
+ *       'legend' => null,                  // submitter legend printed under the rule (e-recording MOUs, e.g. Johnson County KS)
  *       'cover_sheet' => false,            // mail-in office wants eRegister's filing cover sheet
  *       'parcel_label' => 'Parcel ID',     // APN / PIN / Prop ID / Tax ID / PCN / Folio
  *       'fee_note' => null, 'adds_cover_page' => false,
@@ -269,6 +270,7 @@ class LienDocumentRegistry
                 'index_block' => false,
                 'index_roles' => null,
                 'preparer_in_space' => true,
+                'legend' => null,
                 'cover_sheet' => false,
                 'parcel_label' => 'Parcel ID',
                 'fee_note' => null,

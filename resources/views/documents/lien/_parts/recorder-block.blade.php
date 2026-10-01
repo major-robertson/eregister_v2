@@ -19,6 +19,10 @@
     @endif
 </div>
 <div class="recorder-rule">Space above this line for recorder's use only</div>
+@if (! empty($rec['legend']))
+    {{-- A submitter legend some e-recording MOUs require on the face (Johnson County KS). --}}
+    <div class="recorder-legend">{{ $rec['legend'] }}</div>
+@endif
 @if (! $inSpace)
     <div class="preparer-below">
         @include('documents.lien._parts.preparer')

@@ -50,7 +50,7 @@ describe('registry', function () {
 
             expect($rules['recording'])->toHaveKeys([
                 'filing_office', 'top_margin_in', 'other_margin_in', 'min_font_pt', 'page_numbers',
-                'caption', 'index_line', 'index_block', 'index_roles', 'preparer_in_space', 'cover_sheet', 'parcel_label',
+                'caption', 'index_line', 'index_block', 'index_roles', 'preparer_in_space', 'legend', 'cover_sheet', 'parcel_label',
                 'fee_note', 'adds_cover_page', 'notes',
             ]);
             expect($rules['recording']['filing_office'])->toHaveKeys(['label', 'method', 'address_lines', 'vendor']);

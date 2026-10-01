@@ -15,7 +15,7 @@
         "post_lien_notice_recipients": null,
         "enforcement_calc_method": "months_after_date",
         "enforcement_deadline_days": 0,
-        "enforcement_deadline_months": 6,
+        "enforcement_deadline_months": null,
         "enforcement_deadline_trigger": "contract_date",
         "owner_occupied_special_rules": false,
         "owner_occupied_restriction_type": "none",
@@ -24,7 +24,7 @@
         "notarization_required": true,
         "verification_type": "sworn",
         "efile_allowed": false,
-        "filing_location": "county_recorder",
+        "filing_location": "Office of the judge of probate in the county where the property is located",
         "wrongful_lien_penalty": "none",
         "penalty_details": null,
         "lien_anchor_logic": "single",
@@ -38,6 +38,7 @@
         "statute_references": "[\"Ala. Code §§ 35-11-213, 35-11-215, 35-11-218, 35-11-221\"]",
         "statute_url": "https:\/\/law.justia.com\/codes\/alabama\/title-35\/chapter-11\/article-5\/division-8\/",
         "notes": "Filing deadline: original contractor 6 months; others 4 months after last furnishing (Ala. Code §35-11-215). Non-original contractors must give written notice of lien claim to owner BEFORE filing statement (Ala. Code §35-11-218). Verified statement is filed in probate office (judge of probate) and must be sworn (Ala. Code §35-11-213). Enforcement suit due within 6 months after maturity of the debt (Ala. Code §35-11-221) — trigger here uses contract_date as proxy; laborer 30-day filing category not modeled in this sheet.",
+        "public_notes": "Alabama gives a lien to those who improve real property, but the filing deadline depends on your role. An original contractor (one who contracts with the owner) must file a verified statement of lien within six months after last furnishing labor or materials. Journeymen and day laborers have 30 days, and everyone else, including subcontractors and suppliers, has four months (Ala. Code § 35-11-215). If you miss the deadline, the lien is \"deemed lost.\"\n\nThe statement must be sworn under oath and filed in the office of the judge of probate in the county where the property sits (Ala. Code § 35-11-213).\n\nIf you did not contract with the owner, you must give the owner written notice of your lien claim before you file. The notice states the amount, what it is for, and who owes it (Ala. Code § 35-11-218). A supplier who notified the owner in advance under Ala. Code § 35-11-210 is treated differently.\n\nA suit to enforce the lien must be started within six months after the entire debt becomes due (Ala. Code § 35-11-221). The statute does not tie that date to a single event, so confirm with counsel when your six months begins.\n\nOnce you are paid, acknowledge satisfaction of the lien promptly when asked. A lienholder who fails to do so within 30 days after written demand can owe damages (Ala. Code § 35-11-231).",
         "data_source": "csv_v3"
     },
     {
@@ -66,8 +67,8 @@
         "verification_type": "sworn",
         "efile_allowed": false,
         "filing_location": "county_recorder",
-        "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "wrongful_lien_penalty": "damages",
+        "penalty_details": "A person injured by a violation of the lien statutes may sue for actual and consequential damages plus costs and reasonable attorney fees. A claimant who does not promptly remove a lien after full payment, or after learning it is mistaken, unjustified, premature or disproportionate, is liable for actual and consequential damages plus costs and attorney fees.",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -79,6 +80,7 @@
         "statute_references": "[\"AS 34.35.064, 34.35.068, 34.35.070, 34.35.071, 34.35.080\"]",
         "statute_url": "https:\/\/law.justia.com\/codes\/alaska\/title-34\/chapter-35\/article-2\/",
         "notes": "Lien filing deadline: 120 days after claimant completes contract or ceases furnishing (AS 34.35.068(a)). If owner records Notice of Completion (AS 34.35.071), some claimants must record a claim of lien OR a Notice of Right to Lien within 15 days (AS 34.35.068(b)(1)); recording a Notice of Right to Lien can preserve the 120-day lien deadline in certain cases (AS 34.35.068(b)(2); AS 34.35.064). Enforcement: lien expires unless action commenced within 6 months of recording or an extension notice is recorded within the original 6 months (AS 34.35.080).",
+        "public_notes": "In Alaska, a claim of lien must be recorded no later than 120 days after you complete your contract or stop furnishing labor, materials, services or equipment, as long as the owner has not recorded a notice of completion (AS 34.35.068(a)). If the owner does record a notice of completion, the window can shrink to 15 days after that recording for a claimant who had advance notice of it or who never gave a notice of right to lien (AS 34.35.068(b)). Giving a notice of right to lien under AS 34.35.064 can protect the longer period, so it is worth considering early on larger jobs.\n\nThe claim must be verified by oath and state the property, owner, contractor, the work furnished, the amount due, and the last date you furnished (AS 34.35.070). Alaska has no counties; claims are recorded with the state recorder for the recording district where the property sits.\n\nA lien lasts six months after recording. To keep it, start a suit to enforce it within those six months, or record an extension notice in the same office within the original six months, which gives six more months (AS 34.35.080(a)). After suing, record a notice of the pending action to protect against later buyers (AS 34.35.080(c)).\n\nRelease a lien promptly once paid or if it turns out to be mistaken or overstated. A claimant who does not can owe actual and consequential damages plus attorney fees (AS 34.35.074).",
         "data_source": "csv_v3"
     },
     {
@@ -108,7 +110,7 @@
         "efile_allowed": false,
         "filing_location": "county_recorder",
         "wrongful_lien_penalty": "treble_damages",
-        "penalty_details": "A.R.S. §33-420: min $5,000 or treble actual damages + attorney fees; class 1 misdemeanor possible",
+        "penalty_details": "A person who records a lien knowing or having reason to know it is forged, groundless, contains a material misstatement or false claim, or is otherwise invalid is liable to the owner for the greater of $5,000 or treble actual damages, plus attorney fees and costs, and is guilty of a class 5 felony. Refusing to release or correct such a document within 20 days of a request carries liability of the greater of $1,000 or treble actual damages.",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -120,6 +122,7 @@
         "statute_references": "[\"A.R.S. §§ 33-992.01, 33-993, 33-998, 33-1002, 33-420\"]",
         "statute_url": "https:\/\/www.azleg.gov\/arsDetail\/?title=33",
         "notes": "Preliminary 20-day notice prerequisite (except wage laborers): A.R.S. §33-992.01(B); due within 20 days of first furnishing: §33-992.01(C). Lien deadline: 120 days after completion, or 60 days after Notice of Completion recorded: A.R.S. §33-993(A). Claim of lien made under oath and recorded with county recorder; serve copy on owner within reasonable time: A.R.S. §33-993(A). Foreclosure suit within 6 months of recording + lis pendens: A.R.S. §33-998. Owner-occupied dwelling: lien only with direct written contract with owner-occupant: A.R.S. §33-1002(B).",
+        "public_notes": "Arizona requires nearly every claimant to serve a preliminary twenty-day notice. Except for people working for wages, anyone who furnishes labor, professional services, materials, machinery, fixtures or tools must serve it on the owner, the original contractor, any construction lender, and whoever hired them, no later than 20 days after first furnishing to the jobsite (A.R.S. § 33-992.01). The notice is a condition of a valid lien. A late notice covers only what you furnished in the 20 days before serving it and afterward.\n\nThe claim of lien must be made under oath and recorded with the county recorder within 120 days after completion of the improvement. If the owner records a notice of completion, the deadline becomes 60 days after that recording (A.R.S. § 33-993(A)). The statute defines completion, including 60 consecutive days with no work. Serve the second copy of the claim on the owner within a reasonable time.\n\nOn a one- or two-family dwelling whose owner lived there before the work began, only someone with a written contract directly with the owner-occupant may claim a lien (A.R.S. § 33-1002(B)).\n\nA lien lasts six months after recording. To enforce it, file suit and record a notice of pendency of action within those six months (A.R.S. § 33-998(A)). The court may award the winner attorney fees.\n\nRecording a lien you know or should know is groundless, overstated or otherwise invalid is serious. The owner can recover the greater of $5,000 or three times actual damages plus fees, and it is a class 5 felony (A.R.S. § 33-420).",
         "data_source": "csv_v3"
     },
     {
@@ -161,6 +164,7 @@
         "statute_references": "[\"Ark. Code Ann. §§ 18-44-114, 18-44-115, 18-44-117, 18-44-119\"]",
         "statute_url": "https:\/\/law.justia.com\/codes\/arkansas\/title-18\/subtitle-4\/chapter-44\/subchapter-1\/",
         "notes": "NOI: 10-day notice to owner before filing lien (Ark. Code Ann. §18-44-114(a)). Lien filing deadline: within 120 days after work\/materials furnished; file with clerk of the circuit court and include affidavit of notice\/proof (Ark. Code Ann. §18-44-117(a)(1), (a)(3)). Commercial projects: subs\/service providers\/material suppliers\/laborers must send 75-day notice to owner and contractor (Ark. Code Ann. §18-44-115(b)(4)-(5)). Residential (<=4 units): no lien unless owner received the statutory pre-construction notice; residential contractor must provide it before commencement (Ark. Code Ann. §18-44-115(a)(1), (a)(3), (a)(5)(C)). Enforcement: action must be commenced within 15 months after filing lien and a lis pendens filed (Ark. Code Ann. §18-44-119(a)-(b)).",
+        "public_notes": "Arkansas treats small residential jobs and commercial jobs differently.\n\nOn residential real estate with four or fewer units, no one has a lien unless the owner received the statutory pre-construction notice by personal delivery or certified mail. The residential contractor must give it on behalf of everyone before work begins (Ark. Code Ann. § 18-44-115(a)(1), (a)(3)). A contractor who skips it loses the lien and can be fined. Any subcontractor or supplier may also give the notice. The notice is not needed if the contractor posts a performance and payment bond, or on a direct sale to the owner.\n\nOn commercial real estate, including residential buildings with five or more units, a subcontractor, supplier, service provider or laborer must send a written notice of nonpayment to the owner and the contractor \"before seventy-five (75) days have elapsed\" from when the labor or materials were furnished (Ark. Code Ann. § 18-44-115(b)). Whether that runs from first or last furnishing is not settled by the text, so confirm with counsel; sending early is safest.\n\nEvery claimant must give the owner ten days' notice before filing the lien (Ark. Code Ann. § 18-44-114). The lien must be filed with the circuit clerk in the county where the property sits within 120 days after last furnishing. It must include a sworn account, a legal description (a street address is not enough), and an affidavit with copies of the notices and proof of service (Ark. Code Ann. § 18-44-117).\n\nA suit to enforce the lien must be filed, along with a lis pendens, within 15 months after the lien is filed (Ark. Code Ann. § 18-44-119).",
         "data_source": "csv_v3"
     },
     {
@@ -189,8 +193,8 @@
         "verification_type": "verified",
         "efile_allowed": false,
         "filing_location": "county_recorder",
-        "wrongful_lien_penalty": "damages",
-        "penalty_details": "Cal. Civ. Code §8422: willfully exaggerated claim can forfeit lien; claimant liable for damages and attorney fees",
+        "wrongful_lien_penalty": "fees",
+        "penalty_details": "A claimant who willfully includes labor, services, equipment or materials not furnished for the property forfeits the lien, and errors about the demand invalidate the lien if made with intent to defraud. On an owner's petition to release a lien, the prevailing party gets reasonable attorney fees. The statute text read does not impose damages for an exaggerated lien.",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -202,6 +206,7 @@
         "statute_references": "[\"Cal. Civ. Code §§ 8204, 8182, 8412, 8414, 8416, 8460, 8422\"]",
         "statute_url": "https:\/\/law.justia.com\/codes\/california\/code-civ\/division-4\/part-6\/title-2\/",
         "notes": "Prelim (20-day) notice due within 20 days of first furnishing (Cal. Civ. Code §8204); late notice only preserves rights for work within 20 days before service. Direct contractors are generally exempt from prelim unless serving a construction lender (see Civ. Code §8200). Lien recording deadline: Direct contractor—before earlier of 90 days after completion or 60 days after Notice of Completion\/Cessation recorded (§8412). Other claimants—before earlier of 90 days after completion or 30 days after Notice recorded (§8414). Notice of Completion must be recorded on\/within 15 days after completion (§8182) to be valid. After recording lien, serve copy of the claim on the owner (Civ. Code §8416). Enforcement: file foreclosure action within 90 days after recordation (§8460), unless an extension of credit is recorded.",
+        "public_notes": "In California, most subcontractors and suppliers must serve a preliminary notice no later than 20 days after first furnishing work (Cal. Civ. Code § 8204). A late notice still counts, but only for work furnished in the 20 days before it was served and afterward.\n\nThe recording deadline depends on whether you contracted with the owner. A direct contractor must record a claim of lien after completing its contract and before the earlier of 90 days after completion of the project or 60 days after the owner records a notice of completion or cessation (Cal. Civ. Code § 8412). Everyone else must record after they stop work and before the earlier of 90 days after completion or 30 days after such a notice is recorded (Cal. Civ. Code § 8414). Watch for a recorded notice, because it can cut your time sharply.\n\nThe claim must be signed and verified by the claimant, and a copy with the statutory notice must be mailed to the owner as the statute directs. If it is not served, the lien is \"unenforceable as a matter of law\" (Cal. Civ. Code § 8416).\n\nYou must file suit to enforce the lien within 90 days after recording it, or it expires. A recorded extension of credit can push that out, but never past one year after completion (Cal. Civ. Code § 8460).\n\nBe accurate. Willfully including work not furnished for the property forfeits the lien (Cal. Civ. Code § 8422). An owner can petition to release an invalid lien, and the winner recovers attorney fees (Cal. Civ. Code § 8488).",
         "data_source": "csv_v3"
     },
     {
@@ -231,7 +236,7 @@
         "efile_allowed": false,
         "filing_location": "county_recorder",
         "wrongful_lien_penalty": "fees",
-        "penalty_details": "C.R.S. §38-35-204: expedited procedure for spurious liens; prevailing party awarded costs incl. reasonable attorney fees",
+        "penalty_details": "Knowingly filing a lien for more than is due, without a reasonable possibility that the amount is due, forfeits the lien and makes the claimant liable for the owner's costs and attorney fees (§ 38-22-128). In a spurious lien proceeding the prevailing party recovers costs and reasonable attorney fees (§ 38-35-204).",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -243,6 +248,7 @@
         "statute_references": "[\"C.R.S. §§ 38-22-109, 38-22-110; C.R.S. § 38-35-204\"]",
         "statute_url": "https:\/\/law.justia.com\/codes\/colorado\/title-38\/liens\/article-22\/section-38-22-109\/",
         "notes": "NOI required: serve Notice of Intent to File Lien Statement on owner and principal contractor at least 10 days before filing; serve by personal service or registered\/certified mail and record affidavit with lien (C.R.S. §38-22-109(3)). Lien filing deadline: most claimants must record lien statement within 4 months after last labor\/materials furnished (C.R.S. §38-22-109(5)); labor-only (day\/piece, no materials) has different deadline (C.R.S. §38-22-109(4)) not modeled here. Enforcement: lien holds property no longer than 6 months after last work\/materials or completion unless foreclosure action commenced AND notice of action recorded (C.R.S. §38-22-110). Spurious lien remedy includes attorney fees to prevailing party (C.R.S. §38-35-204).",
+        "public_notes": "Colorado requires a notice of intent before any lien. At least ten days before filing, serve a notice of intent to file a lien statement on the owner and the principal contractor, by personal service or registered or certified mail. Record an affidavit of that service along with the lien (C.R.S. § 38-22-109(3)).\n\nMost claimants must record the lien statement with the county clerk and recorder within four months after the day they last performed labor or furnished materials (C.R.S. § 38-22-109(5)). Workers paid by the day or piece for labor only have a shorter window, ending two months after the project is completed (C.R.S. § 38-22-109(4)). The statement must be signed and sworn to by the claimant.\n\nThe lien lasts six months. To keep it, start a suit to enforce it and record a notice that the action was filed within six months after the last work or materials were furnished or the project was completed (C.R.S. § 38-22-110). The statute does not say which of those dates controls, so confirm with counsel and plan around the earlier one.\n\nDo not overstate the amount. A claimant who knowingly liens for more than is due forfeits the lien and owes the owner's costs and attorney fees (C.R.S. § 38-22-128). An owner can also bring a fast-track action against a spurious lien, where the winner recovers fees (C.R.S. § 38-35-204).",
         "data_source": "csv_v3"
     },
     {
@@ -271,8 +277,8 @@
         "verification_type": "sworn",
         "efile_allowed": false,
         "filing_location": "town_clerk",
-        "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "wrongful_lien_penalty": "damages",
+        "penalty_details": "If a lienor does not discharge an invalid lien within 30 days after written notice, the owner can sue and the court may award damages of $100 per week after the 30 days, up to $5,000, or the loss sustained, which may include a reasonable attorney fee.",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -284,6 +290,7 @@
         "statute_references": "[\"Conn. Gen. Stat. §§ 49-34, 49-35, 49-39\"]",
         "statute_url": "https:\/\/www.cga.ct.gov\/2023\/pub\/chap_847.htm",
         "notes": "Lien filing: certificate must be lodged\/recorded with the town clerk within 90 days after ceasing to furnish labor\/materials (Conn. Gen. Stat. §49-34). Serve a true and attested copy of the recorded certificate on the owner not later than 30 days after lodging (Conn. Gen. Stat. §49-34). Non-original contractors generally must give written notice to owner and original contractor after commencing and not later than 90 days after ceasing (Conn. Gen. Stat. §49-35(a)); service is by indifferent person\/state marshal or by registered\/certified mail if out of town. Original contractor affidavit (business name\/address + property description) is lodged with town clerk not later than 15 days after commencing (Conn. Gen. Stat. §49-35(a)). Enforcement: lien not in force longer than 1 year after perfected unless foreclosure commenced and lis pendens recorded within that period (Conn. Gen. Stat. §49-39).",
+        "public_notes": "Connecticut lien rights turn on a few firm deadlines.\n\nIf you are not the original contractor, you must give written notice to the owner and to the original contractor that you have furnished or begun furnishing and intend to claim a lien. Give it after you start, and no later than 90 days after you stop (Conn. Gen. Stat. § 49-35(a)). A subcontractor whose written subcontract was approved in writing by the owner does not need it. Service follows the statute: by a marshal or other proper person, or by registered or certified mail when the owner lives out of town.\n\nAn original contractor may lodge an affidavit with the town clerk within 15 days after starting work. It does not affect the contractor's own lien, but without it the contractor is not entitled to the subcontractors' notices.\n\nThe lien certificate must be lodged with the town clerk where the property sits within 90 days after you stop furnishing. It must describe the property, state the amount justly due and the start date, and be \"subscribed and sworn to by the claimant.\" A true and attested copy must then be served on the owner within 30 days (Conn. Gen. Stat. § 49-34).\n\nThe lien expires one year after recording unless you start a foreclosure action and record a lis pendens on the town land records within that year. A court challenge under § 49-35a can extend that (Conn. Gen. Stat. § 49-39).\n\nIf you are asked in writing to release an invalid lien and do not do so within 30 days, you can owe $100 a week up to $5,000, or the owner's loss including attorney fees (Conn. Gen. Stat. § 49-51).",
         "data_source": "csv_v3"
     },
     {
@@ -325,6 +332,7 @@
         "statute_references": "[\"25 Del. C. §§ 2711, 2712, 2714\"]",
         "statute_url": "https:\/\/delcode.delaware.gov\/title25\/c027\/sc02\/index.html",
         "notes": "Direct contractor filing deadline: statement of claim within 180 days after completion of structure; statute also deems timely if filed within 180 days of several alternative events (e.g., final invoice, certificate of occupancy, 90% payment) (25 Del. C. §2711(a)). All other claimants: statement of claim within 120 days from completion of labor\/last delivery of materials; also deemed timely within 120 days of (i) when final payment (incl. retainage) is due to claimant or (ii) when final payment is made to the direct contractor (25 Del. C. §2711(b)). Statement of claim\/complaint is filed with the Prothonotary of the Superior Court (25 Del. C. §2712(a)) and must be supported by claimant affidavit (25 Del. C. §2712(c)). Proceeding to recover is by writ of scire facias (25 Del. C. §2714).",
+        "public_notes": "Delaware handles mechanics liens through the courts rather than the land records. The claim is a statement of claim filed with the Prothonotary of the Superior Court in the county where the structure is located (25 Del. C. § 2712(a)). When labeled as a complaint, it also serves as the lawsuit, and the case proceeds by writ of scire facias (25 Del. C. § 2714). There is no separate, later deadline to sue; the filing deadline is the deadline that matters.\n\nA contractor who contracted directly with the owner and furnished both labor and materials must file within 180 days after completion of the structure. The statute also treats the claim as timely if filed within 180 days of certain other events, such as the final invoice, a certificate of occupancy, or receipt of 90 percent payment (25 Del. C. § 2711(a)). Everyone else must file within 120 days after finishing their labor or making their last delivery of materials (25 Del. C. § 2711(b)). Note that these are counted in days, not months.\n\nThe statement must list the parties, the amount claimed, the work or materials, the start and finish dates, and the property, and state that the work was done on the credit of the structure. It must be supported by the claimant's affidavit that the facts are true (25 Del. C. § 2712(b), (c)).\n\nBecause the filing is a court pleading, many claimants use counsel; confirm with counsel on form and service of the writ.",
         "data_source": "csv_v3"
     },
     {
@@ -354,7 +362,7 @@
         "efile_allowed": false,
         "filing_location": "circuit_clerk",
         "wrongful_lien_penalty": "damages",
-        "penalty_details": "Fla. Stat. §713.31: fraudulent lien (willful exaggeration etc.) is complete defense; lien unenforceable; damages incl. attorney fees and punitive damages may apply",
+        "penalty_details": "A lien whose amount is willfully exaggerated, or that includes work not performed, is fraudulent: it is a complete defense to enforcement and the lien is forfeited. The owner or contractor harmed may recover damages including costs, attorney fees and punitive damages up to the difference between the amount claimed and the amount due, and willfully filing a fraudulent lien is a third-degree felony.",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -366,6 +374,7 @@
         "statute_references": "[\"Fla. Stat. §§ 713.06, 713.08, 713.18, 713.22, 713.31\"]",
         "statute_url": "https:\/\/www.leg.state.fl.us\/statutes\/index.cfm?App_mode=Display_Statute&URL=0700-0799\/0713\/0713.html",
         "notes": "Prelim (Notice to Owner) required for parties not in privity with owner; must be served before commencing or not later than 45 days after commencing to furnish (Fla. Stat. §713.06(2)(a)). Lien recording deadline: claim of lien recorded no later than 90 days after final furnishing by the lienor (Fla. Stat. §713.08). Serve claim of lien on owner before recording or within 15 days after recording (Fla. Stat. §713.08(4)(c) referencing §713.18). Enforcement: lien expires 1 year after recording unless action commenced (and lis pendens as applicable) (Fla. Stat. §713.22(1)). Tenant improvements generally lien only tenant’s interest unless owner authorizes\/implies agency; treat as owner_consent_required in this sheet.",
+        "public_notes": "Florida's lien law rewards careful paperwork. If you did not contract directly with the owner, you must serve a notice to owner before you start, or no later than 45 days after you start, furnishing labor, services or materials. It is a prerequisite to a lien; laborers are exempt (Fla. Stat. § 713.06(2)(a)).\n\nThe claim of lien must be signed and sworn to by the lienor or an agent who knows the facts, and recorded in the clerk's office of the county where the property sits. It must be recorded no later than 90 days after your final furnishing of labor, services or materials (Fla. Stat. § 713.08). Serve a copy on the owner before recording or within 15 days after. Late service can make the lien voidable if it prejudiced someone.\n\nThe lien lasts one year after recording unless you file suit to enforce it within that year. Record a lis pendens to protect against later buyers and lenders (Fla. Stat. § 713.22(1)). The owner can shorten your time by recording a notice of contest, so act quickly if you receive one; confirm the shortened period with counsel.\n\nDo not inflate the amount. A lien that is willfully exaggerated, or that claims work not performed, is fraudulent. It is unenforceable, the owner may recover costs, attorney fees and punitive damages, and willfully filing one is a third-degree felony (Fla. Stat. § 713.31(2)).",
         "data_source": "csv_v3"
     },
     {
@@ -393,7 +402,7 @@
         "notarization_required": true,
         "verification_type": "sworn",
         "efile_allowed": true,
-        "filing_location": "circuit_clerk",
+        "filing_location": "superior_court_clerk",
         "wrongful_lien_penalty": "none",
         "penalty_details": null,
         "lien_anchor_logic": "single",
@@ -407,6 +416,7 @@
         "statute_references": "[\"O.C.G.A. §§ 44-14-361.1, 44-14-361.5\"]",
         "statute_url": "https:\/\/law.justia.com\/codes\/georgia\/title-44\/chapter-14\/article-8\/part-3\/",
         "notes": "Lien filing deadline: file claim of lien within 90 days after completion of work or last furnishing of labor\/materials (O.C.G.A. §44-14-361.1(a)(2)). If a Notice of Commencement is filed, remote claimants must send a Notice to Contractor within 30 days (generally the later of 30 days after NOC filing or 30 days after first furnishing) by registered\/certified mail or statutory overnight delivery to owner and contractor (O.C.G.A. §44-14-361.5(c)). Post-lien notice: within 2 business days after filing, send copy of claim of lien to owner (and also to contractor if NOC filed) by registered\/certified mail or statutory overnight delivery (O.C.G.A. §44-14-361.1(a)). Enforcement: commence lien action within 365 days after lien filing AND file a Notice of Commencement of Lien Action within 30 days after commencing the action (O.C.G.A. §44-14-361.1(a)(3)).",
+        "public_notes": "In Georgia, every claimant has 90 days to file a claim of lien with the clerk of the superior court in the county where the property sits. The clock runs from completion of the work or from when the materials or machinery were furnished (O.C.G.A. § 44-14-361.1(a)(2)). Within two business days after filing, send a true copy of the claim to the owner by registered or certified mail or statutory overnight delivery. Missing a step can make the lien unenforceable.\n\nThe owner or contractor must file a notice of commencement within 15 days after the contractor starts work. If one is filed, a claimant who has no contract with the prime contractor, such as a sub-subcontractor or a supplier to a subcontractor, must give a written notice to contractor to the owner and the contractor. It is due within 30 days after the notice of commencement is filed or 30 days after the claimant's first delivery, whichever is later (O.C.G.A. § 44-14-361.5). If no notice of commencement is filed, this requirement does not apply.\n\nTo enforce the lien, start a lien action within 365 days after filing the claim. Then, within 30 days after starting it, file a notice of commencement of lien action with the clerk (O.C.G.A. § 44-14-361.1(a)(3)). An owner can file a notice contesting the lien, which shortens your time; confirm the period with counsel.",
         "data_source": "csv_v3"
     },
     {
@@ -425,7 +435,7 @@
         "post_lien_notice_recipients": "owner_gc_lender",
         "enforcement_calc_method": "months_after_date",
         "enforcement_deadline_days": 0,
-        "enforcement_deadline_months": 3,
+        "enforcement_deadline_months": null,
         "enforcement_deadline_trigger": "lien_recorded_date",
         "owner_occupied_special_rules": false,
         "owner_occupied_restriction_type": "none",
@@ -448,6 +458,7 @@
         "statute_references": "[\"HRS § 507-43\"]",
         "statute_url": "https:\/\/law.justia.com\/codes\/hawaii\/title-28\/chapter-507\/section-507-43\/",
         "notes": "Hawaii lien is initiated by filing an Application for a Lien + Notice of Lien in circuit court; copies must be served like a summons on owner, contracting party, general contractor, and persons with an interest (HRS §507-43(a)). Filing deadline: Application + Notice must be filed not later than 45 days after the statutory 'date of completion' (HRS §507-43(b)). 'Date of completion' is tied to publication of notice of completion\/abandonment + affidavit filed with circuit court clerk; if no valid notice within 1 year after actual completion\/abandonment, completion is deemed 1 year after actual completion\/abandonment (HRS §507-43(f),(g)). Lien attaches only after court finds probable cause and enters an Order Directing Lien to Attach; lien expires 3 months after entry of that order unless proceedings are commenced (HRS §507-43(e)). Land Court property: file certified copy of the Order Directing Lien to Attach with assistant registrar within 7 days (HRS §507-43(b)).",
+        "public_notes": "Hawaii handles mechanic's liens through the courts rather than a recorder's office. A claimant files an \"Application For A Lien\" with a written \"Notice Of Lien\" in the circuit court for the circuit where the property is located, and serves copies like a summons on the owner, anyone with an interest in the property, and the party who contracted for the work (HRS § 507-43(a)). The deadline is 45 days after the \"date of completion\" (HRS § 507-43(b)). That date is set by a published notice of completion filed with the circuit court clerk. If no valid notice is published and filed within one year after the work is actually completed or abandoned, completion is treated as one year after actual completion (HRS § 507-43(f), (g)). The court holds a hearing 3 to 10 days after service to decide whether probable cause exists, and the lien attaches only if the court orders it. For land registered in Land Court, file a certified copy of that order with the assistant registrar within 7 days. The lien expires 3 months after the order is entered unless a foreclosure action is started in that time (HRS §§ 507-43(e), 507-47). On repairs to homes, a supplier has no lien if it sold to an unlicensed contractor or advanced unreasonable credit (HRS § 507-49). Hawaii does not require a preliminary notice. Court procedure matters here, so confirm with counsel before filing.",
         "data_source": "csv_v3"
     },
     {
@@ -474,10 +485,10 @@
         "tenant_project_restrictions": "none",
         "notarization_required": true,
         "verification_type": "sworn",
-        "efile_allowed": false,
+        "efile_allowed": true,
         "filing_location": "county_recorder",
-        "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "wrongful_lien_penalty": "fees",
+        "penalty_details": "Chapter 5 has no section that specifically punishes a false or excessive lien, but since July 1, 2022 the prevailing party in any court proceeding about a lien filed under § 45-507 is entitled to reasonable attorney fees and costs, so an owner who defeats an invalid lien can recover fees.",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -489,6 +500,7 @@
         "statute_references": "[\"Idaho Code §§ 45-507, 45-510, 45-525\"]",
         "statute_url": "https:\/\/law.justia.com\/codes\/idaho\/title-45\/chapter-5\/",
         "notes": "Lien recording deadline: claim must be recorded within 90 days after completion of labor\/services or furnishing of materials (Idaho Code §45-507(2)). Serve a true and correct copy of the recorded claim on the owner or reputed owner by personal service or certified mail no later than 5 business days after filing (Idaho Code §45-507(5)). Enforcement: lien binds property no longer than 6 months after filing unless proceedings commenced within that time; can be extended if payment\/credit with expiration date is endorsed and recorded (Idaho Code §45-510(1)). Residential disclosure: for residential real property contracts >$2,000, general contractor must provide disclosure prior to entering contract (Idaho Code §45-525(2)).",
+        "public_notes": "Idaho does not require subcontractors or suppliers to send a preliminary notice. The main pre-job rule is for general contractors on homes: before signing a contract over $2,000 to build, alter or repair residential property of one to four units, the contractor must give the owner a lien disclosure statement and keep the signed acknowledgment (Idaho Code § 45-525). A lien claim on that work must include proof of the disclosure (Idaho Code § 45-507(3)(e)). Failing to give it is also treated as a deceptive practice under the consumer protection act. Every claimant must record the claim of lien with the county recorder in the county where the property is located within 90 days after last furnishing labor, services or materials (Idaho Code § 45-507(1), (2)). The claim must be verified by oath, and a copy must be served on the owner personally or by certified mail no later than 5 business days after filing (Idaho Code § 45-507(4), (5)). The lien lapses unless a suit to enforce it is started within 6 months after the claim is filed. A payment on account or a written extension of credit endorsed on the lien record restarts that period (Idaho Code § 45-510). Since July 1, 2022, the winning side in any court case over the lien recovers reasonable attorney fees and costs (Idaho Code § 45-507(7)). That cuts both ways, so a claimant should be sure of the amount before filing.",
         "data_source": "csv_v3"
     },
     {
@@ -515,10 +527,10 @@
         "tenant_project_restrictions": "none",
         "notarization_required": true,
         "verification_type": "sworn",
-        "efile_allowed": false,
+        "efile_allowed": true,
         "filing_location": "county_recorder",
-        "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "wrongful_lien_penalty": "damages",
+        "penalty_details": "An overstated lien is defeated if the error or overcharge was made with intent to defraud (§ 7(a)). A court may make a claimant who sued without just cause pay the owner's reasonable attorney fees (§ 17(c)), and a claimant who fails to release a paid or lapsed lien within 10 days after written demand owes the owner $2,500 plus costs and attorney fees (§ 35(a)).",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -530,6 +542,7 @@
         "statute_references": "[\"770 ILCS 60\\\/7, 60\\\/9, 60\\\/24\"]",
         "statute_url": "https:\/\/www.ilga.gov\/Legislation\/ILCS\/Articles?ActID=2254&ChapterID=63",
         "notes": "Subcontractor\/supplier 90-day notice: must provide written notice of claim to owner (or agent\/architect\/superintendent) and to lending agency (if known) within 90 days; service by registered\/certified mail RRR, nationally recognized delivery company with tracking, or personal service (770 ILCS 60\/24(a); Public Act 103-0827 expands service options). Contractor claim for lien: to have priority against creditors\/incumbrancers\/purchasers, contractor must file claim for lien OR bring action within 4 months after completion (770 ILCS 60\/7(a)). As to the owner, contractor claim for lien may be filed within 2 years after completion of the contract\/extra work (770 ILCS 60\/7(a)). Enforcement suit must be commenced within 2 years after completion of the contract\/extra work\/materials (770 ILCS 60\/9). Owner-occupied single-family residence: contractor must give owner written notice within 10 days after recording lien; otherwise lien can be extinguished to extent of damages (770 ILCS 60\/7(d)).",
+        "public_notes": "In Illinois, subcontractors and suppliers to a contractor must serve a written notice of their claim on the owner (and the lender, if known) within 90 days after they finish their work or last delivery. Serve it by certified or registered mail with return receipt, a national delivery company with tracking, or in person (770 ILCS 60\/24). Since January 1, 2025, tracked courier delivery counts. On work for an existing owner-occupied single-family home, a subcontractor must also notify the occupant within 60 days after first furnishing (770 ILCS 60\/21(c)). The claim for lien is recorded with the county recorder where the property is located and must be verified by affidavit. To bind lenders, other creditors and buyers, record it within 4 months after completion. As against the owner alone, it can be recorded up to 2 years after completion (770 ILCS 60\/7(a), 60\/28). A contractor on an owner-occupied single-family home must give the owner written notice within 10 days after recording (770 ILCS 60\/7(d)). A suit to foreclose must be filed within 2 years after completion (770 ILCS 60\/9). If the owner serves a written demand, suit must be filed within 30 days or the lien is forfeited (770 ILCS 60\/34). An overcharge made with intent to defraud defeats the lien. A claimant who fails to release a paid lien within 10 days of demand owes the owner $2,500 plus fees (770 ILCS 60\/7, 60\/35). How these deadlines apply to a subcontractor's own completion date can turn on the facts, so confirm with counsel.",
         "data_source": "csv_v3"
     },
     {
@@ -556,7 +569,7 @@
         "tenant_project_restrictions": "none",
         "notarization_required": true,
         "verification_type": "sworn",
-        "efile_allowed": false,
+        "efile_allowed": true,
         "filing_location": "county_recorder",
         "wrongful_lien_penalty": "none",
         "penalty_details": null,
@@ -571,6 +584,7 @@
         "statute_references": "[\"IC 32-28-3-1(h),(i); IC 32-28-3-3; IC 32-28-3-6\"]",
         "statute_url": "https:\/\/law.justia.com\/codes\/indiana\/title-32\/article-28\/chapter-3\/",
         "notes": "Owner-occupied 1-2 family: if not contracting directly with owner, claimant must give written notice of first delivery\/work + lien rights within 30 days (alter\/repair) (IC 32-28-3-1(h)) or within 60 days AND file a copy with recorder within 60 days for original construction sold\/furnished on credit (IC 32-28-3-1(i)). Lien recording deadline: file 'statement and notice of intention to hold a lien' in county recorder within 60 days for Class 2 (residential) or within 90 days otherwise (IC 32-28-3-3). Enforcement: foreclosure action must be commenced not later than 1 year after the lien was recorded (IC 32-28-3-6).",
+        "public_notes": "Indiana's notice rules depend on the job. Subcontractors and suppliers who do not contract with the owner only need a pre-lien notice on owner-occupied single or double family homes. For alterations or repairs, they must give the occupying owner written notice of the work and of lien rights within 30 days after first delivery or labor (IC 32-28-3-1(h)). For original construction of an owner-occupied home, the notice is due within 60 days, and a copy must also be filed with the county recorder in that time (IC 32-28-3-1(i)). On these homes the notice is a condition of having a lien at all. To claim a lien, record a sworn statement and notice of intention to hold a lien, in duplicate, with the county recorder. The deadline is 60 days after last furnishing on Class 2 structures, which are generally one- and two-family homes and townhouses, and 90 days on other projects (IC 32-28-3-3). The recorder mails a copy to the owner. A suit to foreclose must be filed in the county where the property sits within one year after the lien is recorded, or the lien is void (IC 32-28-3-6). If the owner or another interested party sends written notice to sue, the claimant has 30 days to file or the lien is void (IC 32-28-3-10). A claimant who wins a judgment recovers reasonable attorney fees, except against an owner who already paid the contract price (IC 32-28-3-14). Every county recorder must accept electronic recording (IC 32-21-2.5-8). Whether a given building counts as a Class 2 structure can be close, so confirm with counsel.",
         "data_source": "csv_v3"
     },
     {
@@ -599,8 +613,8 @@
         "verification_type": "verified",
         "efile_allowed": true,
         "filing_location": "county_recorder",
-        "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "wrongful_lien_penalty": "damages",
+        "penalty_details": "On residential property, a person who successfully challenges a lien may be awarded attorney fees and actual damages; if the lien was posted in bad faith or the supporting affidavit was materially false, the court must award the owner attorney fees plus not less than $500 or the lien amount, whichever is less (§ 572.32(2), amended 2021). Posting fictitious, forged or false information to the registry also carries an administrative penalty set by rule (§ 572.34(4)).",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -612,6 +626,7 @@
         "statute_references": "[\"Iowa Code §§ 572.8, 572.9, 572.10, 572.11, 572.13, 572.13A, 572.13B, 572.27, 572.28, 572.33\"]",
         "statute_url": "https:\/\/law.justia.com\/codes\/iowa\/title-xiv\/chapter-572\/",
         "notes": "Perfection: mechanic’s lien is perfected by posting a verified statement of account to the Mechanics’ Notice and Lien Registry (MNLR) (Iowa Code §572.8). Timing: lien statement may be posted within 2 years and 90 days after last furnishing (Iowa Code §572.9), but if posted after 90 days, additional service is required and the lien’s enforceable extent can be limited (Iowa Code §§572.10–.11). Residential construction: GC must give owner notice (Iowa Code §572.13) and must post a Notice of Commencement to MNLR within 10 days after commencement or loses lien rights (Iowa Code §572.13A). Residential subcontractor: must post MNLR preliminary notice; it must be posted before the balance due is paid to the GC\/owner-builder or the subcontractor has no lien remedy (Iowa Code §572.13B). Commercial: a person furnishing labor\/materials to a subcontractor must give a one-time written notice to the GC\/owner-builder within 30 days of first furnishing (Iowa Code §572.33). Enforcement: action to enforce must be brought within 2 years from expiration of 90 days after last furnishing (Iowa Code §572.27); owner demand can accelerate to 30 days (Iowa Code §572.28). Prelim (commercial\/residential subs\/suppliers): post MNLR preliminary notice within 30 days of first furnishing for full protection.",
+        "public_notes": "Iowa liens and notices are not recorded at the county. They are posted to the Mechanics' Notice and Lien Registry run by the Secretary of State, online or by mail (Iowa Code §§ 572.8, 572.34). On residential jobs, a general contractor that uses subcontractors must give the owner the statutory notice and post a notice of commencement within 10 days after work begins, or it loses its lien (Iowa Code §§ 572.13, 572.13A). Each subcontractor and supplier below the general contractor must post a preliminary notice to the registry. A lien reaches only what the owner still owed the general contractor when the notice was posted and received, so post early (Iowa Code § 572.13B). On commercial jobs, anyone furnishing to a subcontractor must send the general contractor a one-time written notice within 30 days after first furnishing (Iowa Code § 572.33). A verified lien statement posted within 90 days after last furnishing gets full protection. A lien can still be posted up to two years and 90 days after last furnishing, but late liens require notice to the owner and reach only the unpaid balance (Iowa Code §§ 572.9-572.11). A suit to enforce must be filed within two years after the 90-day period ends, or within 30 days after an owner's written demand (Iowa Code §§ 572.27, 572.28). On homes, a lien posted in bad faith or with a materially false affidavit costs the claimant the owner's attorney fees plus at least $500, or the lien amount if that is less (Iowa Code § 572.32). How the residential notice limits apply to a given payment history can be fact-specific, so confirm with counsel.",
         "data_source": "csv_v3"
     },
     {
@@ -639,7 +654,7 @@
         "notarization_required": true,
         "verification_type": "sworn",
         "efile_allowed": false,
-        "filing_location": "circuit_clerk",
+        "filing_location": "clerk_of_court",
         "wrongful_lien_penalty": "none",
         "penalty_details": null,
         "lien_anchor_logic": "single",
@@ -653,6 +668,7 @@
         "statute_references": "[\"K.S.A. §§ 60-1102, 60-1103, 60-1103a, 60-1103b, 60-1105\"]",
         "statute_url": "https:\/\/ksrevisor.gov\/statutes\/chapters\/ch60\/060_011_0002.html",
         "notes": "Prime\/original contractor lien statement: file within 4 months after last furnishing labor\/materials; may extend to 5 months on non-residential only by filing a notice of extension within the original 4 months (K.S.A. §60-1102(a),(c)). Subcontractor\/supplier lien statement: file within 3 months after last furnishing; may extend to 5 months on non-residential only by filing a notice of extension within the original 3 months (K.S.A. §60-1103(a)(1),(e)). Residential improvement (1–2 family): subs\/suppliers must have mailed the statutory warning statement (or have owner-signed acknowledgment) to claim a lien (K.S.A. §60-1103a). New residential property: to preserve lien rights after deed passes to a good-faith purchaser for value, claimant must have filed a Notice of Intent to Perform prior to deed recordation (K.S.A. §60-1103b(b)); NOI-to-perform expires after 18 months unless lien filed (K.S.A. §60-1103b(f)). After filing, claimant must serve a copy of lien statement on owner\/recorded equitable interest holder\/party obligated to pay via personal service, restricted mail, or posting (K.S.A. §60-1103(c)). Foreclosure action deadline: within 1 year after filing lien statement (K.S.A. §60-1105(a)). Prelim for certain residential jobs: warning statement\/notice of intent to perform must be served before lien filing; no fixed day-count deadline.",
+        "public_notes": "In Kansas, a mechanic's lien statement is filed with the clerk of the district court in the county where the property is located, not with the register of deeds. It must be a verified statement showing the owner, the claimant's name and address, the property, and an itemized claim (K.S.A. 60-1102). Contractors who deal directly with the owner have 4 months after last furnishing labor or materials. Subcontractors and suppliers working under a contractor have 3 months, must name the contractor, and must serve a copy of the filed statement on the owner (K.S.A. 60-1103). On projects other than one- or two-family residences, either deadline can be stretched to 5 months by filing a notice of extension with the court within the original period and mailing it as the statute requires. On improvements to an existing owner-occupied home, a subcontractor or supplier has a lien only if it mailed the owner the statutory warning statement, unless the claim is $250 or less. Payments the owner made before receiving it are protected (K.S.A. 60-1103a). On a new home, a lien survives a sale to a good-faith buyer only if a notice of intent to perform was filed before the deed was recorded. That notice expires after 18 months unless a lien is filed (K.S.A. 60-1103b). A suit to foreclose must be brought within one year after the lien statement is filed (K.S.A. 60-1105). Whether a supplier who deals directly with an owner gets 3 or 4 months is not settled by the text, so confirm with counsel.",
         "data_source": "csv_v3"
     },
     {
@@ -679,10 +695,10 @@
         "tenant_project_restrictions": "owner_consent_required",
         "notarization_required": true,
         "verification_type": "sworn",
-        "efile_allowed": false,
+        "efile_allowed": true,
         "filing_location": "county_recorder",
-        "wrongful_lien_penalty": "damages",
-        "penalty_details": "KRS §376.220(3): damages + reasonable court costs and attorney fees for filing in excess of amount actually due",
+        "wrongful_lien_penalty": "criminal",
+        "penalty_details": "Filing a lien the filer knows or should have known is forged, groundless, materially misstated or false is a Class D felony for a first offense (KRS 434.155); an unintentional misstatement is an affirmative defense. Separately, a lienholder who fails to release a satisfied lien within 30 days faces per-day damages and fees after written notice (KRS 382.365).",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -694,6 +710,7 @@
         "statute_references": "[\"KRS §§ 376.010, 376.080, 376.090, 376.220\"]",
         "statute_url": "https:\/\/apps.legislature.ky.gov\/law\/statutes\/chapter.aspx?id=39141",
         "notes": "Pre-lien notice for non-direct claimants: notice of intent within 75 days (<$1,000) or 120 days (>$1,000) after last furnishing (KRS 376.010(4)); owner-occupied 1–2 family\/ag\/personal: notice within 75 days after last furnishing (KRS 376.010(5)) in lieu of (4). Tenant work: lessee not owner's agent unless owner designates in writing (KRS 376.010(1)(b)). Lien statement: file within 6 months after ceasing to labor\/furnish; subscribed and sworn (KRS 376.080(1)). Mail copy to owner within 7 days of filing or lien dissolved (KRS 376.080(1)). Enforce within 12 months after filing (KRS 376.090(1)).",
+        "public_notes": "In Kentucky, a subcontractor or supplier who did not contract directly with the owner must send the owner written notice of its intention to hold the property liable, with the amount it will claim. The deadline runs from the last day it furnished labor or materials: within 120 days on claims over $1,000 and within 75 days on smaller claims (KRS 376.010(4)). On an owner-occupied single or double family home, the notice is due within 75 days, and the lien does not cover amounts the owner paid before receiving it (KRS 376.010(5)). Every claimant must file a sworn lien statement with the county clerk where the property is located within 6 months after last furnishing. A copy must be mailed to the owner within 7 days after filing, or the lien is dissolved (KRS 376.080). A suit to enforce must be filed within 12 months after the statement is filed (KRS 376.090). For leases signed after June 29, 2023, when a tenant orders work under an agreement with the landlord, the lien also reaches the landlord's interest unless the lease expressly excludes it (KRS 376.010(3)). Knowingly filing a groundless or false lien is a felony (KRS 434.155). A paid lien must be released within 30 days, and an owner can recover daily damages and fees if it is not (KRS 382.365). The overcharge damages rule in KRS 376.220 applies to liens on public project funds. Lease situations vary, so confirm with counsel when the work is for a tenant.",
         "data_source": "csv_v3"
     },
     {
@@ -720,10 +737,10 @@
         "tenant_project_restrictions": "none",
         "notarization_required": false,
         "verification_type": "none",
-        "efile_allowed": false,
+        "efile_allowed": true,
         "filing_location": "county_recorder",
-        "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "wrongful_lien_penalty": "damages",
+        "penalty_details": "If a statement of claim is improperly filed or the claim is extinguished, the owner can demand a written request for cancellation, due within 10 days. A claimant who fails to deliver it without reasonable cause is liable for the owner's damages and reasonable attorney fees.",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -735,6 +752,7 @@
         "statute_references": "[\"La. R.S. §§ 9:4811, 9:4822, 9:4823, 9:4831, 9:4833\"]",
         "statute_url": "https:\/\/legis.la.gov\/Legis\/Law.aspx?d=108062",
         "notes": "General preservation deadline: statement of claim\/privilege within 60 days after (i) filing of notice of termination or (ii) substantial completion\/abandonment if no termination filed (La. R.S. 9:4822(A)). If a timely notice of contract is filed (La. R.S. 9:4811), claimants under 9:4802 must file within 30 days after termination OR within 6 months after substantial completion\/abandonment if no termination (9:4822(B)); general contractor then has 60 days after termination OR 7 months after substantial completion\/abandonment if no termination (9:4822(C)). Residential (no timely notice of contract): certain claimants may extend to 70 days by giving owner a notice of nonpayment at least 10 days before filing (9:4822(D)) — mapped here as NOI=10 days (conditional). Enforcement: privilege extinguished if suit not filed within 1 year after filing statement (La. R.S. 9:4823(A)(2)); to keep effect against third persons, file notice of pendency within 1 year after statement filing (La. R.S. 9:4833(E)). Notice of contract must be filed before work begins (La. R.S. 9:4811).",
+        "public_notes": "Louisiana's Private Works Act turns on whether a notice of contract was filed. That notice is signed by the owner and general contractor and filed with the parish recorder of mortgages before work begins. On contracts over $100,000, a general contractor that skips it loses its privilege (La. R.S. 9:4811). Statements of claim or privilege are also filed with the parish recorder of mortgages (La. R.S. 9:4831). When no notice of contract was filed, every claimant has 60 days after a notice of termination is filed, or after substantial completion or abandonment if none is filed (La. R.S. 9:4822(A)). When a notice of contract was filed, subcontractors and suppliers have 30 days after a notice of termination or 6 months after substantial completion. The general contractor has 60 days or 7 months (La. R.S. 9:4822(B), (C)). On residential work with no notice of contract, a notice of nonpayment sent at least 10 days before filing extends the deadline to 70 days (La. R.S. 9:4822(D)). If a notice of contract was filed, a seller of materials to a subcontractor must notify the owner and contractor of nonpayment within 75 days after the end of the month of delivery. Equipment lessors should give notice within 30 days of placing equipment on site (La. R.S. 9:4804). A suit against the owner must be filed within one year after the statement is filed, and a notice of pendency of action must be recorded in that year to bind third persons (La. R.S. 9:4823, 9:4833(E)). A claimant who will not cancel an improper statement within 10 days of a request owes damages and attorney fees (La. R.S. 9:4833). These rules were rewritten effective 2020, so confirm with counsel.",
         "data_source": "csv_v3"
     },
     {
@@ -764,7 +782,7 @@
         "efile_allowed": false,
         "filing_location": "register_of_deeds",
         "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "penalty_details": "Errors in the lien statement do not void the lien unless the claimant willfully claims more than is due, in which case the proceedings are invalid. No damages, fee or criminal penalty for an excessive mechanic's lien was found in the sections read.",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -776,6 +794,7 @@
         "statute_references": "[\"10 M.R.S. §§ 3253, 3255\"]",
         "statute_url": "https:\/\/legislature.maine.gov\/statutes\/10\/title10ch603sec0.html",
         "notes": "Lien certificate must be recorded in the registry of deeds within 90 days after the lien claimant last performed labor or furnished materials (10 M.R.S. §3253). A copy of the lien certificate must be given to the owner (and certain others) within 30 days after recording (10 M.R.S. §3253). Enforcement: action to enforce lien must be commenced within 120 days after last labor\/materials (10 M.R.S. §3255). Because enforcement is keyed to last furnishing (not recording date), this sheet sets enforcement_trigger=last_furnish_date.",
+        "public_notes": "Maine gives a lien to those who furnish labor, materials or services for a building on real estate. How it is preserved depends on whether the claimant contracted with the owner. A subcontractor or supplier without a contract with the owner must, within 90 days after last furnishing, record a sworn statement of the amount due with the register of deeds for the county or registry district where the property is located. The same claimant must mail a copy to the owner (10 M.R.S. § 3253(1)). A claimant who contracted directly with the owner does not have to file that statement (10 M.R.S. § 3253(2)). Every claimant must file suit with the Superior Court or District Court clerk in that county within 120 days after last furnishing, subject to the extension in section 3256 (10 M.R.S. § 3255(1)). Within 60 days after filing suit, record notice of the complaint in the registry of deeds. Without it, a good-faith buyer can take the property free of the lien (10 M.R.S. § 3261). If the claimant had no contract with the owner, the lien reaches only what the owner still owed its own contractor when the owner was served or received the claimant's written notice. That limit does not apply to business or commercial work unless the owner lives on the premises (10 M.R.S. § 3255(3)). Small errors in the statement do not defeat the lien, but willfully claiming more than is due does (10 M.R.S. § 3254). Maine has no required preliminary notice. Because the 120-day suit deadline is short, confirm with counsel early.",
         "data_source": "csv_v3"
     },
     {
@@ -794,7 +813,7 @@
         "post_lien_notice_recipients": null,
         "enforcement_calc_method": "months_after_date",
         "enforcement_deadline_days": 0,
-        "enforcement_deadline_months": 12,
+        "enforcement_deadline_months": null,
         "enforcement_deadline_trigger": "lien_recorded_date",
         "owner_occupied_special_rules": true,
         "owner_occupied_restriction_type": "enhanced_notice",
@@ -817,6 +836,7 @@
         "statute_references": "[\"Md. Code, Real Prop. §§ 9-104, 9-105, 9-109\"]",
         "statute_url": "https:\/\/mgaleg.maryland.gov\/mgawebsite\/laws\/StatuteText?article=grp&section=9-105",
         "notes": "Subcontractor notice: subcontractor is not entitled to a lien unless, within 120 days after doing the work or furnishing materials, it gives the owner written notice of intention to claim a lien (Md. Code, Real Prop. §9-104(a)(1)); for owner-occupied single-family residence, lien is barred if owner made full payment to contractor before receiving the notice (§9-104(a)(2)). Petition deadline: file proceedings (petition to establish mechanic’s lien) in the circuit court within 180 days after the work has been finished or materials furnished (Real Prop. §9-105(a)). Enforcement: right to enforce a lien established expires 1 year from the day the petition to establish lien was first filed (Real Prop. §9-109) — this sheet uses enforcement_trigger=lien_recorded_date as proxy for petition filing date.",
+        "public_notes": "Maryland is unusual: a mechanic's lien is established through a lawsuit, not by recording a document. A subcontractor or supplier who did not contract with the owner must first give the owner a written notice of intention to claim a lien within 120 days after doing the work or furnishing the materials. Send it by registered or certified mail, return receipt requested, or deliver it in person. If the owner cannot be reached, it may be posted on the building before a witness (Md. Code, Real Prop. § 9-104). On a single-family home being built on the owner's land for the owner's own residence, a subcontractor has no lien if the owner paid the contractor in full before getting the notice, and on that kind of home the lien is limited to what the owner still owed when notified. Every claimant must then file a petition to establish the lien in the circuit court for the county where the land is located, within 180 days after the work was finished or the materials furnished. The petition must include a supporting affidavit and copies of the key documents (Md. Code, Real Prop. § 9-105). The court reviews the petition and orders the owner to show cause why the lien should not attach. It may require the claimant to post a bond against the owner's damages (Md. Code, Real Prop. § 9-106). The right to enforce an established lien expires one year after the petition was first filed unless a petition to enforce is filed in that case (Md. Code, Real Prop. § 9-109). Attorneys must file electronically through the state court system. Because this is a court proceeding with strict pleading rules, confirm with counsel.",
         "data_source": "csv_v3"
     },
     {
@@ -845,8 +865,8 @@
         "verification_type": "sworn",
         "efile_allowed": false,
         "filing_location": "register_of_deeds",
-        "wrongful_lien_penalty": "damages",
-        "penalty_details": "M.G.L. c.254 §11: lien validity can be affected if claimant wilfully and knowingly claims more than due",
+        "wrongful_lien_penalty": "none",
+        "penalty_details": null,
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -858,6 +878,7 @@
         "statute_references": "[\"M.G.L. c.254 §§ 4, 8, 11 (and §§2A–2B for substantial completion\\\/termination notices)\"]",
         "statute_url": "https:\/\/malegislature.gov\/Laws\/GeneralLaws\/PartIII\/TitleIV\/Chapter254",
         "notes": "Notice of Contract (subs\/suppliers) deadline: file\/record not later than earliest of (i) 60 days after Notice of Substantial Completion (§2A), (ii) 90 days after Notice of Termination (§2B), or (iii) 90 days after last furnishing by GC or those claiming through GC (M.G.L. c.254 §4). Sub-sub \/ lower-tier without direct contract with original contractor: lien amount can be limited unless Notice of Identification is sent to the original contractor within 30 days of commencing performance by certified mail RRR (c.254 §4). Statement of Account deadline: file\/record not later than earliest of (i) 90 days after Notice of Substantial Completion, (ii) 120 days after Notice of Termination, or (iii) 120 days after last furnishing (c.254 §8). Enforcement: civil action to enforce lien must be commenced within 90 days after filing the §8 statement (c.254 §11). Also, an attested copy of the complaint must be recorded in the registry of deeds within 30 days after commencement of the action (c.254 §5\/§11 practice—see guidance); not represented in this sheet.",
+        "public_notes": "Massachusetts liens are a recorded, two-step process at the registry of deeds for the county or district where the land lies. First, record a notice of contract. A general contractor and a subcontractor or supplier face the same outside limit: 90 days after the last day labor or materials were furnished, or sooner if the owner records a notice of substantial completion (60 days) or a notice of termination (90 days) (M.G.L. c. 254 §§ 2, 4). Second, record a statement of account giving \"a just and true account\" of the amount due. It is due by the earliest of 90 days after a notice of substantial completion, 120 days after a notice of termination, or 120 days after last furnishing (§ 8). A lower-tier claimant with no contract with the original contractor should send a notice of identification to the original contractor by certified mail, return receipt requested, within 30 days of starting work, or the lien amount can be limited (§ 4). The lien is dissolved unless a civil action to enforce it is commenced within 90 days after the statement is filed (§ 11). An attested copy of the complaint must also be recorded at the registry within 30 days after the suit starts (§ 5). A mistake in the amount does not void the lien unless the claimant wilfully and knowingly claimed more than is due (§ 11). Registries may ask for an acknowledgment before recording; confirm with counsel and the registry.",
         "data_source": "csv_v3"
     },
     {
@@ -887,7 +908,7 @@
         "efile_allowed": false,
         "filing_location": "register_of_deeds",
         "wrongful_lien_penalty": "damages",
-        "penalty_details": "MCL 570.1118: willfully exaggerating lien amount can create liability for damages\/attorney fees; lien may be forfeited to extent of excess",
+        "penalty_details": "If a person who was not licensed as required records a lien on residential property, the owner can sue to discharge it and recover all resulting damages, actual costs and attorney fees (MCL 570.1114a). A court may also award attorney fees to the owner if the lien claimant's foreclosure action was vexatious (MCL 570.1118(2)). The act has no general penalty for willfully exaggerating a lien; MCL 570.1118 does not say what the current penalty text says.",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -899,6 +920,7 @@
         "statute_references": "[\"MCL 570.1109, 570.1111, 570.1117, 570.1118\"]",
         "statute_url": "https:\/\/www.legislature.mi.gov\/Laws\/MCL?objectName=mcl-Act-497-of-1980",
         "notes": "Notice of Furnishing: subs\/suppliers must provide within 20 days of first furnishing to preserve full lien amount (MCL 570.1109(1)); late notice limits lien to unpaid amounts owed after notice is received (MCL 570.1109(4)). Lien recording: record claim of lien within 90 days after last furnishing (MCL 570.1111(1)). Serve copy of recorded claim of lien on owner within 15 days after recording (MCL 570.1111(4)). Enforcement: foreclose within 1 year after recording (MCL 570.1117(1)). Excessive lien liability: damages\/fees for willful exaggeration; court may reduce\/forfeit excess (MCL 570.1118).",
+        "public_notes": "Michigan's Construction Lien Act (MCL 570.1101 et seq.) runs on notices tied to the owner's notice of commencement. A subcontractor or supplier should serve a notice of furnishing on the designee and the general contractor named in the notice of commencement, personally or by certified mail, within 20 days after first furnishing labor or material (MCL 570.1109(1)). A late notice does not void the lien for later work, but the lien can be reduced by what the owner already paid the contractor on a sworn statement or lien waiver (MCL 570.1109(5)-(6)). A contractor working directly for the owner does not need this notice. The claim of lien must be recorded with the register of deeds in the county where the property sits within 90 days after the claimant's last furnishing (MCL 570.1111(1)). The statutory form is sworn before a notary. Serve a copy on the designee within 15 days after recording (MCL 570.1111(4)). Foreclosure must be brought no later than 1 year after the claim of lien was recorded (MCL 570.1117(1)). On residential work, a lien recorded by someone who was not licensed as required can be discharged, and that person owes the resulting damages, costs and attorney fees (MCL 570.1114a). A court may award attorney fees to the prevailing claimant, or to the owner if the claimant's suit was vexatious (MCL 570.1118(2)). Michigan courts have reduced or voided overstated liens; how that applies to your claim depends on the facts, so confirm with counsel.",
         "data_source": "csv_v3"
     },
     {
@@ -928,7 +950,7 @@
         "efile_allowed": false,
         "filing_location": "county_recorder",
         "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "penalty_details": "No lien exists 'for any amount' if the claimant knowingly demanded more than is justly due in the lien statement, so a knowingly overstated lien is lost entirely. The statute does not award damages or fees.",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -940,6 +962,7 @@
         "statute_references": "[\"Minn. Stat. §§ 514.011, 514.08, 514.12\"]",
         "statute_url": "https:\/\/www.revisor.mn.gov\/statutes\/cite\/514.011",
         "notes": "Direct contractor notice: must include statutory lien notice in written contract; if no written contract, deliver personally or by certified mail within 10 days after work is agreed upon (Minn. Stat. §514.011 subd. 1). Subcontractor\/supplier notice: must be given personally or by certified mail within 45 days after first furnishing (Minn. Stat. §514.011 subd. 2), subject to statutory exceptions (e.g., certain >4-unit residential and certain >5,000 sq ft nonresidential improvements). Lien statement: lien ceases 120 days after last work\/materials unless within that period the lien statement is filed and a copy served personally or by certified mail on the owner\/agent or person who contracted (Minn. Stat. §514.08 subd. 1). Statement must be verified by oath and include first\/last furnishing dates and acknowledgement of service and, if applicable, §514.011 notice (Minn. Stat. §514.08 subd. 2). Enforcement: must commence action (complaint\/answer) within 1 year after the date of the last item stated in the recorded lien statement; lis pendens absence after that year is conclusive as to bona fide purchasers (Minn. Stat. §514.12 subd. 3).",
+        "public_notes": "Minnesota requires notice from almost everyone on the job. A contractor who deals directly with the owner must put the statutory lien notice in the written contract; if there is no written contract, the notice must be delivered personally or by certified mail within 10 days after the work is agreed upon (Minn. Stat. § 514.011, subd. 1). A subcontractor or supplier must give the owner written notice personally or by certified mail no later than 45 days after first furnishing labor, skill or materials (§ 514.011, subd. 2). That notice is not required on nonresidential improvements of more than 5,000 usable square feet (subd. 4c); other exceptions exist, so confirm with counsel. The lien ends 120 days after the last work or materials unless, within that period, a lien statement is filed for record with the county recorder (or the registrar of titles for registered land) and served on the owner (§ 514.08, subd. 1). The statement must be verified by oath. To enforce, the claimant must file a complaint or answer with the court administrator within one year after the last item of the claim shown in the recorded statement (§ 514.12, subd. 3). Be careful with the amount: no lien exists \"for any amount\" if the claimant knowingly demanded more than is justly due (§ 514.74).",
         "data_source": "csv_v3"
     },
     {
@@ -968,8 +991,8 @@
         "verification_type": "sworn",
         "efile_allowed": false,
         "filing_location": "circuit_clerk",
-        "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "wrongful_lien_penalty": "treble_damages",
+        "penalty_details": "A person who 'falsely and knowingly' files a claim of lien without just cause owes every injured party a penalty of three times the full amount claimed, sued for within 180 days of the filing. An affected party can also move on 7 days' notice to expunge the lien.",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -978,9 +1001,10 @@
         "supplier_owner_has_lien_rights": true,
         "supplier_gc_has_lien_rights": true,
         "supplier_sub_has_lien_rights": true,
-        "statute_references": "[\"Miss. Code Ann. §§ 85-7-131, 85-7-141, 85-7-181\"]",
+        "statute_references": "[\"Miss. Code Ann. §§ 85-7-405, 85-7-407, 85-7-409, 85-7-421, 85-7-423, 85-7-429\"]",
         "statute_url": "https:\/\/law.justia.com\/codes\/mississippi\/title-85\/chapter-7\/subchapter-3\/",
         "notes": "Lien filing deadline: file 'claim of lien' in the office of the clerk of the chancery court (chancery clerk) within 90 days after last labor\/materials (Miss. Code Ann. §85-7-131). Enforcement: suit to enforce must be commenced within 180 days after filing the lien (Miss. Code Ann. §85-7-141). Residential notice to owner requirements exist for claimants not in privity with owner and can impact lien rights; this sheet marks a 30-day prelim as a proxy, but Mississippi notice rules vary by residential\/commercial and by claimant type (see §85-7-181 and related sections).",
+        "public_notes": "Mississippi rewrote its construction lien law in 2014; the rules now sit in Miss. Code Ann. §§ 85-7-401 to 85-7-433. On projects other than single-family homes, anyone without a contract with the prime contractor, such as a second-tier subcontractor or a supplier to a subcontractor, must give the contractor written notice within 30 days after first delivering labor, services or materials, or the lien right is forfeited (§ 85-7-407). On single-family residential work, a subcontractor or supplier should give the owner a written pre-lien notice at least 10 days before filing a lien; without it, the owner's payments to the contractor are a defense (§ 85-7-409). The claim of lien is filed with the chancery clerk in the county where the property sits within 90 days after the claimant's last work or materials (§ 85-7-405). It must include a bold statement that it expires in 180 days and a notice of the owner's right to contest; leaving either out invalidates the lien. Mail a copy to the owner within 2 business days after filing. A payment action must be filed within 180 days after the lien is filed, or within 90 days after the owner files a notice of contest, whichever comes first (§§ 85-7-421, 85-7-423). Filing a lien \"falsely and knowingly\" without just cause exposes the filer to a penalty of three times the amount claimed, and the owner can ask a court to expunge it (§ 85-7-429).",
         "data_source": "csv_v3"
     },
     {
@@ -1010,7 +1034,7 @@
         "efile_allowed": false,
         "filing_location": "circuit_clerk",
         "wrongful_lien_penalty": "criminal",
-        "penalty_details": "RSMo §429.014 lien fraud: class D felony if >$500, else class A misdemeanor; §429.012(3) class B misdemeanor if original contractor fails notice with intent to defraud",
+        "penalty_details": "Missouri's criminal penalties target contractor conduct around liens rather than the act of filing an overstated lien: an original contractor who skips the owner notice with intent to defraud commits a class B misdemeanor, a contractor who knowingly issues a fraudulent lien waiver or false affidavit commits a class D felony (§ 429.012.3), and a contractor paid for work who fails to pay subs or suppliers with intent to defraud commits lien fraud (§ 429.014).",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -1022,6 +1046,7 @@
         "statute_references": "[\"RSMo §§ 429.012, 429.013, 429.080, 429.100, 429.170, 429.014, 429.016\"]",
         "statute_url": "https:\/\/revisor.mo.gov\/main\/OneChapterRng.aspx?tb1=429.010%20to%20429.360",
         "notes": "Original contractor must give 'Notice to Owner' disclosure prior to receiving any payment (may be given at contract, delivery, commencement, or with first invoice); this is a condition precedent to original contractor lien rights (RSMo §429.012). Non-original contractors must give 10 days' notice before filing lien (RSMo §429.100). Lien statement deadline: file verified 'just and true account' with circuit clerk within 6 months after indebtedness accrued; equipment lessor has 60-day deadline and 15-business-day owner notice for commercial equipment liens (RSMo §§429.080, 429.010(2)). Enforcement: commence action within 6 months after filing lien and prosecute without unnecessary delay (RSMo §429.170). Owner-occupied residential (repair\/remodel\/addition, <=4 units): subs\/suppliers must have owner-signed 'Consent of Owner' and attach it to lien filing; full payment to contractor is defense absent consent (RSMo §429.013). Residential sale 'notice of intended sale' \/ claimant 'notice of rights' (not less than 5 days before closing) can apply in certain sale situations; does not extend lien deadline (RSMo §429.016).",
+        "public_notes": "Missouri lien rights start with paperwork from the original contractor. A contractor who deals directly with the owner must give the statutory notice before receiving any payment, either at contract signing, at material delivery, when work starts, or with the first invoice (RSMo § 429.012). This is a condition of the contractor's lien. It does not apply to new homes whose buyer has lien coverage from a Missouri title insurer. Everyone other than the original contractor must give the owner at least 10 days' notice before filing a lien, stating the amount and who owes it (§ 429.100). The lien statement goes to the clerk of the circuit court in the county where the property is located within six months after the debt accrued, which in practice means the last day of furnishing (§ 429.080). Equipment lessors have only 60 days after the last equipment leaves the site. The statement must be verified by oath and include a \"just and true account\" of the amount due after all credits; a knowingly inflated statement can sink the lien, so confirm with counsel. A suit to enforce must be commenced within six months after the lien is filed (§ 429.170). Owner-occupied residential remodels may carry extra owner-consent rules for subcontractors and suppliers; confirm with counsel before relying on a lien there. Contractors face criminal penalties for skipping the owner notice with intent to defraud, issuing false lien waivers or affidavits, or keeping payment meant for subs (§§ 429.012, 429.014).",
         "data_source": "csv_v3"
     },
     {
@@ -1063,6 +1088,7 @@
         "statute_references": "[\"MCA §§ 71-3-531, 71-3-534, 71-3-535, 71-3-533, 71-3-562\"]",
         "statute_url": "https:\/\/archive.legmt.gov\/bills\/mca\/title_0710\/chapter_0030\/part_0050\/sections_index.html",
         "notes": "Prelim (Notice of Right to Claim Lien) required for claimants without direct contract with owner; generally due within 20 days of first furnishing (MCA 71-3-531). If notice is late, lien enforceable only for services\/materials furnished within 45 days before notice is given (MCA 71-3-531). A copy of the notice must be filed with county clerk\/recorder within 5 business days after giving it to the contracting owner (MCA 71-3-531(6)(a)). Lien filing deadline: file lien within 90 days after final furnishing OR within 90 days after owner files a Notice of Completion (MCA 71-3-535(1)). Lien must be served on each owner of record (personal service or certified mail RRR) and certification of service must accompany filing (MCA 71-3-534(2); 71-3-535(2)(b)). Enforcement: action must be commenced within 2 years from filing of lien (MCA 71-3-562).",
+        "public_notes": "Montana's construction lien law is in MCA 71-3-521 through 71-3-564. A subcontractor or supplier who does not deal directly with the owner must give the owner a notice of the right to claim a lien within 20 days after first furnishing services or materials (MCA 71-3-531). If notice is late, the lien covers only what was furnished in the 20 days before the notice. On lender-financed work other than an owner-occupied home, the window is 45 days. A copy of the notice must be filed with the county clerk and recorder within 5 business days after it is given. The notice is not required from the original contractor, from wage earners, on dwellings for five or more families, or on improvements that are partly or wholly commercial. The lien itself must be filed with the county clerk and recorder within 90 days after the claimant's final furnishing, or within 90 days after the owner files a notice of completion (MCA 71-3-535). Serve each owner of record personally or by certified mail first, and certify that service when filing. The statute lets the clerk and recorder accept the lien electronically. An action to enforce must be commenced within 2 years after the lien is filed (MCA 71-3-562). Once paid, the claimant must acknowledge satisfaction or be liable for the resulting injury and costs (MCA 71-3-537). Counties may require a notarized signature even though the statute does not; confirm with counsel or the county.",
         "data_source": "csv_v3"
     },
     {
@@ -1091,8 +1117,8 @@
         "verification_type": "sworn",
         "efile_allowed": false,
         "filing_location": "register_of_deeds",
-        "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "wrongful_lien_penalty": "damages",
+        "penalty_details": "If a claimant in bad faith records a lien, overstates the amount, or refuses to release it, the court may declare the lien void and award damages to the owner or anyone injured, including the cost of correcting the record and reasonable attorney's fees.",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -1101,9 +1127,10 @@
         "supplier_owner_has_lien_rights": true,
         "supplier_gc_has_lien_rights": true,
         "supplier_sub_has_lien_rights": true,
-        "statute_references": "[\"Neb. Rev. Stat. §§ 52-103, 52-109, 52-118\"]",
+        "statute_references": "[\"Neb. Rev. Stat. §§ 52-125 to 52-159, including §§ 52-135, 52-137, 52-140, 52-147, 52-157\"]",
         "statute_url": "https:\/\/nebraskalegislature.gov\/laws\/browse-chapters.php?chapter=52",
         "notes": "Lien statement must be filed within 120 days after the claimant ceased furnishing labor or materials (Neb. Rev. Stat. §52-103). Serve copy of lien statement on the owner within 10 days after filing (Neb. Rev. Stat. §52-109). Enforcement: commence action to enforce within 2 years after filing the lien (Neb. Rev. Stat. §52-118).",
+        "public_notes": "Nebraska's Construction Lien Act is Neb. Rev. Stat. §§ 52-125 to 52-159. Most claimants do not need a preliminary notice. On residential work of up to four units where the owner is a \"protected party\", generally someone who lives or plans to live there (§ 52-129), a claimant may give the owner a written notice of the right to assert a lien, and the act sets out what it must say (§ 52-135). Against such an owner, a subcontractor's or supplier's lien is capped by what remains unpaid on the prime contract when the owner receives the notice, so sending it early matters (§ 52-136). A lien does not attach unless it is recorded with the register of deeds for the county where the land sits no later than 120 days after the claimant's final furnishing of services or materials (§§ 52-127, 52-137). On those protected-party jobs, send the owner a copy of the recorded lien within 10 days after recording (§ 52-135). The lien stays enforceable for 2 years after recording (§ 52-140). If the owner or another interested party sends a written demand to sue, the claimant has 30 days after receiving it to start a suit or record an affidavit that the contract price is not yet due, or the lien lapses. A claimant who records a lien in bad faith, overstates the amount, or refuses to release it risks having the lien declared void and paying damages, including the cost of correcting the record and attorney's fees (§ 52-157). Registers of deeds may require an acknowledged signature; confirm with the county.",
         "data_source": "csv_v3"
     },
     {
@@ -1133,7 +1160,7 @@
         "efile_allowed": false,
         "filing_location": "county_recorder",
         "wrongful_lien_penalty": "criminal",
-        "penalty_details": "NRS 108.226(4): knowingly false statement re lien recording is gross misdemeanor; fine $5,000-$10,000",
+        "penalty_details": "Knowingly making a false statement in or relating to the recording of a notice of lien is a gross misdemeanor with a fine of $5,000 to $10,000 (NRS 108.226(4)). An owner can also move to release a frivolous lien or reduce an excessive one; a frivolous lien made without reasonable cause is released with costs and attorney's fees awarded to the owner (NRS 108.2275).",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -1145,6 +1172,7 @@
         "statute_references": "[\"NRS §§ 108.226, 108.227, 108.228, 108.233, 108.245\"]",
         "statute_url": "https:\/\/www.leg.state.nv.us\/nrs\/nrs-108.html",
         "notes": "Prelim (Notice of Right to Lien): required for lien claimants other than laborers and those contracting directly with owner; deliver to owner by personal service or certified mail; subcontractor\/supplier must also send a copy to prime contractor (info only) (NRS 108.245(1),(5)). If notice is served more than 31 days after first furnishing, lien covers only work\/materials within 31 days before notice + thereafter (NRS 108.245(6)). Lien recording: record notice of lien within 90 days after latest of completion \/ last delivery \/ last work, or within 40 days after valid Notice of Completion recorded and served (NRS 108.226(1); 108.228). Residential\/multifamily\/single-family: must serve 15-day Notice of Intent to Lien on owner and reputed prime contractor before recording; extends recording deadline by 15 days (NRS 108.226(6)). Serve copy of recorded lien on owner within 30 days after recording (NRS 108.227). Enforcement: lien lasts 6 months after recording unless action commenced (NRS 108.233).",
+        "public_notes": "Nevada's mechanic's lien statutes are NRS 108.221 to 108.246. A subcontractor or supplier who does not contract directly with the owner should deliver a notice of right to lien to the owner in person or by certified mail (NRS 108.245). The notice may be given any time after first furnishing, but the lien covers only work and materials from the 31 days before the notice onward, so send it within 31 days of starting. On single-family or multifamily residential work, every claimant except laborers must serve a 15-day notice of intent to lien on the owner and the reputed prime contractor before recording, and doing so adds 15 days to the recording deadline (NRS 108.226(6)). This step does not apply to nonresidential projects. The notice of lien is recorded with the county recorder within 90 days after the latest of completion of the project, the claimant's last delivery, or the claimant's last work, or within 40 days after a properly recorded and served notice of completion (NRS 108.226(1)). It must be verified by oath. Serve a copy on the owner within 30 days after recording (NRS 108.227). The lien expires 6 months after recording unless a suit to enforce is commenced, or a recorded written extension is signed (NRS 108.233). Knowingly false statements in a lien are a gross misdemeanor with a fine of $5,000 to $10,000 (NRS 108.226(4)). A court can release a frivolous lien and award the owner costs and attorney's fees (NRS 108.2275).",
         "data_source": "csv_v3"
     },
     {
@@ -1162,9 +1190,9 @@
         "post_lien_notice_days": null,
         "post_lien_notice_recipients": null,
         "enforcement_calc_method": "days_after_date",
-        "enforcement_deadline_days": 0,
+        "enforcement_deadline_days": 120,
         "enforcement_deadline_months": null,
-        "enforcement_deadline_trigger": "lien_recorded_date",
+        "enforcement_deadline_trigger": "last_furnish_date",
         "owner_occupied_special_rules": false,
         "owner_occupied_restriction_type": "none",
         "tenant_project_lien_allowed": true,
@@ -1186,6 +1214,7 @@
         "statute_references": "[\"RSA 447:5, 447:6, 447:8, 447:9, 447:10\"]",
         "statute_url": "https:\/\/law.justia.com\/codes\/new-hampshire\/title-xli\/chapter-447\/",
         "notes": "Subcontractor\/supplier notice: for those contracting with a GC\/sub, written notice to owner\/person in charge is required to claim a lien before performing\/furnishing (RSA 447:5); notice may also be given after, but lien is limited to amounts then due or thereafter due to the contractor\/agent\/sub (RSA 447:6). After giving notice, claimant must provide a written accounting as often as once in 30 days (RSA 447:8). Lien duration: lien continues for 120 days after services\/materials are furnished (RSA 447:9). Perfection: lien is secured by court attachment of the property at any time while the lien continues (RSA 447:10); attachment is then recorded at the registry of deeds. Pre-lien notice has no strict statutory day-count deadline; notice triggers owner's duty to withhold and 30-day accountings may apply.",
+        "public_notes": "New Hampshire's mechanic's lien works differently from most states. Under RSA ch. 447, a contractor working directly for the owner gets a lien by statute, and so does a subcontractor or supplier hired by a contractor, if it gives the owner or the person in charge of the property written notice that it will claim a lien \"before performing the labor or furnishing the material\" (RSA 447:5). Notice can be given later, but then the lien covers only the amount then due, or later due, to the contractor who hired you (RSA 447:6). After giving notice, send the owner a written account of the labor and materials at least once every 30 days so the owner can hold back enough to pay you (RSA 447:8). The lien lasts 120 days after the services are performed or the materials are furnished (RSA 447:9). There is no lien form to record first. Instead, within those 120 days you must secure the lien by a court attachment of the property (RSA 447:10), which is then recorded at the registry of deeds. In practice that means starting a lawsuit and asking the court to approve the attachment, so the lien deadline and the enforcement deadline are the same. Which court to use and the attachment procedure depend on the claim, so confirm with counsel well before day 120. Chapter 447 has no specific penalty for an excessive lien claim.",
         "data_source": "csv_v3"
     },
     {
@@ -1213,9 +1242,9 @@
         "notarization_required": true,
         "verification_type": "sworn",
         "efile_allowed": false,
-        "filing_location": "county_recorder",
-        "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "filing_location": "county_clerk",
+        "wrongful_lien_penalty": "damages",
+        "penalty_details": "If a lien claim is without basis (frivolous, false, unsupported by a contract, or made in bad faith), willfully overstated, or not lodged in the required form, manner or time, the claimant forfeits the lien rights for the face amount and must pay the owner's or contractor's court costs and attorney's fees, and the court enters judgment for damages to anyone adversely affected.",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -1227,6 +1256,7 @@
         "statute_references": "[\"N.J.S.A. §§ 2A:44A-6, 2A:44A-7, 2A:44A-14, 2A:44A-20, 2A:44A-21\"]",
         "statute_url": "https:\/\/law.justia.com\/codes\/new-jersey\/title-2a\/section-2a-44a-6\/",
         "notes": "Non-residential: lien claim must be lodged for record within 90 days after last work\/materials for which payment is claimed (N.J.S.A. 2A:44A-6(a)(2)). Residential construction contract: lien claim must be lodged not later than 10 days after receipt of arbitrator's determination and within 120 days after last work\/materials (N.J.S.A. 2A:44A-21(b)(8); see also 2A:44A-6). Residential prerequisite: claimant must file a Notice of Unpaid Balance and Right to File Lien (NUB) within 60 days after last work\/materials and demand arbitration; NUB is effective for 120 days on residential claims (N.J.S.A. 2A:44A-20; 2A:44A-21). Service: within 10 days after lodging for record, serve copy on owner and (if any) contractor\/subcontractor against whom claim asserted (N.J.S.A. 2A:44A-7(a)). Enforcement: commence action in Superior Court within 1 year of last work\/materials OR within 30 days after written demand (N.J.S.A. 2A:44A-14(a)).",
+        "public_notes": "New Jersey's Construction Lien Law (N.J.S.A. 2A:44A-1 et seq.) sets different tracks for commercial and residential work. On a commercial project there is no required preliminary notice; the lien claim must be lodged for record with the county clerk within 90 days after the last date work, services, material or equipment were provided (2A:44A-6). On a residential project, the claimant must first lodge a Notice of Unpaid Balance and Right to File Lien with the county clerk within 60 days after last furnishing, and serve a demand for arbitration within 10 days after that (2A:44A-21). The arbitrator rules on whether a lien may be filed and for how much. The lien claim itself is then due within 10 days after the claimant receives that decision, and never later than 120 days after last furnishing (2A:44A-6, 2A:44A-21). Every lien claim must be signed, acknowledged and verified by oath. Suit to enforce must be filed within 1 year after the last work or materials, or within 30 days after receiving a written demand to sue, whichever comes first (2A:44A-14). Be precise about the amount. A claim that is without basis or \"willfully overstated\", or that is filed late or in the wrong form, is forfeited, and the claimant must pay the other side's court costs and attorney's fees, plus damages (2A:44A-15). The residential steps have short, linked deadlines, so confirm with counsel early.",
         "data_source": "csv_v3"
     },
     {
@@ -1256,7 +1286,7 @@
         "efile_allowed": false,
         "filing_location": "county_recorder",
         "wrongful_lien_penalty": "none",
-        "penalty_details": "Failure to send copy of filed claim within 15 days may preclude recovery of interest, attorney fees, or costs (NMSA 48-2-6(B)).",
+        "penalty_details": null,
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -1268,6 +1298,7 @@
         "statute_references": "[\"NMSA 1978 §§ 48-2-2.1, 48-2-6, 48-2-10\"]",
         "statute_url": "https:\/\/law.justia.com\/codes\/new-mexico\/chapter-48\/article-2\/",
         "notes": "Preliminary notice threshold: liens > $5,000 generally require written notice of right to claim lien within 60 days after initially furnishing, delivered to owner or original contractor (NMSA 48-2-2.1(B)); late notice limits lien to work\/materials furnished on\/after 30 days before notice (48-2-2.1(E)). Case annotations indicate original contractor and first-level subcontractors not required to give this notice; third-level and higher must (Wilgert Enters., Inc. v. Broadway Vista Partners). Lien filing deadline: original contractor within 120 days after completion of contract; all other persons within 90 days after completion of the building\/improvement\/repair (NMSA 48-2-6(A)). Post-filing notice: mail\/email\/certified RRR\/hand deliver copy of filed claim to owner within 15 days; failure may preclude interest\/fees\/costs (NMSA 48-2-6(B)). Enforcement: lien not valid longer than 2 years after claim filed unless suit or binding arbitration commenced (NMSA 48-2-10).",
+        "public_notes": "New Mexico lien law is in Chapter 48, Article 2 of the statutes. A claimant who did not contract with the owner or the original contractor, and whose lien will exceed $5,000, must give written notice of the right to claim a lien within 60 days after first furnishing work or materials (NMSA 48-2-2.1). The notice goes to the owner or the original contractor by certified mail, return receipt requested, fax with acknowledgment, or personal delivery. Late notice limits the lien to work furnished on or after 30 days before the notice was given. The notice rule does not apply to residential property with four or fewer dwelling units.\n\nAn original contractor must file its claim within 120 days after completing its contract. Everyone else must file within 90 days after the building or improvement is completed (NMSA 48-2-6). The claim is filed with the county clerk where the property sits and must be verified by oath. Since June 2023, the claimant must mail, email, send by certified mail, or hand deliver a copy of the filed claim to the owner within 15 days of filing. Skipping this step does not void the lien, but it may cost the claimant interest, attorney fees, and costs (NMSA 48-2-6(B)).\n\nA lien expires 2 years after the claim is filed unless a court action or binding arbitration to enforce it is started within that time (NMSA 48-2-10). The prevailing party in a lien dispute may recover reasonable attorney fees and costs (NMSA 48-2-14); how courts apply that to owners who defeat a lien varies, so confirm with counsel.",
         "data_source": "csv_v3"
     },
     {
@@ -1295,9 +1326,9 @@
         "notarization_required": true,
         "verification_type": "sworn",
         "efile_allowed": false,
-        "filing_location": "county_recorder",
+        "filing_location": "county_clerk",
         "wrongful_lien_penalty": "damages",
-        "penalty_details": "NY Lien Law §§39 & 39-a: willful exaggeration can forfeit lien and create liability for damages incl. attorney fees",
+        "penalty_details": "A lien willfully exaggerated is void (§ 39). The lienor is then liable to the owner or contractor for the bond premium or interest on money deposited to discharge the lien, reasonable attorney fees to secure the discharge, and the amount by which the lien exceeded what was actually owed (§ 39-a).",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -1309,6 +1340,7 @@
         "statute_references": "[\"NY Lien Law §§ 10, 11, 17, 39, 39-a\"]",
         "statute_url": "https:\/\/www.nysenate.gov\/legislation\/laws\/LIE",
         "notes": "Private improvement lien deadline: 4 months after last work\/materials for single-family dwelling; 8 months for other private improvements (NY Lien Law §10). Serve copy on owner within 30 days after filing (NY Lien Law §11). Lien expires 1 year after filing unless foreclosure action commenced or extended (NY Lien Law §17). Willful exaggeration can forfeit lien and create damages\/fee liability (NY Lien Law §§39, 39-a).",
+        "public_notes": "New York does not require a preliminary notice before filing a mechanic's lien on a private improvement. The notice of lien must be filed in the county clerk's office where the property is located, and in each county if the property crosses county lines (N.Y. Lien Law § 10). It must be verified by the lienor or an agent.\n\nThe filing deadline runs from completion of the contract or the last work or materials furnished. It is 4 months for a single-family dwelling and 8 months for other private improvements (§ 10). A separate 90-day period applies to retainage claims.\n\nA copy of the notice must be served on the owner from 5 days before to 30 days after filing, by personal delivery, certified or registered mail, or the other methods § 11 allows. Proof of service must be filed with the county clerk within 35 days after the lien is filed, or the lien ends (§ 11).\n\nThe lien lasts 1 year after filing. To keep it, the lienor must start a foreclosure action and file a notice of pendency within that year, or extend the lien (§ 17). On most projects one extension can be filed with the clerk; liens on single-family dwellings can be extended only by court order. Extension rules are technical, so confirm with counsel before relying on one.\n\nA lien that is willfully exaggerated is void (§ 39). The lienor can then owe the owner or contractor the cost of discharging the lien, reasonable attorney fees, and the amount of the exaggeration (§ 39-a).",
         "data_source": "csv_v3"
     },
     {
@@ -1336,9 +1368,9 @@
         "notarization_required": false,
         "verification_type": "verified",
         "efile_allowed": false,
-        "filing_location": "Clerk of Superior Court (county where property is located)",
-        "wrongful_lien_penalty": "fees",
-        "penalty_details": "Possible attorneys' fees for prevailing party in lien actions (G.S. 44A-35).",
+        "filing_location": "superior_court_clerk",
+        "wrongful_lien_penalty": "criminal",
+        "penalty_details": "Knowingly filing a claim of lien that is not authorized by statute, or filing one to hinder, harass, or wrongfully interfere with someone, is a Class I felony (§ 44A-12.1). In lien suits the court may also award reasonable attorney fees to the prevailing party (§ 44A-35, amended 2022).",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -1350,6 +1382,7 @@
         "statute_references": "[\"N.C. Gen. Stat. §§ 44A-11.2, 44A-12, 44A-14, 44A-35\"]",
         "statute_url": "https:\/\/www.ncleg.gov\/EnactedLegislation\/Statutes\/HTML\/ByChapter\/Chapter_44A.html",
         "notes": "Notice to Lien Agent generally required on projects with a designated lien agent; best practice to send within 15 days of first furnishing for full protection. Claim of Lien on Real Property must be filed and served within 120 days after last furnishing; enforcement action\/lis pendens within 180 days of last furnishing.",
+        "public_notes": "North Carolina's lien law is in Chapter 44A, Article 2. On many private projects the owner must name a lien agent: generally where the improvement costs $40,000 or more, except work on an existing single-family home the owner lives in (G.S. 44A-11.1). On those projects, a claimant should get a Notice to Lien Agent to the lien agent within 15 days after first furnishing labor or materials (G.S. 44A-11.2). A later notice still works only if it arrives before a sale of the property to a good-faith buyer is recorded, and the lien can lose priority to loans recorded before the notice. Whether a contractor hired directly by the owner also needs to send this notice is debated in secondary sources, so confirm with counsel; most practitioners send it.\n\nA claim of lien must be filed in the office of the clerk of superior court in each county where the property sits, no later than 120 days after the claimant's last furnishing (G.S. 44A-12). It must be served as G.S. 44A-11 requires. It cannot be amended, only cancelled and refiled within the 120 days.\n\nThe suit to enforce the lien must be filed within 180 days after last furnishing (G.S. 44A-13), which can leave as little as 60 days after the lien is filed.\n\nKnowingly filing a lien that no statute authorizes, or filing one to harass or wrongfully interfere with someone, is a Class I felony (G.S. 44A-12.1). The court may award reasonable attorney fees to the prevailing party in a lien suit (G.S. 44A-35).",
         "data_source": "csv_v3"
     },
     {
@@ -1379,7 +1412,7 @@
         "efile_allowed": false,
         "filing_location": "county_recorder",
         "wrongful_lien_penalty": "fees",
-        "penalty_details": "N.D.C.C. §35-27-24.1: owner awarded full costs and reasonable attorney fees if owner successfully contests lien validity\/accuracy",
+        "penalty_details": "An owner who successfully contests the validity or accuracy of a construction lien in district court must be awarded all costs and reasonable attorney fees (§ 35-27-24.1). No lien exists for any amount if the claimant knowingly demanded more than is justly due (§ 35-27-16). The former criminal penalty section (§ 35-27-26) was repealed in 2009.",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -1391,6 +1424,7 @@
         "statute_references": "[\"N.D.C.C. §§ 35-27-02, 35-27-13, 35-27-24, 35-27-24.1, 35-27-25\"]",
         "statute_url": "https:\/\/ndlegis.gov\/cencode\/t35c27.pdf",
         "notes": "Pre-lien notice: send owner certified-mail notice at least 10 days before recording the lien (N.D.C.C. §35-27-02). Record lien within 90 days after contribution is done; lien statement includes first\/last contribution dates; absolute cap: not more than 3 years after first material is furnished (N.D.C.C. §35-27-13). Pre-suit enforcement notice: 10 days (personal) or 20 days (registered mail) before suit (N.D.C.C. §35-27-24). Owner demand can accelerate: suit + lis pendens within 30 days or lien forfeited; also suit+lis pendens must occur within 3 years after lien recording (N.D.C.C. §35-27-25). Tenant work: no lien unless owner has notice and fails to object (N.D.C.C. §35-27-07(3)).",
+        "public_notes": "North Dakota construction liens are governed by Chapter 35-27 of the Century Code. No preliminary notice is required at the start of a job. Before recording a lien, the claimant must send the owner written notice that a lien will be claimed, by certified mail, at least 10 days before recording (N.D.C.C. 35-27-02). The statute places this sentence in the part of the section about claimants hired through a contractor or subcontractor, but sending it in every case is the safer course; confirm with counsel if you contracted directly with the owner.\n\nThe lien is recorded with the county recorder where the property sits, within 90 days after the claimant's work or materials are complete (35-27-13). It must state the amount due, the dates of first and last contribution, and who hired the claimant. A late lien is not void, but it loses to good-faith buyers and lenders whose rights arise first and to payments the owner already made, and no lien may be filed more than 3 years after first furnishing (35-27-14).\n\nBefore suing, the claimant must give the owner written notice of intent to enforce at least 10 days ahead by personal service or 20 days ahead by registered mail (35-27-24). Suit must be started and a lis pendens recorded within 3 years after the lien is recorded. If the owner delivers and records a written demand, the claimant has only 30 days (35-27-25).\n\nA claimant who knowingly demands more than is due loses the lien (35-27-16). An owner who successfully contests a lien's validity or accuracy in district court must be awarded costs and reasonable attorney fees (35-27-24.1).",
         "data_source": "csv_v3"
     },
     {
@@ -1432,6 +1466,7 @@
         "statute_references": "[\"Ohio Rev. Code §§ 1311.05, 1311.06, 1311.13, 1311.04\"]",
         "statute_url": "https:\/\/codes.ohio.gov\/ohio-revised-code\/chapter-1311",
         "notes": "Notice of Furnishing: for claimants without direct contract, when a Notice of Commencement is filed, serve Notice of Furnishing not later than 21 days after first furnishing; late notice limits lien to work\/materials furnished within 21 days before service and thereafter (Ohio Rev. Code §1311.05). Lien filing (private): affidavit for mechanic’s lien generally within 75 days after last furnishing; for work on a one- or two-family dwelling, within 60 days after last furnishing (Ohio Rev. Code §1311.06(B)). Lien duration\/enforcement: lien continues for 6 years from filing unless enforced\/otherwise discharged (Ohio Rev. Code §1311.13). Tenant improvements: liens generally attach only if owner is deemed to have consented\/authorized; treat as owner_consent_required in this sheet (see generally §1311.04).",
+        "public_notes": "Ohio mechanics liens are governed by Chapter 1311 of the Revised Code. When the owner records a notice of commencement, subcontractors and suppliers who are not hired directly by the owner must serve a notice of furnishing within 21 days after they first furnish labor or materials (R.C. 1311.05). Late notice protects only work furnished in the 21 days before service and afterward. The notice is not required on improvements made under a home construction contract, and some one- and two-family projects with multiple original contractors are also exempt; confirm with counsel on residential jobs.\n\nThe lien affidavit is filed with the county recorder where the property is located. The deadline runs from the last day labor or materials were furnished: 60 days for a one- or two-family dwelling or a residential condominium unit, 75 days for most other projects, and 120 days for oil and gas well work (R.C. 1311.06). The affidavit is sworn before a notary or other officer who can give oaths. Within 30 days after filing, the claimant must serve a copy on the owner; if that cannot be done, the copy may be posted on the property within the next 10 days (R.C. 1311.07).\n\nA lien lasts 6 years after the affidavit is filed, and longer if a suit to enforce it is pending (R.C. 1311.13). An owner can shorten this by serving a notice to commence suit; the lienholder then has 60 days to sue or the lien is void (R.C. 1311.11).\n\nChapter 1311 has no general penalty for an inflated lien, but owners may bring common-law claims. On home construction work, failing to release a paid lien within 30 days after written notice can make the lienholder liable for damages and attorney fees.",
         "data_source": "csv_v3"
     },
     {
@@ -1460,8 +1495,8 @@
         "verification_type": "sworn",
         "efile_allowed": false,
         "filing_location": "county_recorder",
-        "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "wrongful_lien_penalty": "criminal",
+        "penalty_details": "A claimant who falsifies the notarized pre-lien compliance affidavit filed with the lien commits a misdemeanor (fine up to $5,000, up to 30 days in jail) (§ 142.6(C)); an original contractor who falsifies a lien statement to the owner of a dwelling commits a felony (§ 142.4). In a lien enforcement action the party who wins judgment recovers a reasonable attorney fee (§ 176).",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -1473,6 +1508,7 @@
         "statute_references": "[\"42 O.S. §§ 142, 143.1, 143.2, 172\"]",
         "statute_url": "https:\/\/law.justia.com\/codes\/oklahoma\/title-42\/section-42-142\/",
         "notes": "Pre-lien notice: for claimants not in privity with owner (e.g., subs\/suppliers), a pre-lien notice must be sent to the owner and original contractor within 75 days after last furnishing (for commercial\/most projects) to preserve lien rights (42 O.S. §143.2(B)); residential\/owner-occupied has stricter limits (see §143.1 and §143.2). This sheet captures 75-day notice as a prelim proxy. Lien filing deadline: original contractor within 4 months after last furnishing; all other claimants within 90 days after last furnishing (42 O.S. §142). Enforcement: suit must be brought within 1 year after filing the lien statement (42 O.S. §172). Owner-occupied\/residential: subs\/suppliers often have no lien rights absent direct contract or compliance with specific residential notice statutes; this row flags owner_occupied_restriction_type=direct_contract_only as a conservative rule and explains nuance in notes.",
+        "public_notes": "Oklahoma's mechanics lien law is in Title 42 of the statutes. A contractor or supplier who contracts directly with the owner must file a lien statement within 4 months after last furnishing labor, materials, or equipment (42 O.S. 142). Subcontractors, their suppliers, and lower tiers have 90 days after last furnishing (42 O.S. 143). The statement is filed with the county clerk where the land sits and must be verified by affidavit. The county clerk then mails notice of the lien to the owner by certified mail within 5 business days after filing (42 O.S. 143.1).\n\nClaimants other than the original contractor must send a pre-lien notice to the original contractor and an owner before filing the lien, and no later than 75 days after the last date they furnished (42 O.S. 142.6). The notice is not required for claims under $10,000 or for residential projects of four or fewer units where no owner lives, but it is always required when an owner occupies the property as a dwelling. Certified mail, return receipt requested, creates a presumption that it was sent. When filing the lien, the claimant gives the clerk a notarized affidavit confirming the pre-lien notice was sent. Falsifying that affidavit is a misdemeanor. Work not covered by a required notice cannot be liened.\n\nA suit to enforce the lien must be filed in district court within 1 year after the lien is filed (42 O.S. 172). The party who wins judgment in a lien suit recovers a reasonable attorney fee (42 O.S. 176). Special rules apply to owner-occupied homes, so confirm with counsel on residential jobs.",
         "data_source": "csv_v3"
     },
     {
@@ -1489,9 +1525,9 @@
         "post_lien_notice_required": false,
         "post_lien_notice_days": null,
         "post_lien_notice_recipients": null,
-        "enforcement_calc_method": "months_after_date",
-        "enforcement_deadline_days": 0,
-        "enforcement_deadline_months": 24,
+        "enforcement_calc_method": "days_after_date",
+        "enforcement_deadline_days": 120,
+        "enforcement_deadline_months": null,
         "enforcement_deadline_trigger": "lien_recorded_date",
         "owner_occupied_special_rules": true,
         "owner_occupied_restriction_type": "enhanced_notice",
@@ -1501,8 +1537,8 @@
         "verification_type": "sworn",
         "efile_allowed": false,
         "filing_location": "county_recorder",
-        "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "wrongful_lien_penalty": "fees",
+        "penalty_details": "In a suit to foreclose, the court must award reasonable attorney fees at trial and on appeal to the party who prevails on the validity and foreclosure of the lien, so an owner who defeats a lien recovers fees. Levelset also says a baseless lien is a Class A misdemeanor; that statute was not located or read.",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -1514,6 +1550,7 @@
         "statute_references": "[\"ORS §§ 87.021, 87.035, 87.055, 87.039\"]",
         "statute_url": "https:\/\/www.oregonlegislature.gov\/bills_laws\/ors\/ors087.html",
         "notes": "Lien filing deadline: generally 75 days after completion of construction for residential construction (ORS 87.035(1)); 90 days after completion for nonresidential\/commercial (ORS 87.035(1)). Completion is defined in ORS 87.005 and includes cessation\/acceptance. Owner-occupied residential: most claimants not in direct contract must provide an 'Information Notice to Owner' within 8 days after starting work or delivering materials; certain professional services have 5-day timing (ORS 87.039). This sheet encodes 8 days as a general prelim proxy and flags enhanced_notice. Enforcement: suit must be commenced within 2 years after the lien is filed (ORS 87.055). Tenant improvements: lien generally attaches only if owner is an 'owner' under ORS 87.005 or has consent\/agency; treat as owner_consent_required.",
+        "public_notes": "Oregon's Construction Lien Law is in ORS Chapter 87. A claimant who furnishes materials or labor without being hired by the owner generally must give the owner a notice of right to a lien (ORS 87.021). It can be sent at any time, but it protects only work furnished after a date 8 business days before the notice was delivered or mailed, so send it early. On commercial improvements, which include everything except an owner-occupied home of four or fewer units, claimants who provide labor, or labor and materials, or who rent equipment do not need this notice; material-only suppliers still do. On residential contracts over $2,000, the original contractor must give the owner an Information Notice to Owner or lose lien rights (ORS 87.093).\n\nMost claimants must file the claim of lien no later than 75 days after they stop furnishing labor, equipment, or materials, or 75 days after construction is completed, whichever comes first, on commercial and residential work alike (ORS 87.035). The claim is recorded with the county recording officer and must be verified by oath. Within 20 days after filing, the claimant must mail notice of the filing, with a copy of the claim, to the owner and mortgagee, or lose fees and costs (ORS 87.039).\n\nThe lien expires 120 days after it is filed unless suit to foreclose is brought in that time (ORS 87.055). If the claim states extended payment terms, the period runs 120 days from the end of that credit, but never past 2 years after filing; confirm with counsel before relying on an extension. At least 10 days before suing, the claimant must give the owner and mortgagee written notice of intent to foreclose (ORS 87.057). The party who prevails on the lien recovers reasonable attorney fees (ORS 87.060).",
         "data_source": "csv_v3"
     },
     {
@@ -1541,7 +1578,7 @@
         "notarization_required": true,
         "verification_type": "verified",
         "efile_allowed": true,
-        "filing_location": "circuit_clerk",
+        "filing_location": "prothonotary",
         "wrongful_lien_penalty": "none",
         "penalty_details": null,
         "lien_anchor_logic": "single",
@@ -1555,6 +1592,7 @@
         "statute_references": "[\"49 P.S. §§ 1303, 1502, 1701\"]",
         "statute_url": "https:\/\/www.legis.state.pa.us\/cfdocs\/legis\/LI\/Public\/cons_index.cfm?act=0&law=040",
         "notes": "Lien filing: claim must be filed within 6 months after completion of the claimant’s work (49 P.S. §1502(a)(1)). Serve notice of filing of claim on owner within 1 month after filing (49 P.S. §1502(a)(2)). Enforcement: proceed by writ of scire facias within 2 years after filing claim (49 P.S. §1701). Owner-occupied residential exception: no lien by subcontractor against owner-occupied residential property (generally single family) unless subcontractor has a direct contract with the owner (49 P.S. §1303). PA also recognizes 'Notice of Commencement' concept for certain projects and allows contractual lien waivers in many contexts; not modeled here.",
+        "public_notes": "Pennsylvania's Mechanics' Lien Law of 1963 governs private construction liens. A claim must be more than $500. Contractors hired by the owner and subcontractors, including second-tier subcontractors and suppliers to a contractor or first-tier subcontractor, can file. Suppliers to a supplier cannot.\n\nThe claim is filed with the prothonotary of the court of common pleas where the property is located, within 6 months after the claimant completes its own work (Act 497, sections 201 and 502). Completion means the last labor or materials the claimant's contract required, so small punch-list work may not extend the date; confirm with counsel. A subcontractor must give the owner formal written notice of intention to file at least 30 days before filing (section 501). Within one month after filing, the claimant must serve notice of the filing on the owner, and must file an affidavit of service within 20 days after service, or the claim can be struck (section 502).\n\nOn projects costing $1.5 million or more where the owner has filed a notice of commencement in the State Construction Notices Directory, subcontractors must file a notice of furnishing there within 45 days after first furnishing (section 501.3). Subcontractors generally cannot lien a one- or two-family home or townhouse the owner lives in once the owner has paid the contractor in full (section 301).\n\nAn action on the claim must be started within 2 years after filing, unless the owner extends the time in writing, and judgment must be obtained within 5 years after filing (section 701). A claimant who fails to mark a paid claim satisfied within 30 days of a written request can face a court-set penalty up to the claim amount (section 704).",
         "data_source": "csv_v3"
     },
     {
@@ -1572,9 +1610,9 @@
         "post_lien_notice_days": null,
         "post_lien_notice_recipients": null,
         "enforcement_calc_method": "days_after_date",
-        "enforcement_deadline_days": 0,
+        "enforcement_deadline_days": 40,
         "enforcement_deadline_months": null,
-        "enforcement_deadline_trigger": "lien_recorded_date",
+        "enforcement_deadline_trigger": "notice_of_intention_filed",
         "owner_occupied_special_rules": false,
         "owner_occupied_restriction_type": "none",
         "tenant_project_lien_allowed": true,
@@ -1583,8 +1621,8 @@
         "verification_type": "sworn",
         "efile_allowed": false,
         "filing_location": "circuit_clerk",
-        "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "wrongful_lien_penalty": "fees",
+        "penalty_details": "An owner or contractor can ask the superior court to show cause why a claimed lien is invalid and have it dismissed (§ 34-28-17.1). The court may award attorney fees to the prevailing party and decides costs in its discretion (§ 34-28-19). No statutory damages or criminal penalty for a wrongful lien was found in the chapter.",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -1596,6 +1634,7 @@
         "statute_references": "[\"R.I. Gen. Laws §§ 34-28-4, 34-28-10, 34-28-16\"]",
         "statute_url": "https:\/\/webserver.rilegislature.gov\/Statutes\/TITLE34\/34-28\/INDEX.HTM",
         "notes": "RI is a court-driven lien: claimant must file a 'Notice of Intention' in the Superior Court within 200 days after the last day of furnishing labor\/materials (R.I. Gen. Laws §34-28-4). A copy of the Notice of Intention is recorded in the land evidence records of the city\/town where the property is located (see §34-28-10). There is a strict petition\/hearing process and the lien is contingent on the court’s order; enforcement timelines depend on the court order and subsequent proceedings (see §34-28-16 et seq.). This sheet encodes the 200-day Notice of Intention deadline as the 'lien' deadline and leaves enforcement timing as a placeholder (0) with this note.",
+        "public_notes": "Rhode Island's mechanics lien law is Chapter 34-28 of the General Laws. A contractor who deals directly with the owner, other than a material supplier, must give the owner a written \"Notice of Possible Mechanic's Lien\" before starting work, either in the contract or by certified mail (R.I. Gen. Laws 34-28-4.1). Without it, that contractor cannot claim a lien.\n\nTo perfect a lien, the claimant mails a sworn, notarized notice of intention to the owner of record by registered or certified mail, return receipt requested, and records a copy in the land evidence records of the city or town where the land is located (34-28-4, 34-28-5). Both steps must happen within 200 days after the work or materials. The lien covers only work done in the 200 days before the notice is recorded, plus earned retainage (34-28-9), so do not wait until the last day if the job ran long; confirm with counsel. If the mailed notice comes back undelivered, special refiling rules apply.\n\nThe deadline to enforce is short. Within 40 days after recording the notice of intention, the claimant must record a notice of lis pendens in the same land evidence records and file a complaint to enforce in the superior court for the county. The complaint goes in the same day as the lis pendens or within 7 days after (34-28-10). Missing this step voids the lien.\n\nAn owner or contractor can ask the court for a show-cause hearing to dismiss a lien that is invalid or unlikely to succeed (34-28-17.1). The court may award attorney fees to the prevailing party (34-28-19).",
         "data_source": "csv_v3"
     },
     {
@@ -1615,7 +1654,7 @@
         "enforcement_calc_method": "months_after_date",
         "enforcement_deadline_days": 0,
         "enforcement_deadline_months": 6,
-        "enforcement_deadline_trigger": "lien_recorded_date",
+        "enforcement_deadline_trigger": "last_furnish_date",
         "owner_occupied_special_rules": false,
         "owner_occupied_restriction_type": "none",
         "tenant_project_lien_allowed": true,
@@ -1623,9 +1662,9 @@
         "notarization_required": true,
         "verification_type": "sworn",
         "efile_allowed": false,
-        "filing_location": "circuit_clerk",
-        "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "filing_location": "County register of deeds or clerk of court (whichever office records deeds in that county)",
+        "wrongful_lien_penalty": "fees",
+        "penalty_details": "If the owner defeats the lien, the court must award the owner costs and a reasonable attorney fee, capped with costs at the lien amount (§ 29-5-20(A); § 29-5-10(a) lets the prevailing party recover). A statement that willfully and knowingly claims more than is due invalidates the lien proceedings (§ 29-5-100).",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -1637,6 +1676,7 @@
         "statute_references": "[\"S.C. Code Ann. §§ 29-5-10, 29-5-90, 29-5-120\"]",
         "statute_url": "https:\/\/www.scstatehouse.gov\/code\/t29c005.php",
         "notes": "Lien filing deadline: statement of mechanic’s lien must be filed within 90 days after the person last furnished labor or materials (S.C. Code Ann. §29-5-90(A)). Service: claimant must serve a copy of the statement of lien on the owner after filing (S.C. Code Ann. §29-5-90(A)); statute does not give a fixed day-count. Enforcement: action to foreclose the lien must be commenced within 6 months after the lien is filed (S.C. Code Ann. §29-5-120). Tenant improvements: lien typically requires owner consent\/agency for leasehold work; treated here as owner_consent_required.",
+        "public_notes": "South Carolina mechanics liens are governed by Title 29, Chapter 5 of the Code. No preliminary notice is required to have a lien. Within 90 days after the claimant last furnishes labor or materials, it must both serve the lien statement on the owner and file it with the register of deeds or clerk of court in the county where the property is located (S.C. Code 29-5-90). If the owner and anyone in possession cannot be found, an affidavit from the sheriff or a deputy lets the claimant preserve the lien by filing alone. The statement must be sworn and give a true account of the amount due, a description of the property, and the owner's name.\n\nThe suit to enforce the lien, and a notice of pendency of the action, must be filed within 6 months after the claimant last furnished labor or materials (29-5-120). That clock runs from last furnishing, not from the date the lien was filed.\n\nIf a contractor files a notice of project commencement, sub-subcontractors and suppliers to subcontractors should send the contractor a notice of furnishing by certified or registered mail. Without it, their liens are limited to what the contractor still owes the subcontractor they worked for (29-5-20, 29-5-23). The statute sets no deadline for this notice, so send it early; confirm with counsel.\n\nCosts and attorney fees go to the winning side. If the owner defeats the lien, the court must award the owner costs and a reasonable attorney fee, and fees and costs together cannot exceed the lien amount (29-5-20). A claimant who willfully and knowingly claims more than is due can lose the lien (29-5-100).",
         "data_source": "csv_v3"
     },
     {
@@ -1656,7 +1696,7 @@
         "enforcement_calc_method": "months_after_date",
         "enforcement_deadline_days": 0,
         "enforcement_deadline_months": 72,
-        "enforcement_deadline_trigger": "lien_recorded_date",
+        "enforcement_deadline_trigger": "last_furnish_date",
         "owner_occupied_special_rules": false,
         "owner_occupied_restriction_type": "none",
         "tenant_project_lien_allowed": true,
@@ -1678,6 +1718,7 @@
         "statute_references": "[\"SDCL §§ 44-9-15, 44-9-23, 15-2-13\"]",
         "statute_url": "https:\/\/sdlegislature.gov\/Statutes\/Codified_Laws\/2047094",
         "notes": "Lien filing deadline: file statement of lien within 120 days after last furnishing labor or materials (SDCL §44-9-15). Statement must be verified by oath and filed with the register of deeds (SDCL §44-9-16). Foreclosure\/enforcement: SD mechanic’s lien enforcement is tied to bringing an action; a common limitation is 6 years (general actions on record\/obligation limitations), so this sheet encodes 72 months as a placeholder; confirm exact foreclosure limitation and any shorter lien-duration rules in SDCL §44-9-23 and related sections.",
+        "public_notes": "In South Dakota, a contractor, subcontractor or supplier keeps a lien only by filing a lien statement within 120 days after doing the last work or furnishing the last materials (SDCL § 44-9-15). The statement is filed with the register of deeds in the county where the property is located. It must be verified under oath and list the amount owed, the first and last dates of work, the property and an itemized account (§ 44-9-16). Before filing, mail a copy to the owner by registered or certified mail and attach the post office receipt to the statement (§ 44-9-17). If the owner or the prime contractor filed a notice of project commencement, sub-subcontractors and suppliers to subcontractors must send a notice of furnishing to the named contractor, with a copy to the owner, within 60 days after their last work or materials (§ 44-9-53). The lien must be asserted in court within 6 years after the last item of work shown on the lien statement (§ 44-9-24). The owner can shorten that sharply: after a written demand to sue, the claimant has 30 days to start the action or the lien is forfeited (§ 44-9-26). Once a lien is paid, the holder must deliver a satisfaction within 10 days after written demand, or face damages, attorney's fees and a $100 penalty (§ 44-9-22). Whether South Dakota imposes a separate penalty for filing an unfounded mechanics lien is unclear, so confirm with counsel.",
         "data_source": "csv_v3"
     },
     {
@@ -1706,8 +1747,8 @@
         "verification_type": "sworn",
         "efile_allowed": false,
         "filing_location": "register_of_deeds",
-        "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "wrongful_lien_penalty": "fees",
+        "penalty_details": "If the court finds a lienor willfully and grossly exaggerated the lien amount, it may deny any recovery on the lien, and the lienor may be liable for the injured party's actual expenses, including attorney's fees. The older automatic-penalty statute, § 66-21-108, was repealed in 2019 (per secondary sources; repeal text not read).",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -1719,6 +1760,7 @@
         "statute_references": "[\"T.C.A. §§ 66-11-112, 66-11-115, 66-11-130, 66-11-143, 66-11-145\"]",
         "statute_url": "https:\/\/law.justia.com\/codes\/tennessee\/title-66\/chapter-11\/part-1\/",
         "notes": "Recordation: sworn statement\/notice of lien must be recorded within 90 days after improvement is complete or abandoned (T.C.A. §66-11-112). Remote contractor prerequisite: serve Notice of Nonpayment on owner and prime contractor within 90 days of the last day of EACH month in which unpaid labor\/materials\/services\/equipment\/machinery were furnished (T.C.A. §66-11-145). Remote contractor notice of lien: must be served on owner and recorded within the §66-11-112 time period; lien continues 90 days from date of service and must be enforced by suit within that period (T.C.A. §66-11-115(b) & §66-11-126). Notice of Completion: owner may record after completion; remote contractors with Notice of Nonpayment must be served, and deadlines to preserve\/priority can shorten (e.g., 10 days residential \/ 30 days nonres to respond\/file—see T.C.A. §66-11-143(e)). Owner\/prime may demand enforcement: suit must be commenced within 60 days after service of demand or lien is forfeited (T.C.A. §66-11-130). Prime contractor enforcement is generally within 1 year after completion\/abandonment (see practice summaries; confirm §66-11-106 if you want this coded per claimant).",
+        "public_notes": "Tennessee's lien statute is in Tennessee Code Title 66, Chapter 11. A prime contractor, meaning anyone with a contract directly with the owner, has a lien that lasts one year after the improvement is complete or abandoned. A suit to enforce it must be filed within that year (T.C.A. § 66-11-106). To protect its priority against later buyers and lenders, the prime should record a sworn notice of lien with the register of deeds within 90 days after completion or abandonment (§ 66-11-112). Subcontractors and suppliers further down the chain, called remote contractors, have more steps. Except on 1-4 family residential units, a remote contractor must serve a notice of nonpayment on the owner and on the prime contractor it worked under. The notice is due within 90 days after the last day of each month in which work or materials went unpaid, and missing it bars the lien except for retainage (§ 66-11-145). The remote contractor must also serve a notice of lien on the owner within 90 days after completion or abandonment. That lien lasts only 90 days after service, so suit must be filed within that time (§ 66-11-115). On an owner-occupied home of one to four units, generally only the prime contractor has lien rights (§ 66-11-146). An owner or prime contractor can serve a written demand that cuts the time to sue to 60 days (§ 66-11-130). If the owner records a notice of completion, remote contractors may have only 10 days (residential) or 30 days (other projects) to respond (§ 66-11-143). A lienor who willfully and grossly exaggerates the amount can lose the lien and owe the owner's attorney's fees (§ 66-11-139). Confirm with counsel on residential projects.",
         "data_source": "csv_v3"
     },
     {
@@ -1738,7 +1780,7 @@
         "enforcement_calc_method": "months_after_date",
         "enforcement_deadline_days": 0,
         "enforcement_deadline_months": 12,
-        "enforcement_deadline_trigger": "lien_recorded_date",
+        "enforcement_deadline_trigger": "last_day_to_file",
         "owner_occupied_special_rules": true,
         "owner_occupied_restriction_type": "enhanced_notice",
         "tenant_project_lien_allowed": true,
@@ -1746,9 +1788,9 @@
         "notarization_required": true,
         "verification_type": "notarized",
         "efile_allowed": false,
-        "filing_location": "county_recorder",
-        "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "filing_location": "county_clerk",
+        "wrongful_lien_penalty": "damages",
+        "penalty_details": "A person who knowingly files a fraudulent lien with intent to cause injury is liable for the greater of $10,000 or actual damages, plus court costs, attorney's fees and exemplary damages (CPRC § 12.002(b)); a Chapter 53 lien claimant is liable only if acting with intent to defraud (§ 12.002(c)). Separately, in a suit declaring a lien invalid the court awards equitable costs and attorney's fees (Prop. Code § 53.156).",
         "lien_anchor_logic": "later_of",
         "lien_anchor_alt_field": "special_fab_delivery_date",
         "gc_has_lien_rights": true,
@@ -1760,6 +1802,7 @@
         "statute_references": "[\"Tex. Prop. Code §§ 53.052, 53.055, 53.056, 53.158\"]",
         "statute_url": "https:\/\/statutes.capitol.texas.gov\/Docs\/PR\/htm\/PR.53.htm",
         "notes": "Lien affidavit deadline for original contractor: residential construction—15th day of 3rd month after month of completion\/termination\/abandonment; nonresidential—15th day of 4th month (Tex. Prop. Code §53.052(a)(2)). Specially fabricated materials can use later-of logic for filing deadline (see §53.052(b)-(c) and §53.058), modeled here as lien_anchor_logic=later_of with alt field special_fab_delivery_date. Monthly notice regime for derivative claimants is required to preserve lien rights\/fund trapping and depends on project type\/tier; generally notices are due by the 15th day of the 2nd\/3rd month after each month of unpaid labor\/materials (Tex. Prop. Code §53.056; see Texas A&M Real Estate Research Center summaries). Notice of filed affidavit: send copy to owner within 5 days after filing; if not original contractor, also send to original contractor within same period (Tex. Prop. Code §53.055). Foreclosure suit deadline: generally 1 year after the last day the claimant may file the lien affidavit under §53.052 (Tex. Prop. Code §53.158); may be extended by written agreement under §53.158(a-2). Texas uses monthly notices (typically due by the 15th day of the 2nd month (res) or 3rd month (com) after each month of unpaid work); this sheet uses 0 + notes to indicate multiple deadlines.",
+        "public_notes": "Texas lien rules were rewritten by House Bill 2237, effective January 1, 2022, and the dates below follow the current Property Code. Subcontractors and suppliers who did not contract with the owner must send a notice of claim to both the owner and the original contractor for each month in which labor or materials went unpaid. The notice is due by the 15th day of the 3rd month after that month, or the 2nd month on residential projects (Tex. Prop. Code § 53.056). Unpaid retainage has its own notice, due within 30 days after the contract ends (§ 53.057). The lien affidavit is a sworn statement filed with the county clerk in the county where the property sits (§§ 53.052, 53.054). An original contractor files by the 15th day of the 4th month after the month its work was completed, terminated or abandoned, or the 3rd month on residential projects. Other claimants count from the month they last provided labor or materials. Within 5 days after filing, send a copy to the owner, and to the original contractor if you are not one (§ 53.055). A suit to foreclose must be filed within one year after the last day the affidavit could have been filed. A recorded written agreement with the owner can extend that to two years after filing (§ 53.158). Knowingly filing a fraudulent lien can bring liability of $10,000 or actual damages, whichever is greater, plus fees (Tex. Civ. Prac. & Rem. Code § 12.002). Homestead and residential projects carry extra contract and disclosure rules, so confirm with counsel before filing on a home.",
         "data_source": "csv_v3"
     },
     {
@@ -1788,8 +1831,8 @@
         "verification_type": "verified",
         "efile_allowed": true,
         "filing_location": "county_recorder",
-        "wrongful_lien_penalty": "fees",
-        "penalty_details": "Utah Code 38-9a-201 et seq.: wrongful lien remedies include expedited release + costs\/attorney fees; criminal penalties may apply for intentional filing",
+        "wrongful_lien_penalty": "criminal",
+        "penalty_details": "Intentionally recording a lien notice for more than is due, to cloud title, extract more than is owed or gain an unjustified advantage, is a class B misdemeanor. The filer is also liable to an affected owner, original contractor or subcontractor for twice the excess over the amount actually due or actual damages, whichever is greater.",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -1798,9 +1841,10 @@
         "supplier_owner_has_lien_rights": true,
         "supplier_gc_has_lien_rights": true,
         "supplier_sub_has_lien_rights": true,
-        "statute_references": "[\"Utah Code §§ 38-1a-501, 38-1a-502, 38-1a-701, 38-9a-201\"]",
+        "statute_references": "[\"Utah Code §§ 38-1a-308, 38-1a-501, 38-1a-502, 38-1a-701\"]",
         "statute_url": "https:\/\/le.utah.gov\/xcode\/Title38\/Chapter1A\/38-1a.html",
         "notes": "Preliminary notice: to retain lien rights, a preconstruction\/preliminary notice must be filed in the State Construction Registry (SCR) within 20 days after first furnishing labor\/service\/material\/equipment (Utah Code §38-1a-501(1)). Lien recording deadline: lien must be filed within 180 days after final completion of original contract, OR within 90 days after a Notice of Completion is filed in SCR, whichever occurs first (Utah Code §38-1a-502(1)). If preliminary notice not filed, lien rights can be lost (Utah Code §38-1a-501(2)-(3)). Enforcement: action to enforce must be commenced within 180 days after lien recorded (Utah Code §38-1a-701(1)).",
+        "public_notes": "Utah runs lien notices through the State Construction Registry, an online state database. Anyone who wants a construction lien, including a general contractor, must file a preliminary notice in the registry within 20 days after starting work on the project (Utah Code § 38-1a-501). If you miss that window, a late notice still protects only work done starting 5 days after you file it. A notice filed more than 10 days after a notice of completion has no effect. With no preliminary notice, there is no lien. The notice of construction lien is recorded with the county recorder where the property is located. It is due within 180 days after final completion of the original contract. If a notice of completion is filed in the registry, the deadline becomes 90 days after that filing, but never later than the 180 days (§ 38-1a-502). Within 30 days after recording, deliver or mail a copy to the owner by certified mail. To enforce the lien, file suit within 180 days after recording the lien and record a notice of the pending action within the same period. A lien not enforced in time is void (§ 38-1a-701). Knowingly recording a lien for more than is owed, to cloud title or press for more money, is a class B misdemeanor. The filer also owes twice the overstatement or the actual damages, whichever is greater (§ 38-1a-308). Owner-occupied homes carry added protections under the Residence Lien Restriction and Lien Recovery Fund Act, so confirm with counsel on residential work.",
         "data_source": "csv_v3"
     },
     {
@@ -1817,9 +1861,9 @@
         "post_lien_notice_required": true,
         "post_lien_notice_days": 5,
         "post_lien_notice_recipients": "owner",
-        "enforcement_calc_method": "months_after_date",
-        "enforcement_deadline_days": 0,
-        "enforcement_deadline_months": 3,
+        "enforcement_calc_method": "days_after_date",
+        "enforcement_deadline_days": 180,
+        "enforcement_deadline_months": null,
         "enforcement_deadline_trigger": "lien_recorded_date",
         "owner_occupied_special_rules": false,
         "owner_occupied_restriction_type": "none",
@@ -1839,9 +1883,10 @@
         "supplier_owner_has_lien_rights": true,
         "supplier_gc_has_lien_rights": true,
         "supplier_sub_has_lien_rights": true,
-        "statute_references": "[\"9 V.S.A. §§ 1921, 1923\"]",
+        "statute_references": "[\"9 V.S.A. §§ 1921, 1923, 1924, 1925\"]",
         "statute_url": "https:\/\/legislature.vermont.gov\/statutes\/chapter\/09\/051",
         "notes": "Record memorandum of lien within 120 days from the time payment became due; memorandum must be sworn and recorded in the town clerk’s office (9 V.S.A. §1921). Serve copy on owner within 5 days after recording (9 V.S.A. §1921(d)). Enforcement\/perfection: within 3 months after recording memorandum, commence action and obtain an order of attachment of the real estate and record a certified copy of the attachment order in the town clerk’s office (9 V.S.A. §1923).",
+        "public_notes": "Vermont's mechanics lien law is short and sits in 9 V.S.A. §§ 1921-1925. A contractor who works under an agreement with the owner, written or oral, has a lien on the improvements and the land (§ 1921(a)). A subcontractor or supplier hired by someone else gets a lien only by giving the owner written notice that it will claim one, including the payment due date if known. That lien reaches only the part of the contract price the owner still owes when the notice arrives, so send it early (§ 1921(b)). The lien lapses unless a written memorandum of lien is filed with the town clerk where the property is located within 180 days after payment became due for the last labor or materials (§§ 1921(c), 1923). Notice that the clock runs from the payment due date, not from your last day on site. To enforce, start a lawsuit and have the real estate attached within 180 days after filing the memorandum. If payment was not yet due when you filed, the 180 days run from when it becomes due (§ 1924). After you win, record a certified copy of the judgment with the town clerk within five months to foreclose like a mortgage (§ 1925). A lien cannot be waived before the work is done or the materials are delivered (§ 1921(f)). The statute asks only for a signed memorandum, but town clerks and practitioners commonly expect it notarized; confirm with counsel.",
         "data_source": "csv_v3"
     },
     {
@@ -1871,7 +1916,7 @@
         "efile_allowed": false,
         "filing_location": "circuit_clerk",
         "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "penalty_details": "A claimant who, with intent to mislead, includes work not performed or materials not furnished forfeits the lien entirely (§ 43-23.1). Any interested party may petition for a hearing, and an invalid lien is ordered released (§ 43-17.1). No money penalty in ch. 1 for the lien claimant.",
         "lien_anchor_logic": "later_of",
         "lien_anchor_alt_field": "contract_terminated_date",
         "gc_has_lien_rights": true,
@@ -1883,6 +1928,7 @@
         "statute_references": "[\"Va. Code §§ 43-4, 43-5, 43-17\"]",
         "statute_url": "https:\/\/law.lis.virginia.gov\/vacode\/title43\/chapter1\/",
         "notes": "Lien filing (memorandum): record in circuit court clerk’s office. Deadline is the later of (i) 90 days from the last day of the month of last furnishing, or (ii) 90 days from completion\/termination of the building\/contract; BUT never later than 150 days from last furnishing (Va. Code §43-4). This sheet models later_of using lien_anchor_logic=later_of with alt=contract_terminated_date; enforce the 150-day cap in app logic. Service: memorandum must be served on the owner or owner’s agent (Va. Code §§43-4, 43-5). Enforcement: suit must be brought within 6 months after memorandum recorded OR within 60 days after completion\/termination, whichever is later (Va. Code §43-17).",
+        "public_notes": "Virginia's mechanics lien law is in Title 43, Chapter 1 of the Code of Virginia. A memorandum of lien may be filed any time after work starts. It is due by the earlier of two dates: 90 days after the last day of the month in which you last performed labor or furnished materials, and 90 days after the building is completed or the work otherwise ends (Va. Code § 43-4). File it in the clerk's office of the circuit court for the county or city where the property sits. It must be verified by oath. The memorandum cannot include amounts for work done more than 150 days before your last day on the job. The exceptions are retainage up to 10 percent of the contract price and sums not yet due because the party who hired you has not been paid. A general contractor files a certification that it mailed a copy to the owner. A subcontractor must also give the owner written notice of its claim, and its lien cannot exceed what the owner owes the general contractor (§ 43-7). On one- and two-family homes, if the building permit names a mechanics' lien agent, notify that agent within 30 days after you first furnish labor or materials. Late notice limits the lien to work done after the notice (§ 43-4.01). Suit to enforce must be filed within six months after recording or 60 days after completion, whichever is later (§ 43-17). Knowingly padding a memorandum with work not done forfeits the whole lien (§ 43-23.1). Confirm with counsel before relying on a single filing date.",
         "data_source": "csv_v3"
     },
     {
@@ -1909,10 +1955,10 @@
         "tenant_project_restrictions": "owner_consent_required",
         "notarization_required": true,
         "verification_type": "sworn",
-        "efile_allowed": false,
-        "filing_location": "county_recorder",
+        "efile_allowed": true,
+        "filing_location": "County auditor (the county's recording officer)",
         "wrongful_lien_penalty": "fees",
-        "penalty_details": "RCW 60.04.081\/171: frivolous lien motion; court may award costs and reasonable attorney fees; damages possible",
+        "penalty_details": "An owner or other interested party may move in superior court on 6 to 15 days' notice to release a frivolous lien made without reasonable cause or reduce a clearly excessive one; the losing side pays costs and reasonable attorney's fees, which runs both ways (the claimant recovers fees if the lien is upheld).",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -1921,9 +1967,10 @@
         "supplier_owner_has_lien_rights": true,
         "supplier_gc_has_lien_rights": true,
         "supplier_sub_has_lien_rights": true,
-        "statute_references": "[\"RCW 60.04.031, 60.04.091, 60.04.141, 60.04.171\"]",
+        "statute_references": "[\"RCW 60.04.031, 60.04.081, 60.04.091, 60.04.141\"]",
         "statute_url": "https:\/\/apps.leg.wa.gov\/rcw\/default.aspx?cite=60.04",
         "notes": "Residential notice: for owner-occupied single-family residences, certain lien claimants (notably material suppliers) must provide the statutory pre-claim notice (RCW 60.04.031). This sheet encodes a 10-day after first furnishing proxy; statute timing is tied to first delivery\/provision and form content. Lien filing: record claim of lien within 90 days after last furnishing labor\/materials\/equipment (RCW 60.04.091). Serve copy of recorded claim of lien on the owner within 14 days after filing (RCW 60.04.091). Enforcement: commence action to foreclose within 8 months after claim filed (RCW 60.04.141). Frivolous lien remedies: motion to release + attorney fees (RCW 60.04.171).",
+        "public_notes": "Washington's lien law is in RCW chapter 60.04. Suppliers, equipment providers and design professionals who do not contract directly with the owner must give the owner a written notice of the right to claim a lien (RCW 60.04.031). There is no fixed deadline, but the notice only protects what was supplied in the 60 days before it was given, or the 10 days before on new construction of a single-family home. Sending it right after first delivery protects the whole job. Subcontractors hired by the prime contractor and laborers are generally exempt. On a remodel of an existing owner-occupied home, anyone without a direct contract with the owner must send notice, and the lien can only reach money the owner still owed the prime when the notice arrived. A claim of lien must be recorded with the county auditor in the county where the property is located within 90 days after you last furnished labor, services, materials or equipment (§ 60.04.091). It is signed under penalty of perjury and acknowledged. Mail or hand a copy to the owner within 14 days after recording, or you lose the right to recover attorney's fees and costs from the owner. To enforce, file suit in superior court within eight months after recording and serve the owner within 90 days after filing (§ 60.04.141). An owner can ask the court to release a frivolous lien or reduce an excessive one on short notice, and the loser pays the other side's attorney's fees (§ 60.04.081). Confirm with counsel on credit terms that extend the eight months.",
         "data_source": "csv_v3"
     },
     {
@@ -1962,9 +2009,10 @@
         "supplier_owner_has_lien_rights": true,
         "supplier_gc_has_lien_rights": true,
         "supplier_sub_has_lien_rights": true,
-        "statute_references": "[\"W. Va. Code §§ 38-2-2, 38-2-7, 38-2-34\"]",
+        "statute_references": "[\"W. Va. Code §§ 38-2-7, 38-2-8, 38-2-9, 38-2-14, 38-2-34\"]",
         "statute_url": "https:\/\/code.wvlegislature.gov\/38-2\/",
         "notes": "Lien filing deadline: file a verified lien within 100 days after the claimant ceased to furnish labor or materials (W. Va. Code §38-2-7). Enforcement: action to enforce a mechanic’s lien must be brought within 6 months after filing the lien (W. Va. Code §38-2-34). Tenant improvements typically require owner consent\/agency to reach fee interest; treated here as owner_consent_required.",
+        "public_notes": "West Virginia's mechanics lien law is in Chapter 38, Article 2 of the Code. Every claimant has 100 days to perfect a lien. A general contractor counts from completion of its contract work, a subcontractor from completion of its subcontract, and suppliers and laborers from their last delivery or last day of work (W. Va. Code § 38-2-7). A general contractor perfects by recording a sworn notice of lien with the county clerk where the property is located (§ 38-2-8). A subcontractor must also serve its sworn notice on the owner, by a method allowed for serving a summons, within the same 100 days (§ 38-2-9). Missing any required notice or recording step discharges the lien (§ 38-2-14). A worker or supplier hired by the contractor may, before starting, send the owner written notice that it will look to the owner if unpaid. That notice relaxes the 60-day account-filing step under § 38-2-20 but does not replace the lien notice. A suit to enforce must be filed in circuit court within six months after the notice of lien is filed, or the lien is discharged. One claimant's suit protects the others, who may join it (§ 38-2-34). Since July 1, 2015, owners of existing single-family homes and owner-occupied primary residences can defend by showing they owe the contractor less than the lien, or nothing (§ 38-2-34(b)). Supplier notice details and any penalty for a false lien were not confirmed, so confirm with counsel.",
         "data_source": "csv_v3"
     },
     {
@@ -1993,8 +2041,8 @@
         "verification_type": "sworn",
         "efile_allowed": false,
         "filing_location": "register_of_deeds",
-        "wrongful_lien_penalty": "damages",
-        "penalty_details": "Wis. Stat. §779.12: claimant who files exaggerated\/fraudulent lien may be liable for damages; lien may be voided",
+        "wrongful_lien_penalty": "criminal",
+        "penalty_details": "Filing a lien or claim of lien that the filer knows or should have known is false, a sham or frivolous is criminal slander of title, a Class H felony (§ 943.60). A claimant who is paid but refuses to deliver a satisfaction owes the requester one-half of the amount claimed in the lien (§ 779.13(1)).",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -2006,6 +2054,7 @@
         "statute_references": "[\"Wis. Stat. §§ 779.02, 779.06, 779.12\"]",
         "statute_url": "https:\/\/docs.legis.wisconsin.gov\/statutes\/statutes\/779",
         "notes": "Owner-occupied 1–4 family residential: subs\/suppliers must give 'Notice of Right to Lien' within 60 days after first furnishing; late notice limits lien to unpaid amounts owed after notice is received (Wis. Stat. §779.02(2)(b)). Lien filing deadline: file claim for lien within 6 months after last furnishing labor\/materials (Wis. Stat. §779.06(1)). Enforcement: action to enforce\/foreclose must be commenced within 2 years after filing the claim for lien (Wis. Stat. §779.06(2)). Lien waivers and owner protections exist; tenant improvements generally require owner consent\/agency to reach fee interest.",
+        "public_notes": "Wisconsin's construction lien law is in Chapter 779 of the statutes. On residential projects adding four or fewer family units, notice starts at the beginning. The prime contractor must put a statutory lien notice in its written contract with the owner, or serve it within 10 days after first work. Subcontractors and suppliers must serve the owner a written notice, in two signed copies, within 60 days after they first furnish labor, services or materials (Wis. Stat. § 779.02(2)). Missing the 60 days limits the lien to work furnished after the owner receives a late notice (§ 779.02(3)). These notices are not required on nonresidential projects or on residential projects with more than four units (§ 779.02(1)(c)). Every claimant must serve the owner a written notice of intent to file a lien claim at least 30 days before filing it (§ 779.06(2)). The claim for lien itself is filed with the clerk of circuit court in the county where the land lies, within 6 months after you last furnished labor or materials. Serve a copy on the owner within 30 days after filing. The claim must be signed but need not be verified (§ 779.06). A foreclosure action must be filed within 2 years after the claim is filed (§ 779.06(1)). Filing a lien you know or should know is false, a sham or frivolous is criminal slander of title, a felony (§ 943.60). After you are paid, failing to deliver a satisfaction can cost half the amount claimed (§ 779.13). Because the 30-day notice of intent must fit inside the 6-month window, plan to serve it by about the fifth month; confirm with counsel on mixed-use projects.",
         "data_source": "csv_v3"
     },
     {
@@ -2034,8 +2083,8 @@
         "verification_type": "sworn",
         "efile_allowed": false,
         "filing_location": "county_recorder",
-        "wrongful_lien_penalty": "none",
-        "penalty_details": null,
+        "wrongful_lien_penalty": "damages",
+        "penalty_details": "If the court finds the claimant knew when filing that the lien was groundless or contained a material misstatement or false claim, it strikes the lien and awards the owner $1,000 or actual damages, whichever is greater, plus costs and reasonable attorney's fees. If the lien is upheld, the petitioner pays the claimant's costs and fees.",
         "lien_anchor_logic": "single",
         "lien_anchor_alt_field": null,
         "gc_has_lien_rights": true,
@@ -2047,6 +2096,7 @@
         "statute_references": "[\"Wyo. Stat. §§ 29-2-106, 29-2-107, 29-2-109\"]",
         "statute_url": "https:\/\/law.justia.com\/codes\/wyoming\/title-29\/chapter-2\/",
         "notes": "Lien filing deadlines: original contractor must file lien statement within 150 days after completion of the contract; subcontractors\/material suppliers generally within 120 days after last furnishing (see Wyo. Stat. §§29-2-106 & 29-2-107). Enforcement: action to enforce lien must be commenced within 180 days after filing the lien statement (Wyo. Stat. §29-2-109).",
+        "public_notes": "Wyoming's construction lien rules are in Title 29 of the Wyoming Statutes, and notice comes first. A contractor working for the owner must send the owner a written notice of lien rights before receiving any payment, including advances. Subcontractors and material suppliers must send the same notice within 30 days after first providing labor or materials, with a copy to the contractor that hired them. Missing this notice bars the lien (Wyo. Stat. § 29-2-112). Before filing, every claimant must send the owner a notice of intention to file a lien at least 20 days in advance, stating the amount and who owes it (§ 29-2-107). The lien statement is sworn before a notary and filed with the county clerk in the county where the property is located (§ 29-1-312). A contractor has 150 days to file, and everyone else has 120 days. The clock starts at the earlier of your last day of work or delivery and substantial completion of the project (§ 29-2-106). If the owner records a notice of substantial completion, that date is presumed to be the completion date. The parties can agree in a notarized, recorded writing to extend the filing time up to double. Within 30 days after filing, send the owner notice of the lien (§ 29-1-312(c)). A suit to foreclose must be filed within 180 days after the lien statement is filed, or the lien ends (§ 29-2-109). A claimant who knowingly files a groundless or false lien can owe $1,000 or actual damages, whichever is greater, plus attorney's fees (§ 29-1-601). Confirm with counsel which deadline applies to suppliers who sell directly to the owner.",
         "data_source": "csv_v3"
     }
 ]

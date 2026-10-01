@@ -20,7 +20,7 @@
 
 <x-seo.service
     name="{{ $name }} Mechanics Lien Filing"
-    description="Prepare and record {{ $a }} {{ $name }} mechanics lien with the correct deadlines, notices, and statutory form, filed with the {{ lcfirst($page->filingLocationLabel()) }}."
+    description="Prepare and record {{ $a }} {{ $name }} mechanics lien with the correct deadlines, notices, and statutory form, filed with the {{ $page->filingLocationPhrase() }}."
     :url="$page->url()"
     :price="$referral ? null : $page->selfServePrice()"
     category="Mechanics lien filing" />
@@ -168,7 +168,7 @@
             <div class="rounded-2xl border border-zinc-200 bg-white p-6">
                 <h3 class="font-semibold text-zinc-900">Recording the lien</h3>
                 <p class="mt-3 text-sm text-zinc-600">
-                    Record with the {{ lcfirst($page->filingLocationLabel()) }}.
+                    Record with the {{ $page->filingLocationPhrase() }}.
                     {{ $rule->efile_allowed ? 'Electronic recording is available in participating counties.' : 'Whether electronic recording is accepted varies by county, so confirm with the recording office and build mailing time into the deadline.' }}
                     {{ $rule->notarization_required ? 'The lien must be notarized.' : 'No notary is required on the lien itself.' }}
                     @if ($page->verificationLabel()) {{ $page->verificationLabel() }}. @endif
@@ -186,7 +186,7 @@
             <div class="rounded-2xl border border-zinc-200 bg-white p-6">
                 <h3 class="font-semibold text-zinc-900">Wrongful lien exposure</h3>
                 <p class="mt-3 text-sm text-zinc-600">
-                    {{ $page->penaltySentence() ?? "{$name} has no dedicated wrongful-lien penalty statute, but an inflated or baseless lien can still be challenged and removed at the claimant's expense." }}
+                    {{ $page->penaltySentence() ?? "We found no dedicated wrongful-lien penalty in {$name}'s lien statute. An owner can still ask a court to remove an inflated or baseless lien, so claim only what you are owed." }}
                 </p>
             </div>
         </div>

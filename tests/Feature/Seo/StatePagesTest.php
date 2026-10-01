@@ -104,7 +104,7 @@ describe('cached state pages', function () {
     });
 
     it('caches under versioned keys', function () {
-        expect(LienStatePage::cacheKey('tx'))->toBe('seo.lien-state.v2.TX')
+        expect(LienStatePage::cacheKey('tx'))->toBe('seo.lien-state.v3.TX')
             ->and(ResaleStatePage::cacheKey('fl'))->toBe('seo.resale-state.v2.FL')
             ->and(ResaleStatePage::statesCacheKey())->toBe('seo.resale-states.v2');
     });
@@ -186,5 +186,52 @@ describe('lien page details', function () {
             ->assertOk()
             ->assertSee('15th day of the 3rd month', escape: false)
             ->assertSee('Confirm with counsel', escape: false);
+    });
+
+    it('states the researched Texas office, enforcement deadline, and fraudulent-lien statute', function () {
+        // Tex. Prop. Code §§ 53.052, 53.158 (HB 2237); Tex. Civ. Prac. & Rem. Code § 12.002.
+        $this->get('/liens/texas')
+            ->assertOk()
+            ->assertSee('county clerk', escape: false)
+            ->assertSee('within 1 year after the last day the lien could have been filed', escape: false)
+            ->assertSee('12.002', escape: false)
+            ->assertDontSee('within 1 year after the lien is recorded', escape: false);
+    });
+
+    it('states the South Dakota enforcement period from the last item furnished, as SDCL 44-9-24 reads', function () {
+        $this->get('/liens/south-dakota')
+            ->assertOk()
+            ->assertSee('within 6 years after last furnishing labor or materials', escape: false)
+            ->assertDontSee('within 6 years after the lien is recorded', escape: false);
+    });
+
+    it('omits the enforcement fact where it cannot be stated as a date', function () {
+        // Delaware: the statement of claim is itself the suit. Hawaii, Maryland and
+        // Alabama run from a court order, a petition, or the debt's maturity.
+        foreach (['DE', 'HI', 'MD', 'AL'] as $code) {
+            $page = LienStatePage::forCode($code);
+
+            expect($page->enforcementSentence())->toBeNull($code)
+                ->and(array_column($page->keyFacts(), 'label'))->not->toContain('Enforcement deadline')
+                ->and(array_column($page->faq(), 'q'))->each->not->toContain('valid?');
+        }
+    });
+
+    it('renders Delaware, New Hampshire and Rhode Island without a "See statute" fallback', function () {
+        foreach (['delaware', 'new-hampshire', 'rhode-island'] as $slug) {
+            $this->get("/liens/{$slug}")
+                ->assertOk()
+                ->assertDontSee('See statute', escape: false)
+                ->assertSee('Practitioner notes for', escape: false);
+        }
+    });
+
+    it('keeps proper-noun filing offices capitalized mid-sentence', function () {
+        // Iowa's office is held back from the seed data (it feeds the generated documents); set it here.
+        LienStatePage::forCode('IA')->rule->update(['filing_location' => "Iowa Secretary of State's Mechanics' Notice and Lien Registry (MNLR), online"]);
+
+        expect(LienStatePage::forCode('IA')->filingLocationPhrase())->toStartWith('Iowa Secretary of State')
+            ->and(LienStatePage::forCode('AL')->filingLocationPhrase())->toStartWith('office of the judge of probate')
+            ->and(LienStatePage::forCode('TX')->filingLocationPhrase())->toBe('county clerk where the property sits');
     });
 });

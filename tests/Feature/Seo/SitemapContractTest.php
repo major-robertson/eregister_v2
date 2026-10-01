@@ -42,6 +42,7 @@ const RAW_FIELD_NAMES = ['lien_anchor_logic', 'enforcement_trigger', 'first_furn
 it('serves every sitemap url as a clean, self-canonical, indexable page', function () {
     $lienStatePaths = array_map(fn (string $name) => '/liens/'.States::slug($name), States::names());
     $failures = [];
+    $seenLienStates = [];
 
     foreach (SitemapController::urls() as $entry) {
         $loc = $entry['loc'];
@@ -120,9 +121,24 @@ it('serves every sitemap url as a clean, self-canonical, indexable page', functi
             }
         }
 
-        if (in_array($path, $lienStatePaths, true) && stripos($html, 'confirm with counsel') === false) {
-            $fail('no "confirm with counsel" disclaimer');
+        if (in_array($path, $lienStatePaths, true)) {
+            $seenLienStates[] = $path;
+            if (stripos($html, 'confirm with counsel') === false) {
+                $fail('no "confirm with counsel" disclaimer');
+            }
+            // Researched notes print in their own box on every state page.
+            if (! preg_match('/Practitioner notes for [^<]+<\/h3>\s*<p[^>]*>\s*\S/', $html)) {
+                $fail('no "Practitioner notes" box with text');
+            }
+            // Seed-data tokens such as last_furnish_date or lien_anchor_logic.
+            if (preg_match('/\w+_(?:date|logic)\b/', $text, $match)) {
+                $fail("raw field token \"{$match[0]}\"");
+            }
         }
+    }
+
+    foreach (array_diff($lienStatePaths, $seenLienStates) as $missing) {
+        $failures[$missing][] = 'lien state page missing from the sitemap';
     }
 
     $report = collect($failures)

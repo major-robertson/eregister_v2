@@ -763,7 +763,7 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": null,
+        "conditions_json": "{\"display\":\"Before work begins on a residential project of four or fewer units, the contractor must deliver the statutory pre-construction notice to the owner by personal delivery or certified mail. Not required if the contractor provides a performance and payment bond, or on a direct sale to the owner.\"}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -2859,7 +2859,7 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": null,
+        "conditions_json": "{\"display\":\"Before signing a contract over $2,000 with a homeowner or residential buyer (1 to 4 dwelling units), the general contractor must give the statutory lien disclosure statement and keep the signed acknowledgment of receipt\"}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -3883,7 +3883,7 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": null,
+        "conditions_json": "{\"display\":\"On work on an owner-occupied home (one or two families), mail the owner the statutory warning statement before filing a lien; there is no fixed deadline, but the owner is protected for payments made to the contractor before receiving it. Not needed if the claim is $250 or less. On new homes, file a notice of intent to perform with the district court clerk before the deed to a buyer is recorded\"}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -3899,7 +3899,7 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": null,
+        "conditions_json": "{\"display\":\"On work on an owner-occupied home (one or two families), mail the owner the statutory warning statement before filing a lien; there is no fixed deadline, but the owner is protected for payments made to the contractor before receiving it. Not needed if the claim is $250 or less. On new homes, file a notice of intent to perform with the district court clerk before the deed to a buyer is recorded\"}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -3915,7 +3915,7 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": null,
+        "conditions_json": "{\"display\":\"On work on an owner-occupied home (one or two families), mail the owner the statutory warning statement before filing a lien; there is no fixed deadline, but the owner is protected for payments made to the contractor before receiving it. Not needed if the claim is $250 or less. On new homes, file a notice of intent to perform with the district court clerk before the deed to a buyer is recorded\"}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -3931,7 +3931,7 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": null,
+        "conditions_json": "{\"display\":\"On work on an owner-occupied home (one or two families), mail the owner the statutory warning statement before filing a lien; there is no fixed deadline, but the owner is protected for payments made to the contractor before receiving it. Not needed if the claim is $250 or less. On new homes, file a notice of intent to perform with the district court clerk before the deed to a buyer is recorded\"}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -4395,7 +4395,7 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": null,
+        "conditions_json": "{\"display\":\"Before work begins, file a notice of contract, signed by the owner and general contractor, with the parish recorder of mortgages. If the contract price is over $100,000, a general contractor without a timely notice of contract has no privilege and cannot file a statement of claim\"}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -5691,7 +5691,7 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": null,
+        "conditions_json": "{\"display\":\"Put the statutory lien notice in the written contract. If there is no written contract, deliver the notice to the owner personally or by certified mail within 10 days after the work is agreed upon.\"}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -6235,7 +6235,7 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": null,
+        "conditions_json": "{\"display\":\"Give the owner the statutory notice before receiving any payment: when the contract is signed, when materials are delivered, when work starts, or with the first invoice.\"}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -6251,7 +6251,7 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": null,
+        "conditions_json": "{\"display\":\"Give the owner the statutory notice before receiving any payment: when the contract is signed, when materials are delivered, when work starts, or with the first invoice.\"}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -7323,7 +7323,7 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": null,
+        "conditions_json": "{\"display\":\"Before you start work or deliver materials, give the owner (or the person in charge of the property) written notice that you will claim a lien. Later notice still works, but the lien then covers only what is then due or later becomes due to the contractor who hired you.\"}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -7339,7 +7339,7 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": null,
+        "conditions_json": "{\"display\":\"Before you start work or deliver materials, give the owner (or the person in charge of the property) written notice that you will claim a lien. Later notice still works, but the lien then covers only what is then due or later becomes due to the contractor who hired you.\"}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -7355,7 +7355,7 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": null,
+        "conditions_json": "{\"display\":\"Before you deliver materials, give the owner (or the person in charge of the property) written notice that you will claim a lien. Later notice still works, but the lien then covers only what is then due or later becomes due to the contractor who bought from you.\"}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -7371,7 +7371,7 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": null,
+        "conditions_json": "{\"display\":\"Before you deliver materials, give the owner (or the person in charge of the property) written notice that you will claim a lien. Later notice still works, but the lien then covers only what is then due or later becomes due to the subcontractor who bought from you.\"}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -10635,7 +10635,7 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": "{\"display\":\"by the 15th day of the 3rd month after each month in which the labor or materials were furnished (the 2nd month on residential projects)\"}",
+        "conditions_json": "{\"display\":\"by the 15th day of the 3rd month after each month in which unpaid labor or materials were provided (the 2nd month on residential projects)\"}",
         "notes": "Tex. Prop. Code §53.056 (nonresidential: 15th day of the 3rd month after each month of furnishing); §53.252 (residential: 15th day of the 2nd month).",
         "data_source": "csv_v3"
     },
@@ -10651,7 +10651,7 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": "{\"display\":\"by the 15th day of the 3rd month after each month in which the labor or materials were furnished (the 2nd month on residential projects)\"}",
+        "conditions_json": "{\"display\":\"by the 15th day of the 3rd month after each month in which unpaid labor or materials were provided (the 2nd month on residential projects)\"}",
         "notes": "Tex. Prop. Code §53.056 (nonresidential: 15th day of the 3rd month after each month of furnishing); §53.252 (residential: 15th day of the 2nd month).",
         "data_source": "csv_v3"
     },
@@ -10667,7 +10667,7 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": "{\"display\":\"by the 15th day of the 3rd month after each month in which the labor or materials were furnished (the 2nd month on residential projects)\"}",
+        "conditions_json": "{\"display\":\"by the 15th day of the 3rd month after each month in which unpaid labor or materials were provided (the 2nd month on residential projects)\"}",
         "notes": "Tex. Prop. Code §53.056 (nonresidential: 15th day of the 3rd month after each month of furnishing); §53.252 (residential: 15th day of the 2nd month).",
         "data_source": "csv_v3"
     },
@@ -10683,7 +10683,7 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": "{\"display\":\"by the 15th day of the 3rd month after each month in which the labor or materials were furnished (the 2nd month on residential projects)\"}",
+        "conditions_json": "{\"display\":\"by the 15th day of the 3rd month after each month in which unpaid labor or materials were provided (the 2nd month on residential projects)\"}",
         "notes": "Tex. Prop. Code §53.056 (nonresidential: 15th day of the 3rd month after each month of furnishing); §53.252 (residential: 15th day of the 2nd month).",
         "data_source": "csv_v3"
     },

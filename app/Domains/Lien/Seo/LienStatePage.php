@@ -50,7 +50,7 @@ final class LienStatePage
     }
 
     /** Bump when the shape of this object or the page copy changes: the cached instances are replaced on the next request. */
-    public const CACHE_VERSION = 2;
+    public const CACHE_VERSION = 3;
 
     public static function cacheKey(string $code): string
     {
@@ -277,8 +277,23 @@ final class LienStatePage
             'registry_of_deeds' => 'Registry of deeds for the county',
             'town_clerk' => 'Town or city clerk',
             'prothonotary' => 'Prothonotary (court clerk) for the county',
+            // States whose office fits no slug store the office's name as text.
             default => ucfirst(str_replace('_', ' ', (string) $this->rule->filing_location)),
         };
+    }
+
+    /**
+     * The filing office for use mid-sentence ("Record with the ..."). Generic
+     * labels are lowercased; a proper name such as "Iowa Secretary of State's
+     * ..." or "State Recorder's Office ..." keeps its capitals.
+     */
+    public function filingLocationPhrase(): string
+    {
+        $label = $this->filingLocationLabel();
+        $words = preg_split('/\s+/', $label, 3);
+        $properName = isset($words[1]) && preg_match('/^\p{Lu}/u', $words[1]);
+
+        return $properName ? $label : lcfirst($label);
     }
 
     public function ownerOccupiedSentence(): ?string
@@ -402,7 +417,7 @@ final class LienStatePage
 
         $items[] = [
             'q' => "Where is a mechanics lien filed in {$this->name}?",
-            'a' => 'With the '.lcfirst($this->filingLocationLabel()).'. '.($r->efile_allowed
+            'a' => 'With the '.$this->filingLocationPhrase().'. '.($r->efile_allowed
                 ? 'Electronic recording is available in participating counties, which typically cuts the turnaround to a day or two.'
                 : 'Whether electronic recording is accepted varies by county, so check with the recording office and allow time for mailing and processing when working back from your deadline.'),
         ];

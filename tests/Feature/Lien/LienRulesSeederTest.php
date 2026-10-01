@@ -41,7 +41,8 @@ describe('LienStateRuleSeeder', function () {
         expect($tx->sub_has_lien_rights)->toBeTrue();
         expect($tx->owner_occupied_special_rules)->toBeTrue();
         expect((float) $tx->enforcement_deadline_months)->toBe(12.0);
-        expect($tx->enforcement_deadline_trigger)->toBe('lien_recorded_date');
+        // Tex. Prop. Code § 53.158(a) (HB 2237): 1 year from the last day the affidavit could be filed.
+        expect($tx->enforcement_deadline_trigger)->toBe('last_day_to_file');
 
         // Verify California data
         $ca = LienStateRule::find('CA');

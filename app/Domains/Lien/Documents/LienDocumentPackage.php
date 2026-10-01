@@ -164,7 +164,8 @@ final class LienDocumentPackage
      */
     public static function executionLabel(array $execution): string
     {
-        $notary = (bool) ($execution['notary'] ?? false);
+        // notary_in_body: the body or a clause prints the statutory certificate, still signed before a notary.
+        $notary = (bool) ($execution['notary'] ?? false) || (bool) ($execution['notary_in_body'] ?? false);
         $verification = (string) ($execution['verification'] ?? 'none');
 
         $label = match (true) {

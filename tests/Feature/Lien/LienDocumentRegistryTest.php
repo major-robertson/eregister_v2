@@ -55,7 +55,7 @@ describe('registry', function () {
             ]);
             expect($rules['recording']['filing_office'])->toHaveKeys(['label', 'method', 'address_lines', 'vendor']);
             expect($rules['recording']['top_margin_in'])->toBeGreaterThanOrEqual(1.0);
-            expect($rules['execution'])->toHaveKeys(['verification', 'notary', 'notary_form', 'notary_variant', 'witness']);
+            expect($rules['execution'])->toHaveKeys(['verification', 'notary', 'notary_form', 'notary_variant', 'notary_in_body', 'witness']);
             expect($rules['service'])->toHaveKeys(['recipients', 'days_after', 'method', 'proof', 'certificate_on_instrument', 'perjury_state']);
 
             expect(array_keys($rules['kinds']))->toEqualCanonicalizing(LienDocumentRegistry::KINDS);
@@ -70,7 +70,7 @@ describe('registry', function () {
                 expect($entry['body'])->toStartWith('documents.lien.');
                 expect($entry['sections'])->toHaveKeys(['amount', 'gc', 'lender', 'prior_notice', 'first_furnish', 'last_furnish']);
                 expect($entry['clauses'])->toHaveKeys(['notice_box', 'bold_statement', 'after_property', 'before_signature', 'affirmations', 'demand']);
-                expect($entry['execution'])->toHaveKeys(['verification', 'notary', 'notary_form']);
+                expect($entry['execution'])->toHaveKeys(['verification', 'notary', 'notary_form', 'notary_in_body']);
                 expect($entry['service']['recipients'])->toBeArray()->not->toBeEmpty();
 
                 foreach ($entry['service']['recipients'] as $role) {

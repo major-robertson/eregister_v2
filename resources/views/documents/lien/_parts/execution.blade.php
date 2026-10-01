@@ -14,6 +14,7 @@
       —   a generic certificate with blank venue lines (the client notarizes in
           their own county, never the property's); execution.notary_county_line
           adds a "Notary's county of commission" line (Indiana, IC 33-42-9-12(a)(5)(B))
+    execution.notary_in_body (AL): the body or a clause prints the certificate, so notary is false here.
     Statutory certificates are verbatim; never edit them without re-checking
     the statute (verified 2026-09-29).
 --}}

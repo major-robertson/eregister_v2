@@ -10635,8 +10635,8 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": null,
-        "notes": null,
+        "conditions_json": "{\"display\":\"by the 15th day of the 3rd month after each month in which the labor or materials were furnished (the 2nd month on residential projects)\"}",
+        "notes": "Tex. Prop. Code §53.056 (nonresidential: 15th day of the 3rd month after each month of furnishing); §53.252 (residential: 15th day of the 2nd month).",
         "data_source": "csv_v3"
     },
     {
@@ -10651,8 +10651,8 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": null,
-        "notes": null,
+        "conditions_json": "{\"display\":\"by the 15th day of the 3rd month after each month in which the labor or materials were furnished (the 2nd month on residential projects)\"}",
+        "notes": "Tex. Prop. Code §53.056 (nonresidential: 15th day of the 3rd month after each month of furnishing); §53.252 (residential: 15th day of the 2nd month).",
         "data_source": "csv_v3"
     },
     {
@@ -10667,8 +10667,8 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": null,
-        "notes": null,
+        "conditions_json": "{\"display\":\"by the 15th day of the 3rd month after each month in which the labor or materials were furnished (the 2nd month on residential projects)\"}",
+        "notes": "Tex. Prop. Code §53.056 (nonresidential: 15th day of the 3rd month after each month of furnishing); §53.252 (residential: 15th day of the 2nd month).",
         "data_source": "csv_v3"
     },
     {
@@ -10683,8 +10683,8 @@
         "is_required": true,
         "effective_scope": "both",
         "is_placeholder": false,
-        "conditions_json": null,
-        "notes": null,
+        "conditions_json": "{\"display\":\"by the 15th day of the 3rd month after each month in which the labor or materials were furnished (the 2nd month on residential projects)\"}",
+        "notes": "Tex. Prop. Code §53.056 (nonresidential: 15th day of the 3rd month after each month of furnishing); §53.252 (residential: 15th day of the 2nd month).",
         "data_source": "csv_v3"
     },
     {

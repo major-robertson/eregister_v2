@@ -82,7 +82,7 @@
             </h2>
         </div>
         <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            @foreach ([['title' => 'API gateway', 'body' => 'A single, documented API gateway in front of your systems &mdash; with rate limiting, auth, and logging.'], ['title' => 'Async &amp; resilient', 'body' => 'Queued jobs and retry logic so a 30-second mainframe call doesn&rsquo;t freeze the resident&rsquo;s browser.'], ['title' => 'Observable', 'body' => 'Every integration call is logged and graphed. You see error rates and latency in real time.']] as $approach)
+            @foreach ([['title' => 'API gateway', 'body' => 'A single, documented API gateway in front of your systems &mdash; with rate limiting, auth, and logging.'], ['title' => 'Async & resilient', 'body' => 'Queued jobs and retry logic so a 30-second mainframe call doesn&rsquo;t freeze the resident&rsquo;s browser.'], ['title' => 'Observable', 'body' => 'Every integration call is logged and graphed. You see error rates and latency in real time.']] as $approach)
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-6">
                     <h3 class="text-lg font-semibold text-slate-900">{{ $approach['title'] }}</h3>
                     <p class="mt-2 text-sm text-slate-600">{!! $approach['body'] !!}</p>

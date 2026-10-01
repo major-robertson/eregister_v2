@@ -23,7 +23,14 @@ final class LienStatePage
     /** @var array<int, string> */
     public readonly array $statutes;
 
+    /** The author's working notes. Never rendered: see $publicNotes. */
     public readonly ?string $notes;
+
+    /** Reviewed plain-English notes for the public page, or null. */
+    public readonly ?string $publicNotes;
+
+    /** "a" or "an", for "an Alabama lien" / "a Texas lien". */
+    public readonly string $article;
 
     /** @var array<string, array<int, array{who: string, when: string, scope: string}>> keyed by document type slug */
     public readonly array $deadlines;
@@ -36,7 +43,23 @@ final class LienStatePage
         $this->slug = States::slug($this->name);
         $this->statutes = self::decodeStatutes($rule->getRawOriginal('statute_references'));
         $this->notes = Text::fixMojibake($rule->notes);
+        $this->publicNotes = Text::fixMojibake($rule->public_notes) ?: null;
+        $this->article = Text::article($this->name);
         $this->deadlines = $this->buildDeadlines();
+    }
+
+    /** Bump when the shape of this object or the page copy changes: the cached instances are replaced on the next request. */
+    public const CACHE_VERSION = 2;
+
+    public static function cacheKey(string $code): string
+    {
+        return 'seo.lien-state.v'.self::CACHE_VERSION.'.'.strtoupper($code);
+    }
+
+    /** States where the lien is filed through the courts by an attorney, so the wizard cannot sell a self-serve filing. */
+    public function requiresAttorney(): bool
+    {
+        return in_array($this->code, config('lien.attorney_referral_states', []), true);
     }
 
     public static function forCode(string $code): ?self
@@ -101,11 +124,16 @@ final class LienStatePage
             ['label' => 'Lien filing deadline', 'value' => $this->headlineLienDeadline() ?? 'See the deadline table below'],
             ['label' => 'Notarization', 'value' => $r->notarization_required ? 'Required' : 'Not required', 'detail' => $this->verificationLabel()],
             ['label' => 'Where to record', 'value' => $this->filingLocationLabel()],
-            ['label' => 'E-recording', 'value' => $r->efile_allowed ? 'Available in participating counties' : 'Not generally available; plan on paper recording'],
-            ['label' => 'Enforcement deadline', 'value' => $this->enforcementSentence() ? ucfirst($this->enforcementSentence()) : 'See statute'],
+            ['label' => 'E-recording', 'value' => $r->efile_allowed ? 'Available in participating counties' : 'Varies by county', 'detail' => $r->efile_allowed ? null : 'Ask the recording office whether it accepts electronic recording before you rely on it.'],
         ];
 
-        return $facts;
+        // Only state an enforcement deadline when the rule table has one;
+        // a guessed value is worse than none on a legal reference page.
+        if ($this->enforcementSentence()) {
+            $facts[] = ['label' => 'Enforcement deadline', 'value' => ucfirst($this->enforcementSentence())];
+        }
+
+        return array_map(fn (array $fact) => array_filter($fact, fn ($v) => $v !== null), $facts);
     }
 
     /** @return array<int, array{role: string, rights: bool}> */
@@ -203,6 +231,8 @@ final class LienStatePage
             'last_furnish_date' => 'last furnishing labor or materials',
             'completion_date' => 'project completion',
             'contract_date' => 'the contract date',
+            'last_day_to_file' => 'the last day the lien could have been filed',
+            'notice_of_intention_filed' => 'the notice of intention is filed',
             default => null,
         };
 
@@ -237,10 +267,16 @@ final class LienStatePage
     {
         return match ($this->rule->filing_location) {
             'county_recorder' => 'County recorder where the property sits',
+            'county_clerk' => 'County clerk where the property sits',
             'circuit_clerk' => 'Circuit court clerk for the county',
+            'clerk_of_court' => 'Clerk of court for the county',
+            'superior_court_clerk' => 'Clerk of the superior court for the county',
+            'chancery_clerk' => 'Chancery clerk for the county',
             'register_of_deeds' => 'Register of deeds for the county',
+            'registry_of_deeds' => 'Registry of deeds for the county',
             'town_clerk' => 'Town or city clerk',
-            default => (string) $this->rule->filing_location,
+            'prothonotary' => 'Prothonotary (court clerk) for the county',
+            default => ucfirst(str_replace('_', ' ', (string) $this->rule->filing_location)),
         };
     }
 
@@ -356,7 +392,7 @@ final class LienStatePage
         ];
 
         $items[] = [
-            'q' => "Does a {$this->name} mechanics lien need to be notarized?",
+            'q' => "Does {$this->article} {$this->name} mechanics lien need to be notarized?",
             'a' => ($r->notarization_required
                 ? 'Yes. The lien must be notarized before it is recorded.'
                 : "No. {$this->name} does not require a notary on the lien itself.")
@@ -367,13 +403,13 @@ final class LienStatePage
             'q' => "Where is a mechanics lien filed in {$this->name}?",
             'a' => 'With the '.lcfirst($this->filingLocationLabel()).'. '.($r->efile_allowed
                 ? 'Electronic recording is available in participating counties, which typically cuts the turnaround to a day or two.'
-                : 'Paper filing is the norm, so allow time for mailing and the recorder\'s processing queue when working back from your deadline.'),
+                : 'Whether electronic recording is accepted varies by county, so check with the recording office and allow time for mailing and processing when working back from your deadline.'),
         ];
 
         if ($this->enforcementSentence()) {
             $items[] = [
-                'q' => "How long is a {$this->name} mechanics lien valid?",
-                'a' => "A {$this->name} lien must be enforced through a foreclosure lawsuit {$this->enforcementSentence()}. If no suit is filed by then, the lien expires and can no longer be used to force payment.",
+                'q' => "How long is {$this->article} {$this->name} mechanics lien valid?",
+                'a' => ucfirst($this->article)." {$this->name} lien must be enforced through a foreclosure lawsuit {$this->enforcementSentence()}. If no suit is filed by then, the lien expires and can no longer be used to force payment.",
             ];
         }
 
@@ -442,7 +478,10 @@ final class LienStatePage
     {
         $byClaimant = [];
         foreach ($group as $rule) {
-            $byClaimant[$rule->claimant_type][$rule->effective_scope] = $this->describe($rule);
+            $when = $this->describe($rule);
+            if ($when !== null) {
+                $byClaimant[$rule->claimant_type][$rule->effective_scope] = $when;
+            }
         }
 
         $rows = [];
@@ -478,14 +517,25 @@ final class LienStatePage
         }, $merged));
     }
 
-    private function describe(object $rule): string
+    /**
+     * Plain-English deadline for one rule row, or null when the row cannot be
+     * stated honestly (a zero-offset "days after" row is a statutory schedule
+     * the table cannot express; it needs a conditions_json.display override,
+     * otherwise the row is left off the page rather than shown as a guess).
+     */
+    private function describe(object $rule): ?string
     {
         $trigger = self::triggerLabel($rule->trigger_event);
         $days = (int) $rule->offset_days;
         $months = (int) $rule->offset_months;
+        $conditions = is_string($rule->conditions_json) ? json_decode($rule->conditions_json, true) : (array) $rule->conditions_json;
+
+        if (! empty($conditions['display'])) {
+            return $conditions['display'];
+        }
 
         $text = match ($rule->calc_method) {
-            'days_after_date' => $days > 0 ? "within {$days} days after {$trigger}" : "at {$trigger} (see the notes below for the statutory schedule)",
+            'days_after_date' => $days > 0 ? "within {$days} days after {$trigger}" : null,
             'months_after_date' => 'within '.($months === 1 ? '1 month' : "{$months} months")." after {$trigger}",
             'month_day_after_month_of_date' => 'by the '.Text::ordinal((int) $rule->day_of_month).' day of the '.Text::ordinal($months)." month after the month of {$trigger}",
             'days_after_end_of_month_of_date' => "within {$days} days after the end of the month of {$trigger}",
@@ -493,7 +543,10 @@ final class LienStatePage
             default => "see statute ({$trigger})",
         };
 
-        $conditions = is_string($rule->conditions_json) ? json_decode($rule->conditions_json, true) : (array) $rule->conditions_json;
+        if ($text === null) {
+            return null;
+        }
+
         if (($conditions['anchor'] ?? null) === 'later_of' && ! empty($conditions['dates'])) {
             $alts = array_values(array_filter($conditions['dates'], fn ($d) => $d !== $rule->trigger_event));
             if ($alts) {

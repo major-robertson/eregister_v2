@@ -9,6 +9,8 @@
     /** @var \App\Domains\Lien\Seo\LienStatePage $page */
     $name = $page->name;
     $rule = $page->rule;
+    $a = $page->article;
+    $referral = $page->requiresAttorney();
     $deadlineSections = [
         'prelim_notice' => ['title' => 'Preliminary notice deadline', 'blurb' => 'The notice that preserves lien rights before any payment problem exists.'],
         'noi' => ['title' => 'Notice of intent to lien', 'blurb' => 'The final warning before a lien is recorded.'],
@@ -18,9 +20,9 @@
 
 <x-seo.service
     name="{{ $name }} Mechanics Lien Filing"
-    description="Prepare and record a {{ $name }} mechanics lien with the correct deadlines, notices, and statutory form, filed with the {{ lcfirst($page->filingLocationLabel()) }}."
+    description="Prepare and record {{ $a }} {{ $name }} mechanics lien with the correct deadlines, notices, and statutory form, filed with the {{ lcfirst($page->filingLocationLabel()) }}."
     :url="$page->url()"
-    :price="$page->selfServePrice()"
+    :price="$referral ? null : $page->selfServePrice()"
     category="Mechanics lien filing" />
 
 {{-- Hero --}}
@@ -36,12 +38,16 @@
             <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Deadlines &amp; Filing Rules</span>
         </h1>
         <p class="mt-6 max-w-2xl text-lg text-zinc-400">
-            Every notice, deadline, and recording requirement for a {{ $name }} construction lien, drawn from
+            Every notice, deadline, and recording requirement for {{ $a }} {{ $name }} construction lien, drawn from
             @if ($page->statutes) {{ $page->statutes[0] }} and @endif the same rule engine that calculates deadlines for our filing customers.
         </p>
         <div class="mt-10 flex flex-wrap gap-4">
             <a href="{{ route('register') }}" class="group inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#B91C1C]">
-                File a {{ $name }} lien from ${{ $page->selfServePrice() }}
+                @if ($referral)
+                Get matched with {{ $a }} {{ $name }} lien attorney
+                @else
+                File {{ $a }} {{ $name }} lien from ${{ $page->selfServePrice() }}
+                @endif
                 <svg class="h-4 w-4 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
@@ -157,13 +163,13 @@
 {{-- Recording, enforcement, penalties --}}
 <section class="border-y border-zinc-200 bg-zinc-50 py-20">
     <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <h2 class="text-3xl font-bold tracking-tight text-zinc-900">Recording and enforcing a {{ $name }} lien</h2>
+        <h2 class="text-3xl font-bold tracking-tight text-zinc-900">Recording and enforcing {{ $a }} {{ $name }} lien</h2>
         <div class="mt-10 grid gap-8 lg:grid-cols-3">
             <div class="rounded-2xl border border-zinc-200 bg-white p-6">
                 <h3 class="font-semibold text-zinc-900">Recording the lien</h3>
                 <p class="mt-3 text-sm text-zinc-600">
                     Record with the {{ lcfirst($page->filingLocationLabel()) }}.
-                    {{ $rule->efile_allowed ? 'Electronic recording is available in participating counties.' : 'Electronic recording is not generally available, so build mailing time into the deadline.' }}
+                    {{ $rule->efile_allowed ? 'Electronic recording is available in participating counties.' : 'Whether electronic recording is accepted varies by county, so confirm with the recording office and build mailing time into the deadline.' }}
                     {{ $rule->notarization_required ? 'The lien must be notarized.' : 'No notary is required on the lien itself.' }}
                     @if ($page->verificationLabel()) {{ $page->verificationLabel() }}. @endif
                 </p>
@@ -185,10 +191,11 @@
             </div>
         </div>
 
-        @if ($page->notes)
+        @if ($page->publicNotes)
         <div class="mt-10 rounded-2xl border border-amber-200 bg-amber-50 p-6">
             <h3 class="font-semibold text-amber-900">Practitioner notes for {{ $name }}</h3>
-            <p class="mt-3 text-sm leading-relaxed text-amber-900/80">{{ $page->notes }}</p>
+            <p class="mt-3 text-sm leading-relaxed text-amber-900/80">{{ $page->publicNotes }}</p>
+            <p class="mt-3 text-xs text-amber-900/70">These notes summarize the statute as we read it. Deadlines turn on facts specific to your project, so confirm with counsel before relying on them.</p>
         </div>
         @endif
 
@@ -196,7 +203,7 @@
         <p class="mt-8 text-sm text-zinc-500">
             Statutory sources: {{ implode('; ', $page->statutes) }}.
             @if ($rule->statute_url)
-            <a href="{{ $rule->statute_url }}" rel="noopener nofollow" target="_blank" class="font-medium text-zinc-700 underline">Read the {{ $name }} lien statute</a>.
+            <a href="{{ $rule->statute_url }}" rel="noopener" target="_blank" class="font-medium text-zinc-700 underline">Read the {{ $name }} lien statute</a>.
             @endif
         </p>
         @endif
@@ -206,15 +213,27 @@
 {{-- Pricing / CTA --}}
 <section class="bg-white py-20">
     <div class="mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
+        @if ($referral)
+        <h2 class="text-3xl font-bold tracking-tight text-zinc-900">Filing {{ $a }} {{ $name }} mechanics lien</h2>
+        <p class="mx-auto mt-4 max-w-2xl text-zinc-600">
+            {{ $name }} liens are filed through the courts by an attorney, so we do not sell a self-serve {{ $name }} filing.
+            Tell us about the project and we connect you with {{ $a }} {{ $name }} attorney who handles construction lien filings.
+        </p>
+        <div class="mt-8 flex flex-wrap justify-center gap-4">
+            <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:bg-[#B91C1C]">Request {{ $a }} {{ $name }} lien attorney</a>
+            <a href="{{ route('liens.preliminary-notice') }}" class="inline-flex items-center gap-2 rounded-lg border border-zinc-300 px-8 py-4 text-base font-semibold text-zinc-800 transition hover:bg-zinc-50">Send a preliminary notice instead</a>
+        </div>
+        @else
         <h2 class="text-3xl font-bold tracking-tight text-zinc-900">File your {{ $name }} mechanics lien</h2>
         <p class="mx-auto mt-4 max-w-2xl text-zinc-600">
             We calculate the {{ $name }} deadlines from your project dates, prepare the lien on the correct form, and handle recording.
             Self-serve from ${{ $page->selfServePrice() }}, or full service with recording and notices handled for you from ${{ $page->fullServicePrice() }}.
         </p>
         <div class="mt-8 flex flex-wrap justify-center gap-4">
-            <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:bg-[#B91C1C]">Start a {{ $name }} lien</a>
+            <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:bg-[#B91C1C]">Start {{ $a }} {{ $name }} lien</a>
             <a href="{{ route('liens.pricing') }}" class="inline-flex items-center gap-2 rounded-lg border border-zinc-300 px-8 py-4 text-base font-semibold text-zinc-800 transition hover:bg-zinc-50">See lien pricing</a>
         </div>
+        @endif
     </div>
 </section>
 
@@ -236,12 +255,13 @@
                     <li><a href="{{ route('liens.lien-waivers.state', ['state' => strtolower($page->code)]) }}" class="text-zinc-700 underline hover:text-zinc-900">Free {{ $name }} lien waiver forms</a></li>
                     <li><a href="{{ route('liens.preliminary-notice') }}" class="text-zinc-700 underline hover:text-zinc-900">Preliminary notice service</a></li>
                     <li><a href="{{ route('liens.notice-of-intent-to-lien') }}" class="text-zinc-700 underline hover:text-zinc-900">Notice of intent to lien</a></li>
+                    <li><a href="{{ route('liens.payment-demand-letter') }}" class="text-zinc-700 underline hover:text-zinc-900">Payment demand letter</a></li>
                     <li><a href="{{ route('liens.lien-release') }}" class="text-zinc-700 underline hover:text-zinc-900">Lien release</a></li>
                     <li><a href="{{ route('liens') }}" class="text-zinc-700 underline hover:text-zinc-900">Mechanics lien rules for every state</a></li>
                 </ul>
             </div>
             <div>
-                <h2 class="text-lg font-semibold text-zinc-900">Nearby states</h2>
+                <h2 class="text-lg font-semibold text-zinc-900">Bordering states</h2>
                 <ul class="mt-4 flex flex-wrap gap-2">
                     @foreach ($nearbyStates as $nearbyCode => $nearbyName)
                     <li>

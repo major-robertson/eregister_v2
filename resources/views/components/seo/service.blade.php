@@ -9,6 +9,11 @@
 {{-- Service (+ Offer when a price is known) JSON-LD for a product page.
      Pushed to the schema stack so it lands in <head> next to the other tags. --}}
 @php
+    // Static attributes arrive HTML-escaped ("&amp;"); decode once so the
+    // JSON never carries entities. json-ld.blade.php re-escapes "<".
+    $name = html_entity_decode($name, ENT_QUOTES);
+    $description = html_entity_decode($description, ENT_QUOTES);
+
     $schema = [
         '@context' => 'https://schema.org',
         '@type' => 'Service',

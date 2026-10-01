@@ -50,7 +50,9 @@ class WaiverLandingController extends Controller
             'rules' => $rules,
             'stateName' => $stateName,
             'nearbyStates' => $this->nearbyStates($code),
-            'pageTitle' => $stateName.' Lien Waiver Forms | Free '.$stateName.' Lien Waiver Generator',
+            // Under 60 characters for every state (North Carolina = 49), so
+            // Google shows the whole title instead of rewriting it.
+            'pageTitle' => $stateName.' Lien Waiver Forms (Free Generator)',
             'metaDescription' => $this->metaDescription($stateName, $rules),
             'canonicalUrl' => route('liens.lien-waivers.state', ['state' => strtolower($code)]),
         ]);

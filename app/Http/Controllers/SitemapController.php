@@ -103,6 +103,7 @@ class SitemapController extends Controller
         $resaleModified = max(
             self::viewModified('pages.resale-state'),
             self::fileModified(database_path('seeders/ResaleStateRuleSeeder.php')),
+            self::directoryModified(\App\Domains\ResaleCert\Seo\ResaleStateContent::directory()),
         );
         foreach (ResaleStatePage::availableStates() as $name) {
             $entries[] = self::entry('/resale-certificates/'.States::slug($name), 'monthly', '0.6', $resaleModified);

@@ -8,6 +8,8 @@ enum CalcMethod: string
     case MonthsAfterDate = 'months_after_date';
     case MonthDayAfterMonthOfDate = 'month_day_after_month_of_date';
     case DaysAfterEndOfMonthOfDate = 'days_after_end_of_month_of_date';
+    // Notice of intent rows: "N days before the lien filing deadline".
+    case DaysBeforeDate = 'days_before_date';
 
     public function label(): string
     {
@@ -16,6 +18,7 @@ enum CalcMethod: string
             self::MonthsAfterDate => 'Months After Date',
             self::MonthDayAfterMonthOfDate => 'Day of Month After Month',
             self::DaysAfterEndOfMonthOfDate => 'Days After End of Month',
+            self::DaysBeforeDate => 'Days Before Date',
         };
     }
 
@@ -26,6 +29,7 @@ enum CalcMethod: string
             self::MonthsAfterDate => 'Add offset_months calendar months to the anchor date',
             self::MonthDayAfterMonthOfDate => 'Go to Nth day of (anchor_month + offset_months)',
             self::DaysAfterEndOfMonthOfDate => 'Go to end of anchor month, then add offset_days',
+            self::DaysBeforeDate => 'Subtract offset_days from the anchor date (the lien filing deadline)',
         };
     }
 }

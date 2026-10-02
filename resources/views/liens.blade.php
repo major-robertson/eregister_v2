@@ -432,6 +432,10 @@
                 <div class="mt-1 text-sm text-zinc-500">Release a filed lien once you are paid</div>
             </a>
         </div>
+
+        <p class="mt-8 text-center text-sm text-zinc-600">
+            Not sure when your deadlines fall? The free <a href="{{ route('liens.deadline-calculator') }}" class="font-medium text-zinc-900 underline">mechanics lien deadline calculator</a> turns your project dates into notice and filing dates for any state.
+        </p>
     </div>
 </section>
 

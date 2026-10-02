@@ -124,7 +124,7 @@ class SitemapController extends Controller
             }
         }
 
-        // Resale certificate rules by state (states with a sales tax only).
+        // Resale certificate rules by state, including the four no-sales-tax states.
         $resaleModified = max(
             self::viewModified('pages.resale-state'),
             self::fileModified(database_path('seeders/ResaleStateRuleSeeder.php')),

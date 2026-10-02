@@ -10,8 +10,94 @@
     $name = $page->name;
     $rule = $page->rule;
     $a = $page->article;
+    $noTax = $page->noSalesTax();
 @endphp
 
+@if ($noTax)
+{{-- No statewide sales tax: what a buyer from here gives suppliers in other
+     states, and the taxes that do apply. No generator, no Service schema:
+     the state issues no certificate for us to sell. --}}
+<section class="relative overflow-hidden bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-800 py-20 lg:py-24">
+    <div class="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        <x-seo.breadcrumbs class="text-zinc-400" :items="[
+            ['name' => 'Home', 'url' => route('home')],
+            ['name' => 'Resale Certificates', 'url' => route('resale-certificates')],
+            ['name' => $name],
+        ]" />
+        <h1 class="mt-8 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
+            {{ $name }} Resale Certificate<br>
+            <span class="bg-gradient-to-r from-emerald-300 to-teal-400 bg-clip-text text-transparent">No Sales Tax: What Suppliers Need</span>
+        </h1>
+        <p class="mt-6 max-w-2xl text-lg font-semibold text-zinc-200">{{ $name }} has no statewide sales tax. Agency: {{ $page->agencyName() }}.</p>
+        @if ($page->noSalesTaxNote())
+        <p class="mt-6 max-w-2xl text-lg text-zinc-400">{{ $page->noSalesTaxNote() }}</p>
+        @endif
+        <div class="mt-10 flex flex-wrap gap-4">
+            <a href="#suppliers" class="group inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#B91C1C]">
+                What to give suppliers
+                <svg class="h-4 w-4 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+            </a>
+            <a href="{{ route('resale-certificates') }}#states" class="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-8 py-4 text-base font-semibold text-zinc-200 transition hover:bg-zinc-800">
+                Resale certificate rules by state
+            </a>
+        </div>
+    </div>
+</section>
+
+{{-- What to give suppliers in other states --}}
+<section id="suppliers" class="bg-white py-20">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div class="grid gap-12 lg:grid-cols-2">
+            <div>
+                <h2 class="text-3xl font-bold tracking-tight text-zinc-900">What to give suppliers in other states</h2>
+                <p class="mt-6 text-zinc-600">A supplier in a state with a sales tax has to charge that tax unless it has a resale certificate it can accept. Give it:</p>
+                <ul class="mt-6 space-y-3 text-zinc-600">
+                    @foreach ($page->supplierItems() as $item)
+                    <li class="flex gap-3"><span class="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500"></span>{{ $item }}</li>
+                    @endforeach
+                </ul>
+            </div>
+            <div class="rounded-2xl border border-zinc-200 bg-zinc-50 p-8">
+                <h3 class="text-lg font-semibold text-zinc-900">The number they will ask for</h3>
+                <p class="mt-4 text-lg font-semibold text-zinc-900">{{ $page->registrationNumberName() ? ucfirst($page->registrationNumberName()) : "No {$name} sales tax number" }}</p>
+                @if ($page->registrationNotes())
+                <p class="mt-2 text-sm text-zinc-600">{{ $page->registrationNotes() }}</p>
+                @endif
+                @if ($page->formPdfUrl() || $page->registrationVerifyUrl())
+                <ul class="mt-6 space-y-2 text-sm">
+                    @if ($page->formPdfUrl())
+                    <li><a href="{{ $page->formPdfUrl() }}" rel="noopener" target="_blank" class="text-zinc-700 underline hover:text-zinc-900">Download {{ $page->formNumber() ?? $page->formTitle() ?? 'the form' }}</a></li>
+                    @endif
+                    @if ($page->registrationVerifyUrl())
+                    <li><a href="{{ $page->registrationVerifyUrl() }}" rel="noopener" target="_blank" class="text-zinc-700 underline hover:text-zinc-900">Look up {{ $a }} {{ $name }} business registration</a></li>
+                    @endif
+                </ul>
+                @endif
+            </div>
+        </div>
+    </div>
+</section>
+
+{{-- Local taxes to know about --}}
+@if ($page->localTaxes())
+<section class="border-t border-zinc-200 bg-zinc-50 py-20">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold tracking-tight text-zinc-900">Local taxes to know about</h2>
+        <p class="mt-4 max-w-3xl text-zinc-600">{{ $name }} has no general sales tax, but these taxes still apply to some sales.</p>
+        <dl class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            @foreach ($page->localTaxes() as $tax)
+            <div class="rounded-2xl border border-zinc-200 bg-white p-6">
+                <dt class="text-lg font-semibold text-zinc-900">{{ $tax['name'] }}</dt>
+                <dd class="mt-2 text-sm text-zinc-600">{{ $tax['text'] }} <a href="{{ $tax['source_url'] }}" rel="noopener" target="_blank" class="text-zinc-700 underline hover:text-zinc-900">Source</a></dd>
+            </div>
+            @endforeach
+        </dl>
+    </div>
+</section>
+@endif
+@else
 <x-seo.service
     name="{{ $name }} Resale Certificate Generator"
     description="Generate signed {{ $name }} resale certificates on the accepted form, with the state's rules for uniform certificates, out-of-state buyers, blanket certificates, and expiration applied automatically."
@@ -65,10 +151,11 @@
         </dl>
     </div>
 </section>
+@endif
 
 @if ($page->content)
 {{-- Researched state rules, with sources --}}
-<section class="border-y border-zinc-200 bg-zinc-50 py-20">
+<section class="{{ $noTax ? 'border-t border-zinc-200 bg-white' : 'border-y border-zinc-200 bg-zinc-50' }} py-20">
     <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div class="grid gap-12 lg:grid-cols-2">
             <div>
@@ -76,7 +163,14 @@
                 @foreach ($page->notesParagraphs() as $paragraph)
                 <p class="mt-6 text-zinc-600">{{ $paragraph }}</p>
                 @endforeach
-                @if ($page->sourceLinks())
+                @if ($noTax && $page->sources())
+                <p class="mt-6 text-sm text-zinc-600">
+                    Sources:
+                    @foreach ($page->sources() as $source)
+                    <a href="{{ $source['url'] }}" rel="noopener" target="_blank" class="text-zinc-700 underline hover:text-zinc-900">{{ $source['title'] }}</a>{{ $loop->last ? '' : ' ·' }}
+                    @endforeach
+                </p>
+                @elseif ($page->sourceLinks())
                 <p class="mt-6 text-sm text-zinc-600">
                     Sources:
                     @foreach ($page->sourceLinks() as $link)
@@ -85,7 +179,7 @@
                 </p>
                 @endif
             </div>
-            <div class="rounded-2xl border border-zinc-200 bg-white p-8">
+            <div class="rounded-2xl border border-zinc-200 {{ $noTax ? 'bg-zinc-50' : 'bg-white' }} p-8">
                 <h3 class="text-lg font-semibold text-zinc-900">More {{ $name }} facts</h3>
                 <ul class="mt-4 space-y-3 text-sm text-zinc-600">
                     @foreach ($page->moreFacts() as $fact)
@@ -101,6 +195,21 @@
 </section>
 @endif
 
+@if ($noTax)
+{{-- No generator CTA: the state issues no certificate to sell. --}}
+<section class="border-t border-zinc-200 bg-white py-20">
+    <div class="mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold tracking-tight text-zinc-900">Selling into states with a sales tax?</h2>
+        <p class="mx-auto mt-4 max-w-2xl text-zinc-600">
+            {{ $name }} does not issue a sales tax permit. If your business has to collect tax in another state, register there first. Each state's resale certificate page explains what its suppliers will accept.
+        </p>
+        <div class="mt-8 flex flex-wrap justify-center gap-4">
+            <a href="{{ route('sales-tax-registration') }}" class="inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:bg-[#B91C1C]">Sales tax registration</a>
+            <a href="{{ route('resale-certificates') }}#states" class="inline-flex items-center gap-2 rounded-lg border border-zinc-300 px-8 py-4 text-base font-semibold text-zinc-800 transition hover:bg-zinc-50">Resale certificates by state</a>
+        </div>
+    </div>
+</section>
+@else
 {{-- What goes on the certificate --}}
 <section class="{{ $page->content ? 'bg-white' : 'border-y border-zinc-200 bg-zinc-50' }} py-20">
     <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -147,6 +256,7 @@
         </div>
     </div>
 </section>
+@endif
 
 {{-- FAQ --}}
 <section class="border-t border-zinc-200 bg-zinc-50 py-20">
@@ -164,7 +274,11 @@
                 <h2 class="text-lg font-semibold text-zinc-900">Related</h2>
                 <ul class="mt-4 space-y-2 text-sm">
                     <li><a href="{{ route('resale-certificates') }}" class="text-zinc-700 underline hover:text-zinc-900">Resale certificate generator overview</a></li>
+                    @if ($noTax)
+                    <li><a href="{{ route('sales-tax-registration') }}" class="text-zinc-700 underline hover:text-zinc-900">Register for sales tax in other states</a></li>
+                    @else
                     <li><a href="{{ \App\Domains\SalesTax\Seo\SalesTaxStateContent::exists($page->code) ? route('sales-tax-registration.state', ['state' => $page->slug]) : route('sales-tax-registration') }}" class="text-zinc-700 underline hover:text-zinc-900">Register for {{ $page->salesTaxLabel() }}</a></li>
+                    @endif
                     <li><a href="{{ route('llc') }}" class="text-zinc-700 underline hover:text-zinc-900">Form an LLC</a></li>
                 </ul>
             </div>

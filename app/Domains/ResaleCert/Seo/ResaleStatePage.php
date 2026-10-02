@@ -14,8 +14,12 @@ use Carbon\Carbon;
  * researched content file (ResaleStateContent) supplies the agency, the form,
  * sources and state-specific copy. Where the research has a value for one of
  * the accepted-certificate rules, the page shows the researched value; the
- * rule row (which drives the generator) is left alone. States with no
- * statewide sales tax have no rule row and therefore no page.
+ * rule row (which drives the generator) is left alone.
+ *
+ * States with no statewide sales tax (NO_SALES_TAX_STATES) have no rule
+ * row. Their page is built from the content file alone, against an unsaved
+ * rule that carries only the code and name, and answers what a buyer from
+ * that state gives suppliers in other states. See noSalesTax().
  */
 final class ResaleStatePage
 {
@@ -44,7 +48,14 @@ final class ResaleStatePage
     }
 
     /** Bump when the shape of this object or the page copy changes: the cached instances are replaced on the next request. */
-    public const CACHE_VERSION = 3;
+    public const CACHE_VERSION = 4;
+
+    /**
+     * No statewide sales tax and no rule row, but a page all the same: buyers
+     * there still search for a resale certificate because suppliers in other
+     * states ask for one. Each needs a content file with 'no_sales_tax' => true.
+     */
+    public const NO_SALES_TAX_STATES = ['DE', 'MT', 'NH', 'OR'];
 
     public static function cacheKey(string $code): string
     {
@@ -57,19 +68,41 @@ final class ResaleStatePage
     }
 
     /**
-     * Every state with a resale certificate rule, code => name. Cached per
-     * request by the query builder being cheap; the sitemap and the hub page
-     * both call it.
+     * Every state with a resale certificate rule, plus the no-sales-tax
+     * states with a content file, code => name, sorted by name. The sitemap
+     * and the hub page both call it.
      *
      * @return array<string, string>
      */
     public static function availableStates(): array
     {
-        return ResaleStateRule::query()
+        $states = ResaleStateRule::query()
             ->statesOnly()
             ->orderBy('state_name')
             ->pluck('state_name', 'state_code')
             ->all();
+
+        foreach (self::NO_SALES_TAX_STATES as $code) {
+            if (! isset($states[$code]) && self::hasNoSalesTaxContent($code)) {
+                $states[$code] = States::name($code);
+            }
+        }
+
+        asort($states, SORT_STRING);
+
+        return $states;
+    }
+
+    public static function isNoSalesTaxState(string $code): bool
+    {
+        return in_array(strtoupper($code), self::NO_SALES_TAX_STATES, true);
+    }
+
+    private static function hasNoSalesTaxContent(string $code): bool
+    {
+        return self::isNoSalesTaxState($code)
+            && States::name($code) !== null
+            && (ResaleStateContent::for($code)['no_sales_tax'] ?? false) === true;
     }
 
     public static function forCode(string $code): ?self
@@ -77,7 +110,15 @@ final class ResaleStatePage
         $code = strtoupper($code);
         $rule = ResaleStateRule::query()->statesOnly()->where('state_code', $code)->first();
 
-        return $rule ? new self($code, $rule) : null;
+        if ($rule) {
+            return new self($code, $rule);
+        }
+
+        // No rule row: an unsaved rule carrying only the code and name gives
+        // the page its name and slug. Nothing reads its certificate fields.
+        return self::hasNoSalesTaxContent($code)
+            ? new self($code, new ResaleStateRule(['state_code' => $code, 'state_name' => States::name($code)]))
+            : null;
     }
 
     public function url(): string
@@ -87,6 +128,12 @@ final class ResaleStatePage
 
     public function title(): string
     {
+        if ($this->noSalesTax()) {
+            $title = "{$this->name} Resale Certificate: No Sales Tax, What Suppliers Need";
+
+            return mb_strlen($title) <= 60 ? $title : "{$this->name} Resale Certificate: No Sales Tax, What to Use";
+        }
+
         return "{$this->name} Resale Certificate | Rules, Forms & Expiration";
     }
 
@@ -97,6 +144,10 @@ final class ResaleStatePage
      */
     public function metaDescription(): string
     {
+        if ($this->noSalesTax()) {
+            return $this->noSalesTaxDescription();
+        }
+
         $lead = "{$this->name} resale certificate rules: ";
         $cta = '. Generate signed certificates in minutes.';
 
@@ -115,6 +166,25 @@ final class ResaleStatePage
         }
 
         return $compose($clauses);
+    }
+
+    /** "{State} has no sales tax…" plus the state's own form when it publishes one, within 165 characters. */
+    private function noSalesTaxDescription(): string
+    {
+        $lead = "{$this->name} has no sales tax, but suppliers in other states may ask for a resale certificate.";
+        $form = $this->formNumber() ?? $this->formTitle();
+
+        foreach (array_filter([
+            $form ? " Use {$form} or the supplier's state form." : null,
+            ' Here is what to give them and which local taxes apply.',
+            ' Here is what to give them.',
+        ]) as $tail) {
+            if (mb_strlen($lead.$tail) <= 165) {
+                return $lead.$tail;
+            }
+        }
+
+        return $lead;
     }
 
     /** The meta description's form clause when the form has no number. */
@@ -178,6 +248,67 @@ final class ResaleStatePage
         $value = $this->content['accepts'][$key]['value'] ?? null;
 
         return is_bool($value) ? $value : null;
+    }
+
+    // States with no sales tax.
+
+    /** No statewide sales tax: the page says what to give suppliers in other states instead of selling a certificate. */
+    public function noSalesTax(): bool
+    {
+        return ($this->content['no_sales_tax'] ?? false) === true && ! $this->rule->exists;
+    }
+
+    public function noSalesTaxNote(): ?string
+    {
+        return $this->content['no_sales_tax_note'] ?? null;
+    }
+
+    /** @return array<int, string> What to give a supplier in another state, in order. */
+    public function supplierItems(): array
+    {
+        return $this->content['suppliers'] ?? [];
+    }
+
+    /** @return array<int, array{name: string, text: string, source_url: string}> */
+    public function localTaxes(): array
+    {
+        return $this->content['local_taxes'] ?? [];
+    }
+
+    /** For the "number they will ask for" card. */
+    public function registrationNotes(): ?string
+    {
+        return $this->content['registration']['notes'] ?? null;
+    }
+
+    public function registrationVerifyUrl(): ?string
+    {
+        return $this->content['registration']['verify_url'] ?? null;
+    }
+
+    public function formPdfUrl(): ?string
+    {
+        return $this->content['form']['pdf_url'] ?? null;
+    }
+
+    /** @return array<int, array{title: string, url: string}> */
+    public function sources(): array
+    {
+        return $this->content['sources'] ?? [];
+    }
+
+    /** @return array<int, array{q: string, a: string}> */
+    private function noSalesTaxFaq(): array
+    {
+        $answers = $this->content['faq'] ?? [];
+        $business = "{$this->article} {$this->name} business";
+
+        return array_values(array_filter([
+            ['q' => "Do I need a resale certificate in {$this->name}?", 'a' => $answers['need_certificate'] ?? null],
+            ['q' => "What do I give an out-of-state supplier as {$business}?", 'a' => $answers['what_to_give'] ?? null],
+            ['q' => "Can {$business} use the MTC uniform certificate?", 'a' => $answers['mtc'] ?? null],
+            ['q' => "Do I charge sales tax to my customers in {$this->name}?", 'a' => $answers['charge_customers'] ?? null],
+        ], fn (array $item) => $item['a'] !== null));
     }
 
     // Agency, form and registration.
@@ -519,6 +650,10 @@ final class ResaleStatePage
     /** @return array<int, array{q: string, a: string}> */
     public function faq(): array
     {
+        if ($this->noSalesTax()) {
+            return $this->noSalesTaxFaq();
+        }
+
         $r = $this->rule;
         $c = $this->content;
 

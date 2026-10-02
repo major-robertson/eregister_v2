@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Domains\Lien\Models\LienStateRule;
 use App\Domains\Lien\Waivers\WaiverStateRegistry;
 use App\Domains\ResaleCert\Seo\ResaleStatePage;
+use App\Domains\SalesTax\Seo\SalesTaxStateContent;
+use App\Domains\SalesTax\Seo\SalesTaxStatePage;
 use App\Support\Seo\States;
 use App\Support\Seo\Urls;
 use Carbon\Carbon;
@@ -107,6 +109,17 @@ class SitemapController extends Controller
         );
         foreach (ResaleStatePage::availableStates() as $name) {
             $entries[] = self::entry('/resale-certificates/'.States::slug($name), 'monthly', '0.6', $resaleModified);
+        }
+
+        // Sales tax registration by state: the researched content files, the
+        // shared template and the page model that composes the copy.
+        $salesTaxModified = max(
+            self::viewModified('pages.sales-tax-state'),
+            self::directoryModified(SalesTaxStateContent::directory()),
+            self::fileModified(app_path('Domains/SalesTax/Seo/SalesTaxStatePage.php')),
+        );
+        foreach (SalesTaxStatePage::availableStates() as $name) {
+            $entries[] = self::entry('/sales-tax-registration/'.States::slug($name), 'monthly', '0.7', $salesTaxModified);
         }
 
         return $entries;

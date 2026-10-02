@@ -413,6 +413,8 @@
         </div>
     </section>
 
+    <x-seo.sales-tax-states />
+
     {{-- ───────────────────────── FINAL CTA ───────────────────────── --}}
     <section class="relative overflow-hidden" style="background: var(--ink);">
         <div class="pointer-events-none absolute -left-32 bottom-0 h-96 w-96 rounded-full"

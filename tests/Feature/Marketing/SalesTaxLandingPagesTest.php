@@ -10,7 +10,7 @@ describe('sales tax ads landing pages', function () {
     })->with([
         ['tx', 'Sales and Use Tax Permit'],
         ['ny', 'Certificate of Authority'],
-        ['fl', 'Sales Tax Registration'],
+        ['fl', 'Certificate of Registration'],
         ['ca', "Seller's Permit"],
         ['il', 'Certificate of Registration'],
         ['ga', 'Sales and Use Tax Number'],
@@ -19,6 +19,24 @@ describe('sales tax ads landing pages', function () {
         ['nc', 'Certificate of Registration'],
         ['mi', 'Sales Tax License'],
     ]);
+
+    // Corrected from the EREG-13 research (2026-10-02).
+    it('shows the researched Florida, California and Michigan facts', function () {
+        $this->get('/lp/sales-tax/fl')
+            ->assertOk()
+            ->assertSee('Florida <span data-hero-keyword>Certificate of Registration</span>', false)
+            ->assertSee('No state fee.')
+            ->assertDontSee('$5 by paper');
+
+        $this->get('/lp/sales-tax/ca')
+            ->assertOk()
+            ->assertSee('The CDTFA says it may be able to issue the permit the same day.');
+
+        $this->get('/lp/sales-tax/mi')
+            ->assertOk()
+            ->assertSee('Michigan usually processes an online registration within 48 hours; paper applications take 4 to 6 weeks.')
+            ->assertDontSee('about 7 business days');
+    });
 
     it('renders the generic page without a state', function () {
         $this->get('/lp/sales-tax')

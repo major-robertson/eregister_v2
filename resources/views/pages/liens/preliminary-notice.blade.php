@@ -21,7 +21,7 @@
         <p class="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
             <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Preserve Your Lien Rights</span>
         </p>
-        <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">Protect your right to file a <a href="{{ route('liens') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">mechanics lien</a>. Our service helps contractors, subcontractors, and suppliers send state-compliant preliminary notices to preserve construction lien rights in every state.</p>
+        <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">Protect your right to file a <a href="{{ route('liens') }}" class="font-medium text-white underline decoration-zinc-500 underline-offset-2 hover:decoration-white">mechanics lien</a>. Our service helps contractors, subcontractors, and suppliers send state-compliant preliminary notices to preserve construction lien rights in every state.</p>
         <div class="mt-10">
             <a href="{{ route('register') }}" class="group inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#B91C1C]">
                 Get Started

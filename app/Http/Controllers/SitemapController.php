@@ -50,6 +50,7 @@ class SitemapController extends Controller
         ['path' => '/liens/lien-release',            'changefreq' => 'monthly', 'priority' => '0.7', 'view' => 'pages.liens.lien-release'],
         ['path' => '/liens/payment-demand-letter',   'changefreq' => 'monthly', 'priority' => '0.7', 'view' => 'pages.liens.payment-demand-letter'],
         ['path' => '/liens/pricing',                 'changefreq' => 'monthly', 'priority' => '0.7', 'view' => 'pages.liens.pricing'],
+        ['path' => '/liens/deadline-calculator',     'changefreq' => 'monthly', 'priority' => '0.8', 'view' => 'pages.liens.deadline-calculator'],
 
         ['path' => '/liens/lien-waivers',            'changefreq' => 'monthly', 'priority' => '0.8', 'view' => 'pages.liens.lien-waivers'],
         ['path' => '/liens/lien-waivers/pricing',    'changefreq' => 'monthly', 'priority' => '0.7', 'view' => 'pages.liens.lien-waivers-pricing'],

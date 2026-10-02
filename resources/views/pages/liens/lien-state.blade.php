@@ -124,6 +124,14 @@
             @if ($page->noiSentence()) {{ $page->noiSentence() }} @endif
         </p>
 
+        @if ($calculatorRules)
+        <div class="mt-10">
+            <h3 class="text-xl font-semibold text-zinc-900">Calculate your {{ $name }} deadlines</h3>
+            <p class="mt-1 text-sm text-zinc-500">Enter your role and project dates to turn the rules below into calendar dates. For other states, use the <a href="{{ route('liens.deadline-calculator') }}" class="font-medium text-zinc-700 underline">mechanics lien deadline calculator</a>.</p>
+            <x-seo.lien-deadline-calculator class="mt-4" :exports="$calculatorRules" :state="$page->code" />
+        </div>
+        @endif
+
         <div class="mt-10 space-y-10">
             @foreach ($deadlineSections as $slug => $section)
                 @continue(empty($page->deadlines[$slug]))
@@ -255,6 +263,7 @@
                 <h2 class="text-lg font-semibold text-zinc-900">More {{ $name }} lien tools</h2>
                 <ul class="mt-4 space-y-2 text-sm">
                     <li><a href="{{ route('liens.lien-waivers.state', ['state' => strtolower($page->code)]) }}" class="text-zinc-700 underline hover:text-zinc-900">Free {{ $name }} lien waiver forms</a></li>
+                    <li><a href="{{ route('liens.deadline-calculator') }}" class="text-zinc-700 underline hover:text-zinc-900">Mechanics lien deadline calculator</a></li>
                     <li><a href="{{ route('liens.preliminary-notice') }}" class="text-zinc-700 underline hover:text-zinc-900">Preliminary notice service</a></li>
                     <li><a href="{{ route('liens.notice-of-intent-to-lien') }}" class="text-zinc-700 underline hover:text-zinc-900">Notice of intent to lien</a></li>
                     <li><a href="{{ route('liens.payment-demand-letter') }}" class="text-zinc-700 underline hover:text-zinc-900">Payment demand letter</a></li>

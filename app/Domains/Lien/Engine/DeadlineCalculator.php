@@ -2,7 +2,6 @@
 
 namespace App\Domains\Lien\Engine;
 
-use App\Domains\Lien\Enums\CalcMethod;
 use App\Domains\Lien\Enums\DeadlineStatus;
 use App\Domains\Lien\Models\LienDeadlineRule;
 use App\Domains\Lien\Models\LienDocumentType;
@@ -264,11 +263,8 @@ class DeadlineCalculator
 
         $lienDueDate = $lienDeadlineData['due_date'];
 
-        // Get lead time with guardrails - clamp negative/null to 0
-        $leadTimeDays = max(0, $stateRule->noi_lead_time_days ?? 0);
-
-        // Calculate NOI due date
-        $noiDueDate = $lienDueDate->copy()->subDays($leadTimeDays);
+        // Lead time before the lien deadline (days_before_date), negative/null clamped to 0
+        ['date' => $noiDueDate, 'lead_time_days' => $leadTimeDays] = RuleDateMath::noiDueDate($lienDueDate, $stateRule->noi_lead_time_days);
 
         // Guardrail: If NOI due ends up after lien due (bad data), clamp to lien due
         if ($noiDueDate->greaterThan($lienDueDate)) {
@@ -506,37 +502,11 @@ class DeadlineCalculator
      */
     protected function resolveAnchor(LienProject $project, LienDeadlineRule $rule, LienStateRule $stateRule): ?CarbonInterface
     {
-        $conditions = $rule->conditions_json;
-        $anchorLogic = $conditions['anchor'] ?? $stateRule->lien_anchor_logic ?? 'single';
-
-        if ($anchorLogic === 'later_of') {
-            $dates = collect($conditions['dates'] ?? [])
-                ->map(fn ($field) => $this->getEventDate($project, $field))
-                ->filter()
-                ->values();
-
-            if ($dates->isEmpty()) {
-                return null;
-            }
-
-            return $dates->reduce(fn ($carry, $date) => $carry === null || $date->greaterThan($carry) ? $date : $carry);
-        }
-
-        if ($anchorLogic === 'earlier_of') {
-            $dates = collect($conditions['dates'] ?? [])
-                ->map(fn ($field) => $this->getEventDate($project, $field))
-                ->filter()
-                ->values();
-
-            if ($dates->isEmpty()) {
-                return null;
-            }
-
-            return $dates->reduce(fn ($carry, $date) => $carry === null || $date->lessThan($carry) ? $date : $carry);
-        }
-
-        // Default 'single': use the trigger_event field
-        return $this->getEventDate($project, $rule->trigger_event->value);
+        return RuleDateMath::resolveAnchor(
+            RuleDateMath::fromModel($rule),
+            $stateRule->lien_anchor_logic,
+            fn (string $field) => $this->getEventDate($project, $field),
+        );
     }
 
     /**
@@ -544,28 +514,7 @@ class DeadlineCalculator
      */
     protected function calculateDueDate(CarbonInterface $anchorDate, LienDeadlineRule $rule): CarbonInterface
     {
-        $calcMethod = $rule->calc_method ?? CalcMethod::DaysAfterDate;
-
-        return match ($calcMethod) {
-            CalcMethod::DaysAfterDate => $anchorDate->copy()->addDays($rule->offset_days ?? 0),
-
-            // Use addMonthsNoOverflow to prevent Jan 31 + 1 month = Mar 2 issues
-            CalcMethod::MonthsAfterDate => $anchorDate->copy()
-                ->addMonthsNoOverflow($rule->offset_months ?? 0),
-
-            // "15th of the Nth month after the month of X"
-            // Normalize to start of month first for deterministic results
-            CalcMethod::MonthDayAfterMonthOfDate => $anchorDate->copy()
-                ->startOfMonth()
-                ->addMonthsNoOverflow($rule->offset_months ?? 0)
-                ->setDay($rule->day_of_month ?? 1),
-
-            // VA: "90 days from end of month of last work"
-            // First go to end of anchor month, then add days
-            CalcMethod::DaysAfterEndOfMonthOfDate => $anchorDate->copy()
-                ->endOfMonth()
-                ->addDays($rule->offset_days ?? 0),
-        };
+        return RuleDateMath::apply($anchorDate, $rule->calc_method, $rule->offset_days, $rule->offset_months, $rule->day_of_month);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Domains\Lien\Seo\DeadlineRulesExport;
 use App\Domains\Lien\Seo\LienStatePage;
 use App\Support\Seo\States;
 use Illuminate\Http\RedirectResponse;
@@ -31,6 +32,15 @@ class LienStateLandingController extends Controller
         return view('pages.liens.lien-state', [
             'page' => $page,
             'nearbyStates' => States::bordering($code),
+            'calculatorRules' => array_filter([$code => DeadlineRulesExport::cached($code)]),
+        ]);
+    }
+
+    /** The free deadline calculator for every state ("/liens/deadline-calculator"). */
+    public function calculator(): View
+    {
+        return view('pages.liens.deadline-calculator', [
+            'calculatorRules' => DeadlineRulesExport::allCached(),
         ]);
     }
 }

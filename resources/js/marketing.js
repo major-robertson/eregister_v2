@@ -8,9 +8,13 @@ import Alpine from 'alpinejs';
 import collapse from '@alpinejs/collapse';
 import intersect from '@alpinejs/intersect';
 import { onCLS, onINP, onLCP } from 'web-vitals';
+import lienDeadlineCalculator from './lien-deadline-calculator';
 
 Alpine.plugin(collapse);
 Alpine.plugin(intersect);
+
+// The free lien deadline calculator on /liens/deadline-calculator and the state pages.
+Alpine.data('lienDeadlineCalculator', lienDeadlineCalculator);
 
 window.Alpine = Alpine;
 Alpine.start();

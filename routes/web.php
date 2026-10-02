@@ -118,6 +118,9 @@ Route::view('liens/lien-release', 'pages.liens.lien-release')->name('liens.lien-
 Route::view('liens/payment-demand-letter', 'pages.liens.payment-demand-letter')->name('liens.payment-demand-letter');
 Route::view('liens/pricing', 'pages.liens.pricing')->name('liens.pricing');
 
+// Free deadline calculator for every state; registered before {state}.
+Route::get('liens/deadline-calculator', [\App\Http\Controllers\LienStateLandingController::class, 'calculator'])->name('liens.deadline-calculator');
+
 // Mechanics lien rules by state ("/liens/texas"). Registered after the fixed
 // lien slugs above so those always win; two-letter codes 301 to the slug.
 Route::get('liens/{state}', [\App\Http\Controllers\LienStateLandingController::class, 'show'])

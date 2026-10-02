@@ -494,7 +494,7 @@ final class LienStatePage
     {
         $byClaimant = [];
         foreach ($group as $rule) {
-            $when = $this->describe($rule);
+            $when = self::describe($rule);
             if ($when !== null) {
                 $byClaimant[$rule->claimant_type][$rule->effective_scope] = $when;
             }
@@ -539,7 +539,7 @@ final class LienStatePage
      * the table cannot express; it needs a conditions_json.display override,
      * otherwise the row is left off the page rather than shown as a guess).
      */
-    private function describe(object $rule): ?string
+    public static function describe(object $rule): ?string
     {
         $trigger = self::triggerLabel($rule->trigger_event);
         $days = (int) $rule->offset_days;

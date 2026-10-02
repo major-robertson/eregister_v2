@@ -2,6 +2,7 @@
      services (minus the current page) plus the state rule pages. --}}
 @php
     $services = collect([
+        'liens.deadline-calculator' => 'Mechanics lien deadline calculator',
         'liens.preliminary-notice' => 'Preliminary notice service',
         'liens.notice-of-intent-to-lien' => 'Notice of intent to lien',
         'liens.payment-demand-letter' => 'Payment demand letter',

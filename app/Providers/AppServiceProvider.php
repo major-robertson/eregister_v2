@@ -265,6 +265,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Admin tools
         Livewire::component('admin.pdf-coordinate-mapper', \App\Domains\Admin\Livewire\PdfCoordinateMapper::class);
+        Livewire::component('admin.acquisition-stats', \App\Domains\Admin\Livewire\AcquisitionStats::class);
 
         // Resale certificate domain components
         Livewire::component('resale-cert.dashboard', \App\Domains\ResaleCert\Livewire\Dashboard::class);

@@ -1,11 +1,7 @@
 @extends('layouts.government')
 
 @section('title', 'Government Website Design & Digital Services')
-
-@section('meta')
-<meta name="description"
-    content="eRegister Government builds modern, accessible, secure websites and digital services for federal, state, county, and city agencies. Website redesigns, CMS, citizen portals, hosting, and ongoing maintenance.">
-@endsection
+@section('description', 'Accessible, secure websites and digital services for state, county, and city agencies: redesigns, CMS, citizen portals, hosting, and maintenance.')
 
 @section('content')
 {{-- Hero --}}

@@ -1,11 +1,7 @@
 @extends('layouts.landing')
 
-@section('title', 'Annual Report Filing Service | Stay Compliant in Every State')
-
-@section('meta')
-<meta name="description"
-    content="Annual report filing service for LLCs and corporations. Meet state deadlines, maintain good standing, and avoid penalties. We file your annual reports in every state on time.">
-@endsection
+@section('title', 'Annual Report Filing Service for LLCs & Corporations')
+@section('description', 'We file your LLC or corporation annual report on time in every state, with deadline tracking to keep you in good standing and avoid late fees.')
 
 @section('content')
 {{-- Hero Section --}}
@@ -13,10 +9,16 @@
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
             <div>
+                <x-seo.breadcrumbs class="mb-6 text-zinc-500" :items="[
+                    ['name' => 'Home', 'url' => route('home')],
+                    ['name' => 'Annual Reports'],
+                ]" />
                 <h1 class="text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl xl:text-6xl">
-                    Never Miss an
-                    <span class="text-blue-600">Annual Report</span>
+                    Annual Report Filing Service
                 </h1>
+                <p class="text-4xl font-extrabold tracking-tight text-blue-600 sm:text-5xl xl:text-6xl">
+                    Never Miss an Annual Report
+                </p>
 
                 <p class="mt-6 text-xl leading-relaxed text-zinc-600">
                     Stay compliant in every state. We track deadlines, file your annual reports on time, and help you maintain good standing. Avoid late fees, penalties, and administrative dissolution.
@@ -45,7 +47,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Deadline Tracking</h3>
+                            <p class="font-bold text-zinc-900">Deadline Tracking</p>
                             <p class="text-sm text-zinc-500">We remind you before every due date</p>
                         </div>
                     </div>
@@ -58,7 +60,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Good Standing</h3>
+                            <p class="font-bold text-zinc-900">Good Standing</p>
                             <p class="text-sm text-zinc-500">Keep your entity in compliance</p>
                         </div>
                     </div>
@@ -71,7 +73,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">50-State Coverage</h3>
+                            <p class="font-bold text-zinc-900">50-State Coverage</p>
                             <p class="text-sm text-zinc-500">File in any state where you're registered</p>
                         </div>
                     </div>
@@ -90,7 +92,7 @@
                 What Are Annual Reports?
             </h2>
             <p class="mt-4 text-lg text-zinc-600">
-                Annual reports (also called annual statements, franchise tax reports, or biennial reports in some states) are periodic filings required by state governments to keep your LLC, corporation, or nonprofit in good standing. They typically update your business address, registered agent, officers, members, and basic business information. Each state sets its own deadlines—often tied to the anniversary of your formation or the calendar year—and charges a filing fee. Missing a deadline can result in late fees, penalties, loss of good standing, and in severe cases, administrative dissolution.
+                Annual reports (also called annual statements, franchise tax reports, or biennial reports in some states) are periodic filings required by state governments to keep your <a href="{{ route('llc') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">LLC</a>, corporation, or nonprofit in good standing. They typically update your business address, <a href="{{ route('registered-agent') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">registered agent</a>, officers, members, and basic business information. Each state sets its own deadlines—often tied to the anniversary of your formation or the calendar year—and charges a filing fee. Missing a deadline can result in late fees, penalties, loss of good standing, and in severe cases, administrative dissolution.
             </p>
         </div>
 
@@ -176,7 +178,7 @@
                 <div class="absolute -top-5 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-lg font-bold text-white">1</div>
                 <div class="pt-4">
                     <h3 class="text-xl font-bold text-zinc-900">Add Your Entity</h3>
-                    <p class="mt-3 text-zinc-600">Provide your business name, state of registration, and EIN. We'll look up your record and identify your next filing deadline.</p>
+                    <p class="mt-3 text-zinc-600">Provide your business name, state of registration, and <a href="{{ route('ein-tax-id') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">EIN</a>. We'll look up your record and identify your next filing deadline.</p>
                 </div>
             </div>
 
@@ -272,6 +274,13 @@
         </div>
     </div>
 </section>
+
+{{-- Related services --}}
+<x-seo.related-links :links="[
+    ['name' => 'Registered Agent', 'url' => route('registered-agent'), 'text' => 'Receive legal mail and service of process in any state.'],
+    ['name' => 'LLC Formation', 'url' => route('llc'), 'text' => 'Form an LLC in any state.'],
+    ['name' => 'Corporation', 'url' => route('corporation'), 'text' => 'Form a C corp or S corp in any state.'],
+]" />
 
 {{-- CTA --}}
 <section class="bg-white py-24">

@@ -1,17 +1,17 @@
 @extends('layouts.government')
 
-@section('title', 'Government Website Accessibility | WCAG 2.2 AA & Section 508')
-
-@section('meta')
-<meta name="description"
-    content="Section 508, ADA, and WCAG 2.2 AA accessibility audits, remediation, and VPATs for government websites and digital services. Make your agency&rsquo;s site accessible to every resident.">
-@endsection
+@section('title', 'Website Accessibility & Section 508 for Government Agencies')
+@section('description', 'Section 508, ADA, and WCAG 2.2 AA audits, remediation, and VPATs for government websites, so your agency site works for every resident.')
 
 @section('content')
 {{-- Hero --}}
 <section class="relative overflow-hidden bg-gradient-to-b from-slate-950 via-blue-950 to-slate-900 py-20 lg:py-24">
     <div class="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-3xl text-center">
+            <x-seo.breadcrumbs class="mb-6 text-slate-400" center :items="[
+                ['name' => 'Government', 'url' => route('government.home')],
+                ['name' => 'Accessibility'],
+            ]" />
             <p class="text-sm font-semibold uppercase tracking-wider text-blue-300">Service</p>
             <h1 class="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
                 Accessibility &amp; Section 508 compliance

@@ -1,9 +1,9 @@
 @extends('layouts.landing')
 
-@section('title', 'Sales & Use Tax Registration | Register for Sales Tax in Any State')
+@section('title', 'Sales Tax Registration | Get a Sales Tax Permit in Any State')
+@section('description', 'Register for sales and use tax in any state. We prepare and file the application so you get your seller\'s permit fast.')
 
 @section('meta')
-<meta name="description" content="Register for sales and use tax in any state. We prepare and file your registration with the state so you get your permit fast — no government runaround.">
 
 <link rel="preconnect" href="https://fonts.bunny.net">
 <link href="https://fonts.bunny.net/css?family=space-grotesk:500,600,700" rel="stylesheet" />
@@ -121,15 +121,22 @@
 
             {{-- copy --}}
             <div>
+                <x-seo.breadcrumbs class="mb-6 text-zinc-400" :items="[
+                    ['name' => 'Home', 'url' => route('home')],
+                    ['name' => 'Sales Tax Registration'],
+                ]" />
                 <div class="rise mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/80 ring-1 ring-white/15">
                     <flux:icon name="shield-check" variant="micro" class="size-3.5" style="color: var(--color-accent)" />
                     Prepared &amp; filed by compliance specialists
                 </div>
 
                 <h1 class="rise font-display text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
+                    Sales Tax Registration
+                </h1>
+                <p class="rise font-display text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
                     Register for<br>
                     <span data-hero-keyword style="color: var(--color-accent)">{{ $heroKeyword }}</span>
-                </h1>
+                </p>
 
                 <p class="rise-2 mt-6 max-w-md text-lg leading-relaxed text-white/70">
                     Answer a few questions about your business. We prepare your state
@@ -172,31 +179,31 @@
             <div class="rise-2 relative mx-auto w-full max-w-sm">
                 <div class="relative rounded-2xl bg-[var(--paper)] p-7 shadow-2xl ring-1 ring-black/5">
                     <div class="flex items-center justify-between border-b border-slate-200 pb-4">
-                        <div class="font-display text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                        <div class="font-display text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                             Department of Revenue
                         </div>
                         <flux:icon name="building-office-2" variant="mini" class="size-5 text-slate-300" />
                     </div>
 
-                    <h3 class="font-display mt-5 text-lg font-bold leading-tight text-[var(--ink)]">
+                    <p class="font-display mt-5 text-lg font-bold leading-tight text-[var(--ink)]">
                         {{ $cardHeading }}
-                    </h3>
+                    </p>
 
                     <dl class="mt-5 space-y-3 text-sm">
                         <div class="flex justify-between">
-                            <dt class="text-slate-400">Business</dt>
+                            <dt class="text-slate-500">Business</dt>
                             <dd class="font-medium text-slate-700">Acme Contracting LLC</dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="text-slate-400">Permit no.</dt>
+                            <dt class="text-slate-500">Permit no.</dt>
                             <dd class="font-mono font-medium text-slate-700">ST-0042-117835</dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="text-slate-400">Effective</dt>
+                            <dt class="text-slate-500">Effective</dt>
                             <dd class="font-medium text-slate-700">Today</dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="text-slate-400">Status</dt>
+                            <dt class="text-slate-500">Status</dt>
                             <dd class="font-semibold" style="color: var(--color-accent)">Active</dd>
                         </div>
                     </dl>
@@ -226,7 +233,7 @@
             ] as $stat)
                 <div class="px-3">
                     <div class="font-display text-2xl font-bold text-[var(--ink)] sm:text-3xl">{{ $stat['number'] }}</div>
-                    <div class="mt-1 text-xs font-medium uppercase tracking-wide text-slate-400">{{ $stat['label'] }}</div>
+                    <div class="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">{{ $stat['label'] }}</div>
                 </div>
             @endforeach
         </div>
@@ -325,7 +332,7 @@
 
             <div class="mx-auto mt-12 max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-[var(--paper)] shadow-xl shadow-slate-200/60">
                 <div class="border-b border-slate-200 px-8 py-10 text-center">
-                    <div class="font-display text-sm font-semibold uppercase tracking-wide text-slate-400">Per state</div>
+                    <div class="font-display text-sm font-semibold uppercase tracking-wide text-slate-500">Per state</div>
                     <div class="mt-3 flex items-baseline justify-center gap-1">
                         <span class="font-display text-5xl font-bold text-[var(--ink)]">{{ $price }}</span>
                         <span class="text-base font-medium text-slate-500">/ state</span>
@@ -406,12 +413,20 @@
                     <flux:accordion.content>
                         Your sales &amp; use tax permit and account number for each state, plus a copy
                         of your filing for your records — everything you need to start collecting and
-                        remitting correctly.
+                        remitting correctly. Your permit number is also what
+                        you need to give suppliers a <a href="{{ route('resale-certificates') }}" class="font-medium text-[var(--ink)] underline decoration-slate-300 underline-offset-2 hover:decoration-[var(--ink)]">resale certificate</a>.
                     </flux:accordion.content>
                 </flux:accordion.item>
             </flux:accordion>
         </div>
     </section>
+
+    {{-- Related services --}}
+    <x-seo.related-links :links="[
+        ['name' => 'Resale Certificates', 'url' => route('resale-certificates'), 'text' => 'Buy inventory tax-free with signed certificates.'],
+        ['name' => 'LLC Formation', 'url' => route('llc'), 'text' => 'Form an LLC in any state.'],
+        ['name' => 'EIN / Tax ID', 'url' => route('ein-tax-id'), 'text' => 'Get the federal tax ID for banking, hiring, and taxes.'],
+    ]" />
 
     {{-- ───────────────────────── FINAL CTA ───────────────────────── --}}
     <section class="relative overflow-hidden" style="background: var(--ink);">

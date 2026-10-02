@@ -1,23 +1,27 @@
 @extends('layouts.landing')
 
-@section('title', 'Notice of Intent to Lien | Send a Lien Intent Notice')
-
-@section('meta')
-<meta name="description" content="Send a notice of intent to lien before filing a mechanics lien. Our service prepares and delivers intent to lien notices that often get you paid before a lien needs to be filed. Available in all 50 states.">
-@endsection
+@section('title', 'Notice of Intent to Lien | Get Paid Before You File')
+@section('description', 'Send a notice of intent to lien from '.\App\Support\Seo\Prices::lien('noi').'. A formal warning that often gets you paid without filing a mechanics lien.')
 
 @section('content')
 {{-- Hero --}}
 <section class="relative overflow-hidden bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-800 py-24 lg:py-32">
     <div class="relative mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
+        <x-seo.breadcrumbs class="mb-8 text-zinc-400" center :items="[
+            ['name' => 'Home', 'url' => route('home')],
+            ['name' => 'Mechanics Liens', 'url' => route('liens')],
+            ['name' => 'Notice of Intent to Lien'],
+        ]" />
         <div class="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-1.5 text-sm text-amber-400">
             Available in all 50 states
         </div>
         <h1 class="mt-8 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-            Send a Notice of Intent to Lien<br>
-            <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Often Paid Before Filing a Lien</span>
+            Notice of Intent to Lien
         </h1>
-        <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">Send a formal intent to lien notice before filing a mechanics lien. We prepare and deliver state-compliant notices that often trigger payment without ever needing to file a construction lien.</p>
+        <p class="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
+            <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Get Paid Before You File</span>
+        </p>
+        <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">Send a formal intent to lien notice before filing a <a href="{{ route('liens') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">mechanics lien</a>. We prepare and deliver state-compliant notices that often trigger payment without ever needing to file a construction lien.</p>
         <div class="mt-10">
             <a href="{{ route('register') }}" class="group inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#B91C1C]">
                 Get Started
@@ -34,7 +38,7 @@
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div class="grid gap-12 lg:grid-cols-2 lg:gap-16">
             <div>
-                <p class="text-sm font-semibold uppercase tracking-widest text-amber-600">Lien Process</p>
+                <p class="text-sm font-semibold uppercase tracking-widest text-amber-700">Lien Process</p>
                 <h2 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">What Is a Notice of Intent to Lien?</h2>
                 <p class="mt-4 text-lg text-zinc-600">
                     A notice of intent to lien (NOI) is a formal document sent to the property owner, general contractor, and sometimes the lender before you actually file a mechanics lien. It states that you haven't been paid, specifies the amount owed, and warns that you will file a construction lien if payment isn't received by a certain date.
@@ -128,7 +132,7 @@
                     <p class="mt-2 text-zinc-600">Our team creates a state-compliant notice of intent to lien with the correct format, deadlines, and required recipient information.</p>
                 </div>
                 <div class="text-center">
-                    <div class="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-xl font-bold text-white">3</div>
+                    <div class="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-600 text-xl font-bold text-white">3</div>
                     <h3 class="mt-6 text-xl font-semibold text-zinc-900">We deliver it for you</h3>
                     <p class="mt-2 text-zinc-600">We send your intent to lien notice to the property owner, general contractor, and any other required parties with proof of delivery.</p>
                 </div>
@@ -187,7 +191,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </summary>
-                <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">Yes. Subcontractors, material suppliers, and other lower-tier parties can and often must send notices of intent to lien. If you've sent a proper preliminary notice and still aren't paid, an intent to lien is typically the next step before filing a mechanics lien on the property.</div>
+                <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">Yes. Subcontractors, material suppliers, and other lower-tier parties can and often must send notices of intent to lien. If you've sent a proper <a href="{{ route('liens.preliminary-notice') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">preliminary notice</a> and still aren't paid, an intent to lien is typically the next step before filing a mechanics lien on the property.</div>
             </details>
             <details class="group rounded-xl border border-zinc-200 bg-white">
                 <summary class="flex cursor-pointer items-center justify-between p-5 font-medium text-zinc-900 [&::-webkit-details-marker]:hidden">
@@ -201,6 +205,9 @@
         </div>
     </div>
 </section>
+
+{{-- Related lien tools --}}
+<x-seo.lien-more />
 
 {{-- CTA --}}
 <section class="mx-auto mb-16 max-w-5xl px-4 sm:px-6 lg:px-8">
@@ -219,4 +226,7 @@
         </div>
     </div>
 </section>
+
+{{-- Every state page --}}
+<x-seo.lien-states variant="strip" />
 @endsection

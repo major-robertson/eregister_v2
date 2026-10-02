@@ -1,11 +1,7 @@
 @extends('layouts.landing')
 
-@section('title', 'eRegister - LLC Formation | All 50 States')
-
-@section('meta')
-<meta name="description"
-    content="Form your LLC with eRegister. Everything included: LLC filing, registered agent, annual renewals, and compliance management. Available in all 50 states.">
-@endsection
+@section('title', 'LLC Formation Service | Form an LLC in All 50 States')
+@section('description', 'Form your LLC online in any state. Filing, registered agent, and annual renewals included, with compliance tracking after you are formed.')
 
 @section('content')
 {{-- Hero Section --}}
@@ -14,13 +10,19 @@
         <div class="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
             {{-- Left Content --}}
             <div>
+                <x-seo.breadcrumbs class="mb-6 text-zinc-500" :items="[
+                    ['name' => 'Home', 'url' => route('home')],
+                    ['name' => 'LLC Formation'],
+                ]" />
                 <h1 class="text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl xl:text-6xl">
-                    Form Your LLC
-                    <span class="text-blue-600">The Right Way</span>
+                    LLC Formation Service
                 </h1>
+                <p class="text-4xl font-extrabold tracking-tight text-blue-600 sm:text-5xl xl:text-6xl">
+                    Form Your LLC The Right Way
+                </p>
 
                 <p class="mt-6 text-xl leading-relaxed text-zinc-600">
-                    LLC formation, registered agent, compliance management, and ongoing support. We handle the paperwork so you can focus on your business.
+                    LLC formation, <a href="{{ route('registered-agent') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">registered agent</a>, compliance management, and ongoing support. We handle the paperwork so you can focus on your business.
                 </p>
 
                 <div class="mt-8 flex flex-col gap-4 sm:flex-row">
@@ -51,7 +53,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">LLC Formation & Filing</h3>
+                            <p class="font-bold text-zinc-900">LLC Formation & Filing</p>
                             <p class="text-sm text-zinc-500">Articles of Organization filed with the state</p>
                         </div>
                     </div>
@@ -64,7 +66,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Registered Agent Service</h3>
+                            <p class="font-bold text-zinc-900">Registered Agent Service</p>
                             <p class="text-sm text-zinc-500">We receive legal documents on your behalf</p>
                         </div>
                     </div>
@@ -77,7 +79,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Compliance Management</h3>
+                            <p class="font-bold text-zinc-900">Compliance Management</p>
                             <p class="text-sm text-zinc-500">Annual reports & deadline reminders</p>
                         </div>
                     </div>
@@ -90,7 +92,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Ongoing Support</h3>
+                            <p class="font-bold text-zinc-900">Ongoing Support</p>
                             <p class="text-sm text-zinc-500">Expert help whenever you need it</p>
                         </div>
                     </div>
@@ -203,7 +205,7 @@
                         <div class="h-3 w-3 rounded-full bg-red-400"></div>
                         <div class="h-3 w-3 rounded-full bg-amber-400"></div>
                         <div class="h-3 w-3 rounded-full bg-green-400"></div>
-                        <span class="ml-2 text-xs text-zinc-400">eRegister Dashboard</span>
+                        <span class="ml-2 text-xs text-zinc-500">eRegister Dashboard</span>
                     </div>
                     <div class="p-6">
                         <div class="space-y-4">
@@ -216,7 +218,7 @@
                                     </div>
                                     <span class="font-medium text-zinc-900">LLC Formation</span>
                                 </div>
-                                <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">Complete</span>
+                                <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">Complete</span>
                             </div>
                             <div class="flex items-center justify-between rounded-xl bg-green-50 p-4">
                                 <div class="flex items-center gap-3">
@@ -227,7 +229,7 @@
                                     </div>
                                     <span class="font-medium text-zinc-900">Registered Agent</span>
                                 </div>
-                                <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">Active</span>
+                                <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">Active</span>
                             </div>
                             <div class="flex items-center justify-between rounded-xl bg-green-50 p-4">
                                 <div class="flex items-center gap-3">
@@ -238,7 +240,7 @@
                                     </div>
                                     <span class="font-medium text-zinc-900">EIN Obtained</span>
                                 </div>
-                                <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">Complete</span>
+                                <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">Complete</span>
                             </div>
                             <div class="flex items-center justify-between rounded-xl bg-blue-50 p-4">
                                 <div class="flex items-center gap-3">
@@ -338,19 +340,19 @@
                             <svg class="h-5 w-5 shrink-0 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
-                            Operating Agreement Template
+                            <a href="{{ route('operating-agreement') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">Operating Agreement</a> Template
                         </li>
                         <li class="flex items-center gap-3">
                             <svg class="h-5 w-5 shrink-0 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
-                            EIN / Tax ID Application
+                            <a href="{{ route('ein-tax-id') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">EIN</a> / Tax ID Application
                         </li>
                         <li class="flex items-center gap-3">
                             <svg class="h-5 w-5 shrink-0 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
-                            Annual Report Filing
+                            <a href="{{ route('annual-reports') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">Annual Report</a> Filing
                         </li>
                         <li class="flex items-center gap-3">
                             <svg class="h-5 w-5 shrink-0 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -456,6 +458,13 @@
         </div>
     </div>
 </section>
+
+{{-- Related services --}}
+<x-seo.related-links :links="[
+    ['name' => 'Registered Agent', 'url' => route('registered-agent'), 'text' => 'Receive legal mail and service of process in any state.'],
+    ['name' => 'Operating Agreement', 'url' => route('operating-agreement'), 'text' => 'Set ownership, voting, and profit split for your LLC.'],
+    ['name' => 'EIN / Tax ID', 'url' => route('ein-tax-id'), 'text' => 'Get the federal tax ID for banking, hiring, and taxes.'],
+]" />
 
 {{-- Final CTA --}}
 <section class="bg-white py-24">

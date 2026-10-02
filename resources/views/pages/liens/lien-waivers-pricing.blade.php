@@ -1,15 +1,13 @@
 @extends('layouts.landing')
 
-@section('title', 'Lien Waiver Pricing | Free Generation, Affordable E-Signature')
-
-@section('meta')
 @php
     $freeSaves = config('lien_waivers.free_saved_waivers_per_month', 3);
     $monthlyPrice = number_format(config('lien_waivers.prices.monthly.amount_cents', 4900) / 100);
     $yearlyPrice = number_format(config('lien_waivers.prices.yearly.amount_cents', 49000) / 100);
 @endphp
-<meta name="description" content="Lien waiver pricing: generate and download waivers for all 50 states free. Upgrade for e-signature, automatic reminders, and signed-copy storage at ${{ $monthlyPrice }} per person/month or ${{ $yearlyPrice }} per person/year.">
-@endsection
+
+@section('title', 'Lien Waiver Pricing | Free Forms, E-Signature from $'.$monthlyPrice)
+@section('description', 'Generate and download lien waivers for every state free. Pro adds e-signature, reminders, and signed-copy storage for $'.$monthlyPrice.' a month or $'.$yearlyPrice.' a year per person.')
 
 @php
     // Every button goes through the generator page's starter (state, send or
@@ -21,13 +19,21 @@
 {{-- Hero --}}
 <section class="relative overflow-hidden bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-800 py-24 lg:py-32">
     <div class="relative mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
+        <x-seo.breadcrumbs class="mb-8 text-zinc-400" center :items="[
+            ['name' => 'Home', 'url' => route('home')],
+            ['name' => 'Mechanics Liens', 'url' => route('liens')],
+            ['name' => 'Lien Waivers', 'url' => route('liens.lien-waivers')],
+            ['name' => 'Pricing'],
+        ]" />
         <div class="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-1.5 text-sm text-amber-400">
             Free to generate, no credit card required
         </div>
         <h1 class="mt-8 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-            Lien Waiver Pricing<br>
-            <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Free to Generate, Affordable to Automate</span>
+            Lien Waiver Pricing
         </h1>
+        <p class="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
+            <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Free to Generate, Affordable to Automate</span>
+        </p>
         <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">
             Generating and downloading the correct waiver for any of the 50 states is always free. Pay only when you want e-signature, automatic reminders, and signed-copy storage handling the follow-up for you.
         </p>
@@ -157,11 +163,14 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </summary>
-                <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">No. The waiver subscription covers lien waivers only. Filing documents like preliminary notices, notices of intent, mechanics liens, and lien releases are priced separately at one flat fee per filing. See <a href="{{ route('liens.pricing') }}" class="font-medium text-amber-600 underline hover:text-amber-700">lien filing pricing</a> for those. Lien tracking is free either way.</div>
+                <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">No. The waiver subscription covers lien waivers only. Filing documents like preliminary notices, notices of intent, mechanics liens, and lien releases are priced separately at one flat fee per filing. See <a href="{{ route('liens.pricing') }}" class="font-medium text-amber-700 underline hover:text-amber-800">lien filing pricing</a> for those. Lien tracking is free either way.</div>
             </details>
         </div>
     </div>
 </section>
+
+{{-- Related lien tools --}}
+<x-seo.lien-more />
 
 {{-- CTA --}}
 <section class="mx-auto mb-16 max-w-5xl px-4 sm:px-6 lg:px-8">
@@ -180,4 +189,7 @@
         </div>
     </div>
 </section>
+
+{{-- Every state page --}}
+<x-seo.lien-states variant="strip" />
 @endsection

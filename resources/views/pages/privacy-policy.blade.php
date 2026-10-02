@@ -1,6 +1,6 @@
 @extends('layouts.landing')
 
-@section('title', 'Privacy Policy - ' . config('app.name', 'eRegister'))
+@section('title', 'Privacy Policy | eRegister')
 @section('description', 'How eRegister collects, uses and protects your personal information, the choices you have, and how to make a privacy request.')
 
 @section('content')

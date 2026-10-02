@@ -1,11 +1,7 @@
 @extends('layouts.landing')
 
-@section('title', 'Form a Corporation Online | C Corp & S Corp Formation Services')
-
-@section('meta')
-<meta name="description"
-    content="Incorporate your business online with eRegister. C Corp and S Corp formation available in all 50 states. Liability protection, capital raising, and professional credibility. Get started today.">
-@endsection
+@section('title', 'Form a Corporation Online | C Corp & S Corp Formation')
+@section('description', 'Incorporate online in any state. C corp and S corp formation with registered agent and compliance support.')
 
 @section('content')
 {{-- Hero Section --}}
@@ -13,10 +9,16 @@
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
             <div>
+                <x-seo.breadcrumbs class="mb-6 text-zinc-500" :items="[
+                    ['name' => 'Home', 'url' => route('home')],
+                    ['name' => 'Corporation'],
+                ]" />
                 <h1 class="text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl xl:text-6xl">
-                    Form Your Corporation
-                    <span class="text-blue-600">in All 50 States</span>
+                    Form a Corporation Online
                 </h1>
+                <p class="text-4xl font-extrabold tracking-tight text-blue-600 sm:text-5xl xl:text-6xl">
+                    C Corp &amp; S Corp in All 50 States
+                </p>
 
                 <p class="mt-6 text-xl leading-relaxed text-zinc-600">
                     C Corp and S Corp formation made simple. Incorporate your business with liability protection, investor-ready structure, and professional credibility.
@@ -45,7 +47,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Articles of Incorporation</h3>
+                            <p class="font-bold text-zinc-900">Articles of Incorporation</p>
                             <p class="text-sm text-zinc-500">Filed with your state of formation</p>
                         </div>
                     </div>
@@ -58,7 +60,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">C Corp & S Corp Options</h3>
+                            <p class="font-bold text-zinc-900">C Corp & S Corp Options</p>
                             <p class="text-sm text-zinc-500">Choose the right structure for your goals</p>
                         </div>
                     </div>
@@ -71,7 +73,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Registered Agent Included</h3>
+                            <p class="font-bold text-zinc-900">Registered Agent Included</p>
                             <p class="text-sm text-zinc-500">Receive legal documents securely</p>
                         </div>
                     </div>
@@ -192,7 +194,7 @@
                 <div class="absolute -top-5 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-lg font-bold text-white">2</div>
                 <div class="pt-4">
                     <h3 class="text-xl font-bold text-zinc-900">Submit Your Information</h3>
-                    <p class="mt-3 text-zinc-600">Provide your corporation name, registered agent details, incorporators, and share structure. Our form guides you through every requirement.</p>
+                    <p class="mt-3 text-zinc-600">Provide your corporation name, <a href="{{ route('registered-agent') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">registered agent</a> details, incorporators, and share structure. Our form guides you through every requirement.</p>
                 </div>
             </div>
 
@@ -274,12 +276,19 @@
                     </svg>
                 </summary>
                 <div class="px-6 pb-5 text-zinc-600">
-                    Yes. You can convert an LLC to a corporation through a statutory conversion or merger, depending on state law. This can be useful when seeking outside investment or planning to go public. Consult a tax professional for the best approach.
+                    Yes. You can convert an <a href="{{ route('llc') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">LLC</a> to a corporation through a statutory conversion or merger, depending on state law. This can be useful when seeking outside investment or planning to go public. Consult a tax professional for the best approach.
                 </div>
             </details>
         </div>
     </div>
 </section>
+
+{{-- Related services --}}
+<x-seo.related-links :links="[
+    ['name' => 'Registered Agent', 'url' => route('registered-agent'), 'text' => 'Receive legal mail and service of process in any state.'],
+    ['name' => 'Annual Reports', 'url' => route('annual-reports'), 'text' => 'Stay in good standing with on-time state filings.'],
+    ['name' => 'EIN / Tax ID', 'url' => route('ein-tax-id'), 'text' => 'Get the federal tax ID for banking, hiring, and taxes.'],
+]" />
 
 {{-- CTA --}}
 <section class="bg-white py-24">

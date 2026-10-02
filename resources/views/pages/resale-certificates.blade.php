@@ -1,8 +1,24 @@
 @extends('layouts.landing')
 
-@section('title', 'Resale Certificates | Unlimited Signed Certificates for Every State')
+@php
+    // Live price from the catalog (ResaleCertPriceSeeder), fallback if unseeded.
+    // Read up here so the meta description quotes the same price as the page.
+    try {
+        $price = \App\Models\Price::resolve(
+            config('resale_cert.price_family'),
+            config('resale_cert.price_key'),
+            'default',
+            'subscription',
+        );
+        $priceAmount = '$'.number_format($price->amount_cents / 100);
+    } catch (\Throwable) {
+        $priceAmount = '$297';
+    }
+@endphp
 
-@section('description', 'Generate signed resale certificates on official state forms in minutes. Unlimited certificates for every applicable state at one flat yearly price.')
+@section('title', 'Resale Certificate Generator | Every State, One Flat Fee')
+
+@section('description', 'Generate signed resale certificates on official state forms in minutes. Unlimited certificates for every state that accepts them, '.$priceAmount.'/year flat.')
 
 @section('meta')
 <link rel="preconnect" href="https://fonts.bunny.net">
@@ -75,19 +91,6 @@
     $notSureUrl = auth()->check()
         ? route('sales-tax.registrations.start')
         : route('register', array_filter(['product' => 'sales-tax', 'intent' => 'not-sure', 'state' => $adState]));
-
-    // Live price from the catalog (ResaleCertPriceSeeder), fallback if unseeded.
-    try {
-        $price = \App\Models\Price::resolve(
-            config('resale_cert.price_family'),
-            config('resale_cert.price_key'),
-            'default',
-            'subscription',
-        );
-        $priceAmount = '$'.number_format($price->amount_cents / 100);
-    } catch (\Throwable) {
-        $priceAmount = '$297';
-    }
 @endphp
 
 <div class="resale-page text-slate-700">
@@ -104,15 +107,22 @@
 
             {{-- copy --}}
             <div>
+                <x-seo.breadcrumbs class="mb-6 text-zinc-400" :items="[
+                    ['name' => 'Home', 'url' => route('home')],
+                    ['name' => 'Resale Certificates'],
+                ]" />
                 <div class="rise mb-6 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/80 ring-1 ring-white/15">
                     <flux:icon name="document-check" variant="micro" class="size-3.5" style="color: var(--color-accent)" />
                     Unlimited certificates &middot; All applicable states
                 </div>
 
                 <h1 class="rise font-display text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
+                    Resale Certificate Generator
+                </h1>
+                <p class="rise font-display text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
                     Generate your<br>
                     <span data-hero-keyword style="color: var(--color-accent)">{{ $heroKeyword }}</span>
-                </h1>
+                </p>
 
                 <p class="rise-2 mt-6 max-w-md text-lg leading-relaxed text-white/70">
                     Enter your business details once. Get signed, vendor-ready
@@ -161,38 +171,38 @@
 
                 <div class="relative rounded-2xl bg-[var(--paper)] p-7 shadow-2xl ring-1 ring-black/5">
                     <div class="flex items-center justify-between border-b border-slate-200 pb-4">
-                        <div class="font-display text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                        <div class="font-display text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                             Sales &amp; Use Tax
                         </div>
                         <flux:icon name="document-check" variant="mini" class="size-5 text-slate-300" />
                     </div>
 
-                    <h3 class="font-display mt-5 text-lg font-bold leading-tight text-[var(--ink)]">
+                    <p class="font-display mt-5 text-lg font-bold leading-tight text-[var(--ink)]">
                         Resale Certificate
-                    </h3>
+                    </p>
 
                     <dl class="mt-5 space-y-3 text-sm">
                         <div class="flex justify-between">
-                            <dt class="text-slate-400">Purchaser</dt>
+                            <dt class="text-slate-500">Purchaser</dt>
                             <dd class="font-medium text-slate-700">Acme Trading LLC</dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="text-slate-400">Permit no.</dt>
+                            <dt class="text-slate-500">Permit no.</dt>
                             <dd class="font-mono font-medium text-slate-700">32-0451-1178</dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="text-slate-400">Vendor</dt>
+                            <dt class="text-slate-500">Vendor</dt>
                             <dd class="font-medium text-slate-700">Summit Wholesale Co.</dd>
                         </div>
                         <div class="flex justify-between">
-                            <dt class="text-slate-400">Status</dt>
+                            <dt class="text-slate-500">Status</dt>
                             <dd class="font-semibold" style="color: var(--color-accent)">Tax exempt</dd>
                         </div>
                     </dl>
 
                     {{-- the signature --}}
                     <div class="mt-6 border-t border-slate-200 pt-4">
-                        <div class="text-[10px] font-medium uppercase tracking-wider text-slate-400">Authorized signature</div>
+                        <div class="text-[10px] font-medium uppercase tracking-wider text-slate-500">Authorized signature</div>
                         <div class="sign-in font-signature mt-1 -rotate-2 text-3xl" style="color: var(--pen)">
                             Jordan Avery
                         </div>
@@ -223,7 +233,7 @@
             ] as $stat)
                 <div class="px-3">
                     <div class="font-display text-2xl font-bold text-[var(--ink)] sm:text-3xl">{{ $stat['number'] }}</div>
-                    <div class="mt-1 text-xs font-medium uppercase tracking-wide text-slate-400">{{ $stat['label'] }}</div>
+                    <div class="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">{{ $stat['label'] }}</div>
                 </div>
             @endforeach
         </div>
@@ -269,20 +279,20 @@
                 </div>
                 <div class="mt-6 space-y-4">
                     <div class="rounded-xl bg-slate-50 p-5">
-                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Without a certificate</div>
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Without a certificate</div>
                         <div class="mt-2 flex items-baseline justify-between">
                             <span class="text-sm text-slate-500">$25,000 inventory &times; 8% tax</span>
                             <span class="font-display text-2xl font-bold text-rose-600">&minus;$2,000</span>
                         </div>
-                        <p class="mt-1 text-xs text-slate-400">Paid upfront to your supplier.</p>
+                        <p class="mt-1 text-xs text-slate-500">Paid upfront to your supplier.</p>
                     </div>
                     <div class="rounded-xl p-5 ring-2" style="background: rgba(14,159,110,.06); --tw-ring-color: var(--color-accent)">
                         <div class="text-xs font-semibold uppercase tracking-wide" style="color: var(--color-accent-content)">With a resale certificate</div>
                         <div class="mt-2 flex items-baseline justify-between">
-                            <span class="text-sm text-slate-500">Same purchase, tax exempt</span>
+                            <span class="text-sm text-slate-600">Same purchase, tax exempt</span>
                             <span class="font-display text-2xl font-bold" style="color: var(--color-accent-content)">$0</span>
                         </div>
-                        <p class="mt-1 text-xs text-slate-400">You collect the tax from your customers at sale.</p>
+                        <p class="mt-1 text-xs text-slate-600">You collect the tax from your customers at sale.</p>
                     </div>
                 </div>
                 <p class="mt-6 text-sm text-slate-500">
@@ -374,7 +384,7 @@
 
             <div class="mx-auto mt-12 max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-[var(--paper)] shadow-xl shadow-slate-200/60">
                 <div class="border-b border-slate-200 px-8 py-10 text-center">
-                    <div class="font-display text-sm font-semibold uppercase tracking-wide text-slate-400">Resale Certificate Generator</div>
+                    <div class="font-display text-sm font-semibold uppercase tracking-wide text-slate-500">Resale Certificate Generator</div>
                     <div class="mt-3 flex items-baseline justify-center gap-1">
                         <span class="font-display text-5xl font-bold text-[var(--ink)]">{{ $priceAmount }}</span>
                         <span class="text-base font-medium text-slate-500">/ year</span>
@@ -403,7 +413,7 @@
                             Get started
                         </flux:button>
                     </div>
-                    <p class="mt-4 text-center text-xs text-slate-400">
+                    <p class="mt-4 text-center text-xs text-slate-500">
                         Renews at {{ $priceAmount }}/year. Cancel anytime.
                     </p>
                 </div>
@@ -544,7 +554,7 @@
             <li>
                 <a href="{{ route('resale-certificates.state', ['state' => \App\Support\Seo\States::slug($stateName)]) }}" class="flex items-center justify-between rounded-lg border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900">
                     {{ $stateName }}
-                    <span class="text-xs text-zinc-400">{{ $stateCode }}</span>
+                    <span class="text-xs text-zinc-500">{{ $stateCode }}</span>
                 </a>
             </li>
             @endforeach

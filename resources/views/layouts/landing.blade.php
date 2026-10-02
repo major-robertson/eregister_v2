@@ -138,6 +138,12 @@
                         </div>
                     </div>
 
+                    {{-- Government (flat link) --}}
+                    <a href="{{ route('government.home') }}"
+                        class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 {{ request()->routeIs('government.*') ? 'text-zinc-900' : '' }}">
+                        Government
+                    </a>
+
                     {{-- Contact (flat link) --}}
                     <a href="{{ route('contact') }}"
                         class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 {{ request()->routeIs('contact') ? 'text-zinc-900' : '' }}">
@@ -264,6 +270,12 @@
                         </div>
                     </details>
 
+                    {{-- Government --}}
+                    <a href="{{ route('government.home') }}"
+                        class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">
+                        Government
+                    </a>
+
                     {{-- Contact --}}
                     <a href="{{ route('contact') }}"
                         class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 {{ request()->routeIs('contact') ? 'bg-zinc-100 text-zinc-900' : '' }}">
@@ -326,7 +338,7 @@
 
                 {{-- Form a Business --}}
                 <div>
-                    <h4 class="font-semibold text-white">Form a Business</h4>
+                    <h2 class="font-semibold text-white">Form a Business</h2>
                     <ul class="mt-4 space-y-3">
                         <li><a href="{{ route('llc') }}" class="text-sm text-zinc-400 transition hover:text-white">LLC</a></li>
                         <li><a href="{{ route('corporation') }}" class="text-sm text-zinc-400 transition hover:text-white">Corporation</a></li>
@@ -339,7 +351,7 @@
 
                 {{-- Payment Protection --}}
                 <div>
-                    <h4 class="font-semibold text-white">Payment Protection</h4>
+                    <h2 class="font-semibold text-white">Payment Protection</h2>
                     <ul class="mt-4 space-y-3">
                         <li><a href="{{ route('liens') }}" class="text-sm text-zinc-400 transition hover:text-white">Mechanics Lien</a></li>
                         <li><a href="{{ route('liens.preliminary-notice') }}" class="text-sm text-zinc-400 transition hover:text-white">Preliminary Notice</a></li>
@@ -354,7 +366,7 @@
 
                 {{-- Company --}}
                 <div>
-                    <h4 class="font-semibold text-white">Company</h4>
+                    <h2 class="font-semibold text-white">Company</h2>
                     <ul class="mt-4 space-y-3">
                         <li><a href="{{ route('contact') }}" class="text-sm text-zinc-400 transition hover:text-white">Contact</a></li>
                         <li><a href="{{ route('sales-tax-registration') }}" class="text-sm text-zinc-400 transition hover:text-white">Sales Tax</a></li>
@@ -365,7 +377,7 @@
 
                 {{-- Legal --}}
                 <div>
-                    <h4 class="font-semibold text-white">Legal</h4>
+                    <h2 class="font-semibold text-white">Legal</h2>
                     <ul class="mt-4 space-y-3">
                         <li><a href="{{ route('privacy-policy') }}"
                                 class="text-sm text-zinc-400 transition hover:text-white">Privacy Policy</a></li>
@@ -380,12 +392,12 @@
             <div class="mt-12 border-t border-zinc-800 pt-8">
                 <div class="flex flex-col items-center justify-between gap-4 sm:flex-row">
                     <div>
-                        <p class="text-sm text-zinc-500">&copy; {{ date('Y') }} {{ config('app.name', 'eRegister') }}. All
+                        <p class="text-sm text-zinc-400">&copy; {{ date('Y') }} {{ config('app.name', 'eRegister') }}. All
                             rights reserved.</p>
                         @if ($footerAddress = config('company.address'))
-                            <p class="mt-2 text-sm text-zinc-500">{{ $footerAddress['street'] }}, {{ $footerAddress['locality'] }}, {{ $footerAddress['region'] }} {{ $footerAddress['postal_code'] }}</p>
+                            <p class="mt-2 text-sm text-zinc-400">{{ $footerAddress['street'] }}, {{ $footerAddress['locality'] }}, {{ $footerAddress['region'] }} {{ $footerAddress['postal_code'] }}</p>
                         @endif
-                        <p class="mt-2 max-w-xl text-xs text-zinc-600">{{ config('app.name', 'eRegister') }} is a private document preparation and filing service. It is not a government agency and is not affiliated with or endorsed by any government agency.</p>
+                        <p class="mt-2 max-w-xl text-xs text-zinc-400">{{ config('app.name', 'eRegister') }} is a private document preparation and filing service. It is not a government agency and is not affiliated with or endorsed by any government agency.</p>
                     </div>
                 </div>
             </div>

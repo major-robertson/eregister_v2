@@ -1,11 +1,7 @@
 @extends('layouts.landing')
 
 @section('title', 'Get an EIN / Tax ID Number | Federal Tax ID Application')
-
-@section('meta')
-<meta name="description"
-    content="Apply for an Employer Identification Number (EIN) or federal tax ID. Required for LLCs, corporations, and employers. Fast, simple application process. Get your EIN today.">
-@endsection
+@section('description', 'Apply for an Employer Identification Number (EIN) for your LLC, corporation, or new business. Simple online application, fast turnaround.')
 
 @section('content')
 {{-- Hero Section --}}
@@ -13,10 +9,16 @@
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
             <div>
+                <x-seo.breadcrumbs class="mb-6 text-zinc-500" :items="[
+                    ['name' => 'Home', 'url' => route('home')],
+                    ['name' => 'EIN / Tax ID'],
+                ]" />
                 <h1 class="text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl xl:text-6xl">
-                    Get Your EIN
-                    <span class="text-emerald-600">Fast</span>
+                    Get an EIN / Tax ID Number
                 </h1>
+                <p class="text-4xl font-extrabold tracking-tight text-emerald-600 sm:text-5xl xl:text-6xl">
+                    Fast and Simple
+                </p>
 
                 <p class="mt-6 text-xl leading-relaxed text-zinc-600">
                     Apply for your Employer Identification Number (EIN)—your business's federal tax ID. Required for opening bank accounts, hiring employees, and filing business taxes. Simple application, quick turnaround.
@@ -24,7 +26,7 @@
 
                 <div class="mt-8 flex flex-col gap-4 sm:flex-row">
                     <a href="{{ route('register') }}"
-                        class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-8 py-4 text-base font-semibold text-white transition hover:bg-emerald-700">
+                        class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-8 py-4 text-base font-semibold text-white transition hover:bg-emerald-800">
                         Apply for EIN
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -45,7 +47,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">IRS-Approved</h3>
+                            <p class="font-bold text-zinc-900">IRS-Approved</p>
                             <p class="text-sm text-zinc-500">Official federal tax ID from the IRS</p>
                         </div>
                     </div>
@@ -58,7 +60,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Quick Turnaround</h3>
+                            <p class="font-bold text-zinc-900">Quick Turnaround</p>
                             <p class="text-sm text-zinc-500">Often received same day when applied online</p>
                         </div>
                     </div>
@@ -71,7 +73,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Open Accounts</h3>
+                            <p class="font-bold text-zinc-900">Open Accounts</p>
                             <p class="text-sm text-zinc-500">Required for business banking & hiring</p>
                         </div>
                     </div>
@@ -85,12 +87,12 @@
 <section class="bg-zinc-50 py-24">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-3xl text-center">
-            <p class="text-sm font-semibold uppercase tracking-widest text-emerald-600">Overview</p>
+            <p class="text-sm font-semibold uppercase tracking-widest text-emerald-700">Overview</p>
             <h2 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
                 What Is an EIN?
             </h2>
             <p class="mt-4 text-lg text-zinc-600">
-                An Employer Identification Number (EIN) is a nine-digit federal tax ID issued by the IRS. Also called a Federal Tax ID or FEIN, it identifies your business for tax purposes. An EIN functions like a Social Security number for your business—banks, vendors, and the IRS use it to track your entity. Sole proprietors can use their SSN for some purposes, but LLCs, corporations, partnerships, and nonprofits typically need an EIN. Getting one is free directly from the IRS; we simplify the application process and guide you through each step.
+                An Employer Identification Number (EIN) is a nine-digit federal tax ID issued by the IRS. Also called a Federal Tax ID or FEIN, it identifies your business for tax purposes. An EIN functions like a Social Security number for your business—banks, vendors, and the IRS use it to track your entity. <a href="{{ route('sole-proprietorship') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">Sole proprietors</a> can use their SSN for some purposes, but <a href="{{ route('llc') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">LLCs</a>, <a href="{{ route('corporation') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">corporations</a>, partnerships, and nonprofits typically need an EIN. Getting one is free directly from the IRS; we simplify the application process and guide you through each step.
             </p>
         </div>
 
@@ -126,21 +128,21 @@
             <h2 class="text-center text-2xl font-bold text-zinc-900 sm:text-3xl">How to Apply</h2>
             <div class="mt-12 grid gap-8 md:grid-cols-3">
                 <div class="relative rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-                    <div class="absolute -top-4 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-lg font-bold text-white">1</div>
+                    <div class="absolute -top-4 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-700 text-lg font-bold text-white">1</div>
                     <div class="pt-6">
                         <h3 class="font-bold text-zinc-900">Gather Information</h3>
                         <p class="mt-2 text-zinc-600">You'll need your legal business name, address, responsible party (SSN/ITIN), entity type, and formation date. We'll guide you through each field.</p>
                     </div>
                 </div>
                 <div class="relative rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-                    <div class="absolute -top-4 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-lg font-bold text-white">2</div>
+                    <div class="absolute -top-4 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-700 text-lg font-bold text-white">2</div>
                     <div class="pt-6">
                         <h3 class="font-bold text-zinc-900">Complete the Application</h3>
                         <p class="mt-2 text-zinc-600">Answer our simple questions. We'll format your responses for the IRS and submit the application on your behalf—or you can apply directly with the IRS for free.</p>
                     </div>
                 </div>
                 <div class="relative rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-                    <div class="absolute -top-4 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-lg font-bold text-white">3</div>
+                    <div class="absolute -top-4 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-700 text-lg font-bold text-white">3</div>
                     <div class="pt-6">
                         <h3 class="font-bold text-zinc-900">Receive Your EIN</h3>
                         <p class="mt-2 text-zinc-600">Online applications are often processed immediately. You'll receive your EIN confirmation and can start using it for banking, hiring, and tax filings right away.</p>
@@ -155,7 +157,7 @@
 <section class="bg-white py-24">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-3xl text-center">
-            <p class="text-sm font-bold uppercase tracking-widest text-emerald-600">Simple Process</p>
+            <p class="text-sm font-bold uppercase tracking-widest text-emerald-700">Simple Process</p>
             <h2 class="mt-3 text-3xl font-extrabold text-zinc-900 sm:text-4xl">
                 Get Your EIN in 3 Steps
             </h2>
@@ -163,7 +165,7 @@
 
         <div class="mt-16 grid gap-8 md:grid-cols-3">
             <div class="relative rounded-2xl bg-zinc-50 p-8 shadow-sm">
-                <div class="absolute -top-5 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-lg font-bold text-white">1</div>
+                <div class="absolute -top-5 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-700 text-lg font-bold text-white">1</div>
                 <div class="pt-4">
                     <h3 class="text-xl font-bold text-zinc-900">Provide Business Details</h3>
                     <p class="mt-3 text-zinc-600">Enter your legal name, address, entity type, and responsible party information. Our form is designed to match IRS requirements.</p>
@@ -171,7 +173,7 @@
             </div>
 
             <div class="relative rounded-2xl bg-zinc-50 p-8 shadow-sm">
-                <div class="absolute -top-5 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-lg font-bold text-white">2</div>
+                <div class="absolute -top-5 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-700 text-lg font-bold text-white">2</div>
                 <div class="pt-4">
                     <h3 class="text-xl font-bold text-zinc-900">We Submit to the IRS</h3>
                     <p class="mt-3 text-zinc-600">We process your application and submit it to the IRS. You'll get updates at each step so you know exactly where things stand.</p>
@@ -179,7 +181,7 @@
             </div>
 
             <div class="relative rounded-2xl bg-zinc-50 p-8 shadow-sm">
-                <div class="absolute -top-5 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-lg font-bold text-white">3</div>
+                <div class="absolute -top-5 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-700 text-lg font-bold text-white">3</div>
                 <div class="pt-4">
                     <h3 class="text-xl font-bold text-zinc-900">Receive Your Number</h3>
                     <p class="mt-3 text-zinc-600">Once approved, you'll receive your EIN immediately. Save it securely—you'll need it for taxes, banking, and business operations.</p>
@@ -193,7 +195,7 @@
 <section id="faq" class="bg-zinc-50 py-24">
     <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div class="text-center">
-            <p class="text-sm font-semibold uppercase tracking-widest text-emerald-600">FAQ</p>
+            <p class="text-sm font-semibold uppercase tracking-widest text-emerald-700">FAQ</p>
             <h2 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
                 Frequently Asked Questions
             </h2>
@@ -263,6 +265,13 @@
     </div>
 </section>
 
+{{-- Related services --}}
+<x-seo.related-links :links="[
+    ['name' => 'LLC Formation', 'url' => route('llc'), 'text' => 'Form an LLC in any state.'],
+    ['name' => 'Sales Tax Registration', 'url' => route('sales-tax-registration'), 'text' => 'Get your sales tax permit in any state.'],
+    ['name' => 'Sole Proprietorship', 'url' => route('sole-proprietorship'), 'text' => 'Start under your own name with the basics in place.'],
+]" />
+
 {{-- CTA --}}
 <section class="bg-white py-24">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -282,7 +291,7 @@
                 </p>
                 <div class="mt-10">
                     <a href="{{ route('register') }}"
-                        class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-emerald-600/25 transition-all hover:bg-emerald-500 hover:shadow-xl sm:w-auto">
+                        class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-emerald-600/25 transition-all hover:bg-emerald-600 hover:shadow-xl sm:w-auto">
                         Apply Now
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />

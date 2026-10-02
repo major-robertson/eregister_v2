@@ -1,11 +1,7 @@
 @extends('layouts.landing')
 
 @section('title', 'File a DBA Name | Register Doing Business As (DBA) Online')
-
-@section('meta')
-<meta name="description"
-    content="File a DBA, fictitious business name, or trade name online with eRegister. Register your Doing Business As name in all 50 states. Fast, simple, and compliant.">
-@endsection
+@section('description', 'File a DBA, fictitious business name, or trade name online. We register your doing business as name in any state so you can trade under it.')
 
 @section('content')
 {{-- Hero Section --}}
@@ -13,10 +9,16 @@
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
             <div>
+                <x-seo.breadcrumbs class="mb-6 text-zinc-500" :items="[
+                    ['name' => 'Home', 'url' => route('home')],
+                    ['name' => 'DBA'],
+                ]" />
                 <h1 class="text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl xl:text-6xl">
-                    Register Your DBA
-                    <span class="text-indigo-600">The Easy Way</span>
+                    File a DBA Name
                 </h1>
+                <p class="text-4xl font-extrabold tracking-tight text-indigo-600 sm:text-5xl xl:text-6xl">
+                    The Easy Way
+                </p>
 
                 <p class="mt-6 text-xl leading-relaxed text-zinc-600">
                     File your fictitious business name, trade name, or Doing Business As (DBA) online. Operate under a different name than your legal entity—quickly and compliantly.
@@ -45,7 +47,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">DBA Registration</h3>
+                            <p class="font-bold text-zinc-900">DBA Registration</p>
                             <p class="text-sm text-zinc-500">File with county or state as required</p>
                         </div>
                     </div>
@@ -58,7 +60,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Trade Name Protection</h3>
+                            <p class="font-bold text-zinc-900">Trade Name Protection</p>
                             <p class="text-sm text-zinc-500">Publicly register your business name</p>
                         </div>
                     </div>
@@ -71,7 +73,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">All 50 States</h3>
+                            <p class="font-bold text-zinc-900">All 50 States</p>
                             <p class="text-sm text-zinc-500">County and state filing support</p>
                         </div>
                     </div>
@@ -95,7 +97,7 @@
                 </p>
 
                 <p class="mt-6 text-zinc-600">
-                    For example, if your LLC is "Smith Enterprises LLC" but you want to run a store called "Mountain Outdoor Gear," you file a DBA for "Mountain Outdoor Gear." Sole proprietors and partnerships often use DBAs to brand their businesses professionally without forming a separate entity.
+                    For example, if your <a href="{{ route('llc') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">LLC</a> is "Smith Enterprises LLC" but you want to run a store called "Mountain Outdoor Gear," you file a DBA for "Mountain Outdoor Gear." <a href="{{ route('sole-proprietorship') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">Sole proprietors</a> and partnerships often use DBAs to brand their businesses professionally without forming a separate entity.
                 </p>
 
                 <dl class="mt-10 space-y-6">
@@ -243,7 +245,7 @@
                     </svg>
                 </summary>
                 <div class="px-6 pb-5 text-zinc-600">
-                    No. A DBA only registers a name; it does not create a separate legal entity or provide liability protection. Sole proprietors and general partners remain personally liable. For asset protection, consider forming an LLC or corporation.
+                    No. A DBA only registers a name; it does not create a separate legal entity or provide liability protection. Sole proprietors and general partners remain personally liable. For asset protection, consider forming an LLC or <a href="{{ route('corporation') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">corporation</a>.
                 </div>
             </details>
 
@@ -273,6 +275,13 @@
         </div>
     </div>
 </section>
+
+{{-- Related services --}}
+<x-seo.related-links :links="[
+    ['name' => 'Sole Proprietorship', 'url' => route('sole-proprietorship'), 'text' => 'Start under your own name with the basics in place.'],
+    ['name' => 'LLC Formation', 'url' => route('llc'), 'text' => 'Form an LLC in any state.'],
+    ['name' => 'EIN / Tax ID', 'url' => route('ein-tax-id'), 'text' => 'Get the federal tax ID for banking, hiring, and taxes.'],
+]" />
 
 {{-- CTA --}}
 <section class="bg-white py-24">

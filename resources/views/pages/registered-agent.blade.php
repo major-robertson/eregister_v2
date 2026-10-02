@@ -1,11 +1,7 @@
 @extends('layouts.landing')
 
-@section('title', 'Registered Agent Service | Reliable Statutory Agent in All 50 States')
-
-@section('meta')
-<meta name="description"
-    content="Professional registered agent service for LLCs and corporations. Reliable statutory agent in all 50 states. Receive legal documents, maintain compliance, and keep your address private. Never miss service of process.">
-@endsection
+@section('title', 'Registered Agent Service in All 50 States')
+@section('description', 'Registered agent service for LLCs and corporations in all 50 states. Receive service of process, stay compliant, and keep your address off public records.')
 
 @section('content')
 {{-- Hero Section --}}
@@ -13,10 +9,16 @@
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
             <div>
+                <x-seo.breadcrumbs class="mb-6 text-zinc-500" :items="[
+                    ['name' => 'Home', 'url' => route('home')],
+                    ['name' => 'Registered Agent'],
+                ]" />
                 <h1 class="text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl xl:text-6xl">
-                    Trusted Registered Agent
-                    <span class="text-indigo-600">Service</span>
+                    Registered Agent Service
                 </h1>
+                <p class="text-4xl font-extrabold tracking-tight text-indigo-600 sm:text-5xl xl:text-6xl">
+                    Trusted in All 50 States
+                </p>
 
                 <p class="mt-6 text-xl leading-relaxed text-zinc-600">
                     Your reliable statutory agent in all 50 states. Receive legal documents, keep your address private, and maintain compliance. Never miss service of process or state correspondence.
@@ -45,7 +47,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Legal Document Receipt</h3>
+                            <p class="font-bold text-zinc-900">Legal Document Receipt</p>
                             <p class="text-sm text-zinc-500">Service of process, state mail & more</p>
                         </div>
                     </div>
@@ -60,7 +62,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Privacy Protected</h3>
+                            <p class="font-bold text-zinc-900">Privacy Protected</p>
                             <p class="text-sm text-zinc-500">Your address stays off public records</p>
                         </div>
                     </div>
@@ -73,7 +75,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">50-State Coverage</h3>
+                            <p class="font-bold text-zinc-900">50-State Coverage</p>
                             <p class="text-sm text-zinc-500">One agent for every state where you're registered</p>
                         </div>
                     </div>
@@ -92,7 +94,7 @@
                 What Is a Registered Agent?
             </h2>
             <p class="mt-4 text-lg text-zinc-600">
-                A registered agent (also called a statutory agent or resident agent) is a person or business entity designated to receive official legal documents on behalf of your company. Every LLC, corporation, and nonprofit registered in a state must have a registered agent with a physical street address in that state. The agent receives service of process (lawsuits), state correspondence, tax notices, and compliance reminders. Using a professional registered agent service ensures you never miss critical documents and keeps your personal or business address private.
+                A registered agent (also called a statutory agent or resident agent) is a person or business entity designated to receive official legal documents on behalf of your company. Every <a href="{{ route('llc') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">LLC</a>, <a href="{{ route('corporation') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">corporation</a>, and nonprofit registered in a state must have a registered agent with a physical street address in that state. The agent receives service of process (lawsuits), state correspondence, tax notices, and compliance reminders. Using a professional registered agent service ensures you never miss critical documents and keeps your personal or business address private.
             </p>
         </div>
 
@@ -160,7 +162,7 @@
                         <svg class="h-6 w-6 shrink-0 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Annual report deadline reminders</span>
+                        <span><a href="{{ route('annual-reports') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">Annual report</a> deadline reminders</span>
                     </li>
                     <li class="flex gap-3 rounded-xl bg-white p-4 shadow-sm">
                         <svg class="h-6 w-6 shrink-0 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -285,6 +287,13 @@
         </div>
     </div>
 </section>
+
+{{-- Related services --}}
+<x-seo.related-links :links="[
+    ['name' => 'LLC Formation', 'url' => route('llc'), 'text' => 'Form an LLC in any state.'],
+    ['name' => 'Corporation', 'url' => route('corporation'), 'text' => 'Form a C corp or S corp in any state.'],
+    ['name' => 'Annual Reports', 'url' => route('annual-reports'), 'text' => 'Stay in good standing with on-time state filings.'],
+]" />
 
 {{-- CTA --}}
 <section class="bg-white py-24">

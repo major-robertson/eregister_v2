@@ -1,11 +1,7 @@
 @extends('layouts.landing')
 
-@section('title', 'LLC Operating Agreement | Custom Operating Agreement Template')
-
-@section('meta')
-<meta name="description"
-    content="Custom LLC operating agreement for multi-member and single-member LLCs. Define member rights, profit distribution, management structure, and protect your business. Professional template tailored to your needs.">
-@endsection
+@section('title', 'LLC Operating Agreement Template | Single & Multi-Member')
+@section('description', 'Custom operating agreement for single-member and multi-member LLCs. Define ownership, profit split, voting, and management.')
 
 @section('content')
 {{-- Hero Section --}}
@@ -13,13 +9,19 @@
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
             <div>
+                <x-seo.breadcrumbs class="mb-6 text-zinc-500" :items="[
+                    ['name' => 'Home', 'url' => route('home')],
+                    ['name' => 'Operating Agreement'],
+                ]" />
                 <h1 class="text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl xl:text-6xl">
-                    Protect Your LLC with an
-                    <span class="text-violet-600">Operating Agreement</span>
+                    LLC Operating Agreement
                 </h1>
+                <p class="text-4xl font-extrabold tracking-tight text-violet-600 sm:text-5xl xl:text-6xl">
+                    Protect Your LLC
+                </p>
 
                 <p class="mt-6 text-xl leading-relaxed text-zinc-600">
-                    Define member rights, profit distribution, and management structure. A custom operating agreement strengthens liability protection, prevents disputes, and clarifies how your LLC operates. Single-member or multi-member—we tailor it to your business.
+                    Define member rights, profit distribution, and management structure. A custom operating agreement strengthens liability protection, prevents disputes, and clarifies how your <a href="{{ route('llc') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">LLC</a> operates. Single-member or multi-member—we tailor it to your business.
                 </p>
 
                 <div class="mt-8 flex flex-col gap-4 sm:flex-row">
@@ -45,7 +47,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Custom Drafted</h3>
+                            <p class="font-bold text-zinc-900">Custom Drafted</p>
                             <p class="text-sm text-zinc-500">Tailored to your LLC structure</p>
                         </div>
                     </div>
@@ -58,7 +60,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Member Rights</h3>
+                            <p class="font-bold text-zinc-900">Member Rights</p>
                             <p class="text-sm text-zinc-500">Voting, profit sharing & responsibilities</p>
                         </div>
                     </div>
@@ -71,7 +73,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Liability Protection</h3>
+                            <p class="font-bold text-zinc-900">Liability Protection</p>
                             <p class="text-sm text-zinc-500">Strengthen your corporate veil</p>
                         </div>
                     </div>
@@ -289,6 +291,13 @@
         </div>
     </div>
 </section>
+
+{{-- Related services --}}
+<x-seo.related-links :links="[
+    ['name' => 'LLC Formation', 'url' => route('llc'), 'text' => 'Form an LLC in any state.'],
+    ['name' => 'Registered Agent', 'url' => route('registered-agent'), 'text' => 'Receive legal mail and service of process in any state.'],
+    ['name' => 'EIN / Tax ID', 'url' => route('ein-tax-id'), 'text' => 'Get the federal tax ID for banking, hiring, and taxes.'],
+]" />
 
 {{-- CTA --}}
 <section class="bg-white py-24">

@@ -1,5 +1,8 @@
 @extends('layouts.landing')
 
+{{-- Renders <livewire:contact-form />: load Livewire and Flux instead of marketing.js. --}}
+@section('livewire', true)
+
 @section('title', 'Contact Us | eRegister')
 @section('description', 'Questions about a mechanics lien, lien waiver, sales tax registration, resale certificate or LLC? Send us a message and we will reply by email.')
 

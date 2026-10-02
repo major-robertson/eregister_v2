@@ -3,7 +3,14 @@
 
 <head>
     {{-- Inline @section('title', ...) values arrive already escaped; decode so the head partial's {{ }} does not double-escape "&". --}}
-    @include('partials.head', ['title' => html_entity_decode($__env->yieldContent('title', 'eRegister Government'), ENT_QUOTES)])
+    {{-- Marketing pages run the Alpine-only marketing.js bundle. A page that renders a
+         Livewire component sets @section('livewire', true) to get Livewire and Flux instead
+         (their Livewire build ships its own Alpine, so never load both). --}}
+    @php($usesLivewire = $__env->hasSection('livewire'))
+    @include('partials.head', [
+        'title' => html_entity_decode($__env->yieldContent('title', 'eRegister Government'), ENT_QUOTES),
+        'headScript' => $usesLivewire ? 'resources/js/app.js' : 'resources/js/marketing.js',
+    ])
     @include('partials.seo')
     @yield('meta')
 </head>
@@ -32,8 +39,8 @@
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex h-16 items-center justify-between">
                 <!-- Logo -->
-                <a href="{{ route('government.home') }}" class="flex items-center gap-3" wire:navigate>
-                    <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" class="h-9" />
+                <a href="{{ route('government.home') }}" class="flex items-center gap-3">
+                    <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" width="1538" height="520" class="h-9 w-auto" />
                     <span
                         class="rounded-md bg-blue-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-blue-700">
                         Government
@@ -228,8 +235,8 @@
                 {{-- Brand --}}
                 <div class="col-span-2 md:col-span-2">
                     <a href="{{ route('government.home') }}" class="flex items-center gap-3">
-                        <img src="/img/logo/eregister-logo-light-svg.svg" alt="eRegister"
-                            class="h-10" />
+                        <img src="/img/logo/eregister-logo-light-svg.svg" alt="eRegister" width="1538" height="520"
+                            class="h-10 w-auto" />
                         <span
                             class="rounded-md bg-blue-500/15 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-blue-300 ring-1 ring-inset ring-blue-500/30">
                             Government
@@ -318,7 +325,9 @@
         </div>
     </footer>
 
-    @fluxScripts
+    @if ($usesLivewire)
+        @fluxScripts
+    @endif
 </body>
 
 </html>

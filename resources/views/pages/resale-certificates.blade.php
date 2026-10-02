@@ -419,29 +419,29 @@
         </div>
 
         <div class="mt-12">
-            <flux:accordion>
-                <flux:accordion.item>
-                    <flux:accordion.heading>Is it really unlimited?</flux:accordion.heading>
-                    <flux:accordion.content>
+            <x-accordion>
+                <x-accordion.item>
+                    <x-accordion.heading>Is it really unlimited?</x-accordion.heading>
+                    <x-accordion.content>
                         Yes. One flat {{ $priceAmount }}/year covers every certificate you generate:
                         every state, every vendor, every reissue. There are no per-certificate,
                         per-state, or per-download fees.
-                    </flux:accordion.content>
-                </flux:accordion.item>
+                    </x-accordion.content>
+                </x-accordion.item>
 
-                <flux:accordion.item>
-                    <flux:accordion.heading>Which states are covered?</flux:accordion.heading>
-                    <flux:accordion.content>
+                <x-accordion.item>
+                    <x-accordion.heading>Which states are covered?</x-accordion.heading>
+                    <x-accordion.content>
                         All applicable states: every state that has a sales tax, plus Washington,
                         D.C., along with the MTC and SST uniform multi-state certificates. Delaware,
                         Montana, New Hampshire, and Oregon have no state sales tax, so no resale
                         certificate is needed there.
-                    </flux:accordion.content>
-                </flux:accordion.item>
+                    </x-accordion.content>
+                </x-accordion.item>
 
-                <flux:accordion.item>
-                    <flux:accordion.heading>What's the difference between a resale certificate and a sales tax permit?</flux:accordion.heading>
-                    <flux:accordion.content>
+                <x-accordion.item>
+                    <x-accordion.heading>What's the difference between a resale certificate and a sales tax permit?</x-accordion.heading>
+                    <x-accordion.content>
                         A sales tax permit (seller's permit) is issued by the state and authorizes
                         you to collect sales tax from customers. A resale certificate is a document
                         you provide to vendors when buying goods for resale. It tells them you're
@@ -449,61 +449,61 @@
                         your buyers. You need a valid sales tax permit before you can issue a resale
                         certificate. Don't have one yet? We handle
                         <a href="{{ route('sales-tax-registration') }}" class="font-medium underline" style="color: var(--color-accent-content)">sales tax registration</a> too.
-                    </flux:accordion.content>
-                </flux:accordion.item>
+                    </x-accordion.content>
+                </x-accordion.item>
 
-                <flux:accordion.item>
-                    <flux:accordion.heading>How long is a resale certificate valid?</flux:accordion.heading>
-                    <flux:accordion.content>
+                <x-accordion.item>
+                    <x-accordion.heading>How long is a resale certificate valid?</x-accordion.heading>
+                    <x-accordion.content>
                         Validity varies by state. Some states consider resale certificates valid
                         indefinitely as long as your sales tax permit remains active. Others require
                         renewal every 1 to 3 years or have expiration dates. If your permit lapses or is
                         revoked, your resale certificate is no longer valid. We track expiration
                         dates and email you before a certificate lapses.
-                    </flux:accordion.content>
-                </flux:accordion.item>
+                    </x-accordion.content>
+                </x-accordion.item>
 
-                <flux:accordion.item>
-                    <flux:accordion.heading>Will vendors in all 50 states accept my resale certificate?</flux:accordion.heading>
-                    <flux:accordion.content>
+                <x-accordion.item>
+                    <x-accordion.heading>Will vendors in all 50 states accept my resale certificate?</x-accordion.heading>
+                    <x-accordion.content>
                         Most vendors across the country accept properly formatted resale
                         certificates. Some states participate in the Streamlined Sales Tax (SST)
                         multistate certificate, which many vendors recognize. A few states require
                         their own forms for in-state purchases, which is why we generate certificates
                         on each state's official form, so you always have the document a vendor expects.
-                    </flux:accordion.content>
-                </flux:accordion.item>
+                    </x-accordion.content>
+                </x-accordion.item>
 
-                <flux:accordion.item>
-                    <flux:accordion.heading>Can I use a resale certificate for personal purchases?</flux:accordion.heading>
-                    <flux:accordion.content>
+                <x-accordion.item>
+                    <x-accordion.heading>Can I use a resale certificate for personal purchases?</x-accordion.heading>
+                    <x-accordion.content>
                         No. Resale certificates may only be used for purchases you intend to resell.
                         Using one for personal or business consumption (e.g., office supplies you use
                         yourself) is tax fraud and can result in penalties, audits, and loss of your
                         sales tax permit. Only use your resale certificate when buying inventory or
                         goods you will sell to customers.
-                    </flux:accordion.content>
-                </flux:accordion.item>
+                    </x-accordion.content>
+                </x-accordion.item>
 
-                <flux:accordion.item>
-                    <flux:accordion.heading>Do I need a resale certificate for services?</flux:accordion.heading>
-                    <flux:accordion.content>
+                <x-accordion.item>
+                    <x-accordion.heading>Do I need a resale certificate for services?</x-accordion.heading>
+                    <x-accordion.content>
                         Resale certificates typically apply to tangible personal property (goods) you
                         buy for resale. For services, rules vary by state. Some allow exemption when
                         you're reselling a service, others treat services differently. If you buy
                         goods that become part of a service (e.g., materials used in a repair), a
                         resale certificate may apply.
-                    </flux:accordion.content>
-                </flux:accordion.item>
+                    </x-accordion.content>
+                </x-accordion.item>
 
-                <flux:accordion.item>
-                    <flux:accordion.heading>Can I cancel my subscription?</flux:accordion.heading>
-                    <flux:accordion.content>
+                <x-accordion.item>
+                    <x-accordion.heading>Can I cancel my subscription?</x-accordion.heading>
+                    <x-accordion.content>
                         Yes. The subscription renews yearly and can be canceled anytime. Certificates
                         you've already generated and sent to vendors remain valid per their state's rules.
-                    </flux:accordion.content>
-                </flux:accordion.item>
-            </flux:accordion>
+                    </x-accordion.content>
+                </x-accordion.item>
+            </x-accordion>
         </div>
     </section>
 

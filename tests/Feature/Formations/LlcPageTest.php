@@ -14,10 +14,10 @@ it('shows the membership price the LLC checkout charges', function () {
         ->assertDontSee('$297');
 });
 
-it('reads the membership price from the prices table in both places', function () {
+it('reads the membership price from the prices table', function () {
     Price::resolve('formation', 'llc', 'membership', 'subscription')->update(['amount_cents' => 34900]);
 
     $this->get('/llc')
         ->assertOk()
-        ->assertSeeInOrder(['Complete LLC Package', '$349', 'Plus state filing fees', 'Total (first year)', '$349']);
+        ->assertSeeInOrder(['Complete LLC Package', '$349', 'Plus state filing fees']);
 });

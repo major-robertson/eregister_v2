@@ -6,6 +6,7 @@ use App\Domains\Lien\Models\LienStateRule;
 use App\Support\Seo\States;
 use App\Support\Seo\Text;
 use App\Support\Seo\Urls;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -36,6 +37,14 @@ final class LienStatePage
     /** @var array<string, array<int, array{who: string, when: string, scope: string}>> keyed by document type slug */
     public readonly array $deadlines;
 
+    /**
+     * Researched depth (how to file, claim contents, county offices, recent
+     * changes, more FAQs) for the states with a lien_depth file, else null.
+     *
+     * @var array<string, mixed>|null
+     */
+    public readonly ?array $depth;
+
     private function __construct(
         public readonly string $code,
         public readonly LienStateRule $rule,
@@ -47,10 +56,11 @@ final class LienStatePage
         $this->publicNotes = Text::fixMojibake($rule->public_notes) ?: null;
         $this->article = Text::article($this->name);
         $this->deadlines = $this->buildDeadlines();
+        $this->depth = LienStateDepth::for($code);
     }
 
     /** Bump when the shape of this object or the page copy changes: the cached instances are replaced on the next request. */
-    public const CACHE_VERSION = 3;
+    public const CACHE_VERSION = 4;
 
     public static function cacheKey(string $code): string
     {
@@ -379,6 +389,101 @@ final class LienStatePage
         return (int) round(($override ?? config('lien.pricing.mechanics_lien.full_service', 29900)) / 100);
     }
 
+    /* --------------------------------------------------------------- depth */
+
+    /**
+     * How to file, step by step, from the depth file.
+     *
+     * @return array<int, array{step: int, title: string, text: string, cite: string|null, residential_note: string|null}>
+     */
+    public function howToFile(): array
+    {
+        return $this->depth['how_to_file'] ?? [];
+    }
+
+    /**
+     * @return array{document_name: string, required: array<int, string>, cite: string|null, official_form_url: string|null, notes: string|null}|null
+     */
+    public function claimContents(): ?array
+    {
+        return $this->depth['claim_contents'] ?? null;
+    }
+
+    /**
+     * The claim's statutory name for mid-sentence use, without the alias in
+     * parentheses: "affidavit claiming a mechanic's lien", "claim of lien on
+     * real property".
+     */
+    public function claimDocumentLabel(): ?string
+    {
+        $name = $this->claimContents()['document_name'] ?? null;
+
+        return $name === null ? null : mb_strtolower(trim((string) preg_replace('/\s*\([^)]*\)/', '', $name)));
+    }
+
+    /**
+     * The recording offices of the state's most populous counties.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function counties(): array
+    {
+        return $this->depth['counties'] ?? [];
+    }
+
+    /** "file" where the statute files the claim with a court or county clerk (PA, NC, GA, NY), else "record". */
+    public function filingVerb(): string
+    {
+        return ($this->depth['filing_verb'] ?? 'record') === 'file' ? 'file' : 'record';
+    }
+
+    /** State-wide facts printed above the county table, or null. */
+    public function countyIntro(): ?string
+    {
+        return $this->depth['county_intro'] ?? null;
+    }
+
+    /** The e-recording cell for one county: "Yes", "No" or "Not stated". */
+    public static function erecordingLabel(array $county): string
+    {
+        return match ($county['erecording'] ?? null) {
+            true => 'Yes',
+            false => 'No',
+            default => 'Not stated',
+        };
+    }
+
+    /**
+     * Lien law changes since 2022. An entry without an effective date is
+     * pending, not law.
+     *
+     * @return array<int, array{title: string, effective: string|null, summary: string, cite: string|null}>
+     */
+    public function recentChanges(): array
+    {
+        return $this->depth['recent_changes'] ?? [];
+    }
+
+    /**
+     * The depth file's further FAQs, each answer ending with its source.
+     *
+     * @return array<int, array{q: string, a: string}>
+     */
+    public function extraFaqs(): array
+    {
+        return array_map(fn (array $item) => [
+            'q' => $item['q'],
+            'a' => rtrim($item['a']).(empty($item['cite']) ? '' : ' Source: '.rtrim($item['cite'], '.').'.'),
+        ], $this->depth['faqs'] ?? []);
+    }
+
+    public function researchedOn(): ?string
+    {
+        $date = $this->depth['researched_on'] ?? null;
+
+        return $date ? Carbon::parse($date)->format('F j, Y') : null;
+    }
+
     /* ----------------------------------------------------------------- faq */
 
     /** @return array<int, array{q: string, a: string}> */
@@ -443,7 +548,9 @@ final class LienStatePage
                 : "Subcontractors generally do not have direct lien rights in {$this->name}; payment protection runs through other remedies.",
         ];
 
-        return $items;
+        // Researched states add six more after the generated ones, so the
+        // FAQPage JSON-LD carries every question the page shows.
+        return array_merge($items, $this->extraFaqs());
     }
 
     /* ------------------------------------------------------------ deadlines */

@@ -135,6 +135,11 @@ Route::get('liens/deadline-calculator', [\App\Http\Controllers\LienStateLandingC
 Route::get('liens/{state}', [\App\Http\Controllers\LienStateLandingController::class, 'show'])
     ->where('state', '[a-z-]{2,}')
     ->name('liens.state');
+// Blank mechanics lien instrument, ungated. Indexable, but kept out of the
+// sitemap; codes in any case ("/liens/TX/…") 301 to the slug.
+Route::get('liens/{state}/blank-lien-claim.pdf', [\App\Http\Controllers\LienStateLandingController::class, 'blankClaim'])
+    ->where('state', '[A-Za-z-]{2,}')
+    ->name('liens.state.blank-claim');
 
 // Google Ads landing pages for the waiver generator: the state page's promise
 // with no site chrome and the starter above the fold (noindex).

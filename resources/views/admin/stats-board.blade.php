@@ -175,6 +175,9 @@
         </div>
     </div>
 
+    <!-- Acquisition by first-touch channel and landing path -->
+    <livewire:admin.acquisition-stats />
+
     <!-- Recent Signups Table -->
     <div class="rounded-lg border border-border bg-white">
         <div class="border-b border-border px-4 py-3">

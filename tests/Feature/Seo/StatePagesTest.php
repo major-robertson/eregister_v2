@@ -66,9 +66,9 @@ describe('resale certificate state pages', function () {
             ->assertSee('<link rel="canonical" href="'.url('/resale-certificates/florida').'" />', escape: false);
     });
 
-    it('301-redirects codes to slugs and 404s states without a sales tax', function () {
+    it('301-redirects codes to slugs and 404s unknown states', function () {
         $this->get('/resale-certificates/fl')->assertRedirect('/resale-certificates/florida')->assertStatus(301);
-        $this->get('/resale-certificates/oregon')->assertNotFound();
+        $this->get('/resale-certificates/atlantis')->assertNotFound();
         $this->get('/resale-certificates/mtc')->assertNotFound();
     });
 
@@ -108,8 +108,8 @@ describe('cached state pages', function () {
 
     it('caches under versioned keys', function () {
         expect(LienStatePage::cacheKey('tx'))->toBe('seo.lien-state.v4.TX')
-            ->and(ResaleStatePage::cacheKey('fl'))->toBe('seo.resale-state.v3.FL')
-            ->and(ResaleStatePage::statesCacheKey())->toBe('seo.resale-states.v3');
+            ->and(ResaleStatePage::cacheKey('fl'))->toBe('seo.resale-state.v4.FL')
+            ->and(ResaleStatePage::statesCacheKey())->toBe('seo.resale-states.v4');
     });
 });
 
@@ -123,8 +123,12 @@ describe('state page titles and descriptions', function () {
                 ->toBeLessThanOrEqual(165, "{$code}: {$description}")
                 ->and($description)->not->toEndWith('...')
                 ->toContain($page->name)
-                ->toContain('Generate signed certificates')
                 ->and(mb_strlen($page->title()))->toBeLessThanOrEqual(70, $page->title());
+
+            // The no-sales-tax pages sell nothing (NoSalesTaxStatePagesTest covers them).
+            if (! $page->noSalesTax()) {
+                expect($description)->toContain('Generate signed certificates');
+            }
         }
     });
 
@@ -152,7 +156,7 @@ describe('indefinite articles', function () {
             $slug = States::slug(States::name($code));
             $paths[] = "/liens/{$slug}";
             $paths[] = '/liens/lien-waivers/'.strtolower($code);
-            // Oregon has no sales tax, so no resale page.
+            // Oregon has no sales tax; its resale page is the no-sales-tax variant.
             if (isset(ResaleStatePage::availableStates()[$code])) {
                 $paths[] = "/resale-certificates/{$slug}";
             }

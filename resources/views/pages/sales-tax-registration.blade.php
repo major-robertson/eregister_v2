@@ -365,51 +365,51 @@
         </div>
 
         <div class="mt-12">
-            <flux:accordion>
-                <flux:accordion.item>
-                    <flux:accordion.heading>What is sales &amp; use tax registration?</flux:accordion.heading>
-                    <flux:accordion.content>
+            <x-accordion>
+                <x-accordion.item>
+                    <x-accordion.heading>What is sales &amp; use tax registration?</x-accordion.heading>
+                    <x-accordion.content>
                         It's how a state authorizes your business to collect and remit sales tax.
                         Once registered, you receive a permit and account number. Required before
                         you legally collect tax from customers in that state.
-                    </flux:accordion.content>
-                </flux:accordion.item>
+                    </x-accordion.content>
+                </x-accordion.item>
 
-                <flux:accordion.item>
-                    <flux:accordion.heading>Do I actually need to register?</flux:accordion.heading>
-                    <flux:accordion.content>
+                <x-accordion.item>
+                    <x-accordion.heading>Do I actually need to register?</x-accordion.heading>
+                    <x-accordion.content>
                         If you sell taxable goods or services, or you've crossed a state's economic
                         nexus threshold, you generally must register before collecting tax. Not sure?
                         Start the form and we'll help you figure out where you have an obligation.
-                    </flux:accordion.content>
-                </flux:accordion.item>
+                    </x-accordion.content>
+                </x-accordion.item>
 
-                <flux:accordion.item>
-                    <flux:accordion.heading>How long does it take?</flux:accordion.heading>
-                    <flux:accordion.content>
+                <x-accordion.item>
+                    <x-accordion.heading>How long does it take?</x-accordion.heading>
+                    <x-accordion.content>
                         The application takes about ten minutes. Filing and state processing times
                         vary. Many states issue an account number quickly, while others take a few
                         business days. We keep you posted at each step.
-                    </flux:accordion.content>
-                </flux:accordion.item>
+                    </x-accordion.content>
+                </x-accordion.item>
 
-                <flux:accordion.item>
-                    <flux:accordion.heading>Can you register me in multiple states?</flux:accordion.heading>
-                    <flux:accordion.content>
+                <x-accordion.item>
+                    <x-accordion.heading>Can you register me in multiple states?</x-accordion.heading>
+                    <x-accordion.content>
                         Yes. Select every state you need during the application and we'll prepare and
                         file each registration. The flat fee applies per state.
-                    </flux:accordion.content>
-                </flux:accordion.item>
+                    </x-accordion.content>
+                </x-accordion.item>
 
-                <flux:accordion.item>
-                    <flux:accordion.heading>What do I receive when it's done?</flux:accordion.heading>
-                    <flux:accordion.content>
+                <x-accordion.item>
+                    <x-accordion.heading>What do I receive when it's done?</x-accordion.heading>
+                    <x-accordion.content>
                         Your sales &amp; use tax permit and account number for each state, plus a copy
                         of your filing for your records — everything you need to start collecting and
                         remitting correctly.
-                    </flux:accordion.content>
-                </flux:accordion.item>
-            </flux:accordion>
+                    </x-accordion.content>
+                </x-accordion.item>
+            </x-accordion>
         </div>
     </section>
 

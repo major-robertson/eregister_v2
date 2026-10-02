@@ -1,5 +1,8 @@
 @extends('layouts.landing')
 
+{{-- Renders a Livewire component: load Livewire and Flux instead of marketing.js. --}}
+@section('livewire', true)
+
 @section('title', $businessName . ' - Lien Services')
 
 @section('canonical', $canonicalUrl)

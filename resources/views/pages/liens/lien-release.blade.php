@@ -1,23 +1,27 @@
 @extends('layouts.landing')
 
-@section('title', 'Lien Release | File a Mechanics Lien Release or Cancellation')
-
-@section('meta')
-<meta name="description" content="Release or cancel a mechanics lien after payment. Our lien release service handles the paperwork to remove construction liens from property records in all 50 states.">
-@endsection
+@section('title', 'Mechanics Lien Release | Cancel a Lien After Payment')
+@section('description', 'Release or cancel a mechanics lien after payment from '.\App\Support\Seo\Prices::lien('lien_release').'. We prepare the release paperwork so the property record clears.')
 
 @section('content')
 {{-- Hero --}}
 <section class="relative overflow-hidden bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-800 py-24 lg:py-32">
     <div class="relative mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
+        <x-seo.breadcrumbs class="mb-8 text-zinc-400" center :items="[
+            ['name' => 'Home', 'url' => route('home')],
+            ['name' => 'Mechanics Liens', 'url' => route('liens')],
+            ['name' => 'Lien Release'],
+        ]" />
         <div class="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-1.5 text-sm text-amber-400">
             Available in all 50 states
         </div>
         <h1 class="mt-8 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-            Release a Mechanics Lien<br>
-            <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Remove Liens From Property</span>
+            Mechanics Lien Release
         </h1>
-        <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">Remove a mechanics lien from property records after payment or settlement. Our lien release service prepares and files the paperwork to clear construction liens in all 50 states.</p>
+        <p class="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
+            <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Remove Liens From Property</span>
+        </p>
+        <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">Remove a <a href="{{ route('liens') }}" class="font-medium text-white underline decoration-zinc-500 underline-offset-2 hover:decoration-white">mechanics lien</a> from property records after payment or settlement. Our lien release service prepares and files the paperwork to clear construction liens in all 50 states.</p>
         <div class="mt-10">
             <a href="{{ route('register') }}" class="group inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#B91C1C]">
                 Get Started
@@ -34,7 +38,7 @@
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div class="grid gap-12 lg:grid-cols-2 lg:gap-16">
             <div>
-                <p class="text-sm font-semibold uppercase tracking-widest text-amber-600">Lien Removal</p>
+                <p class="text-sm font-semibold uppercase tracking-widest text-amber-700">Lien Removal</p>
                 <h2 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">What Is a Lien Release?</h2>
                 <p class="mt-4 text-lg text-zinc-600">
                     A lien release (or lien waiver release, lien discharge, or mechanics lien release) is a document that removes or cancels a previously filed mechanics lien from property records. Once you've been paid, settled a dispute, or resolved the underlying debt, you typically need to file a lien release to clear the property's title.
@@ -156,7 +160,7 @@
                     <p class="mt-2 text-zinc-600">Our team drafts the correct lien release document for your state—full release, partial release, or cancellation—matching the original lien filing.</p>
                 </div>
                 <div class="text-center">
-                    <div class="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-xl font-bold text-white">3</div>
+                    <div class="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-600 text-xl font-bold text-white">3</div>
                     <h3 class="mt-6 text-xl font-semibold text-zinc-900">We file it for you</h3>
                     <p class="mt-2 text-zinc-600">We record the lien release with the same county recorder where the mechanics lien was filed, clearing the property's title.</p>
                 </div>
@@ -207,7 +211,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </summary>
-                <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">A lien waiver is typically signed before or at the time of payment—you waive your right to file or maintain a lien in exchange for payment. A lien release is filed after a lien has already been recorded—it removes the lien from the county records. Both clear your claim; the lien release is used when a mechanics lien was previously filed.</div>
+                <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">A <a href="{{ route('liens.lien-waivers') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">lien waiver</a> is typically signed before or at the time of payment—you waive your right to file or maintain a lien in exchange for payment. A lien release is filed after a lien has already been recorded—it removes the lien from the county records. Both clear your claim; the lien release is used when a mechanics lien was previously filed.</div>
             </details>
             <details class="group rounded-xl border border-zinc-200 bg-white">
                 <summary class="flex cursor-pointer items-center justify-between p-5 font-medium text-zinc-900 [&::-webkit-details-marker]:hidden">
@@ -231,6 +235,9 @@
     </div>
 </section>
 
+{{-- Related lien tools --}}
+<x-seo.lien-more />
+
 {{-- CTA --}}
 <section class="mx-auto mb-16 max-w-5xl px-4 sm:px-6 lg:px-8">
     <div class="overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-800 py-20">
@@ -248,4 +255,7 @@
         </div>
     </div>
 </section>
+
+{{-- Every state page --}}
+<x-seo.lien-states variant="strip" />
 @endsection

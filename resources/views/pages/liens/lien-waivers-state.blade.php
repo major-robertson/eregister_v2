@@ -34,6 +34,11 @@
 {{-- Hero --}}
 <section class="relative overflow-hidden bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-800 py-24 lg:py-28">
     <div class="relative mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
+        <x-seo.breadcrumbs class="mb-8 text-zinc-400" center :items="[
+            ['name' => 'Home', 'url' => route('home')],
+            ['name' => 'Lien Waivers', 'url' => route('liens.lien-waivers')],
+            ['name' => $stateName],
+        ]" />
         <div class="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-1.5 text-sm text-amber-400">
             @if ($hasStatutoryForm)
             Statutory forms, {{ $statute }}
@@ -62,7 +67,7 @@
 {{-- State overview --}}
 <section class="bg-white py-24">
     <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-        <p class="text-sm font-semibold uppercase tracking-widest text-amber-600">State Rules</p>
+        <p class="text-sm font-semibold uppercase tracking-widest text-amber-700">State Rules</p>
         <h2 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">How {{ $stateName }} treats lien waivers</h2>
         @if ($summary)
         <p class="mt-4 text-lg text-zinc-600">{{ $summary }}</p>
@@ -213,20 +218,30 @@
 {{-- Cross-links --}}
 <section class="bg-white py-16">
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        <div class="flex flex-col items-center justify-between gap-6 sm:flex-row">
+        <div class="grid gap-10 lg:grid-cols-2">
             <div>
-                <h2 class="text-lg font-semibold text-zinc-900">Working in another state?</h2>
-                <p class="mt-1 text-sm text-zinc-600">Every state's waiver rules are different. Check before you sign.</p>
+                <h2 class="text-lg font-semibold text-zinc-900">More {{ $stateName }} lien tools</h2>
+                <ul class="mt-4 space-y-2 text-sm">
+                    <li><a href="{{ route('liens.state', ['state' => \App\Support\Seo\States::slug($stateName)]) }}" class="text-zinc-700 underline hover:text-zinc-900">{{ $stateName }} mechanics lien deadlines</a></li>
+                    <li><a href="{{ route('liens.preliminary-notice') }}" class="text-zinc-700 underline hover:text-zinc-900">Preliminary notice service</a></li>
+                    <li><a href="{{ route('liens.notice-of-intent-to-lien') }}" class="text-zinc-700 underline hover:text-zinc-900">Notice of intent to lien</a></li>
+                    <li><a href="{{ route('liens.payment-demand-letter') }}" class="text-zinc-700 underline hover:text-zinc-900">Payment demand letter</a></li>
+                    <li><a href="{{ route('liens.lien-release') }}" class="text-zinc-700 underline hover:text-zinc-900">Lien release</a></li>
+                    <li><a href="{{ route('liens.lien-waivers') }}" class="text-zinc-700 underline hover:text-zinc-900">Lien waiver forms for every state</a></li>
+                </ul>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
-                @foreach ($nearbyStates as $nearbyCode => $nearbyName)
-                <a href="{{ route('liens.lien-waivers.state', strtolower($nearbyCode)) }}" class="rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:border-amber-300 hover:text-amber-700">
-                    {{ $nearbyName }}
-                </a>
-                @endforeach
-                <a href="{{ route('liens.lien-waivers') }}" class="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800">
-                    All 50 states &rarr;
-                </a>
+            <div>
+                <h2 class="text-lg font-semibold text-zinc-900">Bordering states</h2>
+                <p class="mt-1 text-sm text-zinc-600">Every state's waiver rules are different. Check before you sign.</p>
+                <ul class="mt-4 flex flex-wrap gap-2">
+                    @foreach ($nearbyStates as $nearbyCode => $nearbyName)
+                    <li>
+                        <a href="{{ route('liens.lien-waivers.state', strtolower($nearbyCode)) }}" class="inline-flex rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-50">
+                            {{ $nearbyName }} lien waiver forms
+                        </a>
+                    </li>
+                    @endforeach
+                </ul>
             </div>
         </div>
     </div>

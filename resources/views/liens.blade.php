@@ -1,8 +1,9 @@
 @extends('layouts.landing')
 
-@section('title', $pageTitle ?? 'Mechanics Lien Filing Services | File a Construction Lien on Property')
+@section('title', $pageTitle ?? 'Mechanics Lien Filing Service | File a Lien in Any State')
 
-@section('description', 'File a mechanics lien on property with our trusted construction lien filing services. Expert mechanics lien filing for contractors, subcontractors & suppliers. File a construction lien in all 50 states.')
+@section('description', 'File a mechanics lien in any state from '.\App\Support\Seo\Prices::lien('mechanics_lien').' self-serve or '.\App\Support\Seo\Prices::lien('mechanics_lien', 'full_service').' full-service. Notices, intent to lien, and releases for contractors, subs, and suppliers.')
+
 @if (!empty($noIndex))
 @section('noindex', 'true')
 @endif
@@ -24,6 +25,10 @@
     </div>
 
     <div class="relative mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
+        <x-seo.breadcrumbs class="mb-8 text-zinc-400" center :items="[
+            ['name' => 'Home', 'url' => route('home')],
+            ['name' => 'Mechanics Liens'],
+        ]" />
         <div
             class="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-1.5 text-sm text-amber-400">
             <span class="relative flex h-2 w-2">
@@ -35,9 +40,12 @@
         </div>
 
         <h1 class="mt-8 text-4xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl">
-            File liens.<br>
-            <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Get paid.</span>
+            Mechanics Lien Filing Service
         </h1>
+        <p class="text-4xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl">
+            File liens.
+            <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Get paid.</span>
+        </p>
 
         <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400 sm:text-xl">
             @if (!empty($lead) && $lead->business_name)
@@ -120,7 +128,7 @@
                     <div class="h-3 w-3 rounded-full bg-zinc-300"></div>
                     <div class="h-3 w-3 rounded-full bg-zinc-300"></div>
                 </div>
-                <div class="ml-4 flex-1 rounded-md bg-zinc-100 px-3 py-1.5 text-xs text-zinc-400">
+                <div class="ml-4 flex-1 rounded-md bg-zinc-100 px-3 py-1.5 text-xs text-zinc-600">
                     eregister.com/liens
                 </div>
             </div>
@@ -130,13 +138,13 @@
                 {{-- Sidebar --}}
                 <div class="space-y-3">
                     <div class="rounded-xl bg-white p-4 shadow-sm">
-                        <div class="text-xs font-medium uppercase tracking-wider text-zinc-400">Active Mechanics Liens
+                        <div class="text-xs font-medium uppercase tracking-wider text-zinc-500">Active Mechanics Liens
                         </div>
                         <div class="mt-1 text-3xl font-bold text-zinc-900">12</div>
-                        <div class="mt-2 text-sm text-emerald-600">+3 this month</div>
+                        <div class="mt-2 text-sm text-emerald-700">+3 this month</div>
                     </div>
                     <div class="rounded-xl bg-white p-4 shadow-sm">
-                        <div class="text-xs font-medium uppercase tracking-wider text-zinc-400">Amount Protected</div>
+                        <div class="text-xs font-medium uppercase tracking-wider text-zinc-500">Amount Protected</div>
                         <div class="mt-1 text-3xl font-bold text-zinc-900">$247K</div>
                     </div>
                     <div class="rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 p-4 text-white shadow-sm">
@@ -461,7 +469,7 @@
 
                 <div class="text-center">
                     <div
-                        class="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-xl font-bold text-white">
+                        class="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-600 text-xl font-bold text-white">
                         3</div>
                     <h3 class="mt-6 text-xl font-semibold text-zinc-900">We prepare or file your lien</h3>
                     <p class="mt-2 text-zinc-600">Sign and record the lien yourself, or let us record it with the
@@ -759,6 +767,9 @@
         </div>
     </div>
 </section>
+
+{{-- Every state page --}}
+<x-seo.lien-states />
 
 {{-- CTA --}}
 <section class="mx-auto mb-16 max-w-5xl px-4 sm:px-6 lg:px-8">

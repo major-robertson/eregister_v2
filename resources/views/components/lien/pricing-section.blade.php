@@ -28,7 +28,7 @@
 <section id="pricing" {{ $attributes->merge(['class' => 'py-24']) }}>
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div class="text-center">
-            <p class="text-sm font-semibold uppercase tracking-widest text-amber-600">Simple, Flat-Rate Pricing</p>
+            <p class="text-sm font-semibold uppercase tracking-widest text-amber-700">Simple, Flat-Rate Pricing</p>
             <h2 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">{{ $title }}</h2>
             <p class="mx-auto mt-4 max-w-2xl text-lg text-zinc-600">One flat price, state fees included.* No hourly billing, no surprises.</p>
         </div>
@@ -49,7 +49,7 @@
 
             {{-- Full-Service --}}
             <div class="relative flex flex-col rounded-2xl border-2 border-amber-400 bg-white p-8 shadow-lg">
-                <span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-amber-500 px-3 py-1 text-xs font-semibold text-white">Most Popular</span>
+                <span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-amber-500 px-3 py-1 text-xs font-semibold text-zinc-900">Most Popular</span>
                 <h3 class="font-semibold text-zinc-900">Full-Service</h3>
                 <div class="mt-4 flex items-baseline gap-2">
                     <span class="text-5xl font-extrabold tracking-tight text-zinc-900">{{ $formatPrice($pricing['full_service']) }}@if ($stateNotes->contains('level', 'full_service'))<span class="text-2xl text-amber-600">**</span>@endif</span>
@@ -70,7 +70,7 @@
         </div>
 
         <div class="mt-8 text-center">
-            <a href="{{ route('liens.pricing') }}" class="inline-flex items-center gap-1 text-sm font-semibold text-amber-600 transition hover:text-amber-700">
+            <a href="{{ route('liens.pricing') }}" class="inline-flex items-center gap-1 text-sm font-semibold text-amber-700 transition hover:text-amber-800">
                 Compare pricing for all lien services
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />

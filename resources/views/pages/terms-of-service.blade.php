@@ -1,6 +1,6 @@
 @extends('layouts.landing')
 
-@section('title', 'Terms of Service - ' . config('app.name', 'eRegister'))
+@section('title', 'Terms of Service | eRegister')
 @section('description', 'The terms that govern your use of eRegister: accounts, orders, subscriptions and renewals, cancellations, and the limits of our services.')
 
 @section('content')

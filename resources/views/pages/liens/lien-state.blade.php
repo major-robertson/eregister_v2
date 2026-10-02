@@ -195,7 +195,7 @@
         <div class="mt-10 rounded-2xl border border-amber-200 bg-amber-50 p-6">
             <h3 class="font-semibold text-amber-900">Practitioner notes for {{ $name }}</h3>
             <p class="mt-3 text-sm leading-relaxed text-amber-900/80">{{ $page->publicNotes }}</p>
-            <p class="mt-3 text-xs text-amber-900/70">These notes summarize the statute as we read it.</p>
+            <p class="mt-3 text-xs text-amber-900">These notes summarize the statute as we read it.</p>
         </div>
         @endif
 

@@ -1,17 +1,17 @@
 @extends('layouts.government')
 
-@section('title', 'Government Web Hosting | Secure, U.S.-Based Hosting for Agency Sites')
-
-@section('meta')
-<meta name="description"
-    content="Hardened, U.S.-based hosting and infrastructure for government websites. Uptime SLAs, automated backups, monitoring, security patching, and DDoS protection.">
-@endsection
+@section('title', 'Secure Web Hosting for Government Agencies')
+@section('description', 'Hardened, U.S.-based hosting for government websites, with uptime SLAs, automated backups, monitoring, security patching, and DDoS protection.')
 
 @section('content')
 {{-- Hero --}}
 <section class="relative overflow-hidden bg-gradient-to-b from-slate-950 via-blue-950 to-slate-900 py-20 lg:py-24">
     <div class="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-3xl text-center">
+            <x-seo.breadcrumbs class="mb-6 text-slate-400" center :items="[
+                ['name' => 'Government', 'url' => route('government.home')],
+                ['name' => 'Hosting'],
+            ]" />
             <p class="text-sm font-semibold uppercase tracking-wider text-blue-300">Service</p>
             <h1 class="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
                 Hosting &amp; infrastructure for government

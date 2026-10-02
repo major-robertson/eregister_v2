@@ -1,17 +1,17 @@
 @extends('layouts.government')
 
-@section('title', 'Government CMS | Content Management Systems for Public Agencies')
-
-@section('meta')
-<meta name="description"
-    content="Editor-friendly content management systems built for government. Role-based publishing, multi-department workflows, accessible content blocks, and modern editorial tooling.">
-@endsection
+@section('title', 'Content Management Systems for Government Agencies')
+@section('description', 'Editor-friendly content management for government: role-based publishing, multi-department workflows, and accessible content blocks.')
 
 @section('content')
 {{-- Hero --}}
 <section class="relative overflow-hidden bg-gradient-to-b from-slate-950 via-blue-950 to-slate-900 py-20 lg:py-24">
     <div class="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-3xl text-center">
+            <x-seo.breadcrumbs class="mb-6 text-slate-400" center :items="[
+                ['name' => 'Government', 'url' => route('government.home')],
+                ['name' => 'Content Management'],
+            ]" />
             <p class="text-sm font-semibold uppercase tracking-wider text-blue-300">Service</p>
             <h1 class="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
                 Content management for government

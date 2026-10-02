@@ -1,6 +1,6 @@
 @extends('layouts.landing')
 
-@section('title', 'Refund Policy - ' . config('app.name', 'eRegister'))
+@section('title', 'Refund Policy | eRegister')
 @section('description', 'When eRegister refunds an order, how to cancel a subscription renewal, and what to do if you see a charge you do not recognize.')
 
 @section('content')

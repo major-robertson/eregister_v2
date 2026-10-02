@@ -2,7 +2,7 @@
 
 @section('title', 'Lien Waiver Generator | Free Forms for All 50 States')
 
-@section('description', 'Generate free lien waiver forms with the correct form for all 50 states, including the exact statutory text where the law prescribes one. Conditional, unconditional, progress, and final waivers with e-signature and automatic reminders.')
+@section('description', 'Free lien waiver forms for all 50 states: conditional, unconditional, progress, and final, with the statutory text where required. E-signature from '.\App\Support\Seo\Prices::waiver().'/month.')
 
 @section('content')
 @php
@@ -20,13 +20,20 @@
 {{-- Hero --}}
 <section class="relative overflow-hidden bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-800 py-24 lg:py-32">
     <div class="relative mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
+        <x-seo.breadcrumbs class="mb-8 text-zinc-400" center :items="[
+            ['name' => 'Home', 'url' => route('home')],
+            ['name' => 'Mechanics Liens', 'url' => route('liens')],
+            ['name' => 'Lien Waivers'],
+        ]" />
         <div class="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-1.5 text-sm text-amber-400">
             Free to generate, no credit card required
         </div>
         <h1 class="mt-8 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-            Lien Waiver Generator<br>
-            <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Correct Forms for All 50 States</span>
+            Lien Waiver Generator
         </h1>
+        <p class="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
+            <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Correct Forms for All 50 States</span>
+        </p>
         <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">
             Generate conditional, unconditional, progress, and final lien waivers with the right form for your project's state, including the exact statutory text where the law prescribes one. Download free, or send for e-signature and get the signed copy stored automatically.
         </p>
@@ -65,7 +72,7 @@
                 <p class="mt-2 text-zinc-600">The signed waiver is stored on your project with a tamper-evident audit certificate, and both parties automatically receive their copies.</p>
             </div>
             <div class="text-center">
-                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-xl font-bold text-white">4</div>
+                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-600 text-xl font-bold text-white">4</div>
                 <h3 class="mt-6 text-lg font-semibold text-zinc-900">Automatic reminders</h3>
                 <p class="mt-2 text-zinc-600">Unsigned waivers get automatic follow-up reminders until they're signed, so you never have to nag a sub, vendor, or GC yourself.</p>
             </div>
@@ -142,7 +149,7 @@
             </a>
             @endforeach
         </div>
-        <p class="mt-8 text-center text-sm text-zinc-500">Every other state gets our attorney-reviewed house forms with that state's execution rules built in.</p>
+        <p class="mt-8 text-center text-sm text-zinc-400">Every other state gets our attorney-reviewed house forms with that state's execution rules built in.</p>
     </div>
 </section>
 
@@ -151,7 +158,7 @@
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div class="text-center">
             <h2 class="text-3xl font-bold text-zinc-900">Simple pricing</h2>
-            <p class="mx-auto mt-4 max-w-2xl text-lg text-zinc-600">Creating and downloading waivers is free. Pro adds e-signature, automatic reminders, and signed-copy storage. See the <a href="{{ route('liens.lien-waivers.pricing') }}" class="font-medium text-amber-600 underline hover:text-amber-700">full pricing breakdown</a>.</p>
+            <p class="mx-auto mt-4 max-w-2xl text-lg text-zinc-600">Creating and downloading waivers is free. Pro adds e-signature, automatic reminders, and signed-copy storage. See the <a href="{{ route('liens.lien-waivers.pricing') }}" class="font-medium text-amber-700 underline hover:text-amber-800">full pricing breakdown</a>.</p>
         </div>
         <div class="mx-auto mt-12 grid max-w-4xl gap-8 lg:grid-cols-2">
             {{-- Free --}}
@@ -208,7 +215,7 @@
         <div class="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             @foreach ($states as $stateCode => $stateRules)
             <a href="{{ route('liens.lien-waivers.state', strtolower($stateCode)) }}" class="group flex items-center justify-center rounded-lg border border-zinc-200 bg-white px-4 py-3 text-center transition hover:border-amber-300 hover:shadow-sm">
-                <span class="text-sm font-medium text-zinc-900 group-hover:text-amber-700">{{ $stateRules['state_name'] ?? $stateCode }}</span>
+                <span class="text-sm font-medium text-zinc-900 group-hover:text-amber-700">{{ $stateRules['state_name'] ?? $stateCode }} lien waiver forms</span>
             </a>
             @endforeach
         </div>
@@ -307,6 +314,9 @@
     </div>
 </section>
 
+{{-- Related lien tools --}}
+<x-seo.lien-more />
+
 {{-- CTA --}}
 <section class="mx-auto mb-16 max-w-5xl px-4 sm:px-6 lg:px-8">
     <div class="overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-800 py-20">
@@ -324,4 +334,7 @@
         </div>
     </div>
 </section>
+
+{{-- Every state page --}}
+<x-seo.lien-states variant="strip" />
 @endsection

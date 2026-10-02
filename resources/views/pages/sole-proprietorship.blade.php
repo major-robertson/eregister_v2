@@ -1,11 +1,7 @@
 @extends('layouts.landing')
 
-@section('title', 'Register a Sole Proprietorship | Start Your Business Today')
-
-@section('meta')
-<meta name="description"
-    content="Register a sole proprietorship with eRegister. Start your business as a sole proprietor in all 50 states. DBA registration, EIN, and compliance. Simple setup for solo entrepreneurs.">
-@endsection
+@section('title', 'Register a Sole Proprietorship | DBA, EIN & Compliance')
+@section('description', 'Set up your sole proprietorship in any state: DBA registration, EIN, and the compliance basics you need to start.')
 
 @section('content')
 {{-- Hero Section --}}
@@ -13,13 +9,19 @@
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
             <div>
+                <x-seo.breadcrumbs class="mb-6 text-zinc-500" :items="[
+                    ['name' => 'Home', 'url' => route('home')],
+                    ['name' => 'Sole Proprietorship'],
+                ]" />
                 <h1 class="text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl xl:text-6xl">
-                    Start Your Sole Proprietorship
-                    <span class="text-violet-600">Today</span>
+                    Register a Sole Proprietorship
                 </h1>
+                <p class="text-4xl font-extrabold tracking-tight text-violet-600 sm:text-5xl xl:text-6xl">
+                    Start Your Business Today
+                </p>
 
                 <p class="mt-6 text-xl leading-relaxed text-zinc-600">
-                    The simplest way to launch your business. Register as a sole proprietor, get your DBA and EIN, and start operating—without forming an LLC or corporation.
+                    The simplest way to launch your business. Register as a sole proprietor, get your <a href="{{ route('dba') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">DBA</a> and <a href="{{ route('ein-tax-id') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">EIN</a>, and start operating—without forming an LLC or corporation.
                 </p>
 
                 <div class="mt-8 flex flex-col gap-4 sm:flex-row">
@@ -45,7 +47,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Sole Proprietorship Setup</h3>
+                            <p class="font-bold text-zinc-900">Sole Proprietorship Setup</p>
                             <p class="text-sm text-zinc-500">DBA, EIN, and local registration</p>
                         </div>
                     </div>
@@ -58,7 +60,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Quick & Simple</h3>
+                            <p class="font-bold text-zinc-900">Quick & Simple</p>
                             <p class="text-sm text-zinc-500">No incorporation paperwork required</p>
                         </div>
                     </div>
@@ -71,7 +73,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">All 50 States</h3>
+                            <p class="font-bold text-zinc-900">All 50 States</p>
                             <p class="text-sm text-zinc-500">State and local compliance support</p>
                         </div>
                     </div>
@@ -245,7 +247,7 @@
                     </svg>
                 </summary>
                 <div class="px-6 pb-5 text-zinc-600">
-                    Consider forming an LLC when you have significant liability exposure, hire employees, take on partners, need business credit, or want to protect personal assets from business debts. Many entrepreneurs start as sole proprietors and convert when the business grows.
+                    Consider forming an <a href="{{ route('llc') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">LLC</a> when you have significant liability exposure, hire employees, take on partners, need business credit, or want to protect personal assets from business debts. Many entrepreneurs start as sole proprietors and convert when the business grows.
                 </div>
             </details>
 
@@ -269,12 +271,19 @@
                     </svg>
                 </summary>
                 <div class="px-6 pb-5 text-zinc-600">
-                    Yes. Sole proprietors can hire employees. You'll need an EIN, and you must withhold payroll taxes, pay employer taxes, and comply with labor laws. Many growing sole proprietors form an LLC or corporation once they hire to clarify structure and liability.
+                    Yes. Sole proprietors can hire employees. You'll need an EIN, and you must withhold payroll taxes, pay employer taxes, and comply with labor laws. Many growing sole proprietors form an LLC or <a href="{{ route('corporation') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">corporation</a> once they hire to clarify structure and liability.
                 </div>
             </details>
         </div>
     </div>
 </section>
+
+{{-- Related services --}}
+<x-seo.related-links :links="[
+    ['name' => 'DBA Registration', 'url' => route('dba'), 'text' => 'Register a trade name for your business.'],
+    ['name' => 'EIN / Tax ID', 'url' => route('ein-tax-id'), 'text' => 'Get the federal tax ID for banking, hiring, and taxes.'],
+    ['name' => 'LLC Formation', 'url' => route('llc'), 'text' => 'Form an LLC in any state.'],
+]" />
 
 {{-- CTA --}}
 <section class="bg-white py-24">

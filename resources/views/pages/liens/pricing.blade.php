@@ -1,10 +1,7 @@
 @extends('layouts.landing')
 
-@section('title', 'Lien Services Pricing | Flat-Rate Mechanics Lien & Notice Filing')
-
-@section('meta')
-<meta name="description" content="Simple, flat-rate pricing for every lien service — preliminary notices, notices of intent, mechanics liens, lien releases, and payment demand letters. State fees included, free lien tracking.">
-@endsection
+@section('title', 'Lien Filing Pricing | Flat Rates, State Fees Included')
+@section('description', 'Flat-rate pricing for every lien service: preliminary notices from '.\App\Support\Seo\Prices::lien('prelim_notice').', intent to lien from '.\App\Support\Seo\Prices::lien('noi').', mechanics liens from '.\App\Support\Seo\Prices::lien('mechanics_lien').', and releases from '.\App\Support\Seo\Prices::lien('lien_release').'.')
 
 @php
     $formatPrice = fn (int $cents) => '$'.number_format($cents / 100);
@@ -75,13 +72,20 @@
 {{-- Hero --}}
 <section class="relative overflow-hidden bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-800 py-24 lg:py-32">
     <div class="relative mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
+        <x-seo.breadcrumbs class="mb-8 text-zinc-400" center :items="[
+            ['name' => 'Home', 'url' => route('home')],
+            ['name' => 'Mechanics Liens', 'url' => route('liens')],
+            ['name' => 'Pricing'],
+        ]" />
         <div class="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-1.5 text-sm text-amber-400">
             State fees included
         </div>
         <h1 class="mt-8 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-            Simple, Flat-Rate Pricing<br>
-            <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">for Every Lien Service</span>
+            Lien Filing Pricing
         </h1>
+        <p class="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
+            <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Flat Rates for Every Lien Service</span>
+        </p>
         <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">One flat price per filing — no hourly billing, no hidden costs. Standard state fees are included, and lien tracking is free.</p>
         <div class="mt-10">
             <a href="{{ route('register') }}" class="group inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#B91C1C]">
@@ -106,7 +110,7 @@
             @foreach ($services as $service)
                 <div class="relative flex flex-col rounded-2xl bg-white p-6 transition hover:shadow-md {{ $service['featured'] ? 'border-2 border-amber-400 shadow-lg' : 'border border-zinc-200 shadow-sm' }}">
                     @if ($service['featured'])
-                        <span class="absolute -top-3 left-6 rounded-full bg-amber-500 px-3 py-1 text-xs font-semibold text-white">Most Popular</span>
+                        <span class="absolute -top-3 left-6 rounded-full bg-amber-500 px-3 py-1 text-xs font-semibold text-zinc-900">Most Popular</span>
                     @endif
                     <div class="flex items-center gap-3">
                         <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-xl">{{ $service['icon'] }}</div>
@@ -115,15 +119,15 @@
                     <p class="mt-3 flex-1 text-sm text-zinc-500">{{ $service['description'] }}</p>
                     <div class="mt-5 grid grid-cols-2 divide-x divide-zinc-200 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
                         <div class="px-4 py-3">
-                            <div class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Self-Serve</div>
-                            <div class="mt-1 text-2xl font-extrabold tracking-tight text-zinc-900">{{ $formatPrice(config("lien.pricing.{$service['key']}.self_serve")) }}@if ($hasStateNote($service['key'], 'self_serve'))<span class="text-base text-amber-600">**</span>@endif</div>
+                            <div class="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Self-Serve</div>
+                            <div class="mt-1 text-2xl font-extrabold tracking-tight text-zinc-900">{{ $formatPrice(config("lien.pricing.{$service['key']}.self_serve")) }}@if ($hasStateNote($service['key'], 'self_serve'))<span class="text-base text-amber-700">**</span>@endif</div>
                         </div>
                         <div class="bg-amber-50/60 px-4 py-3">
-                            <div class="text-[11px] font-semibold uppercase tracking-wider text-amber-600">Full-Service</div>
-                            <div class="mt-1 text-2xl font-extrabold tracking-tight text-zinc-900">{{ $formatPrice(config("lien.pricing.{$service['key']}.full_service")) }}@if ($hasStateNote($service['key'], 'full_service'))<span class="text-base text-amber-600">**</span>@endif</div>
+                            <div class="text-[11px] font-semibold uppercase tracking-wider text-amber-700">Full-Service</div>
+                            <div class="mt-1 text-2xl font-extrabold tracking-tight text-zinc-900">{{ $formatPrice(config("lien.pricing.{$service['key']}.full_service")) }}@if ($hasStateNote($service['key'], 'full_service'))<span class="text-base text-amber-700">**</span>@endif</div>
                         </div>
                     </div>
-                    <a href="{{ $service['route'] }}" class="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-amber-600 transition hover:text-amber-700">
+                    <a href="{{ $service['route'] }}" class="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-amber-700 transition hover:text-amber-800">
                         Learn more
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -140,7 +144,7 @@
                 </div>
                 <p class="mt-3 flex-1 text-sm text-zinc-500">Track projects, deadlines, and lien rights in one dashboard — for every job, in every state.</p>
                 <div class="mt-5 overflow-hidden rounded-xl border border-emerald-200 bg-white px-4 py-3">
-                    <div class="text-[11px] font-semibold uppercase tracking-wider text-emerald-600">Always</div>
+                    <div class="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">Always</div>
                     <div class="mt-1 text-2xl font-extrabold tracking-tight text-emerald-600">Free</div>
                 </div>
                 <a href="{{ route('register') }}" class="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700">
@@ -267,6 +271,9 @@
     </div>
 </section>
 
+{{-- Related lien tools --}}
+<x-seo.lien-more />
+
 {{-- CTA --}}
 <section class="mx-auto mb-16 max-w-5xl px-4 sm:px-6 lg:px-8">
     <div class="overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-800 py-20">
@@ -284,4 +291,7 @@
         </div>
     </div>
 </section>
+
+{{-- Every state page --}}
+<x-seo.lien-states variant="strip" />
 @endsection

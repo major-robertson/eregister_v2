@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Domains\Lien\Models\LienStateRule;
+use App\Domains\Lien\Seo\LienReleaseStatePage;
 use App\Domains\Lien\Seo\LienStateDepth;
+use App\Domains\Lien\Seo\NoticeOfIntentStatePage;
 use App\Domains\Lien\Waivers\WaiverStateRegistry;
 use App\Domains\ResaleCert\Seo\ResaleStatePage;
 use App\Domains\SalesTax\Seo\SalesTaxStateContent;
@@ -103,6 +105,23 @@ class SitemapController extends Controller
             ->sort();
         foreach ($lienStates as $name) {
             $entries[] = self::entry('/liens/'.States::slug($name), 'monthly', '0.7', $lienModified);
+        }
+
+        // Notice of intent and lien release by state: the researched entries,
+        // the shared template and the page model, plus the lien rule data they
+        // quote. The blank PDFs stay out.
+        foreach ([NoticeOfIntentStatePage::class => 'pages.liens.notice-of-intent-state', LienReleaseStatePage::class => 'pages.liens.lien-release-state'] as $model => $view) {
+            $variantModified = max(
+                $lienModified,
+                self::viewModified($view),
+                self::fileModified($model::dataFile()),
+                self::fileModified((new \ReflectionClass($model))->getFileName()),
+            );
+            foreach ($model::availableStates() as $code => $name) {
+                if ($lienStates->has($code)) {
+                    $entries[] = self::entry(route($model::ROUTE, ['state' => States::slug($name)], absolute: false), 'monthly', '0.6', $variantModified);
+                }
+            }
         }
 
         // Resale certificate rules by state (states with a sales tax only).

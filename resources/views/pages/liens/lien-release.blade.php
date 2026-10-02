@@ -235,6 +235,15 @@
     </div>
 </section>
 
+{{-- The per-state lien release pages --}}
+<x-seo.lien-states
+    class="border-t border-zinc-200"
+    route="liens.lien-release.state"
+    :states="\App\Domains\Lien\Seo\LienReleaseStatePage::availableStates()"
+    label="lien release"
+    heading="Lien release rules by state"
+    intro="What the release is called, how soon it is due after payment, the penalty for waiting, and a free blank form where we have one." />
+
 {{-- Related lien tools --}}
 <x-seo.lien-more />
 

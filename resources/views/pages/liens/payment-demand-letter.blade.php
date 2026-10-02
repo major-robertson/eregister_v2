@@ -164,6 +164,13 @@
                 </div>
             </div>
         </div>
+        <div id="free-template" class="mx-auto mt-10 max-w-3xl rounded-2xl border border-zinc-200 bg-white p-6 text-center">
+            <a href="{{ route('liens.payment-demand-letter.blank') }}" class="font-semibold text-zinc-900 underline" download>Download a free payment demand letter template</a>
+            <p class="mt-2 text-sm text-zinc-600">
+                The letter our service prepares, with every field left blank. PDF, free, no sign-up.
+                It asks for payment within ten days and names the steps that can follow.
+            </p>
+        </div>
     </div>
 </section>
 

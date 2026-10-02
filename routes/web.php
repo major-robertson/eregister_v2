@@ -127,6 +127,24 @@ Route::view('liens/lien-release', 'pages.liens.lien-release')->name('liens.lien-
 Route::view('liens/payment-demand-letter', 'pages.liens.payment-demand-letter')->name('liens.payment-demand-letter');
 Route::view('liens/pricing', 'pages.liens.pricing')->name('liens.pricing');
 
+// Notice of intent and lien release by state ("/liens/notice-of-intent-to-lien/texas")
+// for twenty states, each with an ungated blank PDF, plus the blank demand letter.
+// The PDFs are indexable but kept out of the sitemap; codes in any case 301 to the slug.
+Route::get('liens/notice-of-intent-to-lien/{state}', [\App\Http\Controllers\LienVariantLandingController::class, 'noticeOfIntent'])
+    ->where('state', '[A-Za-z-]{2,}')
+    ->name('liens.notice-of-intent-to-lien.state');
+Route::get('liens/notice-of-intent-to-lien/{state}/blank.pdf', [\App\Http\Controllers\LienVariantLandingController::class, 'noticeOfIntentBlank'])
+    ->where('state', '[A-Za-z-]{2,}')
+    ->name('liens.notice-of-intent-to-lien.state.blank');
+Route::get('liens/lien-release/{state}', [\App\Http\Controllers\LienVariantLandingController::class, 'lienRelease'])
+    ->where('state', '[A-Za-z-]{2,}')
+    ->name('liens.lien-release.state');
+Route::get('liens/lien-release/{state}/blank.pdf', [\App\Http\Controllers\LienVariantLandingController::class, 'lienReleaseBlank'])
+    ->where('state', '[A-Za-z-]{2,}')
+    ->name('liens.lien-release.state.blank');
+Route::get('liens/payment-demand-letter/blank.pdf', [\App\Http\Controllers\LienVariantLandingController::class, 'demandLetterBlank'])
+    ->name('liens.payment-demand-letter.blank');
+
 // Free deadline calculator for every state; registered before {state}.
 Route::get('liens/deadline-calculator', [\App\Http\Controllers\LienStateLandingController::class, 'calculator'])->name('liens.deadline-calculator');
 

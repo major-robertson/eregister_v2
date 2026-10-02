@@ -1,7 +1,7 @@
 <?php
 
 use App\Domains\Lien\Documents\LienDocumentRegistry;
-use App\Domains\Lien\Seo\BlankLienClaim;
+use App\Domains\Lien\Seo\BlankLienDocument;
 use App\Domains\Lien\Seo\LienStateDepth;
 use App\Domains\Lien\Seo\LienStatePage;
 use App\Http\Controllers\SitemapController;
@@ -144,9 +144,9 @@ it('serves the blank Texas lien claim as a cached PDF attachment', function () {
         ->and($response->headers->get('Content-Disposition'))->toBe('attachment; filename="texas-affidavit-claiming-a-mechanics-lien-blank.pdf"')
         ->and(substr($response->getContent(), 0, 4))->toBe('%PDF');
 
-    $files = Storage::disk('local')->allFiles(BlankLienClaim::CACHE_DIRECTORY);
+    $files = Storage::disk('local')->allFiles(BlankLienDocument::CACHE_DIRECTORY);
     expect($files)->toHaveCount(1)
-        ->and($files[0])->toStartWith(BlankLienClaim::CACHE_DIRECTORY.'/v'.BlankLienClaim::CACHE_VERSION.'/tx-t');
+        ->and($files[0])->toStartWith(BlankLienDocument::CACHE_DIRECTORY.'/v'.BlankLienDocument::CACHE_VERSION.'/mechanics_lien/tx-t');
 
     // The second request is served from the cached file.
     Storage::disk('local')->put($files[0], '%PDF-cached');
@@ -154,7 +154,7 @@ it('serves the blank Texas lien claim as a cached PDF attachment', function () {
 });
 
 it('prints the blank instrument with no names, amounts or preparer', function () {
-    $blanks = app(BlankLienClaim::class);
+    $blanks = app(BlankLienDocument::class);
     $form = $blanks->form('TX');
     $html = view(app(\App\Domains\Lien\Documents\LienDocumentGenerator::class)->layout($form), ['doc' => $blanks->payload($form)])->render();
 
@@ -176,7 +176,7 @@ it('404s the blank claim for states without an instrument and 301s codes to the 
 });
 
 it('renders a blank lien claim for every state with an instrument file', function () {
-    $blanks = app(BlankLienClaim::class);
+    $blanks = app(BlankLienDocument::class);
     $codes = array_keys(array_filter(States::names(), fn (string $name, string $code) => $blanks->available($code), ARRAY_FILTER_USE_BOTH));
 
     expect($codes)->toContain(...LienStateDepth::POPULAR)->not->toContain('VT');

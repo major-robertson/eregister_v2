@@ -206,6 +206,15 @@
     </div>
 </section>
 
+{{-- The per-state notice of intent pages --}}
+<x-seo.lien-states
+    class="border-t border-zinc-200"
+    route="liens.notice-of-intent-to-lien.state"
+    :states="\App\Domains\Lien\Seo\NoticeOfIntentStatePage::availableStates()"
+    label="notice of intent"
+    heading="Notice of intent to lien by state"
+    intro="Whether the state requires one, the lead time, the statute, and a free blank form where we have one." />
+
 {{-- Related lien tools --}}
 <x-seo.lien-more />
 

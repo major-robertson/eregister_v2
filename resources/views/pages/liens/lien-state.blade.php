@@ -451,6 +451,12 @@
                 <h2 class="text-lg font-semibold text-zinc-900">More {{ $name }} lien tools</h2>
                 <ul class="mt-4 space-y-2 text-sm">
                     <li><a href="{{ route('liens.lien-waivers.state', ['state' => strtolower($page->code)]) }}" class="text-zinc-700 underline hover:text-zinc-900">Free {{ $name }} lien waiver forms</a></li>
+                    @if (\App\Domains\Lien\Seo\NoticeOfIntentStatePage::has($page->code))
+                    <li><a href="{{ route('liens.notice-of-intent-to-lien.state', ['state' => $page->slug]) }}" class="text-zinc-700 underline hover:text-zinc-900">{{ $name }} notice of intent to lien</a></li>
+                    @endif
+                    @if (\App\Domains\Lien\Seo\LienReleaseStatePage::has($page->code))
+                    <li><a href="{{ route('liens.lien-release.state', ['state' => $page->slug]) }}" class="text-zinc-700 underline hover:text-zinc-900">{{ $name }} mechanics lien release</a></li>
+                    @endif
                     @if ($blankClaim)
                     <li><a href="{{ $blankClaim['url'] }}" class="text-zinc-700 underline hover:text-zinc-900" download>Download a blank {{ $name }} lien claim form</a></li>
                     @endif

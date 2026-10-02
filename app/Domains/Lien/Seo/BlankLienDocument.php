@@ -16,58 +16,63 @@ use Illuminate\Support\Str;
 use Spatie\LaravelPdf\Facades\Pdf;
 
 /**
- * Ungated blank copy of a state's mechanics lien instrument, for the
- * "/liens/{state}" pages. It is the generator's own instrument shell and the
- * state's body rendered from an unsaved filing with no parties, dates,
- * amounts or county, so every field prints as a ruled blank and the download
- * can never drift from what the filing product prepares. Only states with a
- * lien_documents data file (a state-specific instrument) get one; attorney
- * states and states without a file 404.
+ * Ungated blank copy of one of a state's generated lien documents, for the
+ * public state pages: the mechanics lien instrument ("/liens/{state}"), the
+ * notice of intent letter ("/liens/notice-of-intent-to-lien/{state}") and the
+ * release instrument ("/liens/lien-release/{state}"). It is the generator's
+ * own shell and the state's body rendered from an unsaved filing with no
+ * parties, dates, amounts or county, so every field prints as a ruled blank
+ * and the download can never drift from what the filing product prepares.
+ * Only states with a lien_documents data file (state-specific rules) get one;
+ * attorney states, disabled kinds and states without a file return null.
  *
  * Rendered PDFs are cached on the local disk under a versioned key that also
- * carries the instrument's template_version and a hash of the shell, the
- * body, the shared parts and clauses and the state's data file, so a template
- * or clause change produces a new file instead of serving a stale one.
+ * carries the kind, the document's template_version and a hash of the shell,
+ * the body, the shared parts and clauses and the state's data file, so a
+ * template or clause change produces a new file instead of serving a stale one.
  */
-class BlankLienClaim
+class BlankLienDocument
 {
+    /** The kinds with a public blank, each in the family its layout expects. */
+    public const KINDS = ['mechanics_lien' => 'instrument', 'noi' => 'letter', 'lien_release' => 'instrument'];
+
     /** Bump to invalidate every cached blank (e.g. after a payload change). */
     public const CACHE_VERSION = 1;
 
-    public const CACHE_DIRECTORY = 'lien-claim-blanks';
+    public const CACHE_DIRECTORY = 'lien-document-blanks';
 
     public function __construct(
         private LienDocumentResolver $resolver,
         private LienDocumentGenerator $generator,
     ) {}
 
-    /** The state's resolved mechanics lien instrument, or null when there is no blank to offer. */
-    public function form(string $state): ?ResolvedLienDocument
+    /** The state's resolved document of this kind, or null when there is no blank to offer. */
+    public function form(string $state, string $kind = 'mechanics_lien'): ?ResolvedLienDocument
     {
         $code = strtoupper($state);
 
-        if (! LienDocumentRegistry::isSupported($code) || ! is_file(self::dataFile($code))) {
+        if (! isset(self::KINDS[$kind]) || ! LienDocumentRegistry::isSupported($code) || ! is_file(self::dataFile($code))) {
             return null;
         }
 
         try {
-            $form = $this->resolver->resolve(self::blankFiling($code), 'mechanics_lien');
+            $form = $this->resolver->resolve(self::blankFiling($code), $kind);
         } catch (LienDocumentUnavailable) {
             return null;
         }
 
-        return $form->isInstrument() ? $form : null;
+        return $form->family === self::KINDS[$kind] ? $form : null;
     }
 
-    public function available(string $state): bool
+    public function available(string $state, string $kind = 'mechanics_lien'): bool
     {
-        return $this->form($state) !== null;
+        return $this->form($state, $kind) !== null;
     }
 
-    /** The blank instrument's PDF bytes, or null when the state has none. */
-    public function pdf(string $state): ?string
+    /** The blank document's PDF bytes, or null when the state has none of this kind. */
+    public function pdf(string $state, string $kind = 'mechanics_lien'): ?string
     {
-        $form = $this->form($state);
+        $form = $this->form($state, $kind);
 
         if ($form === null) {
             return null;
@@ -109,7 +114,7 @@ class BlankLienClaim
         return $payload;
     }
 
-    /** "texas-affidavit-claiming-a-mechanics-lien-blank.pdf" */
+    /** "texas-affidavit-claiming-a-mechanics-lien-blank.pdf", "texas-release-of-lien-blank.pdf" */
     public function filename(ResolvedLienDocument $form): string
     {
         return Str::slug(States::name($form->state).' '.str_replace(["'", "\u{2019}"], '', $form->title)).'-blank.pdf';
@@ -123,16 +128,18 @@ class BlankLienClaim
             (string) @file_get_contents(self::dataFile($form->state)),
         ];
 
-        foreach (['documents/lien/_parts', 'documents/lien/instruments/clauses'] as $directory) {
+        $family = $form->isInstrument() ? 'instruments' : 'letters';
+        foreach (['documents/lien/_parts', "documents/lien/{$family}/clauses"] as $directory) {
             foreach (glob(resource_path('views/'.$directory.'/*.blade.php')) ?: [] as $file) {
                 $sources[] = (string) file_get_contents($file);
             }
         }
 
         return sprintf(
-            '%s/v%d/%s-t%d-%s.pdf',
+            '%s/v%d/%s/%s-t%d-%s.pdf',
             self::CACHE_DIRECTORY,
             self::CACHE_VERSION,
+            $form->kind,
             strtolower($form->state),
             $form->templateVersion,
             substr(md5(implode("\n", $sources)), 0, 8),

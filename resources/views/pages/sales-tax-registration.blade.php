@@ -421,6 +421,8 @@
         </div>
     </section>
 
+    <x-seo.sales-tax-states />
+
     {{-- Related services --}}
     <x-seo.related-links :links="[
         ['name' => 'Resale Certificates', 'url' => route('resale-certificates'), 'text' => 'Buy inventory tax-free with signed certificates.'],

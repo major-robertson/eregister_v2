@@ -92,6 +92,11 @@ Route::view('operating-agreement', 'pages.operating-agreement')->name('operating
 
 // Compliance & Tax
 Route::view('sales-tax-registration', 'pages.sales-tax-registration')->name('sales-tax-registration');
+// Sales tax registration by state ("/sales-tax-registration/texas"). Codes
+// and wrong-case slugs 301 to the lower-case full-name slug.
+Route::get('sales-tax-registration/{state}', [\App\Http\Controllers\SalesTaxStateLandingController::class, 'show'])
+    ->where('state', '[A-Za-z-]{2,}')
+    ->name('sales-tax-registration.state');
 
 // Paths from the previous product that Google still indexes and that old ads
 // still point at (32 ads were disapproved for "destination not working" on

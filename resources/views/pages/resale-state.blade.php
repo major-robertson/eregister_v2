@@ -164,7 +164,7 @@
                 <h2 class="text-lg font-semibold text-zinc-900">Related</h2>
                 <ul class="mt-4 space-y-2 text-sm">
                     <li><a href="{{ route('resale-certificates') }}" class="text-zinc-700 underline hover:text-zinc-900">Resale certificate generator overview</a></li>
-                    <li><a href="{{ route('sales-tax-registration') }}" class="text-zinc-700 underline hover:text-zinc-900">Register for {{ $page->salesTaxLabel() }}</a></li>
+                    <li><a href="{{ \App\Domains\SalesTax\Seo\SalesTaxStateContent::exists($page->code) ? route('sales-tax-registration.state', ['state' => $page->slug]) : route('sales-tax-registration') }}" class="text-zinc-700 underline hover:text-zinc-900">Register for {{ $page->salesTaxLabel() }}</a></li>
                     <li><a href="{{ route('llc') }}" class="text-zinc-700 underline hover:text-zinc-900">Form an LLC</a></li>
                 </ul>
             </div>

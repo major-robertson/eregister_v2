@@ -29,7 +29,15 @@
         'conditional_final' => 'Signed when the final payment is promised: waives all remaining lien rights, but only once the payment clears.',
         'unconditional_final' => 'Signed after the final payment is in hand: a complete, immediate waiver of lien rights on the project.',
     ];
+    $uiNotes = array_values(array_filter($rules['ui_notes'] ?? []));
 @endphp
+
+<x-seo.service
+    :name="$stateName.' Lien Waiver Generator'"
+    :description="$metaDescription"
+    :url="$canonicalUrl"
+    :price="0"
+    category="Lien waiver forms" />
 
 {{-- Hero --}}
 <section class="relative overflow-hidden bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-800 py-24 lg:py-28">
@@ -79,6 +87,16 @@
             The rule of thumb everywhere: sign a conditional waiver when payment is promised, and an unconditional waiver only after the money has actually arrived.
         </p>
         @endif
+
+        {{-- The state's reviewed wizard notes, verbatim. States without notes skip this. --}}
+        @if ($uiNotes !== [])
+        <h2 class="mt-16 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">What to know about {{ $stateName }} lien waivers</h2>
+        <ul class="mt-6 list-disc space-y-3 pl-5 text-zinc-600">
+            @foreach ($uiNotes as $note)
+            <li>{{ $note }}</li>
+            @endforeach
+        </ul>
+        @endif
     </div>
 </section>
 
@@ -110,6 +128,25 @@
             We're finalizing the {{ $stateName }} form set. Create a free account and we'll have the correct forms ready for your project.
         </div>
         @endif
+
+        {{-- Blank statutory forms (WaiverBlankForms): the generator's own
+             bodies with every blank empty. States with no statutory form
+             get the generator instead. --}}
+        <div id="blank-forms" class="mx-auto mt-12 max-w-2xl rounded-xl border border-zinc-200 bg-white p-6">
+            @if ($blankForms !== [])
+            <h3 class="font-semibold text-zinc-900">Download the blank {{ $stateName }} forms</h3>
+            <p class="mt-2 text-sm text-zinc-600">The statutory text with every blank left empty, as a PDF to fill in by hand. Free, no account needed.</p>
+            <ul class="mt-4 space-y-2">
+                @foreach ($blankForms as $blankSlug => $blank)
+                <li>
+                    <a href="{{ route('liens.lien-waivers.blank', ['state' => strtolower($code), 'kind' => $blankSlug]) }}" class="font-medium text-amber-700 underline hover:text-amber-800">{{ $blank['title'] }} (blank PDF)</a>
+                </li>
+                @endforeach
+            </ul>
+            @else
+            <p class="text-zinc-600">{{ $stateName }} has no statutory waiver form to download blank. The generator above fills in a general-purpose form with {{ $stateName }}'s signing rules built in instead.</p>
+            @endif
+        </div>
     </div>
 </section>
 
@@ -194,6 +231,16 @@
         </div>
     </div>
 </section>
+
+{{-- FAQ, built from the state's data (WaiverStateFaq) --}}
+@if ($faq !== [])
+<section class="border-t border-zinc-200 bg-white py-24">
+    <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+        <h2 class="text-center text-3xl font-bold text-zinc-900">{{ $stateName }} lien waiver questions</h2>
+        <x-seo.faq class="mt-12" card="zinc" icon="chevron" :items="$faq" />
+    </div>
+</section>
+@endif
 
 {{-- CTA --}}
 <section class="border-t border-zinc-200 bg-zinc-50 py-24">

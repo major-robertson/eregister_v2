@@ -15,7 +15,15 @@
     $freeSaves = config('lien_waivers.free_saved_waivers_per_month', 3);
     $monthlyPrice = number_format(config('lien_waivers.prices.monthly.amount_cents', 4900) / 100);
     $yearlyPrice = number_format(config('lien_waivers.prices.yearly.amount_cents', 49000) / 100);
+    $esignPrice = \App\Support\Seo\Prices::waiver();
 @endphp
+
+<x-seo.service
+    name="Lien Waiver Generator"
+    description="Generate the correct lien waiver form for any state, filled in with your details, and download the PDF free. Conditional, unconditional, progress, and final waivers."
+    :url="\App\Support\Seo\Urls::absolute(route('liens.lien-waivers', absolute: false))"
+    :price="0"
+    category="Lien waiver forms" />
 
 {{-- Hero --}}
 <section class="relative overflow-hidden bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-800 py-24 lg:py-32">
@@ -150,6 +158,47 @@
             @endforeach
         </div>
         <p class="mt-8 text-center text-sm text-zinc-400">Every other state gets our attorney-reviewed house forms with that state's execution rules built in.</p>
+    </div>
+</section>
+
+{{-- Blank statutory forms (WaiverBlankForms), ungated --}}
+<section id="blank-forms" class="scroll-mt-20 bg-white py-24">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        <div class="text-center">
+            <h2 class="text-3xl font-bold text-zinc-900">Blank forms by state</h2>
+            <p class="mx-auto mt-4 max-w-2xl text-lg text-zinc-600">Download any statutory waiver blank, free and with no account: the same statutory text the generator uses, with every blank left empty to fill in by hand.</p>
+        </div>
+        <div class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            @foreach ($blankForms as $blankCode => $forms)
+            <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-5">
+                <h3 class="font-semibold text-zinc-900">
+                    <a href="{{ route('liens.lien-waivers.state', strtolower($blankCode)) }}" class="hover:text-amber-700">{{ $states[$blankCode]['state_name'] ?? $blankCode }}</a>
+                </h3>
+                <ul class="mt-3 space-y-2 text-sm">
+                    @foreach ($forms as $blankSlug => $blank)
+                    <li>
+                        <a href="{{ route('liens.lien-waivers.blank', ['state' => strtolower($blankCode), 'kind' => $blankSlug]) }}" class="text-amber-700 underline hover:text-amber-800">{{ $blank['title'] }}</a>
+                    </li>
+                    @endforeach
+                </ul>
+            </div>
+            @endforeach
+        </div>
+        <p class="mx-auto mt-8 max-w-2xl text-center text-sm text-zinc-600">The other states have no statutory waiver form to download blank. In those states the generator fills in a general-purpose form with the state's signing rules built in instead.</p>
+    </div>
+</section>
+
+{{-- Generator vs a downloaded template --}}
+<section class="border-t border-zinc-200 bg-zinc-50 py-24">
+    <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+        <h2 class="text-center text-3xl font-bold text-zinc-900">Why a generator beats a Word template</h2>
+        <div class="mt-10 space-y-6 text-zinc-600">
+            <p><span class="font-semibold text-zinc-900">The right text for the state and the payment.</span> Where a state prescribes the wording, a waiver that strays from it can be void. The generator picks the form for the project's state and the kind of payment, so no one edits statutory text by hand.</p>
+            <p><span class="font-semibold text-zinc-900">Fields that match the statute.</span> Each form asks for what its blanks call for, such as the check maker, the amount, the through date, or a legal description where the statute needs one. Nothing is left to guess.</p>
+            <p><span class="font-semibold text-zinc-900">E-signature where the state allows it.</span> Send a waiver for electronic signature for {{ $esignPrice }} a month per person. Where a state needs a notary or a witness, you get a print-ready PDF instead.</p>
+            <p><span class="font-semibold text-zinc-900">Reminders until it is signed.</span> Unsigned waivers get automatic reminders, so you don't have to chase subs, vendors, or the GC yourself.</p>
+            <p><span class="font-semibold text-zinc-900">A record of who signed what.</span> Each signed waiver is stored on its project with an audit certificate that shows who signed and when. A Word file on a shared drive keeps none of that.</p>
+        </div>
     </div>
 </section>
 

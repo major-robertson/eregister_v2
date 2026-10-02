@@ -65,29 +65,53 @@ class WaiverFormPreview
     }
 
     /**
+     * The same shape with every blank left empty, for the downloadable blank
+     * forms: the generator's own body with nothing filled in but the state.
+     *
+     * @return array<string, mixed>
+     */
+    public function blankPayload(ResolvedWaiverForm $form, WaiverKind $kind): array
+    {
+        $party = ['company' => null, 'name' => null, 'address_lines' => [], 'email' => null, 'phone' => null];
+
+        return [
+            'form' => $this->formBlock($form, $kind, false),
+            'date' => null,
+            'claimant' => $party,
+            'customer' => $party,
+            'owner' => ['company' => null, 'name' => null, 'address_lines' => []],
+            'project' => [
+                'name' => null,
+                'job_number' => null,
+                'address_line' => null,
+                'county' => null,
+                'city' => null,
+                'state' => $form->state,
+                'zip' => null,
+                'legal_description' => null,
+                'apn' => null,
+            ],
+            'amount' => null,
+            'through_date' => null,
+            'invoice_number' => null,
+            'check_maker' => null,
+            'check_number' => null,
+            'exceptions' => null,
+            'signer' => ['name' => null, 'title' => null, 'email' => null, 'company' => null],
+        ];
+    }
+
+    /**
      * The same shape WaiverGenerator::data() builds from a real waiver.
      *
      * @return array<string, mixed>
      */
     private function samplePayload(ResolvedWaiverForm $form, WaiverKind $kind, bool $anyState): array
     {
-        $stateName = WaiverStateRegistry::STATE_NAMES[$form->state] ?? $form->state;
         $place = $anyState ? 'Anytown' : 'Anytown, '.$form->state;
 
         return [
-            'form' => [
-                'template' => $form->template,
-                'title' => $form->title,
-                'kind' => $kind->value,
-                'state' => $form->state,
-                'state_name' => $anyState ? '____________' : $stateName,
-                'template_version' => $form->templateVersion,
-                'statute' => $form->statute,
-                'notarization_required' => $form->notarizationRequired,
-                'witness_required' => $form->witnessRequired,
-                'deemed_effective_days' => $form->deemedEffectiveDays,
-                'extra_clauses' => $form->extraClauses,
-            ],
+            'form' => $this->formBlock($form, $kind, $anyState),
             'date' => now()->eastern()->format('F j, Y'),
             'claimant' => [
                 'company' => 'Acme Drywall LLC',
@@ -131,6 +155,28 @@ class WaiverFormPreview
                 'email' => null,
                 'company' => 'Acme Drywall LLC',
             ],
+        ];
+    }
+
+    /**
+     * The payload's form block, shared by the sample and blank payloads.
+     *
+     * @return array<string, mixed>
+     */
+    private function formBlock(ResolvedWaiverForm $form, WaiverKind $kind, bool $anyState): array
+    {
+        return [
+            'template' => $form->template,
+            'title' => $form->title,
+            'kind' => $kind->value,
+            'state' => $form->state,
+            'state_name' => $anyState ? '____________' : (WaiverStateRegistry::STATE_NAMES[$form->state] ?? $form->state),
+            'template_version' => $form->templateVersion,
+            'statute' => $form->statute,
+            'notarization_required' => $form->notarizationRequired,
+            'witness_required' => $form->witnessRequired,
+            'deemed_effective_days' => $form->deemedEffectiveDays,
+            'extra_clauses' => $form->extraClauses,
         ];
     }
 

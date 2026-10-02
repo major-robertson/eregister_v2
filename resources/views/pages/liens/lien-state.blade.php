@@ -168,6 +168,79 @@
     </div>
 </section>
 
+@if ($page->depth && $page->howToFile())
+{{-- How to file, step by step (researched states only) --}}
+<section id="how-to-file" class="border-y border-zinc-200 bg-zinc-50 py-20">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold tracking-tight text-zinc-900">How to file {{ $a }} {{ $name }} mechanics lien</h2>
+        <p class="mt-4 text-zinc-600">
+            The steps in order, each with the statute behind it. Some steps apply only to certain claimants, and each says so.
+        </p>
+        <ol class="mt-10 space-y-6">
+            @foreach ($page->howToFile() as $step)
+            <li class="rounded-2xl border border-zinc-200 bg-white p-6">
+                <div class="flex gap-4">
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-sm font-semibold text-white">{{ $step['step'] }}</span>
+                    <div>
+                        <h3 class="font-semibold text-zinc-900">{{ $step['title'] }}</h3>
+                        <p class="mt-2 text-sm leading-relaxed text-zinc-600">{{ $step['text'] }}</p>
+                        @if (! empty($step['cite']))
+                        <p class="mt-2 text-xs text-zinc-500">{{ $step['cite'] }}</p>
+                        @endif
+                        @if (! empty($step['residential_note']))
+                        <aside class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                            <strong class="font-semibold">Residential projects:</strong> {{ $step['residential_note'] }}
+                        </aside>
+                        @endif
+                    </div>
+                </div>
+            </li>
+            @endforeach
+        </ol>
+    </div>
+</section>
+@endif
+
+@if ($page->depth && $page->claimContents())
+@php $contents = $page->claimContents(); @endphp
+{{-- What the claim must contain (researched states only) --}}
+<section id="claim-contents" class="bg-white py-20">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold tracking-tight text-zinc-900">What the {{ $page->claimDocumentLabel() }} must contain</h2>
+        <p class="mt-4 text-zinc-600">
+            {{ $name }} law requires the {{ mb_strtolower($contents['document_name']) }} to include the following{{ ! empty($contents['cite']) ? ' ('.$contents['cite'].')' : '' }}.
+        </p>
+        <ul class="mt-8 space-y-3">
+            @foreach ($contents['required'] as $item)
+            <li class="flex gap-3 text-zinc-700">
+                <svg class="mt-1 h-4 w-4 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>{{ $item }}</span>
+            </li>
+            @endforeach
+        </ul>
+        @if (! empty($contents['notes']))
+        <p class="mt-8 text-sm leading-relaxed text-zinc-600">{{ $contents['notes'] }}</p>
+        @endif
+        @if (! empty($contents['official_form_url']))
+        <p class="mt-4 text-sm text-zinc-600">
+            <a href="{{ $contents['official_form_url'] }}" rel="noopener" target="_blank" class="font-medium text-zinc-700 underline">See the official {{ $name }} form wording</a>.
+        </p>
+        @endif
+        @if ($blankClaim)
+        <div class="mt-8 rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
+            <a href="{{ $blankClaim['url'] }}" class="font-semibold text-zinc-900 underline" download>Download a blank {{ $name }} lien claim form</a>
+            <p class="mt-2 text-sm text-zinc-600">
+                The {{ $blankClaim['title'] }} our filing service prepares, with every field left blank. PDF, free, no sign-up.
+                Fill in your own facts and check them against the list above before you sign.
+            </p>
+        </div>
+        @endif
+    </div>
+</section>
+@endif
+
 {{-- Recording, enforcement, penalties --}}
 <section class="border-y border-zinc-200 bg-zinc-50 py-20">
     <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -220,6 +293,121 @@
     </div>
 </section>
 
+@if ($page->depth && $page->counties())
+@php
+    $verb = $page->filingVerb();
+    $electronic = $verb === 'file' ? 'E-filing' : 'E-recording';
+@endphp
+{{-- County offices (researched states only) --}}
+<section id="county-offices" class="bg-white py-20">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold tracking-tight text-zinc-900">Where to {{ $verb }} in {{ $name }}</h2>
+        @if ($page->countyIntro())
+        <p class="mt-4 max-w-3xl text-zinc-600">{{ $page->countyIntro() }}</p>
+        @endif
+        <p class="mt-4 max-w-3xl text-zinc-600">
+            The {{ count($page->counties()) }} most populous {{ $name }} counties, the office that takes liens in each, whether it accepts {{ mb_strtolower($electronic) }}, and the fee it publishes.
+            Liens on property in any other county go to that county's office.
+        </p>
+        <div class="mt-10 overflow-x-auto rounded-2xl border border-zinc-200">
+            <table class="min-w-full divide-y divide-zinc-200 text-left text-sm">
+                <thead class="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 font-semibold">County</th>
+                        <th scope="col" class="px-6 py-3 font-semibold">Office</th>
+                        <th scope="col" class="px-6 py-3 font-semibold">{{ $electronic }}</th>
+                        <th scope="col" class="px-6 py-3 font-semibold">Fee</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-zinc-100">
+                    @foreach ($page->counties() as $county)
+                    <tr class="align-top">
+                        <td class="px-6 py-4 font-medium text-zinc-900">{{ $county['county'] }}</td>
+                        <td class="px-6 py-4 text-zinc-700">
+                            @if (! empty($county['url']))
+                            <a href="{{ $county['url'] }}" rel="noopener" target="_blank" class="font-medium text-zinc-900 underline">{{ $county['office'] }}</a>
+                            @else
+                            <span class="font-medium text-zinc-900">{{ $county['office'] }}</span>
+                            @endif
+                            @if (! empty($county['mailing_address']))
+                            <div class="mt-1 text-xs text-zinc-500">{{ $county['mailing_address'] }}</div>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 text-zinc-700">
+                            {{ \App\Domains\Lien\Seo\LienStatePage::erecordingLabel($county) }}
+                            @if (($county['erecording'] ?? null) === true)
+                            <div class="mt-1 text-xs text-zinc-500">
+                                {{ ! empty($county['erecording_vendors']) ? 'Through '.implode(', ', $county['erecording_vendors']) : 'Vendors not listed online' }}
+                            </div>
+                            @elseif (($county['erecording'] ?? null) === null)
+                            <div class="mt-1 text-xs text-zinc-500">Ask the office</div>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 text-zinc-700">
+                            @if (! empty($county['fee']['summary']))
+                            {{ $county['fee']['summary'] }}
+                            @if (! empty($county['fee']['url']))
+                            <a href="{{ $county['fee']['url'] }}" rel="noopener" target="_blank" class="mt-1 block text-xs font-medium text-zinc-700 underline">Fee schedule</a>
+                            @endif
+                            @else
+                            <span class="text-zinc-500">Fee not published online; ask the office.</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        <p class="mt-6 text-sm text-zinc-500">
+            @if ($page->researchedOn()) Collected from each office's website on {{ $page->researchedOn() }}. @endif
+            Fees and filing methods change. Confirm them with the office before you {{ $verb }}.
+        </p>
+    </div>
+</section>
+@endif
+
+@if ($page->depth && $page->recentChanges())
+@php $enacted = array_filter($page->recentChanges(), fn (array $change) => ! empty($change['effective'])); @endphp
+{{-- Recent law changes (researched states only) --}}
+<section id="recent-changes" class="border-y border-zinc-200 bg-zinc-50 py-20">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold tracking-tight text-zinc-900">Recent changes to {{ $name }} lien law</h2>
+        <p class="mt-4 text-zinc-600">
+            @if ($enacted)
+            Changes since 2022 that affect lien deadlines, notices, forms or filing.
+            @if (count($enacted) < count($page->recentChanges())) Items marked pending are not law yet. @endif
+            @else
+            We found no enacted change to the {{ $name }} lien statute since 2022. The items below are pending and are not law yet.
+            @endif
+        </p>
+        <div class="mt-10 space-y-6">
+            @foreach ($page->recentChanges() as $change)
+            <article class="rounded-2xl border border-zinc-200 bg-white p-6">
+                <h3 class="font-semibold text-zinc-900">{{ $change['title'] }}</h3>
+                <p class="mt-1 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                    {{ ! empty($change['effective']) ? 'Effective '.\Illuminate\Support\Carbon::parse($change['effective'])->format('F j, Y') : 'Pending, not law' }}
+                </p>
+                <p class="mt-3 text-sm leading-relaxed text-zinc-600">{{ $change['summary'] }}</p>
+                @if (! empty($change['cite']))
+                <p class="mt-2 text-xs text-zinc-500">{{ $change['cite'] }}</p>
+                @endif
+            </article>
+            @endforeach
+        </div>
+        @if (! empty($page->depth['sources']))
+        <details class="mt-10 rounded-2xl border border-zinc-200 bg-white p-6">
+            <summary class="cursor-pointer font-semibold text-zinc-900">Sources for this page ({{ count($page->depth['sources']) }})</summary>
+            <ul class="mt-4 space-y-2 text-sm">
+                @foreach ($page->depth['sources'] as $source)
+                <li><a href="{{ $source['url'] }}" rel="noopener nofollow" target="_blank" class="text-zinc-700 underline hover:text-zinc-900">{{ $source['title'] }}</a></li>
+                @endforeach
+            </ul>
+        </details>
+        @endif
+    </div>
+</section>
+@endif
+
 {{-- Pricing / CTA --}}
 <section class="bg-white py-20">
     <div class="mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
@@ -263,6 +451,9 @@
                 <h2 class="text-lg font-semibold text-zinc-900">More {{ $name }} lien tools</h2>
                 <ul class="mt-4 space-y-2 text-sm">
                     <li><a href="{{ route('liens.lien-waivers.state', ['state' => strtolower($page->code)]) }}" class="text-zinc-700 underline hover:text-zinc-900">Free {{ $name }} lien waiver forms</a></li>
+                    @if ($blankClaim)
+                    <li><a href="{{ $blankClaim['url'] }}" class="text-zinc-700 underline hover:text-zinc-900" download>Download a blank {{ $name }} lien claim form</a></li>
+                    @endif
                     <li><a href="{{ route('liens.deadline-calculator') }}" class="text-zinc-700 underline hover:text-zinc-900">Mechanics lien deadline calculator</a></li>
                     <li><a href="{{ route('liens.preliminary-notice') }}" class="text-zinc-700 underline hover:text-zinc-900">Preliminary notice service</a></li>
                     <li><a href="{{ route('liens.notice-of-intent-to-lien') }}" class="text-zinc-700 underline hover:text-zinc-900">Notice of intent to lien</a></li>

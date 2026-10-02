@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Domains\Lien\Models\LienStateRule;
+use App\Domains\Lien\Seo\LienStateDepth;
 use App\Domains\Lien\Waivers\WaiverStateRegistry;
 use App\Domains\ResaleCert\Seo\ResaleStatePage;
 use App\Domains\SalesTax\Seo\SalesTaxStateContent;
@@ -87,11 +88,13 @@ class SitemapController extends Controller
             $entries[] = self::entry('/liens/lien-waivers/'.strtolower($code), 'monthly', '0.6', $waiverModified);
         }
 
-        // Mechanics lien rules by state: driven by the lien rule seed data.
+        // Mechanics lien rules by state: driven by the lien rule seed data,
+        // plus the researched depth files for the busiest states.
         $lienModified = max(
             self::viewModified('pages.liens.lien-state'),
             self::fileModified(database_path('seeders/data/lien_state_rules.json')),
             self::fileModified(database_path('seeders/data/lien_deadline_rules.json')),
+            self::directoryModified(LienStateDepth::directory()),
         );
         // Only states with a rule row have a page (forCode() 404s the rest).
         $lienStates = LienStateRule::query()->pluck('state')

@@ -107,7 +107,7 @@ describe('cached state pages', function () {
     });
 
     it('caches under versioned keys', function () {
-        expect(LienStatePage::cacheKey('tx'))->toBe('seo.lien-state.v3.TX')
+        expect(LienStatePage::cacheKey('tx'))->toBe('seo.lien-state.v4.TX')
             ->and(ResaleStatePage::cacheKey('fl'))->toBe('seo.resale-state.v4.FL')
             ->and(ResaleStatePage::statesCacheKey())->toBe('seo.resale-states.v4');
     });

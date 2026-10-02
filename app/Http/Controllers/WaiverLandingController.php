@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Domains\Lien\Waivers\WaiverBlankForms;
 use App\Domains\Lien\Waivers\WaiverFormPreview;
 use App\Domains\Lien\Waivers\WaiverIntent;
+use App\Domains\Lien\Waivers\WaiverStateFaq;
 use App\Domains\Lien\Waivers\WaiverStateRegistry;
 use App\Support\Seo\States;
 use App\Support\Seo\Text;
 use App\Support\Seo\Urls;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 /**
@@ -24,10 +27,11 @@ class WaiverLandingController extends Controller
      * Main lien waiver landing page: free-generator hero, pricing, and the
      * directory grid linking every per-state page.
      */
-    public function index(): View
+    public function index(WaiverBlankForms $blanks): View
     {
         return view('pages.liens.lien-waivers', [
             'states' => WaiverStateRegistry::all(),
+            'blankForms' => $blanks->all(),
         ]);
     }
 
@@ -36,7 +40,7 @@ class WaiverLandingController extends Controller
      * the registry lookup); uppercase or mixed-case codes 301 to the lowercase
      * canonical so search engines never index duplicate URLs.
      */
-    public function state(string $state): View|RedirectResponse
+    public function state(string $state, WaiverBlankForms $blanks): View|RedirectResponse
     {
         abort_unless(WaiverStateRegistry::isSupported($state), 404);
 
@@ -47,6 +51,7 @@ class WaiverLandingController extends Controller
         $code = strtoupper($state);
         $rules = WaiverStateRegistry::for($code);
         $stateName = $rules['state_name'] ?? WaiverStateRegistry::STATE_NAMES[$code];
+        $blankForms = $blanks->forState($code);
 
         return view('pages.liens.lien-waivers-state', [
             'code' => $code,
@@ -54,11 +59,37 @@ class WaiverLandingController extends Controller
             'stateName' => $stateName,
             'article' => Text::article($stateName),
             'nearbyStates' => $this->nearbyStates($code),
+            'blankForms' => $blankForms,
+            'faq' => WaiverStateFaq::for($rules, $blankForms),
             // Under 60 characters for every state (North Carolina = 49), so
             // Google shows the whole title instead of rewriting it.
             'pageTitle' => $stateName.' Lien Waiver Forms (Free Generator)',
             'metaDescription' => $this->metaDescription($stateName, $rules),
             'canonicalUrl' => Urls::absolute(route('liens.lien-waivers.state', ['state' => strtolower($code)], absolute: false)),
+        ]);
+    }
+
+    /**
+     * Ungated download of a blank statutory waiver form. Only states whose
+     * law prescribes the wording have blanks; every other state, and any
+     * kind the state does not use, 404s. Not in the sitemap.
+     */
+    public function blank(string $state, string $kind, WaiverBlankForms $blanks): Response|RedirectResponse
+    {
+        abort_unless(WaiverStateRegistry::isSupported($state), 404);
+
+        if ($state !== strtolower($state)) {
+            return redirect()->route('liens.lien-waivers.blank', ['state' => strtolower($state), 'kind' => $kind], 301);
+        }
+
+        $pdf = $blanks->pdf($state, $kind);
+
+        abort_if($pdf === null, 404);
+
+        return response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$blanks->filename($state, $kind).'"',
+            'Cache-Control' => 'public, max-age=86400',
         ]);
     }
 

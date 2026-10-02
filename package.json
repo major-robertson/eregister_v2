@@ -8,13 +8,17 @@
         "watch": "vite build --watch"
     },
     "dependencies": {
+        "@alpinejs/collapse": "^3.17.4",
+        "@alpinejs/intersect": "^3.17.4",
         "@tailwindcss/vite": "^4.1.11",
+        "alpinejs": "^3.17.4",
         "autoprefixer": "^10.4.20",
         "axios": "^1.7.4",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^2.0",
         "tailwindcss": "^4.0.7",
-        "vite": "^7.0.4"
+        "vite": "^7.0.4",
+        "web-vitals": "^6.2.2"
     },
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-gnu": "4.9.5",

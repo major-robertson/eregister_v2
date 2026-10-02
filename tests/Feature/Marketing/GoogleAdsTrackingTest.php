@@ -92,6 +92,25 @@ describe('payment success page', function () {
         expect(strpos($html, "gtag('set', 'user_data'"))->toBeLessThan(strpos($html, "gtag('event', 'conversion'"));
     });
 
+    it('defines the Reddit and OpenAI pixels in production, so the deferred tags still send the sale', function () {
+        app()->detectEnvironment(fn () => 'production');
+
+        $html = $this->get(route('lien.waivers.payment-confirmation', ['payment_intent' => 'pi_test_tracking']))
+            ->assertSuccessful()
+            ->getContent();
+
+        expect($html)
+            ->toContain("rdt('init', 'a2_j93ntx48v4gy'")
+            ->toContain('oaiq("init"')
+            ->toContain("eregLoadScript('https://www.redditstatic.com/ads/pixel.js")
+            ->toContain("rdt('track', 'Purchase'")
+            ->toContain('oaiq("measure"');
+
+        // The stubs that queue the conversion calls come before them.
+        expect(strpos($html, 'function gtag(){dataLayer.push(arguments);}'))->toBeLessThan(strpos($html, "gtag('event', 'conversion'"))
+            ->and(strpos($html, "rdt('init'"))->toBeLessThan(strpos($html, "rdt('track', 'Purchase'"));
+    });
+
     it('sends nothing when the page is revisited without the payment id Stripe appends', function () {
         $this->get(route('lien.waivers.payment-confirmation'))
             ->assertSuccessful()
@@ -192,12 +211,20 @@ describe('ad tags load in production only', function () {
     it('loads the real tags in production', function () {
         app()->detectEnvironment(fn () => 'production');
 
+        // Product pages get the Google tag only; the Reddit and OpenAI
+        // pixels load where paid visits land and conversions fire.
         $this->get('/liens/lien-waivers')
             ->assertSuccessful()
             ->assertSee('googletagmanager.com/gtag/js?id=G-MSVBK7VE6P', false)
             ->assertSee("gtag('config', 'AW-984288380')", false)
-            ->assertSee('redditstatic.com', false)
+            ->assertDontSee('redditstatic.com', false)
             ->assertDontSee('function gtag(){}', false);
+
+        $this->get('/lp/lien-waiver/tx')
+            ->assertSuccessful()
+            ->assertSee('googletagmanager.com/gtag/js?id=G-MSVBK7VE6P', false)
+            ->assertSee('redditstatic.com', false)
+            ->assertSee('bzrcdn.openai.com', false);
     });
 
     it('still leaves admin pages untagged in production', function () {

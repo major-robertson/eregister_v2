@@ -19,7 +19,9 @@
     $seoSection = fn (string $name, string $default = '') => trim(html_entity_decode($__env->yieldContent($name, $default), ENT_QUOTES));
     $seoTitle = $seoSection('title', config('app.name', 'eRegister'));
     $seoDescription = $seoSection('description');
-    $seoCanonical = $seoSection('canonical') ?: url()->current();
+    // Built from the configured app URL, not the request, so a copy served
+    // at /index.php/... or through a tunnel still points at the real page.
+    $seoCanonical = $seoSection('canonical') ?: \App\Support\Seo\Urls::absolute(request()->path());
     $seoImage = $seoSection('og_image') ?: asset('img/og/default.png');
     $seoType = $seoSection('og_type') ?: 'website';
     $seoNoindex = $__env->hasSection('noindex');
@@ -53,20 +55,36 @@
 <meta name="twitter:image" content="{{ $seoImage }}" />
 
 @unless ($seoNoindex)
-<x-seo.json-ld :data="[
-    '@context' => 'https://schema.org',
-    '@type' => 'Organization',
-    '@id' => url('/').'#organization',
-    'name' => 'eRegister',
-    'url' => url('/'),
-    'logo' => asset('img/logo/eregister-logo-dark.png'),
-    'contactPoint' => [
-        '@type' => 'ContactPoint',
-        'contactType' => 'customer support',
-        'url' => route('contact'),
-        'areaServed' => 'US',
-        'availableLanguage' => 'en',
-    ],
-]" />
+@php
+    // No email, telephone or legalName: the inbox stays off public pages and
+    // the legal name is not confirmed.
+    $seoAddress = config('company.address');
+    $seoOrganization = array_filter([
+        '@context' => 'https://schema.org',
+        '@type' => 'Organization',
+        '@id' => \App\Support\Seo\Urls::absolute('/').'#organization',
+        'name' => 'eRegister',
+        'url' => \App\Support\Seo\Urls::absolute('/'),
+        'logo' => asset('img/logo/eregister-logo-dark.png'),
+        'description' => 'eRegister prepares and files mechanics liens, lien waivers, sales tax registrations, resale certificates and business formations for U.S. businesses.',
+        'foundingDate' => (string) config('company.in_business_since'),
+        'address' => $seoAddress ? [
+            '@type' => 'PostalAddress',
+            'streetAddress' => $seoAddress['street'],
+            'addressLocality' => $seoAddress['locality'],
+            'addressRegion' => $seoAddress['region'],
+            'postalCode' => $seoAddress['postal_code'],
+            'addressCountry' => $seoAddress['country'],
+        ] : null,
+        'contactPoint' => [
+            '@type' => 'ContactPoint',
+            'contactType' => 'customer support',
+            'url' => \App\Support\Seo\Urls::absolute(route('contact', absolute: false)),
+            'areaServed' => 'US',
+            'availableLanguage' => 'en',
+        ],
+    ]);
+@endphp
+<x-seo.json-ld :data="$seoOrganization" />
 @endunless
 @stack('schema')

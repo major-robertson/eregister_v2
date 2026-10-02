@@ -96,12 +96,12 @@
                             class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
                             <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Foreign Qualification</h3>
-                            <p class="text-sm text-zinc-500">Expand to new states easily</p>
+                            <h3 class="font-bold text-zinc-900">Resale Certificates</h3>
+                            <p class="text-sm text-zinc-500">Buy inventory tax-free</p>
                         </div>
                     </div>
 
@@ -129,28 +129,28 @@
 {{-- Trust Bar --}}
 <section class="bg-zinc-900 py-6">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="flex flex-wrap items-center justify-center gap-x-12 gap-y-4">`
+        <div class="flex flex-wrap items-center justify-center gap-x-12 gap-y-4">
             <p class="text-sm font-medium text-zinc-400">Trusted by businesses of all sizes</p>
             <div class="hidden h-4 w-px bg-zinc-700 sm:block"></div>
             <div class="flex items-center gap-2">
                 <svg class="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
-                <span class="text-sm font-medium text-white">10,000+ Businesses</span>
+                <span class="text-sm font-medium text-white">{{ number_format(config('company.businesses_helped')) }}+ businesses helped</span>
             </div>
             <div class="flex items-center gap-2">
                 <svg class="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
-                <span class="text-sm font-medium text-white">256-bit SSL</span>
+                <span class="text-sm font-medium text-white">Secure SSL checkout</span>
             </div>
             <div class="flex items-center gap-2">
                 <svg class="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span class="text-sm font-medium text-white">24/7 Support</span>
+                <span class="text-sm font-medium text-white">In business since {{ config('company.in_business_since') }}</span>
             </div>
         </div>
     </div>
@@ -208,7 +208,7 @@
                         Fast processing
                     </li>
                 </ul>
-                <a href="{{ route('register') }}"
+                <a href="{{ route('sales-tax-registration') }}"
                     class="mt-8 inline-flex items-center gap-1 text-sm font-semibold text-blue-600 transition-colors hover:text-blue-700">
                     Get your permits
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -256,7 +256,7 @@
                         EIN assistance
                     </li>
                 </ul>
-                <a href="{{ route('register') }}"
+                <a href="{{ route('llc') }}"
                     class="mt-8 inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 transition-colors hover:text-indigo-700">
                     Start your LLC
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -266,7 +266,7 @@
                 </a>
             </div>
 
-            {{-- Use Tax Registration --}}
+            {{-- Resale Certificates --}}
             <div
                 class="group rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                 <div
@@ -276,10 +276,10 @@
                             d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
                 </div>
-                <h3 class="text-xl font-bold text-zinc-900">Use Tax Registration</h3>
+                <h3 class="text-xl font-bold text-zinc-900">Resale Certificates</h3>
                 <p class="mt-3 text-zinc-600">
-                    Stay compliant with use tax requirements. We help you understand and register for use tax
-                    obligations in applicable states.
+                    Buy inventory without paying sales tax. Get signed resale certificates on official
+                    state forms, ready to give your suppliers.
                 </p>
                 <ul class="mt-6 space-y-3">
                     <li class="flex items-center gap-3 text-sm text-zinc-600">
@@ -287,26 +287,26 @@
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        Compliance guidance
+                        Official state forms
                     </li>
                     <li class="flex items-center gap-3 text-sm text-zinc-600">
                         <svg class="h-5 w-5 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        State-specific requirements
+                        Signed and ready to send
                     </li>
                     <li class="flex items-center gap-3 text-sm text-zinc-600">
                         <svg class="h-5 w-5 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        Deadline tracking
+                        Unlimited certificates
                     </li>
                 </ul>
-                <a href="{{ route('register') }}"
+                <a href="{{ route('resale-certificates') }}"
                     class="mt-8 inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 transition-colors hover:text-emerald-700">
-                    Learn more
+                    Get resale certificates
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -314,20 +314,20 @@
                 </a>
             </div>
 
-            {{-- Foreign Qualification --}}
+            {{-- Lien Waivers --}}
             <div
                 class="group rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                 <div
                     class="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
                     <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                 </div>
-                <h3 class="text-xl font-bold text-zinc-900">Foreign Qualification</h3>
+                <h3 class="text-xl font-bold text-zinc-900">Lien Waivers</h3>
                 <p class="mt-3 text-zinc-600">
-                    Expanding to new states? We handle foreign qualification filings so your business can legally
-                    operate across state lines.
+                    Create lien waivers on the correct form for your state, then send them out for
+                    e-signature.
                 </p>
                 <ul class="mt-6 space-y-3">
                     <li class="flex items-center gap-3 text-sm text-zinc-600">
@@ -335,26 +335,26 @@
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        Certificate of good standing
+                        Conditional and unconditional
                     </li>
                     <li class="flex items-center gap-3 text-sm text-zinc-600">
                         <svg class="h-5 w-5 shrink-0 text-violet-600" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        Registered agent services
+                        Progress and final waivers
                     </li>
                     <li class="flex items-center gap-3 text-sm text-zinc-600">
                         <svg class="h-5 w-5 shrink-0 text-violet-600" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        Multi-state expansion
+                        E-signature
                     </li>
                 </ul>
-                <a href="{{ route('register') }}"
+                <a href="{{ route('liens.lien-waivers') }}"
                     class="mt-8 inline-flex items-center gap-1 text-sm font-semibold text-violet-600 transition-colors hover:text-violet-700">
-                    Expand your business
+                    Create a lien waiver
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -400,7 +400,7 @@
                         Compliance monitoring
                     </li>
                 </ul>
-                <a href="{{ route('register') }}"
+                <a href="{{ route('annual-reports') }}"
                     class="mt-8 inline-flex items-center gap-1 text-sm font-semibold text-amber-600 transition-colors hover:text-amber-700">
                     Stay compliant
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -545,9 +545,9 @@
                             </svg>
                         </div>
                         <div>
-                            <dt class="font-bold text-zinc-900">10x Faster Than DIY</dt>
-                            <dd class="mt-1 text-zinc-600">What takes hours of research and form-filling takes minutes
-                                with eRegister.</dd>
+                            <dt class="font-bold text-zinc-900">All 50 States, One Form</dt>
+                            <dd class="mt-1 text-zinc-600">Answer our questions once. We use your answers for every
+                                state you pick.</dd>
                         </div>
                     </div>
                     <div class="flex gap-4">
@@ -559,9 +559,9 @@
                             </svg>
                         </div>
                         <div>
-                            <dt class="font-bold text-zinc-900">99.9% Accuracy Rate</dt>
-                            <dd class="mt-1 text-zinc-600">Built-in validation catches errors before submission. No more
-                                rejected applications.</dd>
+                            <dt class="font-bold text-zinc-900">Rated {{ number_format(config('company.google_reviews.rating'), 1) }} on Google</dt>
+                            <dd class="mt-1 text-zinc-600">Customers of our lien filing service rate us
+                                {{ number_format(config('company.google_reviews.rating'), 1) }} out of 5.</dd>
                         </div>
                     </div>
                     <div class="flex gap-4">
@@ -678,110 +678,27 @@
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-2 gap-8 lg:grid-cols-4">
             <div class="text-center">
+                <div class="text-4xl font-bold text-white sm:text-5xl">{{ number_format(config('company.businesses_helped')) }}+</div>
+                <div class="mt-2 text-zinc-400">Businesses helped</div>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl font-bold text-white sm:text-5xl">{{ number_format(config('company.google_reviews.rating'), 1) }}</div>
+                <div class="mt-2 text-zinc-400">Rating on Google</div>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl font-bold text-white sm:text-5xl">{{ config('company.in_business_since') }}</div>
+                <div class="mt-2 text-zinc-400">In business since</div>
+            </div>
+            <div class="text-center">
                 <div class="text-4xl font-bold text-white sm:text-5xl">50</div>
-                <div class="mt-2 text-zinc-400">States Covered</div>
-            </div>
-            <div class="text-center">
-                <div class="text-4xl font-bold text-white sm:text-5xl">10K+</div>
-                <div class="mt-2 text-zinc-400">Businesses Served</div>
-            </div>
-            <div class="text-center">
-                <div class="text-4xl font-bold text-white sm:text-5xl">99.9%</div>
-                <div class="mt-2 text-zinc-400">Approval Rate</div>
-            </div>
-            <div class="text-center">
-                <div class="text-4xl font-bold text-white sm:text-5xl">24hr</div>
-                <div class="mt-2 text-zinc-400">Avg. Processing</div>
+                <div class="mt-2 text-zinc-400">States covered</div>
             </div>
         </div>
     </div>
 </section>
 
-{{-- Testimonials from landing1 --}}
-<section class="bg-white py-24">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="mx-auto max-w-2xl text-center">
-            <p class="text-sm font-semibold uppercase tracking-widest text-blue-600">Testimonials</p>
-            <h2 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-                Loved by Business Owners
-            </h2>
-        </div>
-
-        <div class="mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
-            <div class="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-                <div class="flex gap-1 text-amber-400">
-                    @for ($i = 0; $i < 5; $i++) <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path
-                            d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                        </svg>
-                        @endfor
-                </div>
-                <p class="mt-4 text-zinc-600">
-                    "eRegister saved us weeks of work. We needed sales tax permits in 12 states and they handled
-                    everything. The multi-state form was a game changer."
-                </p>
-                <div class="mt-6 flex items-center gap-3">
-                    <div
-                        class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-600">
-                        JM
-                    </div>
-                    <div>
-                        <div class="font-semibold text-zinc-900">Jessica Martinez</div>
-                        <div class="text-sm text-zinc-500">E-commerce Founder</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-                <div class="flex gap-1 text-amber-400">
-                    @for ($i = 0; $i < 5; $i++) <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path
-                            d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                        </svg>
-                        @endfor
-                </div>
-                <p class="mt-4 text-zinc-600">
-                    "Formed my LLC in Delaware and registered in 3 other states. The process was seamless and their
-                    support team answered all my questions quickly."
-                </p>
-                <div class="mt-6 flex items-center gap-3">
-                    <div
-                        class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-600">
-                        DK
-                    </div>
-                    <div>
-                        <div class="font-semibold text-zinc-900">David Kim</div>
-                        <div class="text-sm text-zinc-500">SaaS Startup CEO</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-                <div class="flex gap-1 text-amber-400">
-                    @for ($i = 0; $i < 5; $i++) <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path
-                            d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                        </svg>
-                        @endfor
-                </div>
-                <p class="mt-4 text-zinc-600">
-                    "Finally, a registration service that doesn't nickel and dime you. Transparent pricing, fast
-                    service, and everything was done right the first time."
-                </p>
-                <div class="mt-6 flex items-center gap-3">
-                    <div
-                        class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-600">
-                        SB
-                    </div>
-                    <div>
-                        <div class="font-semibold text-zinc-900">Sarah Brooks</div>
-                        <div class="text-sm text-zinc-500">Retail Business Owner</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+{{-- Real Google reviews (config/company.php). They are about the lien filing service. --}}
+<x-reviews.google-cards heading="What contractors say about our lien filing service" />
 
 {{-- FAQ Section from landing1 --}}
 <section id="faq" class="bg-zinc-50 py-24">
@@ -807,10 +724,13 @@
                     </svg>
                 </summary>
                 <div class="px-6 pb-5 text-zinc-600">
-                    A sales tax permit (also called a seller's permit or resale certificate) allows you to collect sales
-                    tax from customers. You need one in each state where you have "nexus" – typically where you have
-                    physical presence, employees, or significant sales volume. If you sell products online and ship to
-                    multiple states, you likely need permits in those states.
+                    A sales tax permit (also called a seller's permit) lets you collect sales tax from customers. You
+                    need one in each state where you have "nexus" – typically where you have physical presence,
+                    employees, or significant sales volume. If you sell products online and ship to multiple states,
+                    you likely need permits in those states. A
+                    <a href="{{ route('resale-certificates') }}" class="font-semibold text-blue-600 hover:text-blue-700">resale certificate</a>
+                    is a separate document. You give it to your suppliers so you can buy inventory without paying sales
+                    tax.
                 </div>
             </details>
 
@@ -889,9 +809,8 @@
                     </svg>
                 </summary>
                 <div class="px-6 pb-5 text-zinc-600">
-                    Absolutely. While rejections are rare (less than 1%), if it happens, we work with you to correct the
-                    issue and resubmit at no additional service charge. Our team reviews every application before
-                    submission to catch potential problems, which is why our approval rate is so high.
+                    Yes. If a state rejects your application, we work with you to fix the issue and resubmit it at no
+                    additional service charge.
                 </div>
             </details>
         </div>
@@ -917,8 +836,8 @@
                     Ready to Simplify Your Business Registrations?
                 </h2>
                 <p class="mt-6 text-lg text-zinc-300">
-                    Join thousands of businesses that trust eRegister for their compliance needs. Get started today – no
-                    credit card required.
+                    We have helped more than {{ number_format(config('company.businesses_helped')) }} businesses
+                    register. Get started today – no credit card required.
                 </p>
                 <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
                     <a href="{{ route('register') }}"

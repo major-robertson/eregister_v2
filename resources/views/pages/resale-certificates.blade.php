@@ -540,7 +540,7 @@
             </p>
         </div>
         <ul class="mt-12 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-            @foreach (\Illuminate\Support\Facades\Cache::remember('seo.resale-states.v1', now()->addDay(), fn () => \App\Domains\ResaleCert\Seo\ResaleStatePage::availableStates()) as $stateCode => $stateName)
+            @foreach (\Illuminate\Support\Facades\Cache::remember(\App\Domains\ResaleCert\Seo\ResaleStatePage::statesCacheKey(), now()->addDay(), fn () => \App\Domains\ResaleCert\Seo\ResaleStatePage::availableStates()) as $stateCode => $stateName)
             <li>
                 <a href="{{ route('resale-certificates.state', ['state' => \App\Support\Seo\States::slug($stateName)]) }}" class="flex items-center justify-between rounded-lg border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900">
                     {{ $stateName }}

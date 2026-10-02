@@ -86,7 +86,7 @@
                 @if ($hasStatutoryForm)
                 {{ $stateName }} prescribes the waiver language by statute; we generate the exact text of {{ $statute }}, filled in with your project details.
                 @else
-                Four house forms cover every payment on a {{ $stateName }} project: conditional or unconditional, progress or final.
+                Four house forms cover every payment on {{ $article }} {{ $stateName }} project: conditional or unconditional, progress or final.
                 @endif
             </p>
         </div>

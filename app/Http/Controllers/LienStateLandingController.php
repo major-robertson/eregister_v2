@@ -25,12 +25,12 @@ class LienStateLandingController extends Controller
             return redirect()->route('liens.state', ['state' => $slug], 301);
         }
 
-        $page = Cache::remember("seo.lien-state.v1.{$code}", now()->addDay(), fn () => LienStatePage::forCode($code));
+        $page = Cache::remember(LienStatePage::cacheKey($code), now()->addDay(), fn () => LienStatePage::forCode($code));
         abort_unless($page, 404);
 
         return view('pages.liens.lien-state', [
             'page' => $page,
-            'nearbyStates' => States::neighbours($code),
+            'nearbyStates' => States::bordering($code),
         ]);
     }
 }

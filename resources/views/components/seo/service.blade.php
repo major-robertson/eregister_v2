@@ -9,13 +9,18 @@
 {{-- Service (+ Offer when a price is known) JSON-LD for a product page.
      Pushed to the schema stack so it lands in <head> next to the other tags. --}}
 @php
+    // Static attributes arrive HTML-escaped ("&amp;"); decode once so the
+    // JSON never carries entities. json-ld.blade.php re-escapes "<".
+    $name = html_entity_decode($name, ENT_QUOTES);
+    $description = html_entity_decode($description, ENT_QUOTES);
+
     $schema = [
         '@context' => 'https://schema.org',
         '@type' => 'Service',
         'name' => $name,
         'description' => $description,
-        'url' => $url ?? url()->current(),
-        'provider' => ['@id' => url('/').'#organization'],
+        'url' => $url ?? \App\Support\Seo\Urls::absolute(request()->path()),
+        'provider' => ['@id' => \App\Support\Seo\Urls::absolute('/').'#organization'],
         'areaServed' => ['@type' => 'Country', 'name' => 'United States'],
         'serviceType' => $category ?? $name,
     ];
@@ -26,7 +31,7 @@
             'price' => number_format((float) $price, 2, '.', ''),
             'priceCurrency' => 'USD',
             'availability' => 'https://schema.org/InStock',
-            'url' => $url ?? url()->current(),
+            'url' => $url ?? \App\Support\Seo\Urls::absolute(request()->path()),
         ];
         if ($priceUnit) {
             $offer['priceSpecification'] = [

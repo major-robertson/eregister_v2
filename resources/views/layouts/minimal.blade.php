@@ -2,6 +2,8 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         @include('partials.head')
+        {{-- Sign-in, account and portal screens are never search results. --}}
+        <meta name="robots" content="noindex" />
     </head>
     <body class="min-h-screen bg-white antialiased">
         <div class="flex min-h-screen flex-col">

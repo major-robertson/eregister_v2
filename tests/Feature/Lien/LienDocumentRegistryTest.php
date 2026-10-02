@@ -2,6 +2,7 @@
 
 use App\Domains\Business\Models\Business;
 use App\Domains\Lien\Documents\LienCountyKey;
+use App\Domains\Lien\Documents\LienDocumentGenerator;
 use App\Domains\Lien\Documents\LienDocumentRegistry;
 use App\Domains\Lien\Documents\LienDocumentResolver;
 use App\Domains\Lien\Documents\LienDocumentUnavailable;
@@ -10,6 +11,7 @@ use App\Domains\Lien\Models\LienDocumentType;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Waivers\WaiverStateRegistry;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(fn () => LienDocumentRegistry::flush());
 afterEach(fn () => LienDocumentRegistry::flush());
@@ -103,7 +105,44 @@ describe('registry', function () {
         expect($nm['kinds']['prelim_notice']['service']['recipients'])->toBe(['owner', 'gc']);
         expect($nm['kinds']['prelim_notice']['execution']['notary'])->toBeFalse();
         expect($nm['kinds']['mechanics_lien']['body'])->toBe('documents.lien.instruments.bodies.generic-lien');
-        expect($nm['recording']['filing_office']['label'])->toBe('County recorder');
+        expect($nm['recording']['filing_office']['label'])->toBe('County clerk');
+    });
+
+    it('names the researched filing office for the states built from the lien state rules', function () {
+        $offices = [
+            'DE' => 'Prothonotary',
+            'KY' => 'County clerk',
+            'ME' => 'Registry of deeds',
+            'MA' => 'Registry of deeds',
+            'MS' => 'Chancery clerk',
+            'NM' => 'County clerk',
+            'OK' => 'County clerk',
+            'RI' => 'Town or city clerk',
+            'WV' => 'County clerk',
+            'WI' => 'Clerk of court',
+            'WY' => 'County clerk',
+        ];
+
+        foreach ($offices as $state => $label) {
+            expect(is_file(database_path('data/lien_documents/'.strtolower($state).'.php')))->toBeFalse("{$state} has its own lien_documents file");
+            expect(LienDocumentRegistry::for($state)['recording']['filing_office']['label'])->toBe($label, "{$state} filing office");
+        }
+    });
+
+    it('directs the researched office to cancel the lien in a generated release', function () {
+        Storage::fake('s3');
+
+        $filing = lienFixtureFiling(lienFixtureProject('MS', 'Hinds'), 'lien_release', [
+            'document_details_json' => ['original_lien' => [
+                'recording_reference' => 'Instrument 2026-001234',
+                'recorded_at' => '2026-07-22',
+                'county' => 'Hinds',
+            ]],
+        ]);
+
+        $text = lienFixtureText(app(LienDocumentGenerator::class)->render($filing));
+
+        expect($text)->toContain('authorizes and directs the Chancery clerk to cancel it of record.');
     });
 
     it('marks the attorney-referral states', function () {

@@ -1,6 +1,8 @@
 @extends('layouts.landing')
 
 @section('title', 'eRegister - Business Registrations Made Simple')
+{{-- An old copy of the home page: kept reachable, kept out of search. --}}
+@section('noindex', 'true')
 
 @section('meta')
     <meta name="description" content="eRegister simplifies business registrations. Apply for sales tax permits, form LLCs, and handle compliance across multiple states from one platform.">

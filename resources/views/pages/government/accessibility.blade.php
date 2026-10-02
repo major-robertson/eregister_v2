@@ -1,6 +1,6 @@
 @extends('layouts.government')
 
-@section('title', 'Government Website Accessibility | WCAG 2.2 AA & Section 508 Compliance')
+@section('title', 'Government Website Accessibility | WCAG 2.2 AA & Section 508')
 
 @section('meta')
 <meta name="description"

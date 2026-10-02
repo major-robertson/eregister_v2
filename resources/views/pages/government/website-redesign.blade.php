@@ -121,7 +121,7 @@
             </h2>
         </div>
         <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            @foreach ([['stat' => '< 2s', 'label' => 'Page load on 4G mobile'], ['stat' => '100%', 'label' => 'WCAG 2.2 AA conformance'], ['stat' => '50%+', 'label' => 'Reduction in support calls'], ['stat' => '99.9%', 'label' => 'Uptime under SLA']] as $stat)
+            @foreach ([['stat' => 'Mobile-first', 'label' => 'Pages built to load fast on phones'], ['stat' => 'WCAG 2.2 AA', 'label' => 'Accessibility target'], ['stat' => 'Self-service', 'label' => 'Residents find answers without calling'], ['stat' => 'SLA', 'label' => 'Uptime commitment in writing']] as $stat)
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center">
                     <p class="text-3xl font-bold text-blue-700">{{ $stat['stat'] }}</p>
                     <p class="mt-2 text-sm text-slate-600">{{ $stat['label'] }}</p>

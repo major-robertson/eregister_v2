@@ -16,7 +16,7 @@ class ResaleStateLandingController extends Controller
 {
     public function show(string $state): View|RedirectResponse
     {
-        $states = Cache::remember('seo.resale-states.v1', now()->addDay(), fn () => ResaleStatePage::availableStates());
+        $states = Cache::remember(ResaleStatePage::statesCacheKey(), now()->addDay(), fn () => ResaleStatePage::availableStates());
 
         $code = States::codeFromSlug($state, $states);
         abort_unless($code, 404);
@@ -26,12 +26,12 @@ class ResaleStateLandingController extends Controller
             return redirect()->route('resale-certificates.state', ['state' => $slug], 301);
         }
 
-        $page = Cache::remember("seo.resale-state.v1.{$code}", now()->addDay(), fn () => ResaleStatePage::forCode($code));
+        $page = Cache::remember(ResaleStatePage::cacheKey($code), now()->addDay(), fn () => ResaleStatePage::forCode($code));
         abort_unless($page, 404);
 
         return view('pages.resale-state', [
             'page' => $page,
-            'nearbyStates' => States::neighbours($code, 4, $states),
+            'nearbyStates' => States::bordering($code, 6, $states),
         ]);
     }
 }

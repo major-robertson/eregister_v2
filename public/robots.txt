@@ -10,12 +10,9 @@ Disallow: /go/
 Disallow: /r/
 Disallow: /api/
 Disallow: /storage/
-Disallow: /landing2
-Disallow: /styleguide
-Disallow: /clay-demo
-Disallow: /mdcps-demo
-Disallow: /pcc-demo
-Disallow: /government/florida-eog-demo-1
-Disallow: /government/florida-eog-demo-2
+
+# /landing2, the sales demos and the ads landing pages carry a meta noindex.
+# They are deliberately NOT disallowed here: a robots.txt block would stop
+# Google from ever reading that tag.
 
 Sitemap: https://eregister.com/sitemap.xml

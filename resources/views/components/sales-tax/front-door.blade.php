@@ -15,18 +15,19 @@
     // states may still need registration in others, so nothing here turns a
     // visitor away because of a permit they already hold.
     $stateName = $state ? config("states.{$state}") : null;
+    $article = $stateName ? \App\Support\Seo\Text::article($stateName) : 'a';
     $q = array_filter(['state' => $state, 'intent' => $intent]);
     $registerUrl = route('register', ['product' => 'sales-tax'] + $q);
     $certificateUrl = route('register', ['product' => 'resale-cert'] + array_filter(['state' => $state]));
     $doors = [
         'sales-tax' => [
-            'title' => $stateName ? "Register for a {$stateName} ".($term ?? 'sales tax permit') : 'Register for a sales tax permit',
+            'title' => $stateName ? "Register for {$article} {$stateName} ".($term ?? 'sales tax permit') : 'Register for a sales tax permit',
             'text' => "One state or several. We prepare and file the registration and send you the number. {$permitPrice} per state.",
             'button' => 'Start my registration',
             'href' => $registerUrl,
         ],
         'resale-cert' => [
-            'title' => $stateName ? "Create a {$stateName} resale certificate" : 'Create a resale certificate',
+            'title' => $stateName ? "Create {$article} {$stateName} resale certificate" : 'Create a resale certificate',
             'text' => "Already registered? Generate signed, vendor-ready certificates for every state you buy in. {$generatorPrice} a year, unlimited.",
             'button' => 'Create my certificate',
             'href' => $certificateUrl,

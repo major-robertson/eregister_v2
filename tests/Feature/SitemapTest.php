@@ -63,3 +63,29 @@ it('includes the mechanics lien and resale certificate state pages', function ()
         expect($locs)->toContain(url('/resale-certificates/'.States::slug($name)));
     }
 });
+
+it('is served publicly cacheable without session cookies', function () {
+    $response = $this->get('/sitemap.xml')->assertOk();
+
+    expect($response->headers->getCookies())->toBeEmpty()
+        ->and($response->headers->has('Set-Cookie'))->toBeFalse()
+        ->and($response->headers->get('Cache-Control'))->toContain('public')
+        ->toContain('max-age=3600')
+        ->not->toContain('private');
+});
+
+it('fails loudly when a lastmod source file is missing', function () {
+    $method = new ReflectionMethod(SitemapController::class, 'fileModified');
+
+    expect(fn () => $method->invoke(null, base_path('does-not-exist.json')))
+        ->toThrow(RuntimeException::class, 'does-not-exist.json');
+});
+
+it('lists a lien state page only for states with a rule row', function () {
+    App\Domains\Lien\Models\LienStateRule::whereKey('WY')->delete();
+
+    $locs = array_column(SitemapController::urls(), 'loc');
+
+    expect($locs)->not->toContain(url('/liens/wyoming'))
+        ->toContain(url('/liens/texas'));
+});

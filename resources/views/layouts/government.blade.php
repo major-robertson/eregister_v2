@@ -303,8 +303,13 @@
 
             <div class="mt-12 border-t border-slate-800 pt-8">
                 <div class="flex flex-col items-center justify-between gap-4 sm:flex-row">
-                    <p class="text-sm text-slate-500">&copy; {{ date('Y') }} {{ config('app.name', 'eRegister') }}.
-                        All rights reserved.</p>
+                    <div>
+                        <p class="text-sm text-slate-500">&copy; {{ date('Y') }} {{ config('app.name', 'eRegister') }}.
+                            All rights reserved.</p>
+                        @if ($footerAddress = config('company.address'))
+                            <p class="mt-1 text-sm text-slate-500">{{ $footerAddress['street'] }}, {{ $footerAddress['locality'] }}, {{ $footerAddress['region'] }} {{ $footerAddress['postal_code'] }}</p>
+                        @endif
+                    </div>
                     <p class="text-xs text-slate-500">
                         Not a government agency. eRegister is a private commercial vendor of digital services.
                     </p>

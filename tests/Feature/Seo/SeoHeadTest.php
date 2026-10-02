@@ -1,11 +1,13 @@
 <?php
 
+use App\Support\Seo\Urls;
+
 it('emits canonical, description, open graph, and organization schema on marketing pages', function (string $uri) {
     $response = $this->get($uri)->assertOk();
     $html = $response->getContent();
 
     $response
-        ->assertSee('<link rel="canonical" href="'.url($uri === '/' ? '' : $uri).'" />', escape: false)
+        ->assertSee('<link rel="canonical" href="'.Urls::absolute($uri).'" />', escape: false)
         ->assertSee('<meta name="description" content="', escape: false)
         ->assertSee('property="og:title"', escape: false)
         ->assertSee('property="og:image" content="'.asset('img/og/default.png').'"', escape: false)
@@ -57,3 +59,54 @@ it('emits only well-formed JSON-LD blocks', function (string $uri) {
     'resale-state' => '/resale-certificates/florida',
     'government-cms' => '/government/cms',
 ]);
+
+it('gives the home page a canonical with a trailing slash, matching the sitemap root', function () {
+    $this->get('/')
+        ->assertOk()
+        ->assertSee('<link rel="canonical" href="http://localhost/" />', escape: false);
+
+    expect(array_column(App\Http\Controllers\SitemapController::urls(), 'loc'))->toContain('http://localhost/');
+});
+
+it('canonicalises a copy served through /index.php to the real url', function () {
+    // What nginx hands PHP for "/index.php/llc": the script name is the
+    // front controller and the route sees "/llc".
+    $this->withServerVariables([
+        'SCRIPT_NAME' => '/index.php',
+        'SCRIPT_FILENAME' => public_path('index.php'),
+    ])->get('/index.php/llc')
+        ->assertOk()
+        ->assertSee('<link rel="canonical" href="http://localhost/llc" />', escape: false)
+        ->assertSee('property="og:url" content="http://localhost/llc"', escape: false)
+        ->assertSee('"@id":"http://localhost/#organization"', escape: false);
+    // Ordinary links on that copy still carry /index.php; the nginx redirect
+    // (a Forge change) is what removes the copy itself.
+});
+
+it('builds the canonical and organization ids from the configured app url', function () {
+    config(['app.url' => 'https://example.test']);
+
+    $this->get('/llc')
+        ->assertOk()
+        ->assertSee('<link rel="canonical" href="'.Urls::absolute('/llc').'" />', escape: false)
+        ->assertSee('<link rel="canonical" href="https://example.test/llc" />', escape: false)
+        ->assertSee('"@id":"https://example.test/#organization"', escape: false);
+});
+
+it('describes the organization with its address and founding year, and no email or phone', function () {
+    $html = $this->get('/llc')->assertOk()->getContent();
+
+    preg_match_all('/<script type="application\/ld\+json">(.*?)<\/script>/s', $html, $blocks);
+    $organization = collect($blocks[1])
+        ->map(fn ($json) => json_decode($json, true))
+        ->firstWhere('@type', 'Organization');
+
+    expect($organization)->not->toBeNull()
+        ->and($organization['foundingDate'])->toBe('2013')
+        ->and($organization['address']['@type'])->toBe('PostalAddress')
+        ->and($organization['address']['addressLocality'])->toBe('Louisville')
+        ->and($organization['description'])->toBeString()
+        ->and($organization)->not->toHaveKey('email')
+        ->not->toHaveKey('telephone')
+        ->not->toHaveKey('legalName');
+});

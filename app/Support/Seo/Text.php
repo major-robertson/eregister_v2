@@ -28,6 +28,15 @@ final class Text
             : $repaired;
     }
 
+    /**
+     * Indefinite article for a state name: "an Alabama lien", "a Utah lien".
+     * Utah and other names that start with a consonant sound keep "a".
+     */
+    public static function article(string $name): string
+    {
+        return preg_match('/^(?:[AEIO]|U(?!t|n[iy]|s))/i', trim($name)) ? 'an' : 'a';
+    }
+
     /** Ordinal words for small numbers: 1 => "1st", 3 => "3rd". */
     public static function ordinal(int $n): string
     {

@@ -1,6 +1,7 @@
 @extends('layouts.landing')
 
-@section('title', 'Contact Us - ' . config('app.name', 'eRegister'))
+@section('title', 'Contact Us | eRegister')
+@section('description', 'Questions about a mechanics lien, lien waiver, sales tax registration, resale certificate or LLC? Send us a message and we will reply by email.')
 
 @section('content')
 <div class="bg-white py-16 lg:py-24">
@@ -17,6 +18,13 @@
                 <livewire:contact-form />
             </div>
         </div>
+
+        @if ($address = config('company.address'))
+            <div class="mx-auto mt-12 max-w-lg text-center text-zinc-600">
+                <p class="font-bold text-zinc-900">{{ config('app.name', 'eRegister') }}</p>
+                <p>{{ $address['street'] }}, {{ $address['locality'] }}, {{ $address['region'] }} {{ $address['postal_code'] }}</p>
+            </div>
+        @endif
 
     </div>
 </div>

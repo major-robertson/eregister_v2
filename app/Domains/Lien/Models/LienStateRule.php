@@ -52,6 +52,7 @@ class LienStateRule extends Model
         'statute_references',
         'statute_url',
         'notes',
+        'public_notes',
         'data_source',
     ];
 

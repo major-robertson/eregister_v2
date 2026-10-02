@@ -44,7 +44,7 @@
             </h2>
         </div>
         <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            @foreach ([['stat' => '99.9%', 'label' => 'Uptime SLA'], ['stat' => '< 15min', 'label' => 'Incident response'], ['stat' => 'Daily', 'label' => 'Encrypted backups'], ['stat' => 'U.S.', 'label' => 'Data residency']] as $stat)
+            @foreach ([['stat' => 'SLA', 'label' => 'Uptime commitment in every contract'], ['stat' => 'On call', 'label' => 'Incident response'], ['stat' => 'Daily', 'label' => 'Encrypted backups'], ['stat' => 'U.S.', 'label' => 'Data residency']] as $stat)
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center">
                     <p class="text-3xl font-bold text-blue-700">{{ $stat['stat'] }}</p>
                     <p class="mt-2 text-sm text-slate-600">{{ $stat['label'] }}</p>
@@ -65,7 +65,7 @@
         </div>
 
         <div class="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            @foreach ([['title' => 'Hardened cloud infrastructure', 'body' => 'Built on FedRAMP-aligned U.S. cloud regions with private networking and encryption at rest and in transit.'], ['title' => '24/7 monitoring & alerting', 'body' => 'Synthetic uptime checks, error-rate tracking, and on-call rotation. We see issues before residents do.'], ['title' => 'Automated patching', 'body' => 'OS, runtime, and dependency security patches applied on a defined cadence with rollback safety.'], ['title' => 'Daily encrypted backups', 'body' => 'Off-site, encrypted backups with point-in-time recovery and tested restore procedures.'], ['title' => 'DDoS &amp; WAF protection', 'body' => 'Web application firewall and DDoS mitigation in front of every public endpoint.'], ['title' => 'Audit-ready logging', 'body' => 'Centralized logs retained per your records-management policy, available for FOIA or audit requests.']] as $item)
+            @foreach ([['title' => 'Hardened cloud infrastructure', 'body' => 'Built on FedRAMP-aligned U.S. cloud regions with private networking and encryption at rest and in transit.'], ['title' => 'Monitoring & alerting', 'body' => 'Synthetic uptime checks, error-rate tracking, and on-call rotation. We see issues before residents do.'], ['title' => 'Automated patching', 'body' => 'OS, runtime, and dependency security patches applied on a defined cadence with rollback safety.'], ['title' => 'Daily encrypted backups', 'body' => 'Off-site, encrypted backups with point-in-time recovery and tested restore procedures.'], ['title' => 'DDoS & WAF protection', 'body' => 'Web application firewall and DDoS mitigation in front of every public endpoint.'], ['title' => 'Audit-ready logging', 'body' => 'Centralized logs retained per your records-management policy, available for FOIA or audit requests.']] as $item)
                 <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                     <div
                         class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-100">

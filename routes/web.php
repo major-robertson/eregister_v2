@@ -35,7 +35,15 @@ Route::get('/go/t/{token}', [MarketingLandingController::class, 'tokenLanding'])
 Route::get('/go/{slug}', [MarketingLandingController::class, 'slugLanding'])
     ->name('marketing.landing.slug');
 
-Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+// Public and cacheable: no session, so no Set-Cookie and no "private" Cache-Control.
+Route::get('/sitemap.xml', SitemapController::class)
+    ->withoutMiddleware([
+        \Illuminate\Session\Middleware\StartSession::class,
+        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+        \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+        \App\Http\Middleware\TrackSignupAttribution::class,
+    ])
+    ->name('sitemap');
 
 Route::get('/', function () {
     return view('landing');

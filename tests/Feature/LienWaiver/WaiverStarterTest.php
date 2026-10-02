@@ -124,7 +124,7 @@ describe('ads landing page', function () {
             ->assertSee('on Google')
             // Seven is too few to brag about, so the count stays off the page.
             ->assertDontSee('7 reviews')
-            ->assertSee('In business since 2017')
+            ->assertSee('In business since '.config('company.in_business_since'))
             ->assertSee('href="#reviews"', false)
             ->assertSee('What contractors say about eRegister')
             ->assertSee('Everything was straightforward, communication was excellent')
@@ -151,7 +151,7 @@ describe('ads landing page', function () {
         $texas = $this->get('/lp/lien-waiver/tx')->assertSuccessful();
         $texas->assertSee('Not in Texas.')
             ->assertSee('Who is eRegister?')
-            ->assertSee('in business since 2017')
+            ->assertSee('in business since '.config('company.in_business_since'))
             ->assertSee('Does the person I send a waiver to need an account to sign it?');
         expect(substr_count($texas->getContent(), '<details'))->toBe(7);
 

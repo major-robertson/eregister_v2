@@ -57,12 +57,12 @@
         <div class="mx-auto max-w-3xl text-center">
             <p class="text-sm font-semibold uppercase tracking-wider text-blue-700">Common Systems</p>
             <h2 class="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-                Systems we&rsquo;ve integrated
+                Systems we integrate with
             </h2>
         </div>
 
         <div class="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            @foreach ([['title' => 'Permitting &amp; licensing', 'body' => 'Tyler EnerGov, Accela, OpenGov Permitting, and custom legacy systems.'], ['title' => 'Tax &amp; revenue', 'body' => 'Tyler Munis, CentralSquare, Springbrook, and state tax systems.'], ['title' => 'GIS', 'body' => 'Esri ArcGIS Online, ArcGIS Enterprise, and OpenStreetMap-based stacks.'], ['title' => 'Payment processors', 'body' => 'Stripe, Authorize.net, Heartland, NIC, GovOS, Point &amp; Pay, and PayGov.'], ['title' => 'Identity &amp; SSO', 'body' => 'Okta, Microsoft Entra ID, Google Workspace, Login.gov, and state identity providers.'], ['title' => 'Records &amp; documents', 'body' => 'OnBase, Laserfiche, SharePoint, and standalone document stores.'], ['title' => 'CRM &amp; case management', 'body' => 'Salesforce Public Sector, Microsoft Dynamics 365, and home-grown systems.'], ['title' => 'Financial &amp; ERP', 'body' => 'Oracle, SAP, Workday, and mid-market public-sector ERP suites.'], ['title' => 'Legacy &amp; mainframe', 'body' => 'Yes, even those. SOAP, fixed-width files, scheduled SFTP &mdash; we&rsquo;ve seen it all.']] as $system)
+            @foreach ([['title' => 'Permitting &amp; licensing', 'body' => 'Tyler EnerGov, Accela, OpenGov Permitting, and custom legacy systems.'], ['title' => 'Tax &amp; revenue', 'body' => 'Tyler Munis, CentralSquare, Springbrook, and state tax systems.'], ['title' => 'GIS', 'body' => 'Esri ArcGIS Online, ArcGIS Enterprise, and OpenStreetMap-based stacks.'], ['title' => 'Payment processors', 'body' => 'Stripe, Authorize.net, Heartland, NIC, GovOS, Point &amp; Pay, and PayGov.'], ['title' => 'Identity &amp; SSO', 'body' => 'Okta, Microsoft Entra ID, Google Workspace, Login.gov, and state identity providers.'], ['title' => 'Records &amp; documents', 'body' => 'OnBase, Laserfiche, SharePoint, and standalone document stores.'], ['title' => 'CRM &amp; case management', 'body' => 'Salesforce Public Sector, Microsoft Dynamics 365, and home-grown systems.'], ['title' => 'Financial &amp; ERP', 'body' => 'Oracle, SAP, Workday, and mid-market public-sector ERP suites.'], ['title' => 'Legacy &amp; mainframe', 'body' => 'Yes, even those. SOAP, fixed-width files, scheduled SFTP &mdash; we can work with them.']] as $system)
                 <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                     <h3 class="text-lg font-semibold text-slate-900">{!! $system['title'] !!}</h3>
                     <p class="mt-2 text-sm text-slate-600">{!! $system['body'] !!}</p>
@@ -82,7 +82,7 @@
             </h2>
         </div>
         <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            @foreach ([['title' => 'API gateway', 'body' => 'A single, documented API gateway in front of your systems &mdash; with rate limiting, auth, and logging.'], ['title' => 'Async &amp; resilient', 'body' => 'Queued jobs and retry logic so a 30-second mainframe call doesn&rsquo;t freeze the resident&rsquo;s browser.'], ['title' => 'Observable', 'body' => 'Every integration call is logged and graphed. You see error rates and latency in real time.']] as $approach)
+            @foreach ([['title' => 'API gateway', 'body' => 'A single, documented API gateway in front of your systems &mdash; with rate limiting, auth, and logging.'], ['title' => 'Async & resilient', 'body' => 'Queued jobs and retry logic so a 30-second mainframe call doesn&rsquo;t freeze the resident&rsquo;s browser.'], ['title' => 'Observable', 'body' => 'Every integration call is logged and graphed. You see error rates and latency in real time.']] as $approach)
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-6">
                     <h3 class="text-lg font-semibold text-slate-900">{{ $approach['title'] }}</h3>
                     <p class="mt-2 text-sm text-slate-600">{!! $approach['body'] !!}</p>

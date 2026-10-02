@@ -117,14 +117,14 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
-                <span class="text-sm font-medium text-white">256-bit SSL</span>
+                <span class="text-sm font-medium text-white">Secure SSL checkout</span>
             </div>
             <div class="flex items-center gap-2">
                 <svg class="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span class="text-sm font-medium text-white">24/7 Support</span>
+                <span class="text-sm font-medium text-white">In business since {{ config('company.in_business_since') }}</span>
             </div>
         </div>
     </div>
@@ -379,70 +379,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</section>
-
-{{-- Why Choose eRegister --}}
-<section class="bg-white py-24">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="mx-auto max-w-2xl text-center">
-            <p class="text-sm font-semibold uppercase tracking-widest text-blue-600">Compare</p>
-            <h2 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
-                Why Choose eRegister?
-            </h2>
-            <p class="mt-4 text-lg text-zinc-600">
-                See how our all-inclusive package compares to typical LLC formation services.
-            </p>
-        </div>
-
-        <div class="mt-12 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg">
-            <table class="w-full">
-                <thead>
-                    <tr class="border-b border-zinc-200 bg-zinc-50">
-                        <th class="px-6 py-4 text-left text-sm font-semibold text-zinc-900">Feature</th>
-                        <th class="px-6 py-4 text-center text-sm font-semibold text-zinc-500">Others</th>
-                        <th class="px-6 py-4 text-center text-sm font-semibold text-blue-600">eRegister</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-zinc-100">
-                    <tr>
-                        <td class="px-6 py-4 text-sm text-zinc-900">LLC Formation & Filing</td>
-                        <td class="px-6 py-4 text-center text-zinc-500">$99-$299</td>
-                        <td class="px-6 py-4 text-center font-medium text-blue-600">Included</td>
-                    </tr>
-                    <tr class="bg-zinc-50/50">
-                        <td class="px-6 py-4 text-sm text-zinc-900">Registered Agent (1 year)</td>
-                        <td class="px-6 py-4 text-center text-zinc-500">$99-$199/yr</td>
-                        <td class="px-6 py-4 text-center font-medium text-blue-600">Included</td>
-                    </tr>
-                    <tr>
-                        <td class="px-6 py-4 text-sm text-zinc-900">Operating Agreement</td>
-                        <td class="px-6 py-4 text-center text-zinc-500">$30-$99</td>
-                        <td class="px-6 py-4 text-center font-medium text-blue-600">Included</td>
-                    </tr>
-                    <tr class="bg-zinc-50/50">
-                        <td class="px-6 py-4 text-sm text-zinc-900">EIN / Tax ID</td>
-                        <td class="px-6 py-4 text-center text-zinc-500">$50-$99</td>
-                        <td class="px-6 py-4 text-center font-medium text-blue-600">Included</td>
-                    </tr>
-                    <tr>
-                        <td class="px-6 py-4 text-sm text-zinc-900">Annual Report Filing</td>
-                        <td class="px-6 py-4 text-center text-zinc-500">$50-$150/yr</td>
-                        <td class="px-6 py-4 text-center font-medium text-blue-600">Included</td>
-                    </tr>
-                    <tr class="bg-zinc-50/50">
-                        <td class="px-6 py-4 text-sm text-zinc-900">Compliance Alerts</td>
-                        <td class="px-6 py-4 text-center text-zinc-500">$29-$99/yr</td>
-                        <td class="px-6 py-4 text-center font-medium text-blue-600">Included</td>
-                    </tr>
-                    <tr class="border-t-2 border-blue-200 bg-blue-50">
-                        <td class="px-6 py-4 text-sm font-semibold text-zinc-900">Total (first year)</td>
-                        <td class="px-6 py-4 text-center font-semibold text-zinc-500">$400-$900+</td>
-                        <td class="px-6 py-4 text-center text-xl font-bold text-blue-600">{{ $membershipPrice }}</td>
-                    </tr>
-                </tbody>
-            </table>
         </div>
     </div>
 </section>

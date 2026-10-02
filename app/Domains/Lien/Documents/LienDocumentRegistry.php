@@ -431,6 +431,12 @@ class LienDocumentRegistry
             'circuit_clerk' => 'Clerk of the circuit court',
             'register_of_deeds' => 'Register of deeds',
             'town_clerk' => 'Town or city clerk',
+            'county_clerk' => 'County clerk',
+            'clerk_of_court' => 'Clerk of court',
+            'superior_court_clerk' => 'Clerk of the superior court',
+            'chancery_clerk' => 'Chancery clerk',
+            'registry_of_deeds' => 'Registry of deeds',
+            'prothonotary' => 'Prothonotary',
             null, '' => 'County recorder',
             default => $location,
         };

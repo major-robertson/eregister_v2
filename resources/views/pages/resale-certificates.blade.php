@@ -445,7 +445,8 @@
                         All applicable states: every state that has a sales tax, plus Washington,
                         D.C., along with the MTC and SST uniform multi-state certificates. Delaware,
                         Montana, New Hampshire, and Oregon have no state sales tax, so no resale
-                        certificate is needed there.
+                        certificate is needed there. Their state pages below explain what to give
+                        suppliers in other states.
                     </x-accordion.content>
                 </x-accordion.item>
 
@@ -554,7 +555,7 @@
             <li>
                 <a href="{{ route('resale-certificates.state', ['state' => \App\Support\Seo\States::slug($stateName)]) }}" class="flex items-center justify-between rounded-lg border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900">
                     {{ $stateName }}
-                    <span class="text-xs text-zinc-500">{{ $stateCode }}</span>
+                    <span class="text-xs text-zinc-500">{{ \App\Domains\ResaleCert\Seo\ResaleStatePage::isNoSalesTaxState($stateCode) ? 'No sales tax' : $stateCode }}</span>
                 </a>
             </li>
             @endforeach

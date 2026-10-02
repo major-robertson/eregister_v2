@@ -1,11 +1,7 @@
 @extends('layouts.landing')
 
-@section('title', 'eRegister - Business Registrations Made Simple')
-
-@section('meta')
-<meta name="description"
-    content="eRegister simplifies business formation, compliance, and payment protection. Form LLCs, register for sales tax, file mechanics liens, and manage compliance across all 50 states.">
-@endsection
+@section('title', 'LLC Formation, Sales Tax Registration & Liens | eRegister')
+@section('description', 'Form an LLC, register for sales tax, generate resale certificates, and file mechanics liens online in all 50 states. Flat fees, no government runaround.')
 
 @section('content')
 {{-- Hero Section from landing2 (modified) --}}
@@ -15,9 +11,11 @@
             {{-- Left Content --}}
             <div>
                 <h1 class="text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl xl:text-6xl">
-                    Register Your Business
-                    <span class="text-blue-600">Across All 50 States</span>
+                    LLC Formation, Sales Tax Registration &amp; Liens
                 </h1>
+                <p class="text-4xl font-extrabold tracking-tight text-blue-600 sm:text-5xl xl:text-6xl">
+                    Across All 50 States
+                </p>
 
                 <p class="mt-6 text-xl leading-relaxed text-zinc-600">
                     LLC formation, sales tax permits, mechanics liens, and compliance management. One platform, all 50 states, zero hassle.
@@ -51,11 +49,11 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Sales Tax Permits</h3>
+                            <p class="font-bold text-zinc-900">Sales Tax Permits</p>
                             <p class="text-sm text-zinc-500">Multi-state registration in minutes</p>
                         </div>
                         <span
-                            class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">Popular</span>
+                            class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">Popular</span>
                     </div>
 
                     {{-- Card 2 --}}
@@ -68,7 +66,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">LLC Formation</h3>
+                            <p class="font-bold text-zinc-900">LLC Formation</p>
                             <p class="text-sm text-zinc-500">Form your LLC in any state</p>
                         </div>
                         <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">Fast</span>
@@ -84,7 +82,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Compliance Management</h3>
+                            <p class="font-bold text-zinc-900">Compliance Management</p>
                             <p class="text-sm text-zinc-500">Annual reports & renewals</p>
                         </div>
                         <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">Auto</span>
@@ -100,7 +98,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Resale Certificates</h3>
+                            <p class="font-bold text-zinc-900">Resale Certificates</p>
                             <p class="text-sm text-zinc-500">Buy inventory tax-free</p>
                         </div>
                     </div>
@@ -115,7 +113,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Payment Protection</h3>
+                            <p class="font-bold text-zinc-900">Payment Protection</p>
                             <p class="text-sm text-zinc-500">Liens, notices & demand letters</p>
                         </div>
                         <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">Free tracking</span>
@@ -305,7 +303,7 @@
                     </li>
                 </ul>
                 <a href="{{ route('resale-certificates') }}"
-                    class="mt-8 inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 transition-colors hover:text-emerald-700">
+                    class="mt-8 inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 transition-colors hover:text-emerald-800">
                     Get resale certificates
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -401,7 +399,7 @@
                     </li>
                 </ul>
                 <a href="{{ route('annual-reports') }}"
-                    class="mt-8 inline-flex items-center gap-1 text-sm font-semibold text-amber-600 transition-colors hover:text-amber-700">
+                    class="mt-8 inline-flex items-center gap-1 text-sm font-semibold text-amber-700 transition-colors hover:text-amber-800">
                     Stay compliant
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -451,7 +449,7 @@
                     </li>
                 </ul>
                 <a href="{{ route('liens') }}"
-                    class="mt-8 inline-flex items-center gap-1 text-sm font-semibold text-amber-600 transition-colors hover:text-amber-700">
+                    class="mt-8 inline-flex items-center gap-1 text-sm font-semibold text-amber-700 transition-colors hover:text-amber-800">
                     Protect your payments
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -535,7 +533,7 @@
                     growing your business.
                 </p>
 
-                <dl class="mt-10 space-y-6">
+                <div class="mt-10 space-y-6">
                     <div class="flex gap-4">
                         <div
                             class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
@@ -545,9 +543,9 @@
                             </svg>
                         </div>
                         <div>
-                            <dt class="font-bold text-zinc-900">All 50 States, One Form</dt>
-                            <dd class="mt-1 text-zinc-600">Answer our questions once. We use your answers for every
-                                state you pick.</dd>
+                            <h3 class="font-bold text-zinc-900">All 50 States, One Form</h3>
+                            <p class="mt-1 text-zinc-600">Answer our questions once. We use your answers for every
+                                state you pick.</p>
                         </div>
                     </div>
                     <div class="flex gap-4">
@@ -559,9 +557,9 @@
                             </svg>
                         </div>
                         <div>
-                            <dt class="font-bold text-zinc-900">Rated {{ number_format(config('company.google_reviews.rating'), 1) }} on Google</dt>
-                            <dd class="mt-1 text-zinc-600">Customers of our lien filing service rate us
-                                {{ number_format(config('company.google_reviews.rating'), 1) }} out of 5.</dd>
+                            <h3 class="font-bold text-zinc-900">Rated {{ number_format(config('company.google_reviews.rating'), 1) }} on Google</h3>
+                            <p class="mt-1 text-zinc-600">Customers of our lien filing service rate us
+                                {{ number_format(config('company.google_reviews.rating'), 1) }} out of 5.</p>
                         </div>
                     </div>
                     <div class="flex gap-4">
@@ -573,9 +571,9 @@
                             </svg>
                         </div>
                         <div>
-                            <dt class="font-bold text-zinc-900">Transparent Pricing</dt>
-                            <dd class="mt-1 text-zinc-600">Know exactly what you'll pay upfront. No hidden fees, no
-                                surprises.</dd>
+                            <h3 class="font-bold text-zinc-900">Transparent Pricing</h3>
+                            <p class="mt-1 text-zinc-600">Know exactly what you'll pay upfront. No hidden fees, no
+                                surprises.</p>
                         </div>
                     </div>
                     <div class="flex gap-4">
@@ -587,12 +585,12 @@
                             </svg>
                         </div>
                         <div>
-                            <dt class="font-bold text-zinc-900">Expert Support</dt>
-                            <dd class="mt-1 text-zinc-600">Our compliance specialists are here to help. Real experts,
-                                not bots.</dd>
+                            <h3 class="font-bold text-zinc-900">Expert Support</h3>
+                            <p class="mt-1 text-zinc-600">Our compliance specialists are here to help. Real experts,
+                                not bots.</p>
                         </div>
                     </div>
-                </dl>
+                </div>
             </div>
 
             {{-- Dashboard Preview --}}
@@ -605,7 +603,7 @@
                         <div class="h-3 w-3 rounded-full bg-red-400"></div>
                         <div class="h-3 w-3 rounded-full bg-amber-400"></div>
                         <div class="h-3 w-3 rounded-full bg-green-400"></div>
-                        <span class="ml-2 text-xs text-zinc-400">eRegister Dashboard</span>
+                        <span class="ml-2 text-xs text-zinc-500">eRegister Dashboard</span>
                     </div>
                     <div class="p-6">
                         <div class="space-y-4">
@@ -621,7 +619,7 @@
                                     <span class="font-medium text-zinc-900">California Sales Tax</span>
                                 </div>
                                 <span
-                                    class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">Approved</span>
+                                    class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">Approved</span>
                             </div>
                             <div class="flex items-center justify-between rounded-xl bg-green-50 p-4">
                                 <div class="flex items-center gap-3">
@@ -635,7 +633,7 @@
                                     <span class="font-medium text-zinc-900">Texas Sales Tax</span>
                                 </div>
                                 <span
-                                    class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">Approved</span>
+                                    class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">Approved</span>
                             </div>
                             <div class="flex items-center justify-between rounded-xl bg-amber-50 p-4">
                                 <div class="flex items-center gap-3">
@@ -663,7 +661,7 @@
                                     <span class="font-medium text-zinc-900">Delaware LLC</span>
                                 </div>
                                 <span
-                                    class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">Formed</span>
+                                    class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">Formed</span>
                             </div>
                         </div>
                     </div>

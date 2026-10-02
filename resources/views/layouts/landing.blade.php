@@ -3,7 +3,14 @@
 
 <head>
     {{-- Inline @section('title', ...) values arrive already escaped; decode so the head partial's {{ }} does not double-escape "&". --}}
-    @include('partials.head', ['title' => html_entity_decode($__env->yieldContent('title', config('app.name', 'eRegister')), ENT_QUOTES)])
+    {{-- Marketing pages run the Alpine-only marketing.js bundle. A page that renders a
+         Livewire component sets @section('livewire', true) to get Livewire and Flux instead
+         (their Livewire build ships its own Alpine, so never load both). --}}
+    @php($usesLivewire = $__env->hasSection('livewire'))
+    @include('partials.head', [
+        'title' => html_entity_decode($__env->yieldContent('title', config('app.name', 'eRegister')), ENT_QUOTES),
+        'headScript' => $usesLivewire ? 'resources/js/app.js' : 'resources/js/marketing.js',
+    ])
     @include('partials.seo')
     @yield('meta')
 </head>
@@ -15,8 +22,8 @@
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex h-16 items-center justify-between">
                 <!-- Logo -->
-                <a href="{{ route('home') }}" class="flex items-center" wire:navigate>
-                    <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" class="h-9" />
+                <a href="{{ route('home') }}" class="flex items-center">
+                    <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" width="1538" height="520" class="h-9 w-auto" />
                 </a>
 
                 <!-- Main Navigation (Desktop) -->
@@ -138,6 +145,12 @@
                         </div>
                     </div>
 
+                    {{-- Government (flat link) --}}
+                    <a href="{{ route('government.home') }}"
+                        class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 {{ request()->routeIs('government.*') ? 'text-zinc-900' : '' }}">
+                        Government
+                    </a>
+
                     {{-- Contact (flat link) --}}
                     <a href="{{ route('contact') }}"
                         class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 {{ request()->routeIs('contact') ? 'text-zinc-900' : '' }}">
@@ -150,8 +163,7 @@
                     <nav class="hidden items-center gap-4 lg:flex">
                         @auth
                         <a href="{{ auth()->user()->roles->isNotEmpty() ? route('admin.home') : url('/portal') }}"
-                            class="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800"
-                            wire:navigate>
+                            class="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800">
                             Dashboard
                         </a>
                         <form method="POST" action="{{ route('logout') }}">
@@ -163,13 +175,12 @@
                         </form>
                         @else
                         <a href="{{ route('login') }}"
-                            class="text-sm font-medium text-zinc-600 transition hover:text-zinc-900" wire:navigate>
+                            class="text-sm font-medium text-zinc-600 transition hover:text-zinc-900">
                             Log in
                         </a>
                         @if (Route::has('register'))
                         <a href="{{ route('register') }}"
-                            class="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800"
-                            wire:navigate>
+                            class="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800">
                             Sign up
                         </a>
                         @endif
@@ -264,6 +275,12 @@
                         </div>
                     </details>
 
+                    {{-- Government --}}
+                    <a href="{{ route('government.home') }}"
+                        class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">
+                        Government
+                    </a>
+
                     {{-- Contact --}}
                     <a href="{{ route('contact') }}"
                         class="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 {{ request()->routeIs('contact') ? 'bg-zinc-100 text-zinc-900' : '' }}">
@@ -274,8 +291,7 @@
                     <div class="mt-3 flex flex-col gap-2 border-t border-zinc-200 pt-3">
                         @auth
                         <a href="{{ auth()->user()->roles->isNotEmpty() ? route('admin.home') : url('/portal') }}"
-                            class="rounded-lg bg-zinc-900 px-4 py-2 text-center text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800"
-                            wire:navigate>
+                            class="rounded-lg bg-zinc-900 px-4 py-2 text-center text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800">
                             Dashboard
                         </a>
                         <form method="POST" action="{{ route('logout') }}">
@@ -287,14 +303,12 @@
                         </form>
                         @else
                         <a href="{{ route('login') }}"
-                            class="rounded-lg px-3 py-2 text-center text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
-                            wire:navigate>
+                            class="rounded-lg px-3 py-2 text-center text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900">
                             Log in
                         </a>
                         @if (Route::has('register'))
                         <a href="{{ route('register') }}"
-                            class="rounded-lg bg-zinc-900 px-4 py-2 text-center text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800"
-                            wire:navigate>
+                            class="rounded-lg bg-zinc-900 px-4 py-2 text-center text-sm font-medium text-white shadow-sm transition hover:bg-zinc-800">
                             Sign up
                         </a>
                         @endif
@@ -316,8 +330,8 @@
             <div class="grid grid-cols-2 gap-8 md:grid-cols-5">
                 {{-- Company Info --}}
                 <div class="col-span-2 md:col-span-1">
-                    <a href="{{ route('home') }}" class="flex items-center" wire:navigate>
-                        <img src="/img/logo/eregister-logo-light-svg.svg" alt="eRegister" class="h-10" />
+                    <a href="{{ route('home') }}" class="flex items-center">
+                        <img src="/img/logo/eregister-logo-light-svg.svg" alt="eRegister" width="1538" height="520" class="h-10 w-auto" />
                     </a>
                     <p class="mt-4 text-sm text-zinc-400">
                         Business formation, compliance, and payment protection across all 50 states.
@@ -326,7 +340,7 @@
 
                 {{-- Form a Business --}}
                 <div>
-                    <h4 class="font-semibold text-white">Form a Business</h4>
+                    <h2 class="font-semibold text-white">Form a Business</h2>
                     <ul class="mt-4 space-y-3">
                         <li><a href="{{ route('llc') }}" class="text-sm text-zinc-400 transition hover:text-white">LLC</a></li>
                         <li><a href="{{ route('corporation') }}" class="text-sm text-zinc-400 transition hover:text-white">Corporation</a></li>
@@ -339,7 +353,7 @@
 
                 {{-- Payment Protection --}}
                 <div>
-                    <h4 class="font-semibold text-white">Payment Protection</h4>
+                    <h2 class="font-semibold text-white">Payment Protection</h2>
                     <ul class="mt-4 space-y-3">
                         <li><a href="{{ route('liens') }}" class="text-sm text-zinc-400 transition hover:text-white">Mechanics Lien</a></li>
                         <li><a href="{{ route('liens.preliminary-notice') }}" class="text-sm text-zinc-400 transition hover:text-white">Preliminary Notice</a></li>
@@ -354,7 +368,7 @@
 
                 {{-- Company --}}
                 <div>
-                    <h4 class="font-semibold text-white">Company</h4>
+                    <h2 class="font-semibold text-white">Company</h2>
                     <ul class="mt-4 space-y-3">
                         <li><a href="{{ route('contact') }}" class="text-sm text-zinc-400 transition hover:text-white">Contact</a></li>
                         <li><a href="{{ route('sales-tax-registration') }}" class="text-sm text-zinc-400 transition hover:text-white">Sales Tax</a></li>
@@ -365,7 +379,7 @@
 
                 {{-- Legal --}}
                 <div>
-                    <h4 class="font-semibold text-white">Legal</h4>
+                    <h2 class="font-semibold text-white">Legal</h2>
                     <ul class="mt-4 space-y-3">
                         <li><a href="{{ route('privacy-policy') }}"
                                 class="text-sm text-zinc-400 transition hover:text-white">Privacy Policy</a></li>
@@ -380,19 +394,21 @@
             <div class="mt-12 border-t border-zinc-800 pt-8">
                 <div class="flex flex-col items-center justify-between gap-4 sm:flex-row">
                     <div>
-                        <p class="text-sm text-zinc-500">&copy; {{ date('Y') }} {{ config('app.name', 'eRegister') }}. All
+                        <p class="text-sm text-zinc-400">&copy; {{ date('Y') }} {{ config('app.name', 'eRegister') }}. All
                             rights reserved.</p>
                         @if ($footerAddress = config('company.address'))
-                            <p class="mt-2 text-sm text-zinc-500">{{ $footerAddress['street'] }}, {{ $footerAddress['locality'] }}, {{ $footerAddress['region'] }} {{ $footerAddress['postal_code'] }}</p>
+                            <p class="mt-2 text-sm text-zinc-400">{{ $footerAddress['street'] }}, {{ $footerAddress['locality'] }}, {{ $footerAddress['region'] }} {{ $footerAddress['postal_code'] }}</p>
                         @endif
-                        <p class="mt-2 max-w-xl text-xs text-zinc-600">{{ config('app.name', 'eRegister') }} is a private document preparation and filing service. It is not a government agency and is not affiliated with or endorsed by any government agency.</p>
+                        <p class="mt-2 max-w-xl text-xs text-zinc-400">{{ config('app.name', 'eRegister') }} is a private document preparation and filing service. It is not a government agency and is not affiliated with or endorsed by any government agency.</p>
                     </div>
                 </div>
             </div>
         </div>
     </footer>
 
-    @fluxScripts
+    @if ($usesLivewire)
+        @fluxScripts
+    @endif
 </body>
 
 </html>

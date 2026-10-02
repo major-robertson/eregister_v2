@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Domains\Lien\Waivers\WaiverFormPreview;
 use App\Domains\Lien\Waivers\WaiverIntent;
 use App\Domains\Lien\Waivers\WaiverStateRegistry;
+use App\Support\Seo\States;
 use App\Support\Seo\Text;
 use App\Support\Seo\Urls;
 use Illuminate\Http\RedirectResponse;
@@ -162,24 +163,14 @@ class WaiverLandingController extends Controller
     }
 
     /**
-     * Four alphabetical neighbours for the cross-link strip, wrapping at the
-     * ends of the registry list so Alabama and Wyoming still get four links.
+     * Bordering states for the cross-link strip (Texas points at Oklahoma
+     * and Louisiana), padded to at least four from the alphabetical
+     * neighbours, matching the mechanics lien state pages.
      *
      * @return array<string, string> code => state name
      */
     private function nearbyStates(string $code): array
     {
-        $codes = array_keys(WaiverStateRegistry::STATE_NAMES);
-        $count = count($codes);
-        $index = (int) array_search($code, $codes, true);
-
-        $nearby = [];
-
-        foreach ([-2, -1, 1, 2] as $offset) {
-            $neighbor = $codes[($index + $offset + $count) % $count];
-            $nearby[$neighbor] = WaiverStateRegistry::STATE_NAMES[$neighbor];
-        }
-
-        return $nearby;
+        return States::bordering($code, 4, WaiverStateRegistry::STATE_NAMES);
     }
 }

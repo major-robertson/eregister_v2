@@ -1,6 +1,7 @@
 @props([
     'items',              // [['name' => 'Liens', 'url' => route('liens')], ['name' => 'Texas']]  (last item may omit url)
     'visible' => true,
+    'center' => false,      // centre the trail in centred heroes
 ])
 {{-- BreadcrumbList JSON-LD plus (optionally) the visible trail. The trail is
      rendered from the same array so the markup can never disagree with it. --}}
@@ -20,7 +21,7 @@
 @endpush
 @if ($visible)
 <nav aria-label="Breadcrumb" {{ $attributes->merge(['class' => 'text-sm']) }}>
-    <ol class="flex flex-wrap items-center gap-1.5">
+    <ol @class(['flex flex-wrap items-center gap-1.5', 'justify-center' => $center])>
         @foreach ($crumbs as $i => $crumb)
             @if ($i > 0)
                 <li aria-hidden="true" class="opacity-50">/</li>

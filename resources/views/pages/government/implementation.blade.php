@@ -1,17 +1,17 @@
 @extends('layouts.government')
 
-@section('title', 'Government Implementation Services | Discovery to Go-Live')
-
-@section('meta')
-<meta name="description"
-    content="Procurement-friendly implementation services for government digital projects. Discovery, design, build, training, and go-live support &mdash; on a fixed-fee, fixed-timeline contract.">
-@endsection
+@section('title', 'Implementation Services for Government Agencies')
+@section('description', 'Procurement-friendly implementation for government digital projects: discovery, design, build, training, and go-live support on a fixed-fee contract.')
 
 @section('content')
 {{-- Hero --}}
 <section class="relative overflow-hidden bg-gradient-to-b from-slate-950 via-blue-950 to-slate-900 py-20 lg:py-24">
     <div class="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-3xl text-center">
+            <x-seo.breadcrumbs class="mb-6 text-slate-400" center :items="[
+                ['name' => 'Government', 'url' => route('government.home')],
+                ['name' => 'Implementation'],
+            ]" />
             <p class="text-sm font-semibold uppercase tracking-wider text-blue-300">Service</p>
             <h1 class="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
                 Implementation services

@@ -1,17 +1,17 @@
 @extends('layouts.government')
 
-@section('title', 'Government Website Redesign Services | Modern Agency Websites')
-
-@section('meta')
-<meta name="description"
-    content="Full website redesigns for federal, state, county, and city government agencies. Modern, mobile-first, accessible (WCAG 2.2 AA / Section 508) websites delivered on a predictable timeline.">
-@endsection
+@section('title', 'Website Redesign for Government Agencies')
+@section('description', 'Full website redesigns for state, county, and city agencies. Mobile-first, accessible to WCAG 2.2 AA and Section 508, and delivered on a set timeline.')
 
 @section('content')
 {{-- Hero --}}
 <section class="relative overflow-hidden bg-gradient-to-b from-slate-950 via-blue-950 to-slate-900 py-20 lg:py-24">
     <div class="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-3xl text-center">
+            <x-seo.breadcrumbs class="mb-6 text-slate-400" center :items="[
+                ['name' => 'Government', 'url' => route('government.home')],
+                ['name' => 'Website Redesign'],
+            ]" />
             <p class="text-sm font-semibold uppercase tracking-wider text-blue-300">Service</p>
             <h1 class="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
                 Government website redesign

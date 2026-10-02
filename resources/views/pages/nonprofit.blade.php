@@ -1,11 +1,7 @@
 @extends('layouts.landing')
 
-@section('title', 'Form a Nonprofit Organization | 501(c)(3) Formation Services')
-
-@section('meta')
-<meta name="description"
-    content="Start a nonprofit organization with eRegister. 501(c)(3) formation services for charitable, educational, and religious organizations. Tax-exempt status guidance. Form your nonprofit in all 50 states.">
-@endsection
+@section('title', 'Start a Nonprofit | 501(c)(3) Formation in Any State')
+@section('description', 'Form a 501(c)(3) nonprofit in any state. Formation filing plus tax-exempt status guidance for charitable, educational, and religious organizations.')
 
 @section('content')
 {{-- Hero Section --}}
@@ -13,10 +9,16 @@
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
             <div>
+                <x-seo.breadcrumbs class="mb-6 text-zinc-500" :items="[
+                    ['name' => 'Home', 'url' => route('home')],
+                    ['name' => 'Nonprofit'],
+                ]" />
                 <h1 class="text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl xl:text-6xl">
-                    Start Your Nonprofit
-                    <span class="text-emerald-600">With Confidence</span>
+                    Start a Nonprofit
                 </h1>
+                <p class="text-4xl font-extrabold tracking-tight text-emerald-600 sm:text-5xl xl:text-6xl">
+                    With Confidence
+                </p>
 
                 <p class="mt-6 text-xl leading-relaxed text-zinc-600">
                     Form a nonprofit corporation and pursue 501(c)(3) tax-exempt status. Charitable, educational, religious, and other mission-driven organizations—we guide you every step of the way.
@@ -24,7 +26,7 @@
 
                 <div class="mt-8 flex flex-col gap-4 sm:flex-row">
                     <a href="{{ route('register') }}"
-                        class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-8 py-4 text-base font-semibold text-white transition hover:bg-emerald-700">
+                        class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-8 py-4 text-base font-semibold text-white transition hover:bg-emerald-800">
                         Start Your Nonprofit
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -45,7 +47,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Nonprofit Incorporation</h3>
+                            <p class="font-bold text-zinc-900">Nonprofit Incorporation</p>
                             <p class="text-sm text-zinc-500">Articles of Incorporation for charitable entities</p>
                         </div>
                     </div>
@@ -58,7 +60,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">501(c)(3) Guidance</h3>
+                            <p class="font-bold text-zinc-900">501(c)(3) Guidance</p>
                             <p class="text-sm text-zinc-500">IRS tax-exempt status support</p>
                         </div>
                     </div>
@@ -71,7 +73,7 @@
                             </svg>
                         </div>
                         <div class="flex-1">
-                            <h3 class="font-bold text-zinc-900">Donor Tax Deductions</h3>
+                            <p class="font-bold text-zinc-900">Donor Tax Deductions</p>
                             <p class="text-sm text-zinc-500">Qualified nonprofits enable donor write-offs</p>
                         </div>
                     </div>
@@ -86,7 +88,7 @@
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 items-center gap-16 lg:grid-cols-2">
             <div>
-                <p class="text-sm font-semibold uppercase tracking-widest text-emerald-600">Benefits</p>
+                <p class="text-sm font-semibold uppercase tracking-widest text-emerald-700">Benefits</p>
                 <h2 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
                     Benefits of Nonprofit Status
                 </h2>
@@ -177,7 +179,7 @@
 <section class="bg-white py-24">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-3xl text-center">
-            <p class="text-sm font-bold uppercase tracking-widest text-emerald-600">Simple Process</p>
+            <p class="text-sm font-bold uppercase tracking-widest text-emerald-700">Simple Process</p>
             <h2 class="mt-3 text-3xl font-extrabold text-zinc-900 sm:text-4xl">
                 Form Your Nonprofit in 3 Steps
             </h2>
@@ -185,7 +187,7 @@
 
         <div class="mt-16 grid gap-8 md:grid-cols-3">
             <div class="relative rounded-2xl bg-zinc-50 p-8 shadow-sm">
-                <div class="absolute -top-5 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-lg font-bold text-white">1</div>
+                <div class="absolute -top-5 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-700 text-lg font-bold text-white">1</div>
                 <div class="pt-4">
                     <h3 class="text-xl font-bold text-zinc-900">Incorporate</h3>
                     <p class="mt-3 text-zinc-600">Form a nonprofit corporation in your state with Articles of Incorporation that include required 501(c)(3) language.</p>
@@ -193,7 +195,7 @@
             </div>
 
             <div class="relative rounded-2xl bg-zinc-50 p-8 shadow-sm">
-                <div class="absolute -top-5 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-lg font-bold text-white">2</div>
+                <div class="absolute -top-5 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-700 text-lg font-bold text-white">2</div>
                 <div class="pt-4">
                     <h3 class="text-xl font-bold text-zinc-900">Adopt Bylaws & Governance</h3>
                     <p class="mt-3 text-zinc-600">Create bylaws, appoint a board of directors, and hold your organizational meeting. We provide templates and guidance.</p>
@@ -201,10 +203,10 @@
             </div>
 
             <div class="relative rounded-2xl bg-zinc-50 p-8 shadow-sm">
-                <div class="absolute -top-5 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-lg font-bold text-white">3</div>
+                <div class="absolute -top-5 left-8 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-700 text-lg font-bold text-white">3</div>
                 <div class="pt-4">
                     <h3 class="text-xl font-bold text-zinc-900">Apply for 501(c)(3)</h3>
-                    <p class="mt-3 text-zinc-600">File Form 1023 or Form 1023-EZ with the IRS. We help you prepare the application and organize required documents.</p>
+                    <p class="mt-3 text-zinc-600">Get an <a href="{{ route('ein-tax-id') }}" class="font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-900">EIN</a> for the organization, then file Form 1023 or Form 1023-EZ with the IRS. We help you prepare the application and organize required documents.</p>
                 </div>
             </div>
         </div>
@@ -215,7 +217,7 @@
 <section id="faq" class="bg-zinc-50 py-24">
     <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div class="text-center">
-            <p class="text-sm font-semibold uppercase tracking-widest text-emerald-600">FAQ</p>
+            <p class="text-sm font-semibold uppercase tracking-widest text-emerald-700">FAQ</p>
             <h2 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
                 Frequently Asked Questions
             </h2>
@@ -285,6 +287,13 @@
     </div>
 </section>
 
+{{-- Related services --}}
+<x-seo.related-links :links="[
+    ['name' => 'EIN / Tax ID', 'url' => route('ein-tax-id'), 'text' => 'Get the federal tax ID for banking, hiring, and taxes.'],
+    ['name' => 'Registered Agent', 'url' => route('registered-agent'), 'text' => 'Receive legal mail and service of process in any state.'],
+    ['name' => 'Annual Reports', 'url' => route('annual-reports'), 'text' => 'Stay in good standing with on-time state filings.'],
+]" />
+
 {{-- CTA --}}
 <section class="bg-white py-24">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -304,7 +313,7 @@
                 </p>
                 <div class="mt-10">
                     <a href="{{ route('register') }}"
-                        class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-emerald-600/25 transition-all hover:bg-emerald-500 hover:shadow-xl sm:w-auto">
+                        class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-700 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-emerald-600/25 transition-all hover:bg-emerald-600 hover:shadow-xl sm:w-auto">
                         Get Started Now
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />

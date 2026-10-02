@@ -1,17 +1,17 @@
 @extends('layouts.government')
 
-@section('title', 'Citizen & Staff Portals for Government | Self-Service Web Applications')
-
-@section('meta')
-<meta name="description"
-    content="Custom citizen self-service portals and internal staff portals for government agencies. Permits, licensing, payments, requests, and intranet workflows.">
-@endsection
+@section('title', 'Citizen & Staff Portals for Government Agencies')
+@section('description', 'Custom citizen self-service portals and internal staff portals for government agencies: permits, licensing, payments, requests, and intranet workflows.')
 
 @section('content')
 {{-- Hero --}}
 <section class="relative overflow-hidden bg-gradient-to-b from-slate-950 via-blue-950 to-slate-900 py-20 lg:py-24">
     <div class="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-3xl text-center">
+            <x-seo.breadcrumbs class="mb-6 text-slate-400" center :items="[
+                ['name' => 'Government', 'url' => route('government.home')],
+                ['name' => 'Portals'],
+            ]" />
             <p class="text-sm font-semibold uppercase tracking-wider text-blue-300">Service</p>
             <h1 class="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
                 Citizen &amp; staff portals

@@ -1,17 +1,17 @@
 @extends('layouts.government')
 
-@section('title', 'Government Website Maintenance & Support | Long-Term Care Contracts')
-
-@section('meta')
-<meta name="description"
-    content="Long-term maintenance and support contracts for government websites. Security patching, content updates, accessibility monitoring, and on-call incident response.">
-@endsection
+@section('title', 'Website Maintenance & Support for Government Agencies')
+@section('description', 'Long-term maintenance and support contracts for government websites: security patching, content updates, accessibility monitoring, and incident response.')
 
 @section('content')
 {{-- Hero --}}
 <section class="relative overflow-hidden bg-gradient-to-b from-slate-950 via-blue-950 to-slate-900 py-20 lg:py-24">
     <div class="relative mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-3xl text-center">
+            <x-seo.breadcrumbs class="mb-6 text-slate-400" center :items="[
+                ['name' => 'Government', 'url' => route('government.home')],
+                ['name' => 'Maintenance & Support'],
+            ]" />
             <p class="text-sm font-semibold uppercase tracking-wider text-blue-300">Service</p>
             <h1 class="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
                 Maintenance &amp; ongoing support

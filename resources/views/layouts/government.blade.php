@@ -3,7 +3,14 @@
 
 <head>
     {{-- Inline @section('title', ...) values arrive already escaped; decode so the head partial's {{ }} does not double-escape "&". --}}
-    @include('partials.head', ['title' => html_entity_decode($__env->yieldContent('title', 'eRegister Government'), ENT_QUOTES)])
+    {{-- Marketing pages run the Alpine-only marketing.js bundle. A page that renders a
+         Livewire component sets @section('livewire', true) to get Livewire and Flux instead
+         (their Livewire build ships its own Alpine, so never load both). --}}
+    @php($usesLivewire = $__env->hasSection('livewire'))
+    @include('partials.head', [
+        'title' => html_entity_decode($__env->yieldContent('title', 'eRegister Government'), ENT_QUOTES),
+        'headScript' => $usesLivewire ? 'resources/js/app.js' : 'resources/js/marketing.js',
+    ])
     @include('partials.seo')
     @yield('meta')
 </head>
@@ -11,8 +18,8 @@
 <body class="min-h-screen bg-white antialiased">
     <!-- Top Bar -->
     <div class="border-b border-slate-800 bg-slate-950 text-slate-300">
-        <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-1.5 text-xs sm:px-6 lg:px-8">
-            <div class="flex items-center gap-2">
+        <div class="mx-auto flex max-w-7xl items-center justify-end px-4 py-1.5 text-xs sm:justify-between sm:px-6 lg:px-8">
+            <div class="hidden items-center gap-2 sm:flex">
                 <svg class="h-3.5 w-3.5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd"
                         d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
@@ -20,7 +27,7 @@
                 </svg>
                 <span>A commercial digital services partner for state and local government teams</span>
             </div>
-            <a href="{{ route('home') }}" class="hidden text-slate-400 transition hover:text-white sm:inline">
+            <a href="{{ route('home') }}" class="text-slate-400 transition hover:text-white">
                 Visit eRegister.com &rarr;
             </a>
         </div>
@@ -32,8 +39,8 @@
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="flex h-16 items-center justify-between">
                 <!-- Logo -->
-                <a href="{{ route('government.home') }}" class="flex items-center gap-3" wire:navigate>
-                    <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" class="h-9" />
+                <a href="{{ route('government.home') }}" class="flex items-center gap-3">
+                    <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" width="1538" height="520" class="h-9 w-auto" />
                     <span
                         class="rounded-md bg-blue-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-blue-700">
                         Government
@@ -228,8 +235,8 @@
                 {{-- Brand --}}
                 <div class="col-span-2 md:col-span-2">
                     <a href="{{ route('government.home') }}" class="flex items-center gap-3">
-                        <img src="/img/logo/eregister-logo-light-svg.svg" alt="eRegister"
-                            class="h-10" />
+                        <img src="/img/logo/eregister-logo-light-svg.svg" alt="eRegister" width="1538" height="520"
+                            class="h-10 w-auto" />
                         <span
                             class="rounded-md bg-blue-500/15 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-blue-300 ring-1 ring-inset ring-blue-500/30">
                             Government
@@ -257,7 +264,7 @@
 
                 {{-- Build --}}
                 <div>
-                    <h4 class="font-semibold text-white">Build</h4>
+                    <h2 class="font-semibold text-white">Build</h2>
                     <ul class="mt-4 space-y-3">
                         <li><a href="{{ route('government.website-redesign') }}"
                                 class="text-sm text-slate-400 transition hover:text-white">Website Redesign</a></li>
@@ -272,7 +279,7 @@
 
                 {{-- Operate --}}
                 <div>
-                    <h4 class="font-semibold text-white">Operate</h4>
+                    <h2 class="font-semibold text-white">Operate</h2>
                     <ul class="mt-4 space-y-3">
                         <li><a href="{{ route('government.hosting') }}"
                                 class="text-sm text-slate-400 transition hover:text-white">Hosting</a></li>
@@ -287,7 +294,7 @@
 
                 {{-- Company --}}
                 <div>
-                    <h4 class="font-semibold text-white">Company</h4>
+                    <h2 class="font-semibold text-white">Company</h2>
                     <ul class="mt-4 space-y-3">
                         <li><a href="{{ route('contact') }}"
                                 class="text-sm text-slate-400 transition hover:text-white">Contact</a></li>
@@ -304,13 +311,13 @@
             <div class="mt-12 border-t border-slate-800 pt-8">
                 <div class="flex flex-col items-center justify-between gap-4 sm:flex-row">
                     <div>
-                        <p class="text-sm text-slate-500">&copy; {{ date('Y') }} {{ config('app.name', 'eRegister') }}.
+                        <p class="text-sm text-slate-400">&copy; {{ date('Y') }} {{ config('app.name', 'eRegister') }}.
                             All rights reserved.</p>
                         @if ($footerAddress = config('company.address'))
-                            <p class="mt-1 text-sm text-slate-500">{{ $footerAddress['street'] }}, {{ $footerAddress['locality'] }}, {{ $footerAddress['region'] }} {{ $footerAddress['postal_code'] }}</p>
+                            <p class="mt-1 text-sm text-slate-400">{{ $footerAddress['street'] }}, {{ $footerAddress['locality'] }}, {{ $footerAddress['region'] }} {{ $footerAddress['postal_code'] }}</p>
                         @endif
                     </div>
-                    <p class="text-xs text-slate-500">
+                    <p class="text-xs text-slate-400">
                         Not a government agency. eRegister is a private commercial vendor of digital services.
                     </p>
                 </div>
@@ -318,7 +325,9 @@
         </div>
     </footer>
 
-    @fluxScripts
+    @if ($usesLivewire)
+        @fluxScripts
+    @endif
 </body>
 
 </html>

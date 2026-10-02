@@ -1,23 +1,27 @@
 @extends('layouts.landing')
 
-@section('title', 'Preliminary Notice | File a Preliminary Lien Notice in Any State')
-
-@section('meta')
-<meta name="description" content="Protect your lien rights with a preliminary notice. Our service helps contractors, subcontractors, and suppliers file preliminary lien notices in all 50 states. Preserve your right to file a mechanics lien.">
-@endsection
+@section('title', 'Preliminary Notice Service | Any State, from '.\App\Support\Seo\Prices::lien('prelim_notice'))
+@section('description', 'Send a state-compliant preliminary notice from '.\App\Support\Seo\Prices::lien('prelim_notice').'. Preserve your mechanics lien rights as a contractor, sub, or supplier in any state.')
 
 @section('content')
 {{-- Hero --}}
 <section class="relative overflow-hidden bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-800 py-24 lg:py-32">
     <div class="relative mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
+        <x-seo.breadcrumbs class="mb-8 text-zinc-400" center :items="[
+            ['name' => 'Home', 'url' => route('home')],
+            ['name' => 'Mechanics Liens', 'url' => route('liens')],
+            ['name' => 'Preliminary Notice'],
+        ]" />
         <div class="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-1.5 text-sm text-amber-400">
             Available in all 50 states
         </div>
         <h1 class="mt-8 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-            File a Preliminary Notice<br>
-            <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Preserve Your Lien Rights</span>
+            Preliminary Notice Service
         </h1>
-        <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">Protect your right to file a mechanics lien. Our service helps contractors, subcontractors, and suppliers send state-compliant preliminary notices to preserve construction lien rights in every state.</p>
+        <p class="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
+            <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Preserve Your Lien Rights</span>
+        </p>
+        <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">Protect your right to file a <a href="{{ route('liens') }}" class="font-medium text-white underline decoration-zinc-500 underline-offset-2 hover:decoration-white">mechanics lien</a>. Our service helps contractors, subcontractors, and suppliers send state-compliant preliminary notices to preserve construction lien rights in every state.</p>
         <div class="mt-10">
             <a href="{{ route('register') }}" class="group inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#B91C1C]">
                 Get Started
@@ -34,7 +38,7 @@
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div class="grid gap-12 lg:grid-cols-2 lg:gap-16">
             <div>
-                <p class="text-sm font-semibold uppercase tracking-widest text-amber-600">Lien Rights</p>
+                <p class="text-sm font-semibold uppercase tracking-widest text-amber-700">Lien Rights</p>
                 <h2 class="mt-3 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">What Is a Preliminary Notice?</h2>
                 <p class="mt-4 text-lg text-zinc-600">
                     A preliminary notice (sometimes called a pre-lien notice, 20-day notice, or notice to owner) is a document sent early in a construction project to notify the property owner and general contractor that you're providing labor, materials, or services. It's the critical first step to preserve your right to file a mechanics lien if you're not paid.
@@ -152,7 +156,7 @@
                     <p class="mt-2 text-zinc-600">Our team creates your state-compliant preliminary notice with the correct form, language, and deadlines for your jurisdiction.</p>
                 </div>
                 <div class="text-center">
-                    <div class="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-500 text-xl font-bold text-white">3</div>
+                    <div class="relative z-10 mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-600 text-xl font-bold text-white">3</div>
                     <h3 class="mt-6 text-xl font-semibold text-zinc-900">We send it for you</h3>
                     <p class="mt-2 text-zinc-600">We deliver your preliminary notice to all required parties—property owner, general contractor, and lender if applicable—with proof of service.</p>
                 </div>
@@ -226,6 +230,9 @@
     </div>
 </section>
 
+{{-- Related lien tools --}}
+<x-seo.lien-more />
+
 {{-- CTA --}}
 <section class="mx-auto mb-16 max-w-5xl px-4 sm:px-6 lg:px-8">
     <div class="overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-800 py-20">
@@ -243,4 +250,7 @@
         </div>
     </div>
 </section>
+
+{{-- Every state page --}}
+<x-seo.lien-states variant="strip" />
 @endsection

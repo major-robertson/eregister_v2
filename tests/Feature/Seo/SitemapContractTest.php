@@ -9,31 +9,8 @@ use App\Support\Seo\States;
  * on that HTML; failures are collected per path so one run lists them all.
  */
 
-// Static marketing pages whose descriptions run past 165 characters today
-// (170 to 235). Phase C (EREG-12) rewrites them; remove each path as it is
-// fixed so the budget applies to it again.
-const KNOWN_LONG_DESCRIPTIONS = [
-    '/',
-    '/liens',
-    '/corporation',
-    '/nonprofit',
-    '/sole-proprietorship',
-    '/registered-agent',
-    '/annual-reports',
-    '/ein-tax-id',
-    '/operating-agreement',
-    '/liens/preliminary-notice',
-    '/liens/notice-of-intent-to-lien',
-    '/liens/payment-demand-letter',
-    '/liens/pricing',
-    '/liens/lien-waivers',
-    '/liens/lien-waivers/pricing',
-    '/government',
-    '/government/website-redesign',
-    '/government/accessibility',
-    '/government/cms',
-    '/government/implementation',
-];
+// The only pages whose titles end with " | eRegister" (decision D3).
+const BRANDED_TITLE_PATHS = ['/', '/privacy-policy', '/terms-of-service', '/refund-policy', '/contact'];
 
 // Working notes from the lien seed data that must never reach a page.
 const AUTHORING_PHRASES = '/this sheet|modeled here|as proxy|placeholder|See the notes below|See statute|plan on paper recording|snake_case/i';
@@ -88,11 +65,19 @@ it('serves every sitemap url as a clean, self-canonical, indexable page', functi
         if (mb_strlen($title) > 70) {
             $fail('title is '.mb_strlen($title)." characters: {$title}");
         }
+        // Decision D3: only home, the legal pages and /contact carry the
+        // brand; product, state and government titles spend it on the query.
+        $branded = str_ends_with($title, ' | eRegister');
+        if (in_array($path, BRANDED_TITLE_PATHS, true) && ! $branded) {
+            $fail("title does not end with \" | eRegister\": {$title}");
+        } elseif (! in_array($path, BRANDED_TITLE_PATHS, true) && $branded) {
+            $fail("title carries the brand suffix: {$title}");
+        }
 
         preg_match('/<meta name="description"\s+content="([^"]*)"/', $html, $description);
         $description = html_entity_decode($description[1] ?? '', ENT_QUOTES);
         $length = mb_strlen($description);
-        if (($length < 70 || $length > 165) && ! in_array($path, KNOWN_LONG_DESCRIPTIONS, true)) {
+        if ($length < 70 || $length > 165) {
             $fail("description is {$length} characters: {$description}");
         }
 

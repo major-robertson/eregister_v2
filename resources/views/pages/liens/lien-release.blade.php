@@ -44,7 +44,7 @@
                     A lien release (or lien waiver release, lien discharge, or mechanics lien release) is a document that removes or cancels a previously filed mechanics lien from property records. Once you've been paid, settled a dispute, or resolved the underlying debt, you typically need to file a lien release to clear the property's title.
                 </p>
                 <p class="mt-4 text-zinc-600">
-                    Property owners, lenders, and buyers need clear title to sell or refinance. A lien that remains on the books after payment can block closings and create legal headaches. Our service prepares state-compliant lien release documents and handles the filing process so the property is cleared properly.
+                    Property owners, lenders, and buyers need clear title to sell or refinance. A lien that remains on the books after payment can block closings and create legal headaches. Our service prepares state-compliant lien release documents and handles the filing process so the property is cleared properly. For each state's release deadline and penalty, see <a href="{{ route('guides.show', ['slug' => 'how-to-release-a-mechanics-lien']) }}" class="font-medium text-zinc-900 underline">how to release a mechanics lien</a>.
                 </p>
             </div>
             <div class="rounded-2xl border border-zinc-200 bg-zinc-50 p-8">

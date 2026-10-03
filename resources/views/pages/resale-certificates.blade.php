@@ -460,6 +460,7 @@
                         your buyers. You need a valid sales tax permit before you can issue a resale
                         certificate. Don't have one yet? We handle
                         <a href="{{ route('sales-tax-registration') }}" class="font-medium underline" style="color: var(--color-accent-content)">sales tax registration</a> too.
+                        Our guide to <a href="{{ route('guides.show', ['slug' => 'sellers-permit-vs-resale-certificate']) }}" class="font-medium underline" style="color: var(--color-accent-content)">seller's permit vs resale certificate</a> compares the two side by side.
                     </x-accordion.content>
                 </x-accordion.item>
 

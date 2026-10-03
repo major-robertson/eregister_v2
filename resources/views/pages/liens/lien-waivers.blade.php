@@ -129,6 +129,7 @@
                 </ul>
             </div>
         </div>
+        <p class="mx-auto mt-10 max-w-2xl text-center text-sm text-zinc-600">For the rules behind each form, read <a href="{{ route('guides.show', ['slug' => 'conditional-vs-unconditional-lien-waivers']) }}" class="font-medium text-zinc-900 underline">conditional vs unconditional lien waivers</a> and <a href="{{ route('guides.show', ['slug' => 'how-to-fill-out-a-lien-waiver']) }}" class="font-medium text-zinc-900 underline">how to fill out a lien waiver</a>.</p>
     </div>
 </section>
 

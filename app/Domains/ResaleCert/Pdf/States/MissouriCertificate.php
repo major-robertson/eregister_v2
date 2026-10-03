@@ -27,25 +27,27 @@ class MissouriCertificate extends BaseStateCertificate
             $this->writeAt($pdf, 87.0, 61.6, $data->businessCity);
             $this->writeAt($pdf, 87.0, 54.3, $data->businessDba);
 
-            // Tax ID Breakout #1 (top right - Federal Tax ID or State Tax ID)
-            // Place each digit individually at specific x positions
+            // Missouri Tax I.D. Number boxes (top right): only a Missouri
+            // tax id belongs here; out-of-state ids go on the resale line below
+            $business = $certificate->business_snapshot;
+            $taxIdSourceState = $business['tax_id_source_state'] ?? $data->businessState;
             $taxIdDigits = preg_replace('/\D+/', '', $data->businessTaxId ?? '');
-            if (! empty($taxIdDigits)) {
+            if ($taxIdSourceState === 'MO' && ! empty($taxIdDigits)) {
                 $xPositions1 = [
                     147.5,  // 1st digit
-                    155,  // 2nd digit
-                    161,  // 3rd digit
-                    168.5,  // 4th digit
-                    176,  // 5th digit
-                    182,  // 6th digit
-                    189,  // 7th digit
-                    197,  // 8th digit
+                    155.5,  // 2nd digit
+                    162.5,  // 3rd digit
+                    169.5,  // 4th digit
+                    176.6,  // 5th digit
+                    183.5,  // 6th digit
+                    190.4,  // 7th digit
+                    197.3,  // 8th digit
                 ];
 
                 $digits = str_split($taxIdDigits);
                 $digitCount = count($digits);
 
-                // Place up to 11 digits at manual positions
+                // Place up to 8 digits at manual positions
                 for ($i = 0; $i < min(8, $digitCount); $i++) {
                     $this->writeAt($pdf, $xPositions1[$i], 46.8, $digits[$i]);
                 }
@@ -56,9 +58,7 @@ class MissouriCertificate extends BaseStateCertificate
             $this->writeAt($pdf, 21.2, 76.4, $data->businessType);
             $this->writeAt($pdf, 133, 114.8, $data->businessTaxId);
 
-            // Get the tax ID source state instead of hardcoding "MO"
-            $business = $certificate->business_snapshot;
-            $taxIdSourceState = $business['tax_id_source_state'] ?? $data->businessState;
+            // Home state: the state that issued the tax id
             $this->writeAt($pdf, 183.9, 114.8, $taxIdSourceState);
 
             // Vendor Information
@@ -133,45 +133,21 @@ class MissouriCertificate extends BaseStateCertificate
             $this->writeAt($pdf, 22.3, 115.0, $data->checkmarkX);
         }
 
-        // Page 2: Fill form fields
+        // Page 2: Signature block (Signature, Title, Date MM/DD/YYYY)
         if ($currentPage === 2) {
-            // Coordinates are in millimeters (mm) - FPDI default unit
-            // Note: Y coordinates include a +4mm offset adjustment for PDF rendering alignment
-            // Contact Information
-            $this->writeAt($pdf, 100.0, 65.4, $data->signerTitle);
+            $this->writeAt($pdf, 101, 115.9, $data->signerTitle);
 
-            // Special Elements
-            $this->addSignatureWithHeight($pdf, $certificate, 20.0, 62.8, 5);
+            $this->addSignatureWithHeight($pdf, $certificate, 22, 113.2, 4.8);
 
-            // Date Fields - MM DD YYYY (to the right of owner/signature)
-            // Using Cell() instead of Write() to prevent text wrapping
-            $date = $certificate->created_at ?? now();
-            $month = $date->format('m');
-            $day = $date->format('d');
-            $year = $date->format('Y');
+            // Date digits go one per underscore slot. Cell() instead of
+            // Write() so nothing wraps.
+            $date = ($certificate->issue_date ?? now())->format('mdY');
+            $slots = [165.9, 170.2, 175.9, 180.2, 185.5, 190, 194.4, 198.8];
 
-            // Month (MM)
-            $pdf->SetXY(165.5, 65.4);
-            $pdf->Cell(0, 0, substr($month, 0, 1), 0, 0, 'L');
-            $pdf->SetXY(169.5, 65.4);
-            $pdf->Cell(0, 0, substr($month, 1, 1), 0, 0, 'L');
-
-            // Day (DD)
-            $pdf->SetXY(175, 65.4);
-            $pdf->Cell(0, 0, substr($day, 0, 1), 0, 0, 'L');
-            $pdf->SetXY(179, 65.4);
-            $pdf->Cell(0, 0, substr($day, 1, 1), 0, 0, 'L');
-
-            // Year (YYYY)
-            $pdf->SetXY(184.5, 65.4);
-            $pdf->Cell(0, 0, substr($year, 0, 1), 0, 0, 'L');
-            $pdf->SetXY(189, 65.4);
-            $pdf->Cell(0, 0, substr($year, 1, 1), 0, 0, 'L');
-            $pdf->SetXY(193, 65.4);
-            $pdf->Cell(0, 0, substr($year, 2, 1), 0, 0, 'L');
-            $pdf->SetXY(197.5, 65.4);
-            $pdf->Cell(0, 0, substr($year, 3, 1), 0, 0, 'L');
-
+            foreach ($slots as $i => $x) {
+                $pdf->SetXY($x, 115.7);
+                $pdf->Cell(0, 0, $date[$i], 0, 0, 'L');
+            }
         }
     }
 }

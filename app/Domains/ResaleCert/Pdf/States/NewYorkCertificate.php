@@ -43,12 +43,13 @@ class NewYorkCertificate extends BaseStateCertificate
         $isInState = ($taxIdSourceState === 'NY');
 
         if ($isInState) {
-            // In-state: two checkboxes and tax ID at original positions
+            // Part 1: "a New York State vendor", the sales tax id, and purchasing box A
             $this->writeAt($pdf, 8.5, 117, $data->checkmarkX);
-            $this->writeAt($pdf, 70, 121, $data->businessTaxId);
+            $this->writeAt($pdf, 107, 121.3, $data->businessTaxId);
             $this->writeAt($pdf, 8.5, 138, $data->checkmarkX);
         } else {
-            // Out-of-state: one checkbox, tax ID, and state at different positions
+            // Part 2: purchasing box D (delivered to a customer or fulfillment provider in NY),
+            // then the registration state and number
             $this->writeAt($pdf, 8.5, 206.5, $data->checkmarkX);
             $this->writeAt($pdf, 96.2, 182.7, $taxIdSourceState);
             $this->writeAt($pdf, 74.8, 187.0, $data->businessTaxId);
@@ -56,7 +57,10 @@ class NewYorkCertificate extends BaseStateCertificate
 
         // Business type and product description
         $this->writeAt($pdf, 54, 96, $data->businessType);
-        $this->writeAt($pdf, 145.5, 96, $data->productDescription);
+        // "and principally sell" line is about 60mm wide: 8pt keeps the sample on it
+        $pdf->SetFont('Helvetica', '', 8);
+        $this->writeAt($pdf, 145.5, 96.3, $data->productDescription);
+        $pdf->SetFont('Helvetica', '', 10);
 
         // Signer information and date
         $this->writeAt($pdf, 10, 252.75, $data->signerNameAndTitle);
@@ -66,6 +70,6 @@ class NewYorkCertificate extends BaseStateCertificate
         $pdf->SetAutoPageBreak(true);
 
         // Add signature
-        $this->addSignatureWithHeight($pdf, $certificate, 10, 258, 6);
+        $this->addSignatureWithHeight($pdf, $certificate, 10, 258, 5);
     }
 }

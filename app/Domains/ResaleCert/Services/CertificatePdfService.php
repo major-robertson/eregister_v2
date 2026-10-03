@@ -99,15 +99,16 @@ class CertificatePdfService
             $tplIdx = $pdf->importPage($pageNumber);
             $size = $pdf->getTemplateSize($tplIdx);
 
-            if ($pageNumber === 1) {
-                $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
-            } else {
-                $pdf->AddPage();
-            }
+            // Every page takes its template size; a bare AddPage() would fall
+            // back to FPDF's A4 default and clip letter-size forms.
+            $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
 
             $pdf->useTemplate($tplIdx);
             $pdf->SetFont('Helvetica', '', 10);
             $pdf->SetTextColor(0, 0, 0);
+            // Fields near the bottom edge must stay on this page, never
+            // trip FPDF's auto page break into a new one.
+            $pdf->SetAutoPageBreak(false);
 
             $stateCertificate->fillFormFields($pdf, $certificate, $pageNumber, $pageCount);
 
@@ -119,7 +120,9 @@ class CertificatePdfService
 
     /**
      * Overlay a labeled coordinate grid (5mm minor / 10mm major lines) used
-     * when mapping field positions for a new or updated state form.
+     * when mapping field positions for a new or updated state form. Labels
+     * use Text(), not Write(): Write() near the bottom edge trips the auto
+     * page break and appends blank pages.
      */
     protected function addCoordinateGrid(Fpdi $pdf): void
     {
@@ -138,10 +141,8 @@ class CertificatePdfService
                 $pdf->SetLineWidth(0.1);
 
                 $labelWidth = strlen((string) $x) * 2;
-                $pdf->SetXY($x - ($labelWidth / 2), 2);
-                $pdf->Write(0, (string) $x);
-                $pdf->SetXY($x - ($labelWidth / 2), $pageHeight - 8);
-                $pdf->Write(0, (string) $x);
+                $pdf->Text($x - ($labelWidth / 2), 2.6, (string) $x);
+                $pdf->Text($x - ($labelWidth / 2), $pageHeight - 7.4, (string) $x);
             } else {
                 $pdf->Line($x, 0, $x, $pageHeight);
             }
@@ -153,11 +154,9 @@ class CertificatePdfService
                 $pdf->Line(0, $y, $pageWidth, $y);
                 $pdf->SetLineWidth(0.1);
 
-                $pdf->SetXY(1, $y - 1);
-                $pdf->Write(0, (string) $y);
+                $pdf->Text(1, $y - 0.4, (string) $y);
                 $labelWidth = strlen((string) $y) * 2;
-                $pdf->SetXY($pageWidth - $labelWidth - 2, $y - 1);
-                $pdf->Write(0, (string) $y);
+                $pdf->Text($pageWidth - $labelWidth - 2, $y - 0.4, (string) $y);
             } else {
                 $pdf->Line(0, $y, $pageWidth, $y);
             }

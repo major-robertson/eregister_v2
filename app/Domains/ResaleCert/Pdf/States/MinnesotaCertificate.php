@@ -11,9 +11,9 @@ class MinnesotaCertificate extends BaseStateCertificate
     /**
      * Coordinates for tax ID (same for both in-state and out-of-state)
      */
-    protected $taxIdCoordinates = ['x' => 12.9, 'y' => 99.5];
+    protected $taxIdCoordinates = ['x' => 12.9, 'y' => 98.8];
 
-    protected $stateCoordinates = ['x' => 101.1, 'y' => 99.5];
+    protected $stateCoordinates = ['x' => 101.1, 'y' => 98.8];
 
     public function getTemplatePath(): string
     {
@@ -34,12 +34,11 @@ class MinnesotaCertificate extends BaseStateCertificate
         // Coordinates are in millimeters (mm) - FPDI default unit
         // Note: Y coordinates include a +4mm offset adjustment for PDF rendering alignment
         // Business Information
-        $this->writeAt($pdf, 12.9, 82.8, $data->businessName);
-        $this->writeAt($pdf, 101.1, 91.3, $data->businessCity);
-        $this->writeAt($pdf, 147.0, 91.3, $data->businessState);
-        $this->writeAt($pdf, 164.6, 91.3, $data->businessZip);
-        $this->writeAt($pdf, 137.6, 178.0, $data->businessType);
-        $this->writeAt($pdf, 12.9, 91.3, $data->businessStreetAddress);
+        $this->writeAt($pdf, 12.9, 82.1, $data->businessName);
+        $this->writeAt($pdf, 101.1, 90.6, $data->businessCity);
+        $this->writeAt($pdf, 147.0, 90.6, $data->businessState);
+        $this->writeAt($pdf, 164.6, 90.6, $data->businessZip);
+        $this->writeAt($pdf, 12.9, 90.6, $data->businessStreetAddress);
 
         // Tax ID and state
         $business = $certificate->business_snapshot;
@@ -47,21 +46,21 @@ class MinnesotaCertificate extends BaseStateCertificate
 
         $this->writeAt($pdf, $this->taxIdCoordinates['x'], $this->taxIdCoordinates['y'], $data->businessTaxId);
         $this->writeAt($pdf, $this->stateCoordinates['x'], $this->stateCoordinates['y'], $taxIdSourceState);
-        $this->writeAt($pdf, 137.6, 178.0, $data->businessType);
+        $this->writeAt($pdf, 137.6, 177.4, $data->businessType);
 
         // Vendor Information
-        $this->writeAt($pdf, 12.9, 115.7, $data->vendorName);
-        $this->writeAt($pdf, 12.9, 124.9, $data->vendorStreetAddress);
-        $this->writeAt($pdf, 101.1, 124.9, $data->vendorCity);
-        $this->writeAt($pdf, 147.0, 124.9, $data->vendorState);
-        $this->writeAt($pdf, 164.6, 124.9, $data->vendorZip);
+        $this->writeAt($pdf, 12.9, 115.0, $data->vendorName);
+        $this->writeAt($pdf, 12.9, 124.2, $data->vendorStreetAddress);
+        $this->writeAt($pdf, 101.1, 124.2, $data->vendorCity);
+        $this->writeAt($pdf, 147.0, 124.2, $data->vendorState);
+        $this->writeAt($pdf, 164.6, 124.2, $data->vendorZip);
 
         // Certificate Details
-        $this->writeAt($pdf, 167.7, 259.2, $data->issueDate);
+        $this->writeAt($pdf, 167.7, 258.5, $data->issueDate);
 
         // Contact Information
-        $this->writeAt($pdf, 76.4, 259.2, $data->signerName);
-        $this->writeAt($pdf, 129.6, 259.2, $data->signerTitle);
+        $this->writeAt($pdf, 76.4, 258.5, $data->signerName);
+        $this->writeAt($pdf, 129.6, 258.5, $data->signerTitle);
 
         // Special Elements
         $this->writeAt($pdf, 105.8, 178.0, $data->checkmarkX);

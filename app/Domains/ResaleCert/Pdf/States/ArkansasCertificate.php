@@ -14,9 +14,10 @@ class ArkansasCertificate extends BaseStateCertificate
     protected $inStateTaxIdCoordinates = ['x' => 102, 'y' => 57];
 
     /**
-     * Coordinates for out-of-state tax ID
+     * Coordinates for out-of-state tax ID (the "Number" line after
+     * "similar permit issued by the State of")
      */
-    protected $outOfStateTaxIdCoordinates = ['x' => 102.3, 'y' => 56.9];
+    protected $outOfStateTaxIdCoordinates = ['x' => 126.5, 'y' => 66.6];
 
     /**
      * Coordinates for state abbreviation (out-of-state only)
@@ -53,40 +54,35 @@ class ArkansasCertificate extends BaseStateCertificate
         }
 
         // "purchased from" (seller/vendor name)
-        $this->writeAt($pdf, 106, 76.5, $data->vendorName);
+        $this->writeAt($pdf, 106, 76, $data->vendorName);
 
         // -------------------------------------------------
         // Merchandise description & exemption (blanket resale)
         // -------------------------------------------------
         // Description of the merchandise to be purchased
-        $this->writeAt($pdf, 25, 130, $data->productDescription);
+        $this->writeAt($pdf, 25, 129.4, $data->productDescription);
 
         // Reason merchandise is exempt — treat as blanket resale
-        $this->writeAt($pdf, 25, 149, $data->businessType);
+        $this->writeAt($pdf, 25, 148.4, $data->businessType);
 
         // Purchaser's business activity
-        $this->writeAt($pdf, 82, 169, $data->businessType);
+        $this->writeAt($pdf, 82, 168.5, $data->businessType);
 
         // ------------------------------------
         // Purchaser name and signature section
         // ------------------------------------
         // Purchaser's Business Name (as stated on permit)
-        $this->writeAt($pdf, 25, 188, $data->businessName);
+        $this->writeAt($pdf, 25, 187.4, $data->businessName);
 
         // Signature (right side)
         $this->addSignatureWithHeight($pdf, $certificate, 128, 182, 9);
 
         // Address (street) and Title/Position with Company
-        $this->writeAt($pdf, 25, 203, $data->businessStreetAddress);
-        $this->writeAt($pdf, 96, 203, $data->signerTitle);
+        $this->writeAt($pdf, 25, 202.4, $data->businessStreetAddress);
+        $this->writeAt($pdf, 96, 202.4, $data->signerTitle);
 
         // City, State, Zip (left) and Date (right)
-        $this->writeAt(
-            $pdf,
-            25,
-            218,
-            $data->businessCity.', '.$data->businessState.' '.$data->businessZip
-        );
-        $this->writeAt($pdf, 96, 218, $data->issueDate);
+        $this->writeAt($pdf, 25, 217.4, $data->businessCityStateZip);
+        $this->writeAt($pdf, 96, 217.4, $data->issueDate);
     }
 }

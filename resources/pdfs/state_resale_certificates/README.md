@@ -1,40 +1,22 @@
 # State Resale Certificate PDF Templates
 
-This directory contains the PDF templates for each state's resale certificate form.
+This directory holds the official blank resale certificate form for each state. Certificates are made by importing the form with FPDI and writing the buyer's details at fixed millimetre coordinates.
+
+- `config/resale_cert.php` maps each state to its certificate class and template file (Georgia and New Jersey also have a `template_out_of_state` form).
+- The certificate classes live in `app/Domains/ResaleCert/Pdf/States/`. Each class's `fillFormFields()` writes fields with `$this->writeAt($pdf, x, y, $data->field)` and stamps the signature with `addSignatureWithHeight()`.
 
 ## File Naming Convention
 
-PDF files should be named using lowercase with underscores for spaces:
-- `new_york.pdf` - New York
-- `south_carolina.pdf` - South Carolina
-- `california.pdf` - California
-- `texas.pdf` - Texas
-- etc.
+Name files in lowercase with underscores for spaces, for example `new_york.pdf` or `south_carolina.pdf`.
 
-## Template Requirements
+## Mapping Fields
 
-1. PDF files should be the official blank forms from each state
-2. Forms should be fillable or have clear areas where data can be overlaid
-3. Keep file sizes reasonable (under 5MB per template)
+The PDF coordinate mapper is at `/admin/tools/pdf-mapper` (admin role). It reads the `writeAt()` calls from each class, so keep that call shape: numeric coordinates and a `$data->field` or a literal string. Its sample preview renders a certificate with fixed sample data and a red 5 mm grid, in-state or out-of-state, so you can check every field against the form.
 
-## Adding Templates for PDF Field Mapper
+## Updating a Template
 
-The PDF Field Mapper tool (available at `/dev/cert-mapper`) automatically detects any PDFs in this directory.
-
-1. Download the official resale certificate form from the state's tax authority website
-2. Name it using lowercase and underscores (e.g., `north_carolina.pdf`)
-3. Place it in this directory
-4. The PDF will automatically appear in the dropdown on the field mapper tool
-5. No code changes or database entries required!
-
-## Using the Field Mapper
-
-1. Navigate to `/dev/cert-mapper` (local environment only)
-2. Your new PDF will appear in the dropdown
-3. Select it and drag fields onto the PDF
-4. Copy the generated `fillFormFields` function
-5. Create a new certificate class in `app/Services/StateCertificates/States/`
-
-## Missing Templates
-
-If a template is not found for a state, the system will generate a generic certificate with all required information.
+1. Download the current form from the state's tax agency and note its revision mark.
+2. Flatten it before copying it here. Most downloaded state forms use object streams or compression that the free FPDI parser cannot read ("compression technique not supported"). Saving the PDF with pdf-lib and `useObjectStreams: false`, after `form.flatten()` for fillable forms, gives a file FPDI imports. Remove buttons and help banners (for example "Print" and "Reset") before flattening, or they are baked into the page.
+3. Replace the file here under the same name.
+4. Render the sample certificate in-state and out-of-state with the grid, and fix the coordinates in the state's class until every field sits on its line or in its box.
+5. Run `tests/Feature/ResaleCert/CertificateRenderingTest.php`. It renders every state and checks the page count matches the template.

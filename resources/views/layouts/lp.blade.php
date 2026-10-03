@@ -17,7 +17,7 @@
     <header class="relative border-b border-zinc-200 bg-white" x-data="{ menuOpen: false }" @keydown.escape.window="menuOpen = false">
         <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
             <a href="{{ route('home') }}" class="flex shrink-0 items-center">
-                <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" class="h-9" />
+                <img src="/img/logo/eregister-logo-dark-svg.svg" alt="eRegister" width="1538" height="520" class="h-9 w-auto" />
             </a>
 
             @hasSection('nav')

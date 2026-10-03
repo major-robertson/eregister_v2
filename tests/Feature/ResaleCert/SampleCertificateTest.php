@@ -27,6 +27,18 @@ it('answers 404 for a state without a certificate form', function () {
     $this->get(route('resale-cert.sample', 'ZZ'))->assertNotFound();
 });
 
+it('answers 404 for a state that issues its own certificate', function () {
+    $this->get(route('resale-cert.sample', 'FL'))->assertNotFound();
+});
+
+it('falls back to the Texas sample for a business in a state without a generator', function () {
+    $this->business->update(['business_address' => ['line1' => '1 Main St', 'city' => 'Miami', 'state' => 'FL', 'postal_code' => '33101']]);
+
+    Livewire::test(Dashboard::class)
+        ->assertSee(route('resale-cert.sample', 'TX'))
+        ->assertDontSee(route('resale-cert.sample', 'FL'));
+});
+
 it('links the sample for the business state from the pricing pitch', function () {
     Livewire::test(Dashboard::class)
         ->assertSee('See a sample certificate')

@@ -6,7 +6,7 @@ This directory contains the PDF templates for each state's resale certificate fo
 
 PDF files should be named using lowercase with underscores for spaces:
 - `new_york.pdf` - New York
-- `district_of_columbia.pdf` - District of Columbia
+- `south_carolina.pdf` - South Carolina
 - `california.pdf` - California
 - `texas.pdf` - Texas
 - etc.

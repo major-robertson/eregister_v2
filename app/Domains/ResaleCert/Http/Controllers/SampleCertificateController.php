@@ -3,6 +3,7 @@
 namespace App\Domains\ResaleCert\Http\Controllers;
 
 use App\Domains\ResaleCert\Models\ResaleCertificate;
+use App\Domains\ResaleCert\Pdf\StateCertificateFactory;
 use App\Domains\ResaleCert\Services\CertificatePdfService;
 use Illuminate\Http\Response;
 
@@ -14,11 +15,11 @@ use Illuminate\Http\Response;
  */
 class SampleCertificateController
 {
-    public function __invoke(string $stateCode, CertificatePdfService $pdfService): Response
+    public function __invoke(string $stateCode, CertificatePdfService $pdfService, StateCertificateFactory $factory): Response
     {
         $stateCode = strtoupper($stateCode);
 
-        abort_unless(config()->has("resale_cert.states.{$stateCode}"), 404, 'Unknown state.');
+        abort_unless($factory->has($stateCode), 404, 'No certificate form for this state.');
 
         $bytes = $pdfService->renderCertificate($this->sampleCertificate($stateCode), false);
 

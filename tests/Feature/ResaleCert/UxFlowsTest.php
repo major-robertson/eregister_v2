@@ -66,10 +66,20 @@ describe('blank resale certificate forms', function () {
         $this->get(route('sales-tax.blank-resale-certificate', 'TX'))->assertForbidden();
     });
 
-    it('has no blank form for FL (state-issued only)', function () {
-        paidSalesTaxRegistration($this->business, $this->user, ['FL']);
+    it('has no blank form for a state that issues its own certificate', function (string $state) {
+        paidSalesTaxRegistration($this->business, $this->user, [$state]);
 
-        $this->get(route('sales-tax.blank-resale-certificate', 'FL'))->assertNotFound();
+        $this->get(route('sales-tax.blank-resale-certificate', $state))->assertNotFound();
+    })->with(['FL', 'LA', 'MS', 'DC', 'ME', 'WA', 'NM']);
+
+    it('serves the SST form as the Tennessee blank', function () {
+        paidSalesTaxRegistration($this->business, $this->user, ['TN']);
+
+        $response = $this->get(route('sales-tax.blank-resale-certificate', 'TN'))
+            ->assertSuccessful()
+            ->assertDownload('TN_Blank_Resale_Certificate.pdf');
+
+        expect($response->baseResponse->getFile()->getFilename())->toBe('sst.pdf');
     });
 
     it('shows the free-forms perk and resale upsell on the sales-tax dashboard', function () {

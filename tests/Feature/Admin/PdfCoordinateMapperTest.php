@@ -122,4 +122,9 @@ describe('sample renders', function () {
         $this->get(route('admin.tools.pdf-mapper.sample', 'ZZ'))
             ->assertNotFound();
     });
+
+    it('404s for states without a generator', function () {
+        $this->get(route('admin.tools.pdf-mapper.sample', 'FL'))
+            ->assertNotFound();
+    });
 });

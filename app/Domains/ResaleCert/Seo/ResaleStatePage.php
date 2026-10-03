@@ -48,7 +48,7 @@ final class ResaleStatePage
     }
 
     /** Bump when the shape of this object or the page copy changes: the cached instances are replaced on the next request. */
-    public const CACHE_VERSION = 4;
+    public const CACHE_VERSION = 5;
 
     /**
      * No statewide sales tax and no rule row, but a page all the same: buyers
@@ -205,6 +205,22 @@ final class ResaleStatePage
     public function hasOfficialForm(): bool
     {
         return ! empty($this->config['template']);
+    }
+
+    /**
+     * Whether the generator produces a certificate for this state. False for
+     * the states that issue the certificate themselves and have no generator
+     * class (FL, LA, MS, DC): their pages point to the state instead.
+     */
+    public function hasGenerator(): bool
+    {
+        return ! empty($this->config['class']);
+    }
+
+    /** Where a registered buyer gets the state's own certificate (config 'state_issued'), or null. */
+    public function stateIssuedGuidance(): ?string
+    {
+        return $this->config['state_issued']['guidance'] ?? null;
     }
 
     /** The rule row's expiration, used when the content file has none. */
@@ -530,6 +546,10 @@ final class ResaleStatePage
 
     private function generatorSentence(): string
     {
+        if (! $this->hasGenerator()) {
+            return $this->stateIssuedGuidance() ?? 'Our generator does not produce this certificate.';
+        }
+
         return match ($this->generatorTemplate()) {
             'mtc.pdf' => 'Our generator produces the MTC uniform certificate.',
             'sst.pdf' => 'Our generator produces the Streamlined Sales Tax certificate.',
@@ -735,9 +755,11 @@ final class ResaleStatePage
         $agency = $this->agencyName();
         $number = $this->formNumber();
         $title = $this->formTitle();
-        $generator = $this->generatorTemplate() !== ''
-            ? $this->generatorSentence().' You get a signed PDF with your business, permit, and purchase details.'
-            : 'Our generator produces a signed certificate with every required element.';
+        $generator = match (true) {
+            ! $this->hasGenerator() => $this->generatorSentence(),
+            $this->generatorTemplate() !== '' => $this->generatorSentence().' You get a signed PDF with your business, permit, and purchase details.',
+            default => 'Our generator produces a signed certificate with every required element.',
+        };
 
         if (! empty($form['label'])) {
             return "{$form['label']}. The rules come from the {$agency}. {$generator}";

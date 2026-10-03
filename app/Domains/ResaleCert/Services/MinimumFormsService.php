@@ -4,15 +4,19 @@ namespace App\Domains\ResaleCert\Services;
 
 use App\Domains\ResaleCert\Models\ResaleProfile;
 use App\Domains\ResaleCert\Models\ResaleStateRule;
+use App\Domains\ResaleCert\Pdf\StateCertificateFactory;
 
 /**
  * The core multi-state optimization: given the states a user wants to cover,
  * compute the fewest forms that do it. Preference order SST > MTC >
  * individual state forms; states already covered by a uniform form are also
- * offered as optional individual extras.
+ * offered as optional individual extras. A state without a generator class
+ * never gets an individual form; left uncovered, it blocks generation.
  */
 class MinimumFormsService
 {
+    public function __construct(protected StateCertificateFactory $factory) {}
+
     /**
      * @param  list<string>  $selectedStates
      * @return array{minimum: list<array<string, mixed>>, optional: list<array<string, mixed>>}
@@ -63,7 +67,7 @@ class MinimumFormsService
         $remainingStates = array_diff($selectedStates, $coveredStates);
 
         foreach ($remainingStates as $stateCode) {
-            if ($rule = $rules->get($stateCode)) {
+            if ($this->factory->has($stateCode) && ($rule = $rules->get($stateCode))) {
                 $minimum[] = [
                     'type' => 'individual',
                     'state_code' => $stateCode,
@@ -81,7 +85,7 @@ class MinimumFormsService
                 continue;
             }
 
-            if ($rule = $rules->get($stateCode)) {
+            if ($this->factory->has($stateCode) && ($rule = $rules->get($stateCode))) {
                 $optional[] = [
                     'type' => 'individual',
                     'state_code' => $stateCode,

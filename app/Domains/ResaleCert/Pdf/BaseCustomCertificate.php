@@ -246,7 +246,6 @@ abstract class BaseCustomCertificate extends BaseStateCertificate
     {
         $states = [
             'AL' => 'Alabama',
-            'LA' => 'Louisiana',
             'OK' => 'Oklahoma',
         ];
 

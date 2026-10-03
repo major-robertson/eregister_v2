@@ -10,7 +10,7 @@ class StateCertificateFactory
     /** @var array<string, StateCertificateInterface> */
     protected array $certificates = [];
 
-    /** @var array<string, array{class: class-string, template: string, name: string, template_out_of_state?: string}> */
+    /** @var array<string, array{class: class-string|null, template: string, name: string, template_out_of_state?: string, state_issued?: array<string, string>}> */
     protected array $config;
 
     public function __construct()
@@ -88,5 +88,17 @@ class StateCertificateFactory
     public function getStateName(string $stateCode): ?string
     {
         return $this->config[$stateCode]['name'] ?? null;
+    }
+
+    /**
+     * The state-issued certificate block for a state that issues its own
+     * resale document (document, issuer, url, guidance, registered_buyers),
+     * or null.
+     *
+     * @return array{document: string, issuer: string, url: string, guidance: string, registered_buyers: string}|null
+     */
+    public function stateIssued(string $stateCode): ?array
+    {
+        return $this->config[$stateCode]['state_issued'] ?? null;
     }
 }

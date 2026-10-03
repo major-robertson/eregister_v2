@@ -27,8 +27,9 @@ class NevadaCertificate extends BaseStateCertificate
 
         $pdf->SetFont('Helvetica', '', 9);
 
-        // "I hold valid seller's permit, Location ID number ____"
-        $this->writeAt($pdf, 138, 62.2, $data->businessTaxId);
+        // "I hold valid seller's permit, Location ID number ____": no field
+        // for the state, so an out-of-state number carries its state ("CT 123")
+        $this->writeAt($pdf, 138, 62.2, $this->labelledTaxId($certificate, 'NV'));
 
         // "engaged in the business of selling:" box
         $this->writeAt($pdf, 24, 79, $data->productDescription);

@@ -36,9 +36,10 @@ class VirginiaCertificate extends BaseStateCertificate
         // Box 1: tangible personal property for resale
         $this->writeAt($pdf, 12.85, 135.1, $data->checkmarkX);
 
-        // Name of Dealer and Virginia Account No.
+        // Name of Dealer and Virginia Account No. The form has no field for
+        // the state, so an out-of-state number carries its state ("CT 123").
         $this->writeAt($pdf, 39, 178.3, $data->businessName);
-        $this->writeAt($pdf, 137.5, 178.3, $data->businessTaxId);
+        $this->writeAt($pdf, 137.5, 178.3, $this->labelledTaxId($certificate, 'VA'));
 
         // Trading as
         $this->writeAt($pdf, 31, 185.8, $data->businessDba);

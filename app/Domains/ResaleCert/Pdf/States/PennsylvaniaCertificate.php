@@ -24,8 +24,17 @@ class PennsylvaniaCertificate extends BaseStateCertificate
 
         // Coordinates are in millimeters (mm) - FPDI default unit
         // Note: Y coordinates include a +4mm offset adjustment for PDF rendering alignment
-        // Business Information
-        $this->writeAt($pdf, 73.1, 123.9, $data->businessTaxId);
+        // Business Information. Paragraph 3 "resold under License ID ____" has
+        // no field for the state, so an out-of-state number carries its state
+        // ("CT 123"). The form then asks a purchaser without a PA license to
+        // explain under Number 8, so that line names the issuing state.
+        $this->writeAt($pdf, 73.1, 123.9, $this->labelledTaxId($certificate, 'PA'));
+
+        $sourceState = $certificate->business_snapshot['tax_id_source_state'] ?? null;
+        if ($sourceState !== null && $sourceState !== 'PA' && $data->businessTaxId !== '') {
+            $this->writeAt($pdf, 35.0, 176.8, "Out-of-state purchaser, not registered in PA. License ID above was issued by {$sourceState}.");
+        }
+
         $this->writeAt($pdf, 14.1, 203.9, $data->businessName);
         $this->writeAt($pdf, 139.9, 203.9, $data->businessEin);
         $this->writeAt($pdf, 14.1, 213.8, $data->businessStreetAddress);

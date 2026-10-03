@@ -45,6 +45,7 @@ class AppServiceProvider extends ServiceProvider
             \App\Domains\Lien\Console\SendDeadlineReminders::class,
             \App\Domains\Lien\Console\SendWaiverReminders::class,
             \App\Domains\ResaleCert\Console\CheckExpiringCertificates::class,
+            \App\Domains\ResaleCert\Console\SyncStateRules::class,
             \App\Domains\ResaleCert\Console\VerifyResaleSignatureChain::class,
         ]);
 

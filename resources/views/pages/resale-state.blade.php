@@ -225,6 +225,9 @@
                     <li class="flex gap-3"><span class="mt-1 h-2 w-2 shrink-0 rounded-full bg-emerald-500"></span>A date, because {{ $name }} certificates are {{ $page->expirationPhrase() }} and vendors need to know when to ask for a new one.</li>
                     @endif
                 </ul>
+                @if ($page->code === 'TX')
+                <p class="mt-6 text-zinc-600">For a field-by-field walkthrough of the state form, see <a href="{{ route('guides.show', ['slug' => 'how-to-fill-out-texas-form-01-339']) }}" class="font-medium text-zinc-900 underline">how to fill out Texas Form 01-339</a>.</p>
+                @endif
             </div>
             <div class="rounded-2xl border border-zinc-200 {{ $page->content ? 'bg-zinc-50' : 'bg-white' }} p-8">
                 <h3 class="text-lg font-semibold text-zinc-900">Using your {{ $name }} certificate</h3>

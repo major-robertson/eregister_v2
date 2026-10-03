@@ -7,15 +7,77 @@ use App\Support\Seo\Guides;
 use App\Support\Seo\Urls;
 
 /*
- * The /guides hub, the article template and the three data-driven guides
- * (SEO Phase E, EREG-14). Author and publisher are the Organization node.
+ * The /guides hub, the article template, the three data-driven guides and
+ * the eleven written guides (SEO Phase E, EREG-14). Author and publisher are
+ * the Organization node. Every guide in the registry, present and future, is
+ * held to the same contract by the 'guides' dataset.
  */
 
-const GUIDE_SLUGS = [
+/** The guides built from the state pages' data; every other guide is written. */
+const DATA_GUIDE_SLUGS = [
     'mechanics-lien-deadlines-by-state',
     'preliminary-notice-requirements-by-state',
     'economic-nexus-thresholds-by-state',
 ];
+
+// Every registry slug. The registry builds its related links with route(), so
+// the dataset boots the application once to read it, skipping the exception
+// bootstrapper so PHPUnit's error handlers stay untouched.
+dataset('guides', function () {
+    $app = require __DIR__.'/../../../bootstrap/app.php';
+    $app->bootstrapWith([
+        Illuminate\Foundation\Bootstrap\LoadEnvironmentVariables::class,
+        Illuminate\Foundation\Bootstrap\LoadConfiguration::class,
+        Illuminate\Foundation\Bootstrap\RegisterFacades::class,
+        Illuminate\Foundation\Bootstrap\SetRequestForConsole::class,
+        Illuminate\Foundation\Bootstrap\RegisterProviders::class,
+        Illuminate\Foundation\Bootstrap\BootProviders::class,
+    ]);
+
+    return array_keys(Guides::all());
+});
+
+/** The rendered <main> element's HTML. */
+function guideMain(string $html): string
+{
+    preg_match('/<main>(.*)<\/main>/s', $html, $main);
+
+    return $main[1] ?? '';
+}
+
+/** The visible words in a chunk of HTML (scripts and styles removed). */
+function guideWordCount(string $html): int
+{
+    $text = html_entity_decode(strip_tags(preg_replace('/<(script|style)\b.*?<\/\1>/si', ' ', $html)), ENT_QUOTES);
+
+    return count(array_filter(preg_split('/\s+/u', $text), fn (string $word) => preg_match('/[\p{L}\p{N}]/u', $word) === 1));
+}
+
+/**
+ * The internal hrefs in a chunk of HTML as paths: relative links and links to
+ * the app's own URL. Anchors, mailto and other hosts are left out.
+ *
+ * @return array<int, string>
+ */
+function guideInternalPaths(string $html): array
+{
+    preg_match_all('/href="([^"]+)"/', $html, $hrefs);
+    $origin = rtrim(url('/'), '/');
+
+    $paths = [];
+    foreach ($hrefs[1] as $href) {
+        $href = html_entity_decode($href, ENT_QUOTES);
+        if (str_starts_with($href, $origin.'/') || $href === $origin) {
+            $href = substr($href, strlen($origin)) ?: '/';
+        }
+        if (! str_starts_with($href, '/') || str_starts_with($href, '//')) {
+            continue;
+        }
+        $paths[] = strtok($href, '#');
+    }
+
+    return array_values(array_unique($paths));
+}
 
 /** @return array<int, array<string, mixed>> every JSON-LD block on the page */
 function guideJsonLd(string $html): array
@@ -47,7 +109,7 @@ function guideRow(string $table, string $state): string
     return collect($rows[0])->first(fn (string $row) => str_contains($row, '>'.$state.'</a>')) ?? '';
 }
 
-it('renders the hub with its H1, breadcrumbs, a card per guide and the footer link', function () {
+it('renders the hub with its H1, breadcrumbs, all four clusters, a card per guide and the footer link', function () {
     $html = $this->get('/guides')->assertOk()->getContent();
 
     preg_match('/<title>(.*?)<\/title>/s', $html, $title);
@@ -62,11 +124,21 @@ it('renders the hub with its H1, breadcrumbs, a card per guide and the footer li
         ->toContain('"@type":"BreadcrumbList"')
         ->toContain('<link rel="canonical" href="'.Urls::absolute('/guides').'" />')
         ->toContain('>Mechanics liens</h2>')
+        ->toContain('>Lien waivers</h2>')
         ->toContain('>Sales tax</h2>')
-        ->not->toContain('>Lien waivers</h2>');
+        ->toContain('>Resale certificates</h2>');
 
-    foreach (GUIDE_SLUGS as $slug) {
-        $guide = Guides::find($slug);
+    // Fourteen guides, one card each.
+    preg_match_all('#<a href="'.preg_quote(url('/guides').'/', '#').'([a-z0-9-]+)"#', $html, $cards);
+    $slugs = array_keys(Guides::all());
+    sort($slugs);
+    $linked = $cards[1];
+    sort($linked);
+    expect(Guides::byCluster())->toHaveCount(4)
+        ->and($cards[1])->toHaveCount(14)
+        ->and($linked)->toBe($slugs);
+
+    foreach (Guides::all() as $slug => $guide) {
         expect($html)->toContain('href="'.route('guides.show', ['slug' => $slug]).'"')
             ->toContain(e($guide['title']))
             ->toContain(e($guide['summary']))
@@ -114,12 +186,46 @@ it('renders each guide with its title, description, canonical, article markup an
 
     $faq = guideSchema($html, 'FAQPage');
     expect($faq)->not->toBeNull()
-        ->and($faq['mainEntity'])->toHaveCount(4);
+        ->and(count($faq['mainEntity']))->toBeGreaterThanOrEqual(4);
 
-    // A Sources section with primary-source links that pass link equity.
-    expect($html)->toContain('>Sources</h2>')
-        ->and(substr_count($html, 'rel="nofollow'))->toBe(0);
-})->with(GUIDE_SLUGS);
+    // A Sources section with primary-source links that pass link equity. The
+    // written guides cite at least five; the data guides list a statute or
+    // agency page per state.
+    preg_match('/>Sources<\/h2>(.*?)<\/ol>/s', $html, $sources);
+    expect($sources)->not->toBeEmpty()
+        ->and(substr_count($html, 'nofollow'))->toBe(0);
+    if (! in_array($slug, DATA_GUIDE_SLUGS, true)) {
+        expect(preg_match_all('/<a href="https?:\/\//', $sources[1]))->toBeGreaterThanOrEqual(5);
+    }
+
+    // The article (below its header) links to at least five pages on the site.
+    preg_match('/<\/header>(.*?)<\/article>/s', $html, $article);
+    expect(count(guideInternalPaths($article[1])))->toBeGreaterThanOrEqual(5);
+
+    // No Markdown or template leftovers, and a real article's worth of words.
+    expect($html)->not->toContain('{{price:')
+        ->not->toContain('**')
+        ->not->toContain('](')
+        ->and(guideWordCount(guideMain($html)))->toBeGreaterThanOrEqual(900);
+})->with('guides');
+
+it('links only to internal pages that resolve', function (string $slug) {
+    $html = $this->get('/guides/'.$slug)->assertOk()->getContent();
+
+    // Links only: the head's <link href="/img/..."> files are static assets.
+    preg_match_all('/<a\b[^>]*\bhref="(\/(?!\/)[^"#]*)/', $html, $hrefs);
+    $paths = array_values(array_unique(array_map(fn (string $href) => html_entity_decode($href, ENT_QUOTES), $hrefs[1])));
+
+    // The data guides link with absolute route() URLs; the written guides use paths.
+    expect($paths)->toBeArray();
+    if (! in_array($slug, DATA_GUIDE_SLUGS, true)) {
+        expect(count($paths))->toBeGreaterThanOrEqual(5);
+    }
+
+    foreach ($paths as $path) {
+        expect($this->get($path)->getStatusCode())->toBeIn([200, 301], $path);
+    }
+})->with('guides');
 
 it('lists all 50 states in the lien deadlines table with the state pages\' headline deadline', function () {
     $html = $this->get('/guides/mechanics-lien-deadlines-by-state')->assertOk()->getContent();
@@ -189,6 +295,9 @@ it('lists the hub and every guide in the sitemap with the registry date', functi
         ->and($entries[Urls::absolute('/guides')]['changefreq'])->toBe('weekly')
         ->and($entries[Urls::absolute('/guides')]['lastmod'] >= Guides::lastUpdated())->toBeTrue();
 
+    $guideUrls = $entries->keys()->filter(fn (string $loc) => str_starts_with($loc, Urls::absolute('/guides/')));
+    expect($guideUrls)->toHaveCount(14);
+
     foreach (Guides::all() as $slug => $guide) {
         $entry = $entries[Guides::url($slug)] ?? null;
         expect($entry)->not->toBeNull()
@@ -207,6 +316,22 @@ it('links the guides from the pages they extend', function () {
         ->assertSee('href="'.route('guides.show', ['slug' => 'preliminary-notice-requirements-by-state']).'"', false);
     $this->get('/sales-tax-registration')->assertOk()
         ->assertSee('href="'.route('guides.show', ['slug' => 'economic-nexus-thresholds-by-state']).'"', false);
+
+    // The written guides, from the product page each one supports.
+    $guide = fn (string $slug) => 'href="'.route('guides.show', ['slug' => $slug]).'"';
+    $this->get('/liens')->assertSee($guide('how-to-file-a-mechanics-lien'), false);
+    $this->get('/liens/lien-waivers')->assertOk()
+        ->assertSee($guide('conditional-vs-unconditional-lien-waivers'), false)
+        ->assertSee($guide('how-to-fill-out-a-lien-waiver'), false);
+    $this->get('/liens/notice-of-intent-to-lien')->assertOk()->assertSee($guide('notice-of-intent-to-lien-explained'), false);
+    $this->get('/liens/lien-release')->assertOk()->assertSee($guide('how-to-release-a-mechanics-lien'), false);
+    $this->get('/liens/payment-demand-letter')->assertOk()->assertSee($guide('what-to-do-when-a-contractor-or-owner-doesnt-pay'), false);
+    $this->get('/resale-certificates')->assertOk()->assertSee($guide('sellers-permit-vs-resale-certificate'), false);
+    $this->get('/resale-certificates/texas')->assertOk()->assertSee($guide('how-to-fill-out-texas-form-01-339'), false);
+    $this->get('/resale-certificates/california')->assertOk()->assertDontSee($guide('how-to-fill-out-texas-form-01-339'), false);
+    $this->get('/sales-tax-registration')
+        ->assertSee($guide('when-do-you-need-a-sales-tax-permit'), false)
+        ->assertSee($guide('sales-tax-registration-checklist'), false);
 });
 
 it('keeps every registry entry within the title and description budgets', function () {
@@ -234,4 +359,4 @@ it('publishes no email, empty anchor, street address or raw field name on a guid
     foreach (['lien_anchor_logic', 'enforcement_trigger', 'first_furnish_date', 'pre_notice_required', 'noi_lead_time_days', 'revenue_usd'] as $field) {
         expect($html)->not->toContain($field);
     }
-})->with(GUIDE_SLUGS);
+})->with('guides');

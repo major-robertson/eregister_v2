@@ -389,6 +389,7 @@
                         nexus threshold, you generally must register before collecting tax. Not sure?
                         Start the form and we'll help you figure out where you have an obligation.
                         Our guide to <a href="{{ route('guides.show', ['slug' => 'economic-nexus-thresholds-by-state']) }}" class="font-medium text-[var(--ink)] underline decoration-slate-300 underline-offset-2 hover:decoration-[var(--ink)]">economic nexus thresholds by state</a> lists each state's threshold.
+                        To check whether you need a permit and what the application asks for, read <a href="{{ route('guides.show', ['slug' => 'when-do-you-need-a-sales-tax-permit']) }}" class="font-medium text-[var(--ink)] underline decoration-slate-300 underline-offset-2 hover:decoration-[var(--ink)]">when you need a sales tax permit</a> and the <a href="{{ route('guides.show', ['slug' => 'sales-tax-registration-checklist']) }}" class="font-medium text-[var(--ink)] underline decoration-slate-300 underline-offset-2 hover:decoration-[var(--ink)]">registration checklist</a>.
                     </x-accordion.content>
                 </x-accordion.item>
 

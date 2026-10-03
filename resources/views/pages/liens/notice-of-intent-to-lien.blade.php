@@ -44,7 +44,7 @@
                     A notice of intent to lien (NOI) is a formal document sent to the property owner, general contractor, and sometimes the lender before you actually file a mechanics lien. It states that you haven't been paid, specifies the amount owed, and warns that you will file a construction lien if payment isn't received by a certain date.
                 </p>
                 <p class="mt-4 text-zinc-600">
-                    In some states, sending a notice of intent to lien is legally required before you can file a mechanics lien. But even when it's optional, sending one is a smart strategy—many contractors and property owners pay up as soon as they receive it, avoiding the need to file a lien altogether.
+                    In some states, sending a notice of intent to lien is legally required before you can file a mechanics lien. But even when it's optional, sending one is a smart strategy—many contractors and property owners pay up as soon as they receive it, avoiding the need to file a lien altogether. Our guide to the <a href="{{ route('guides.show', ['slug' => 'notice-of-intent-to-lien-explained']) }}" class="font-medium text-zinc-900 underline">notice of intent to lien</a> lists the states that require one and the lead time each sets.
                 </p>
             </div>
             <div class="rounded-2xl border border-zinc-200 bg-zinc-50 p-8">

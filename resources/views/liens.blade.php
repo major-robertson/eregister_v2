@@ -436,6 +436,7 @@
         <p class="mt-8 text-center text-sm text-zinc-600">
             Not sure when your deadlines fall? The free <a href="{{ route('liens.deadline-calculator') }}" class="font-medium text-zinc-900 underline">mechanics lien deadline calculator</a> turns your project dates into notice and filing dates for any state.
             To compare every state at once, see <a href="{{ route('guides.show', ['slug' => 'mechanics-lien-deadlines-by-state']) }}" class="font-medium text-zinc-900 underline">mechanics lien deadlines by state</a>.
+            For each step from first notice to release, read <a href="{{ route('guides.show', ['slug' => 'how-to-file-a-mechanics-lien']) }}" class="font-medium text-zinc-900 underline">how to file a mechanics lien</a>.
         </p>
     </div>
 </section>

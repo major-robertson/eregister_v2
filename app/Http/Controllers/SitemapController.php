@@ -10,6 +10,7 @@ use App\Domains\Lien\Waivers\WaiverStateRegistry;
 use App\Domains\ResaleCert\Seo\ResaleStatePage;
 use App\Domains\SalesTax\Seo\SalesTaxStateContent;
 use App\Domains\SalesTax\Seo\SalesTaxStatePage;
+use App\Support\Seo\Guides;
 use App\Support\Seo\States;
 use App\Support\Seo\Urls;
 use Carbon\Carbon;
@@ -80,6 +81,14 @@ class SitemapController extends Controller
 
         foreach (self::PAGES as $page) {
             $entries[] = self::entry($page['path'], $page['changefreq'], $page['priority'], self::viewModified($page['view']));
+        }
+
+        // Guides, read from the registry: the hub carries the newest guide date
+        // (or the hub view's, if newer); each guide carries its own `updated`.
+        $hubModified = max(Carbon::createFromTimestamp(self::viewModified('pages.guides.index'))->toDateString(), Guides::lastUpdated());
+        $entries[] = self::datedEntry(route('guides.index', absolute: false), 'weekly', '0.7', $hubModified);
+        foreach (Guides::all() as $guide) {
+            $entries[] = self::datedEntry(route('guides.show', ['slug' => $guide['slug']], absolute: false), 'monthly', '0.6', $guide['updated']);
         }
 
         // Lien waiver state pages: content comes from the waiver state data
@@ -178,6 +187,21 @@ class SitemapController extends Controller
             'changefreq' => $changefreq,
             'priority' => $priority,
             'lastmod' => Carbon::createFromTimestamp($modified)->toDateString(),
+        ];
+    }
+
+    /**
+     * An entry whose lastmod is a known date ("2026-10-03") rather than a file time.
+     *
+     * @return array{loc: string, changefreq: string, priority: string, lastmod: string}
+     */
+    private static function datedEntry(string $path, string $changefreq, string $priority, string $date): array
+    {
+        return [
+            'loc' => Urls::absolute($path),
+            'changefreq' => $changefreq,
+            'priority' => $priority,
+            'lastmod' => Carbon::parse($date)->toDateString(),
         ];
     }
 

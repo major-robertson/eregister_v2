@@ -67,6 +67,12 @@ Route::view('refund-policy', 'pages.refund-policy')->name('refund-policy');
 Route::view('contact', 'pages.contact')->name('contact');
 Route::view('about', 'pages.about')->name('about');
 
+// Editorial guides. The slugs live in App\Support\Seo\Guides; unknown slugs 404.
+Route::get('guides', [\App\Http\Controllers\GuidesController::class, 'index'])->name('guides.index');
+Route::get('guides/{slug}', [\App\Http\Controllers\GuidesController::class, 'show'])
+    ->where('slug', '[a-z0-9-]+')
+    ->name('guides.show');
+
 Route::get('/llc', function () {
     // Show the membership price the LLC checkout charges.
     try {

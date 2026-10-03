@@ -388,6 +388,7 @@
                         If you sell taxable goods or services, or you've crossed a state's economic
                         nexus threshold, you generally must register before collecting tax. Not sure?
                         Start the form and we'll help you figure out where you have an obligation.
+                        Our guide to <a href="{{ route('guides.show', ['slug' => 'economic-nexus-thresholds-by-state']) }}" class="font-medium text-[var(--ink)] underline decoration-slate-300 underline-offset-2 hover:decoration-[var(--ink)]">economic nexus thresholds by state</a> lists each state's threshold.
                     </x-accordion.content>
                 </x-accordion.item>
 

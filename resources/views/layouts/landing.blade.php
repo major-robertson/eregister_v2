@@ -371,6 +371,7 @@
                     <h2 class="font-semibold text-white">Company</h2>
                     <ul class="mt-4 space-y-3">
                         <li><a href="{{ route('about') }}" class="text-sm text-zinc-400 transition hover:text-white">About</a></li>
+                        <li><a href="{{ route('guides.index') }}" class="text-sm text-zinc-400 transition hover:text-white">Guides</a></li>
                         <li><a href="{{ route('contact') }}" class="text-sm text-zinc-400 transition hover:text-white">Contact</a></li>
                         <li><a href="{{ route('sales-tax-registration') }}" class="text-sm text-zinc-400 transition hover:text-white">Sales Tax</a></li>
                         <li><a href="{{ route('resale-certificates') }}" class="text-sm text-zinc-400 transition hover:text-white">Resale Certificates</a></li>

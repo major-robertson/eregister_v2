@@ -10,7 +10,7 @@
             <div class="relative hidden h-full flex-col bg-zinc-900 p-10 text-white lg:flex">
                 <div class="absolute inset-0 bg-zinc-900"></div>
                 <a href="{{ route('home') }}" class="relative z-20 flex items-center" wire:navigate>
-                    <img src="/img/logo/eregister-logo-light-svg.svg" alt="eRegister" class="h-9" />
+                    <img src="/img/logo/eregister-logo-light-svg.svg" alt="eRegister" width="1538" height="520" class="h-9 w-auto" />
                 </a>
 
                 @php

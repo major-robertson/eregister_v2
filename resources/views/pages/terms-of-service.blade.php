@@ -188,11 +188,7 @@
             </p>
 
             <h2 class="mt-14 font-bold">12. Contact Information</h2>
-            <p>If you have any questions about these Terms of Service, please contact us at:</p>
-            <ul>
-                <li>Contact form: <a href="{{ route('contact') }}">eregister.com/contact</a></li>
-                <li>Address: 4869 Brownsboro Rd STE 101-E, Louisville, KY 40207</li>
-            </ul>
+            <p>If you have any questions about these Terms of Service, please contact us through our <a href="{{ route('contact') }}">contact page</a>.</p>
 
             <h3 class="mt-8 font-bold">12.1 Related Policies</h3>
             <ul>

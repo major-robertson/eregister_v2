@@ -65,6 +65,7 @@ Route::view('privacy-policy', 'pages.privacy-policy')->name('privacy-policy');
 Route::view('terms-of-service', 'pages.terms-of-service')->name('terms-of-service');
 Route::view('refund-policy', 'pages.refund-policy')->name('refund-policy');
 Route::view('contact', 'pages.contact')->name('contact');
+Route::view('about', 'pages.about')->name('about');
 
 Route::get('/llc', function () {
     // Show the membership price the LLC checkout charges.
@@ -181,6 +182,7 @@ Route::prefix('government')->name('government.')->group(function () {
     Route::view('portals', 'pages.government.portals')->name('portals');
     Route::view('integrations', 'pages.government.integrations')->name('integrations');
     Route::view('implementation', 'pages.government.implementation')->name('implementation');
+    Route::view('capabilities', 'pages.government.capabilities')->name('capabilities');
 
     // Sales demos (noindex, shareable by direct URL only)
     // Two design options for EOG–RFQ–26-03; cross-link via banner.

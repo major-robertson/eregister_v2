@@ -56,9 +56,9 @@
 
 @unless ($seoNoindex)
 @php
-    // No email, telephone or legalName: the inbox stays off public pages and
-    // the legal name is not confirmed.
-    $seoAddress = config('company.address');
+    // No address, email, telephone, legalName or sameAs: the owner keeps the
+    // street address off the website (2026-10-03), the inbox stays off public
+    // pages, the legal name is not confirmed and there are no social profiles.
     $seoOrganization = array_filter([
         '@context' => 'https://schema.org',
         '@type' => 'Organization',
@@ -68,14 +68,7 @@
         'logo' => asset('img/logo/eregister-logo-dark.png'),
         'description' => 'eRegister prepares and files mechanics liens, lien waivers, sales tax registrations, resale certificates and business formations for U.S. businesses.',
         'foundingDate' => (string) config('company.in_business_since'),
-        'address' => $seoAddress ? [
-            '@type' => 'PostalAddress',
-            'streetAddress' => $seoAddress['street'],
-            'addressLocality' => $seoAddress['locality'],
-            'addressRegion' => $seoAddress['region'],
-            'postalCode' => $seoAddress['postal_code'],
-            'addressCountry' => $seoAddress['country'],
-        ] : null,
+        'areaServed' => 'US',
         'contactPoint' => [
             '@type' => 'ContactPoint',
             'contactType' => 'customer support',

@@ -296,6 +296,8 @@
                 <div>
                     <h2 class="font-semibold text-white">Company</h2>
                     <ul class="mt-4 space-y-3">
+                        <li><a href="{{ route('government.capabilities') }}"
+                                class="text-sm text-slate-400 transition hover:text-white">Capabilities Statement</a></li>
                         <li><a href="{{ route('contact') }}"
                                 class="text-sm text-slate-400 transition hover:text-white">Contact</a></li>
                         <li><a href="{{ route('home') }}"
@@ -313,9 +315,6 @@
                     <div>
                         <p class="text-sm text-slate-400">&copy; {{ date('Y') }} {{ config('app.name', 'eRegister') }}.
                             All rights reserved.</p>
-                        @if ($footerAddress = config('company.address'))
-                            <p class="mt-1 text-sm text-slate-400">{{ $footerAddress['street'] }}, {{ $footerAddress['locality'] }}, {{ $footerAddress['region'] }} {{ $footerAddress['postal_code'] }}</p>
-                        @endif
                     </div>
                     <p class="text-xs text-slate-400">
                         Not a government agency. eRegister is a private commercial vendor of digital services.

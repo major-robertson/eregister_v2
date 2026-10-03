@@ -178,6 +178,11 @@
                 </a>
             @endforeach
         </div>
+
+        <p class="mt-10 text-center text-slate-600">
+            Need it all on one page for procurement?
+            <a href="{{ route('government.capabilities') }}" class="font-semibold text-blue-700 underline hover:text-blue-800">Read our capabilities statement</a>.
+        </p>
     </div>
 </section>
 

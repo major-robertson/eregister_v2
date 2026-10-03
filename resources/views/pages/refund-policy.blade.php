@@ -195,12 +195,8 @@
 
             <h2 class="mt-14 font-bold">11. Contact</h2>
             <p>
-                Questions about this Policy must be sent to:
+                Questions about this Policy must be sent through our <a href="{{ route('contact') }}">contact page</a>.
             </p>
-            <ul>
-                <li>Contact form: <a href="{{ route('contact') }}">eregister.com/contact</a></li>
-                <li>Address: 4869 Brownsboro Rd STE 101-E, Louisville, KY 40207</li>
-            </ul>
 
             <h2 class="mt-14 font-bold">12. Governing Law</h2>
             <p>

@@ -20,8 +20,11 @@ return [
     'businesses_helped' => 13000,
     'businesses_helped_as_of' => '2026-09-15',
 
-    // Mailing address (confirmed 2026-09-30). No phone or email: public pages
-    // link to /contact instead so the inbox is not scraped.
+    // Mailing address (confirmed 2026-09-30). Never render it on public
+    // pages, footers or structured data: the owner decided on 2026-10-03 that
+    // the street address is not published anywhere on the website, and the
+    // sitemap contract test fails if it appears. No phone or email either:
+    // public pages link to /contact instead so the inbox is not scraped.
     'address' => [
         'street' => '4869 Brownsboro Rd STE 101-E',
         'locality' => 'Louisville',

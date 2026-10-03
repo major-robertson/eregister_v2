@@ -93,7 +93,7 @@ it('builds the canonical and organization ids from the configured app url', func
         ->assertSee('"@id":"https://example.test/#organization"', escape: false);
 });
 
-it('describes the organization with its address and founding year, and no email or phone', function () {
+it('describes the organization with its founding year and service area, and no address, email or phone', function () {
     $html = $this->get('/llc')->assertOk()->getContent();
 
     preg_match_all('/<script type="application\/ld\+json">(.*?)<\/script>/s', $html, $blocks);
@@ -103,10 +103,17 @@ it('describes the organization with its address and founding year, and no email 
 
     expect($organization)->not->toBeNull()
         ->and($organization['foundingDate'])->toBe('2013')
-        ->and($organization['address']['@type'])->toBe('PostalAddress')
-        ->and($organization['address']['addressLocality'])->toBe('Louisville')
+        ->and($organization['areaServed'])->toBe('US')
+        ->and($organization['contactPoint']['url'])->toBe('http://localhost/contact')
         ->and($organization['description'])->toBeString()
-        ->and($organization)->not->toHaveKey('email')
+        ->and($organization)->toHaveKeys(['name', 'url', 'logo', 'description', 'foundingDate', 'contactPoint'])
+        ->not->toHaveKey('address')
+        ->not->toHaveKey('email')
         ->not->toHaveKey('telephone')
+        ->not->toHaveKey('sameAs')
         ->not->toHaveKey('legalName');
+
+    expect($html)->not->toContain('PostalAddress')
+        ->not->toContain('Brownsboro')
+        ->not->toContain('40207');
 });

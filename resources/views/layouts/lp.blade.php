@@ -65,9 +65,6 @@
             <div class="flex flex-col gap-8 md:flex-row md:justify-between">
                 <div>
                     <p class="font-semibold text-zinc-900">{{ config('app.name', 'eRegister') }}</p>
-                    @if (filled(config('mail.postal_address')))
-                        <p class="mt-1">{{ config('mail.postal_address') }}</p>
-                    @endif
                     <p class="mt-3 max-w-md text-xs text-zinc-500">{{ config('app.name', 'eRegister') }} is a private document preparation and filing service. It is not a government agency and is not affiliated with or endorsed by any government agency.</p>
                 </div>
                 <nav aria-label="Footer" class="flex flex-wrap gap-x-6 gap-y-2">

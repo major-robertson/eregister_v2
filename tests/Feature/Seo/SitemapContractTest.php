@@ -10,7 +10,11 @@ use App\Support\Seo\States;
  */
 
 // The only pages whose titles end with " | eRegister" (decision D3).
-const BRANDED_TITLE_PATHS = ['/', '/privacy-policy', '/terms-of-service', '/refund-policy', '/contact'];
+const BRANDED_TITLE_PATHS = ['/', '/privacy-policy', '/terms-of-service', '/refund-policy', '/contact', '/about'];
+
+// The street address is never published on the website (owner, 2026-10-03):
+// not in copy, footers or JSON-LD. Word boundaries keep asset hashes out.
+const STREET_ADDRESS_PATTERN = '/Brownsboro|\b40207\b|PostalAddress/i';
 
 // Working notes from the lien seed data that must never reach a page.
 const AUTHORING_PHRASES = '/this sheet|modeled here|as proxy|placeholder|See the notes below|See statute|plan on paper recording|snake_case/i';
@@ -65,7 +69,7 @@ it('serves every sitemap url as a clean, self-canonical, indexable page', functi
         if (mb_strlen($title) > 70) {
             $fail('title is '.mb_strlen($title)." characters: {$title}");
         }
-        // Decision D3: only home, the legal pages and /contact carry the
+        // Decision D3: only home, the legal pages, /contact and /about carry the
         // brand; product, state and government titles spend it on the query.
         $branded = str_ends_with($title, ' | eRegister');
         if (in_array($path, BRANDED_TITLE_PATHS, true) && ! $branded) {
@@ -87,6 +91,10 @@ it('serves every sitemap url as a clean, self-canonical, indexable page', functi
             if (! is_array($data) || ! isset($data['@type'])) {
                 $fail('JSON-LD block without @type or not valid JSON: '.mb_substr(trim($json), 0, 80));
             }
+        }
+
+        if (preg_match(STREET_ADDRESS_PATTERN, $html, $match)) {
+            $fail("publishes the street address (\"{$match[0]}\")");
         }
 
         foreach (['href="#"', '&amp;amp;', '@eregister.com', 'mailto:'] as $needle) {

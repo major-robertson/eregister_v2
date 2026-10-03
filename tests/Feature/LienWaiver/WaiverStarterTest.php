@@ -88,9 +88,7 @@ describe('ads landing page', function () {
             ->assertDontSee('Form a Business');
     });
 
-    it('gives the visitor a way around: a slim menu, a fuller footer, and the business address', function () {
-        config(['mail.postal_address' => '4869 Example Rd, Louisville KY 40207']);
-
+    it('gives the visitor a way around: a slim menu and a fuller footer', function () {
         $this->get('/lp/lien-waiver/tx')
             ->assertSuccessful()
             // Menu links and the sections they jump to.
@@ -104,18 +102,23 @@ describe('ads landing page', function () {
             ->assertSee(route('contact'), false)
             // Footer: who we are and where else to go.
             ->assertSee(route('liens.lien-waivers.pricing'), false)
-            ->assertSee(route('liens'), false)
-            ->assertSee('4869 Example Rd, Louisville KY 40207');
+            ->assertSee(route('liens'), false);
 
         // "Forms by state" has somewhere to land.
         $this->get('/liens/lien-waivers')->assertSee('id="states"', false);
     });
 
-    it('leaves the address out of the footer when none is configured', function () {
-        config(['mail.postal_address' => null]);
+    it('never publishes the street address, even when a mailing address is configured for email', function () {
+        // The postal address belongs in marketing email footers only, not on the website.
+        config(['mail.postal_address' => '4869 Example Rd, Louisville KY 40207']);
 
-        // The FAQ names the city; the street address and ZIP only come from config.
-        $this->get('/lp/lien-waiver')->assertSuccessful()->assertDontSee('KY 40207');
+        foreach (['/lp/lien-waiver', '/lp/lien-waiver/tx'] as $path) {
+            $this->get($path)
+                ->assertSuccessful()
+                ->assertDontSee('4869 Example Rd')
+                ->assertDontSee('Brownsboro')
+                ->assertDontSee('40207');
+        }
     });
 
     it('backs the promise with proof: the Google rating, years in business, and real reviews', function () {

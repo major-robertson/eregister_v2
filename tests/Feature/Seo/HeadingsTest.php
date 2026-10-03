@@ -38,6 +38,8 @@ it('keeps a clean heading outline', function (string $path) {
     'corporation' => '/corporation',
     'registered-agent' => '/registered-agent',
     'sales-tax-registration' => '/sales-tax-registration',
+    'about' => '/about',
+    'government capabilities' => '/government/capabilities',
 ]);
 
 it('builds the home page "Why eRegister" cards from headings, not a definition list', function () {

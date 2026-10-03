@@ -22,13 +22,6 @@
             </div>
         </div>
 
-        @if ($address = config('company.address'))
-            <div class="mx-auto mt-12 max-w-lg text-center text-zinc-600">
-                <p class="font-bold text-zinc-900">{{ config('app.name', 'eRegister') }}</p>
-                <p>{{ $address['street'] }}, {{ $address['locality'] }}, {{ $address['region'] }} {{ $address['postal_code'] }}</p>
-            </div>
-        @endif
-
     </div>
 </div>
 @endsection

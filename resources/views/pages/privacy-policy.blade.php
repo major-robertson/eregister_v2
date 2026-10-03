@@ -275,11 +275,7 @@
                 applicable).
             </p>
 
-            <p>To make a request, contact us at:</p>
-            <ul>
-                <li>Contact form: <a href="{{ route('contact') }}">eregister.com/contact</a></li>
-                <li>Mail: 4869 Brownsboro Rd STE 101-E, Louisville, KY 40207</li>
-            </ul>
+            <p>To make a request, contact us through our <a href="{{ route('contact') }}">contact page</a>.</p>
             <p>
                 We may need to verify your identity before fulfilling certain requests.
             </p>
@@ -321,12 +317,8 @@
 
             <h2 class="mt-14 font-bold">15. Contact Us</h2>
             <p>
-                If you have questions about this Privacy Policy or our privacy practices, contact us:
-            </p>
-            <p>
-                eRegister<br>
-                4869 Brownsboro Rd STE 101-E, Louisville, KY 40207<br>
-                <a href="{{ route('contact') }}">eregister.com/contact</a>
+                If you have questions about this Privacy Policy or our privacy practices, contact us through our
+                <a href="{{ route('contact') }}">contact page</a>.
             </p>
             <p>
                 Privacy Policy URL: <a href="https://eregister.com/privacy-policy"

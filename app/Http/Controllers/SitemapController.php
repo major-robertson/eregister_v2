@@ -36,6 +36,7 @@ class SitemapController extends Controller
         ['path' => '/terms-of-service',              'changefreq' => 'yearly',  'priority' => '0.3', 'view' => 'pages.terms-of-service'],
         ['path' => '/refund-policy',                 'changefreq' => 'yearly',  'priority' => '0.3', 'view' => 'pages.refund-policy'],
         ['path' => '/contact',                       'changefreq' => 'monthly', 'priority' => '0.6', 'view' => 'pages.contact'],
+        ['path' => '/about',                         'changefreq' => 'yearly',  'priority' => '0.5', 'view' => 'pages.about'],
 
         ['path' => '/corporation',                   'changefreq' => 'monthly', 'priority' => '0.8', 'view' => 'pages.corporation'],
         ['path' => '/dba',                           'changefreq' => 'monthly', 'priority' => '0.8', 'view' => 'pages.dba'],
@@ -69,6 +70,7 @@ class SitemapController extends Controller
         ['path' => '/government/portals',                  'changefreq' => 'monthly', 'priority' => '0.7', 'view' => 'pages.government.portals'],
         ['path' => '/government/integrations',             'changefreq' => 'monthly', 'priority' => '0.7', 'view' => 'pages.government.integrations'],
         ['path' => '/government/implementation',           'changefreq' => 'monthly', 'priority' => '0.7', 'view' => 'pages.government.implementation'],
+        ['path' => '/government/capabilities',             'changefreq' => 'monthly', 'priority' => '0.6', 'view' => 'pages.government.capabilities'],
     ];
 
     /** @return array<int, array{loc: string, changefreq: string, priority: string, lastmod: string}> */

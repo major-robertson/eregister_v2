@@ -370,6 +370,7 @@
                 <div>
                     <h2 class="font-semibold text-white">Company</h2>
                     <ul class="mt-4 space-y-3">
+                        <li><a href="{{ route('about') }}" class="text-sm text-zinc-400 transition hover:text-white">About</a></li>
                         <li><a href="{{ route('contact') }}" class="text-sm text-zinc-400 transition hover:text-white">Contact</a></li>
                         <li><a href="{{ route('sales-tax-registration') }}" class="text-sm text-zinc-400 transition hover:text-white">Sales Tax</a></li>
                         <li><a href="{{ route('resale-certificates') }}" class="text-sm text-zinc-400 transition hover:text-white">Resale Certificates</a></li>
@@ -396,10 +397,7 @@
                     <div>
                         <p class="text-sm text-zinc-400">&copy; {{ date('Y') }} {{ config('app.name', 'eRegister') }}. All
                             rights reserved.</p>
-                        @if ($footerAddress = config('company.address'))
-                            <p class="mt-2 text-sm text-zinc-400">{{ $footerAddress['street'] }}, {{ $footerAddress['locality'] }}, {{ $footerAddress['region'] }} {{ $footerAddress['postal_code'] }}</p>
-                        @endif
-                        <p class="mt-2 max-w-xl text-xs text-zinc-400">{{ config('app.name', 'eRegister') }} is a private document preparation and filing service. It is not a government agency and is not affiliated with or endorsed by any government agency.</p>
+                        <p class="mt-2 max-w-xl text-xs text-zinc-400">{{ config('app.name', 'eRegister') }} is a private document preparation and filing service. It is not a government agency and is not affiliated with or endorsed by any government agency. <a href="{{ route('about') }}" class="underline transition hover:text-white">More about eRegister</a>.</p>
                     </div>
                 </div>
             </div>

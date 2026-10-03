@@ -57,7 +57,7 @@
 <section class="bg-zinc-50 py-16">
     <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <h2 class="text-2xl font-bold tracking-tight text-zinc-900">Find your deadlines</h2>
-        <p class="mt-2 text-zinc-600">The calculator asks only for the dates your state's rules use.</p>
+        <p class="mt-2 text-zinc-600">The calculator asks only for the dates your state's rules use. To compare the rules side by side, see <a href="{{ route('guides.show', ['slug' => 'mechanics-lien-deadlines-by-state']) }}" class="font-medium text-zinc-900 underline">mechanics lien deadlines by state</a>.</p>
         <x-seo.lien-deadline-calculator class="mt-6" :exports="$calculatorRules" />
     </div>
 </section>

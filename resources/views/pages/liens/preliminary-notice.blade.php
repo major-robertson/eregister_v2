@@ -117,6 +117,7 @@
         <div class="text-center">
             <h2 class="text-3xl font-bold text-zinc-900">Who Needs to Send a Preliminary Notice?</h2>
             <p class="mx-auto mt-4 max-w-2xl text-lg text-zinc-600">If you furnish labor or materials to a construction project and don't have a direct contract with the owner, you likely need one.</p>
+            <p class="mx-auto mt-3 max-w-2xl text-sm text-zinc-600">The rules differ by state. See <a href="{{ route('guides.show', ['slug' => 'preliminary-notice-requirements-by-state']) }}" class="font-medium text-zinc-900 underline">preliminary notice requirements by state</a>.</p>
         </div>
         <div class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-5">

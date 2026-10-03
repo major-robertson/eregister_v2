@@ -6,6 +6,9 @@ use App\Domains\ResaleCert\Models\ResaleCertificate;
 use App\Domains\ResaleCert\Pdf\BaseStateCertificate;
 use setasign\Fpdi\Fpdi;
 
+/**
+ * Nevada Resale Certificate, TAX-F005 V2026.1.
+ */
 class NevadaCertificate extends BaseStateCertificate
 {
     public function getTemplatePath(): string
@@ -22,27 +25,29 @@ class NevadaCertificate extends BaseStateCertificate
 
         $data = $this->extractCertificateData($certificate);
 
-        // Set smaller font size for all fields
-        $pdf->SetFont('Helvetica', '', 6);
+        $pdf->SetFont('Helvetica', '', 9);
 
-        // Coordinates are in millimeters (mm) - FPDI default unit
-        // Note: Y coordinates include a +4mm offset adjustment for PDF rendering alignment
-        // Business Information
-        $this->writeAt($pdf, 111.5, 51.0, $data->businessTaxId);
-        $this->writeAt($pdf, 32.2, 122.1, $data->businessCity);
-        $this->writeAt($pdf, 69.4, 122.1, $data->businessState);
-        $this->writeAt($pdf, 135.7, 113.4, $data->businessName);
-        $this->writeAt($pdf, 135.7, 122.1, $data->businessFullAddress);
+        // "I hold valid seller's permit, Location ID number ____"
+        $this->writeAt($pdf, 138, 62.2, $data->businessTaxId);
 
-        // Vendor Information
-        $this->writeAt($pdf, 83.5, 63.3, $data->vendorName);
+        // "engaged in the business of selling:" box
+        $this->writeAt($pdf, 24, 79, $data->productDescription);
 
-        // Certificate Details
-        $this->writeAt($pdf, 25.9, 59.3, $data->productDescription);
-        $this->writeAt($pdf, 97.6, 87.5, $data->productDescription);
-        $this->writeAt($pdf, 38.8, 114.5, $data->issueDate);
+        // "which I purchase from:" box (seller name, then address)
+        $this->writeAt($pdf, 24, 104.5, $data->vendorName);
+        $this->writeAt($pdf, 24, 109.5, $data->vendorFullAddress);
 
-        // Special Elements
-        $this->addSignatureWithHeight($pdf, $certificate, 120.4, 126.3, 6);
+        // "Description of the property to be purchased:" box
+        $this->writeAt($pdf, 24, 163.5, $data->productDescription);
+
+        // "Purchaser Location Address:" box
+        $this->writeAt($pdf, 24, 206, $data->businessFullAddress);
+
+        // "Purchaser Name (Print):"
+        $this->writeAt($pdf, 66, 225, $data->businessName);
+
+        // "Signature of Purchaser:" and "Dated:"
+        $this->addSignatureWithHeight($pdf, $certificate, 66, 229.8, 7);
+        $this->writeAt($pdf, 162, 233.7, $data->issueDate);
     }
 }

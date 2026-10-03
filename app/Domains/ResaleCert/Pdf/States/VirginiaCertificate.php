@@ -6,6 +6,9 @@ use App\Domains\ResaleCert\Models\ResaleCertificate;
 use App\Domains\ResaleCert\Pdf\BaseStateCertificate;
 use setasign\Fpdi\Fpdi;
 
+/**
+ * Virginia Form ST-10, Sales and Use Tax Certificate of Exemption, Rev. 05/26.
+ */
 class VirginiaCertificate extends BaseStateCertificate
 {
     public function getTemplatePath(): string
@@ -22,33 +25,35 @@ class VirginiaCertificate extends BaseStateCertificate
 
         $data = $this->extractCertificateData($certificate);
 
-        // Supplier information
-        $this->writeAt($pdf, 18.5, 55.5, $data->vendorName);
-        $this->writeAt($pdf, 150.5, 55.5, $data->issueDate);
-        $this->writeAt($pdf, 12.5, 65.5, $data->vendorStreetAddress);
-        $this->writeAt($pdf, 97, 65.5, $data->vendorCity);
-        $this->writeAt($pdf, 162.5, 65.5, $data->vendorState);
-        $this->writeAt($pdf, 185.5, 65.5, $data->vendorZip);
+        // Supplier information ("To:" and "Date:", then the address line)
+        $this->writeAt($pdf, 18.5, 57.4, $data->vendorName);
+        $this->writeAt($pdf, 150.5, 57.4, $data->issueDate);
+        $this->writeAt($pdf, 12.5, 68.2, $data->vendorStreetAddress);
+        $this->writeAt($pdf, 97, 68.2, $data->vendorCity);
+        $this->writeAt($pdf, 162.5, 68.2, $data->vendorState);
+        $this->writeAt($pdf, 185.5, 68.2, $data->vendorZip);
 
-        // Checkbox
-        $this->writeAt($pdf, 12.5, 132.5, $data->checkmarkX);
+        // Box 1: tangible personal property for resale
+        $this->writeAt($pdf, 12.85, 135.1, $data->checkmarkX);
 
-        // Business information
-        $this->writeAt($pdf, 38.5, 174.5, $data->businessName);
-        $this->writeAt($pdf, 137.5, 174.5, $data->businessTaxId);
-        $this->writeAt($pdf, 30.5, 181.85, $data->businessDba);
+        // Name of Dealer and Virginia Account No.
+        $this->writeAt($pdf, 39, 178.3, $data->businessName);
+        $this->writeAt($pdf, 137.5, 178.3, $data->businessTaxId);
+
+        // Trading as
+        $this->writeAt($pdf, 31, 185.8, $data->businessDba);
 
         // Business address
-        $this->writeAt($pdf, 27.5, 190.5, $data->businessStreetAddress);
-        $this->writeAt($pdf, 102.5, 190.5, $data->businessCity);
-        $this->writeAt($pdf, 159.5, 190.5, $data->businessState);
-        $this->writeAt($pdf, 184, 190.5, $data->businessZip);
+        $this->writeAt($pdf, 28.5, 192.9, $data->businessStreetAddress);
+        $this->writeAt($pdf, 102.5, 192.9, $data->businessCity);
+        $this->writeAt($pdf, 159.5, 192.9, $data->businessState);
+        $this->writeAt($pdf, 184, 192.9, $data->businessZip);
 
-        // Business type and signer title
-        $this->writeAt($pdf, 75, 206.5, $data->businessType);
-        $this->writeAt($pdf, 124.75, 227.5, $data->signerTitle);
+        // Kind of business engaged in by dealer
+        $this->writeAt($pdf, 75, 208.7, $data->businessType);
 
-        // Add signature
-        $this->addSignatureWithHeight($pdf, $certificate, 20, 222, 8);
+        // "By ____ Signature" and Title
+        $this->addSignatureWithHeight($pdf, $certificate, 20, 224.8, 8);
+        $this->writeAt($pdf, 126, 229.1, $data->signerTitle);
     }
 }

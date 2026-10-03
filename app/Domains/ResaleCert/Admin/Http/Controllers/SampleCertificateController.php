@@ -2,7 +2,7 @@
 
 namespace App\Domains\ResaleCert\Admin\Http\Controllers;
 
-use App\Domains\ResaleCert\Models\ResaleCertificate;
+use App\Domains\ResaleCert\Pdf\SampleCertificate;
 use App\Domains\ResaleCert\Pdf\StateCertificateFactory;
 use App\Domains\ResaleCert\Services\CertificatePdfService;
 use Illuminate\Http\Request;
@@ -33,7 +33,7 @@ class SampleCertificateController
         $outOfState = $request->query('out_of_state');
         $sourceState = $outOfState ? strtoupper($outOfState === '1' || $outOfState === 'true' ? 'CT' : $outOfState) : $stateCode;
 
-        $certificate = $this->sampleCertificate($stateCode, $sourceState);
+        $certificate = SampleCertificate::make($stateCode, $sourceState);
         // Unsaved model: hydrate the relation so the admin's own adopted
         // signature stamps onto the preview (position checking).
         $certificate->setRelation('createdBy', $request->user());
@@ -44,58 +44,6 @@ class SampleCertificateController
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="sample-'.strtolower($stateCode).($showGrid ? '-grid' : '').'.pdf"',
         ]);
-    }
-
-    protected function sampleCertificate(string $stateCode, string $sourceState): ResaleCertificate
-    {
-        $certificate = new ResaleCertificate([
-            'state_code' => $stateCode,
-            'is_blanket' => true,
-            'item_description' => 'All tangible personal property for resale',
-            'business_snapshot' => [
-                'legal_name' => 'Acme Trading LLC',
-                'dba' => 'Acme Wholesale',
-                'ein' => '12-3456789',
-                'products_description' => 'General merchandise and consumer goods',
-                'email' => 'billing@acme.test',
-                'phone' => '(512) 555-1234',
-                'signer_title' => 'Owner',
-                'address' => [
-                    'line1' => '100 Congress Ave',
-                    'line2' => 'Suite 200',
-                    'city' => 'Austin',
-                    'state' => 'TX',
-                    'postal_code' => '78701',
-                    'country' => 'US',
-                ],
-                'tax_id' => '11122233344',
-                'tax_id_source_state' => $sourceState,
-                'selected_states_tax_ids' => [
-                    $stateCode => ['tax_id' => '11122233344', 'source_state' => $sourceState],
-                ],
-            ],
-            'vendor_snapshot' => [
-                'legal_name' => 'Sample Supplier Co',
-                'address' => [
-                    'line1' => '200 Main St',
-                    'line2' => null,
-                    'city' => 'Dallas',
-                    'state' => 'TX',
-                    'postal_code' => '75201',
-                    'country' => 'US',
-                ],
-                'contact' => [
-                    'name' => 'Pat Vendor',
-                    'email' => 'pat@supplier.test',
-                    'phone' => '(214) 555-9876',
-                ],
-            ],
-            'issue_date' => now(),
-        ]);
-
-        $certificate->id = 0;
-
-        return $certificate;
     }
 
     /**

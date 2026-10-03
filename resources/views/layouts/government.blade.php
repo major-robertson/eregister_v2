@@ -110,7 +110,7 @@
                                         </a>
                                         <a href="{{ route('government.accessibility') }}"
                                             class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900">
-                                            Accessibility (Section 508)
+                                            Accessibility (ADA Title II)
                                         </a>
                                         <a href="{{ route('government.implementation') }}"
                                             class="block rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900">
@@ -200,7 +200,7 @@
                                 &amp; Support</a>
                             <a href="{{ route('government.accessibility') }}"
                                 class="block rounded-lg px-3 py-1.5 text-sm text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">Accessibility
-                                (Section 508)</a>
+                                (ADA Title II)</a>
                             <a href="{{ route('government.implementation') }}"
                                 class="block rounded-lg px-3 py-1.5 text-sm text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">Implementation
                                 Services</a>
@@ -231,7 +231,7 @@
     <!-- Footer -->
     <footer class="border-t border-slate-800 bg-slate-950">
         <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-2 gap-8 md:grid-cols-5">
+            <div class="grid grid-cols-2 gap-8 md:grid-cols-6">
                 {{-- Brand --}}
                 <div class="col-span-2 md:col-span-2">
                     <a href="{{ route('government.home') }}" class="flex items-center gap-3">
@@ -289,6 +289,17 @@
                                 class="text-sm text-slate-400 transition hover:text-white">Accessibility</a></li>
                         <li><a href="{{ route('government.implementation') }}"
                                 class="text-sm text-slate-400 transition hover:text-white">Implementation</a></li>
+                    </ul>
+                </div>
+
+                {{-- States --}}
+                <div>
+                    <h2 class="font-semibold text-white">States</h2>
+                    <ul class="mt-4 space-y-3">
+                        <li><a href="{{ route('government.florida') }}"
+                                class="text-sm text-slate-400 transition hover:text-white">Florida</a></li>
+                        <li><a href="{{ route('government.north-carolina') }}"
+                                class="text-sm text-slate-400 transition hover:text-white">North Carolina</a></li>
                     </ul>
                 </div>
 

@@ -102,6 +102,103 @@
     </div>
 </section>
 
+{{-- Who it's for --}}
+<section class="bg-white py-20">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid gap-12 lg:grid-cols-2 lg:gap-16">
+            <div>
+                <p class="text-sm font-semibold uppercase tracking-wider text-blue-700">Who it&rsquo;s for</p>
+                <h2 class="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                    One team from kickoff to go-live
+                </h2>
+                <p class="mt-6 text-lg text-slate-600">
+                    This fits any agency buying a defined project: a website redesign, a CMS move, a new portal or a
+                    set of integrations. It works best when your team is small and cannot spare people to manage
+                    several vendors. You get one point of contact and one contract.
+                </p>
+                <p class="mt-4 text-lg text-slate-600">
+                    The problems it prevents are common. A vendor disappears after launch. Change orders keep growing
+                    the budget. A project stalls because no one owns the schedule.
+                </p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-8">
+                <h3 class="text-lg font-semibold text-slate-900">What your agency provides</h3>
+                <ul class="mt-6 space-y-3 text-slate-700">
+                    @foreach (['An executive sponsor and a day-to-day project lead', 'Decisions and sign-off at the end of each phase', 'Subject experts for interviews and reviews', 'Staff time for acceptance testing and training', 'Access to systems, content and existing documentation'] as $item)
+                        <li class="flex items-start gap-3">
+                            <svg class="mt-0.5 h-5 w-5 shrink-0 text-blue-700" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4" />
+                            </svg>
+                            <span>{{ $item }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{-- Delivery team --}}
+<section class="bg-slate-50 py-20">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-3xl text-center">
+            <p class="text-sm font-semibold uppercase tracking-wider text-blue-700">The team</p>
+            <h2 class="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                Who is on the delivery team
+            </h2>
+        </div>
+        <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            @foreach ([
+                ['title' => 'Project management', 'body' => 'Runs the schedule, the risk register and the monthly status report. Your single point of contact.'],
+                ['title' => 'Design', 'body' => 'Owns the information architecture, the visual design and the accessible component library.'],
+                ['title' => 'Engineering', 'body' => 'Builds the site, portal or integrations, and handles security and performance.'],
+                ['title' => 'Quality assurance', 'body' => 'Tests each sprint for function and accessibility, and runs acceptance testing with your team.'],
+                ['title' => 'Training', 'body' => 'Teaches your editors and staff, and writes the runbooks they keep after launch.'],
+            ] as $role)
+                <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-slate-900">{{ $role['title'] }}</h3>
+                    <p class="mt-2 text-sm text-slate-600">{{ $role['body'] }}</p>
+                </div>
+            @endforeach
+        </div>
+    </div>
+</section>
+
+{{-- How it fits, and FAQ --}}
+@php
+    $faqs = [
+        ['q' => 'Can you work under our existing contract vehicle?', 'a' => 'Usually. We work under cooperative purchasing agreements and standard professional-services contracts, and we respond to RFPs and RFQs. If you have not issued a solicitation yet, we can help you write one.'],
+        ['q' => 'How long does a typical project take?', 'a' => 'Each phase above shows its typical range. Your written scope sets firm dates for every phase once discovery is done.'],
+        ['q' => 'Who owns the work product?', 'a' => 'Your agency owns its content and data. The statement of work sets ownership of the code, designs and documentation before work starts.'],
+        ['q' => 'How is accessibility handled during the project?', 'a' => 'It is part of every phase. Designs are reviewed before the build, each sprint produces an accessibility test report, and editor training covers accessible content.'],
+        ['q' => 'What happens after hypercare ends?', 'a' => 'We hand off with final documentation, either to a maintenance contract with us or to your in-house team. You can decide which during the project.'],
+    ];
+@endphp
+<section class="bg-white py-20">
+    <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+        <p class="text-sm font-semibold uppercase tracking-wider text-blue-700">Related work</p>
+        <h2 class="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">How it fits with our other services</h2>
+        <ul class="mt-8 space-y-4 text-slate-600">
+            <li>A <a href="{{ route('government.website-redesign') }}" class="font-medium text-blue-700 underline hover:text-blue-800">website redesign</a> runs through all five phases, ending with migrated content and trained editors.</li>
+            <li>A <a href="{{ route('government.portals') }}" class="font-medium text-blue-700 underline hover:text-blue-800">portal</a> can launch one service at a time within the build phase.</li>
+            <li><a href="{{ route('government.integrations') }}" class="font-medium text-blue-700 underline hover:text-blue-800">Integrations</a> are scoped and tested in the same phases, so data and screens launch together.</li>
+            <li>Hypercare ends with a handoff to a <a href="{{ route('government.maintenance') }}" class="font-medium text-blue-700 underline hover:text-blue-800">maintenance contract</a> or your in-house team.</li>
+        </ul>
+        <p class="mt-8 text-slate-600">
+            Contracting officers can find the full summary on our
+            <a href="{{ route('government.capabilities') }}" class="font-medium text-blue-700 underline hover:text-blue-800">capabilities statement</a>.
+            To request a statement of work, use our
+            <a href="{{ route('contact') }}" class="font-medium text-blue-700 underline hover:text-blue-800">contact page</a>.
+        </p>
+
+        <p class="mt-16 text-sm font-semibold uppercase tracking-wider text-blue-700">FAQ</p>
+        <h2 class="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Questions about implementation</h2>
+        <x-seo.faq class="mt-10" card="zinc" :items="$faqs" />
+    </div>
+</section>
+
 @include('pages.government.partials.related', ['exclude' => 'implementation'])
 @include('pages.government.partials.cta')
 @endsection

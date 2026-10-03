@@ -72,6 +72,8 @@ class SitemapController extends Controller
         ['path' => '/government/integrations',             'changefreq' => 'monthly', 'priority' => '0.7', 'view' => 'pages.government.integrations'],
         ['path' => '/government/implementation',           'changefreq' => 'monthly', 'priority' => '0.7', 'view' => 'pages.government.implementation'],
         ['path' => '/government/capabilities',             'changefreq' => 'monthly', 'priority' => '0.6', 'view' => 'pages.government.capabilities'],
+        ['path' => '/government/florida',                  'changefreq' => 'monthly', 'priority' => '0.7', 'view' => 'pages.government.florida'],
+        ['path' => '/government/north-carolina',           'changefreq' => 'monthly', 'priority' => '0.7', 'view' => 'pages.government.north-carolina'],
     ];
 
     /** @return array<int, array{loc: string, changefreq: string, priority: string, lastmod: string}> */

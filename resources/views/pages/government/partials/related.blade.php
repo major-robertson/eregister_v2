@@ -1,7 +1,7 @@
 @php
     $allServices = [
         'website-redesign' => ['title' => 'Website Redesign', 'description' => 'Modern, accessible redesigns of legacy agency websites.', 'route' => 'government.website-redesign'],
-        'accessibility' => ['title' => 'Accessibility', 'description' => 'WCAG 2.2 AA, Section 508, and ADA audits and remediation.', 'route' => 'government.accessibility'],
+        'accessibility' => ['title' => 'Accessibility', 'description' => 'ADA Title II, WCAG 2.1 and 2.2 AA audits and remediation, with Section 508 where it applies.', 'route' => 'government.accessibility'],
         'cms' => ['title' => 'Content Management', 'description' => 'Editor-friendly CMS with workflows and role-based publishing.', 'route' => 'government.cms'],
         'hosting' => ['title' => 'Hosting & Infrastructure', 'description' => 'Hardened, U.S.-based hosting with monitoring and SLAs.', 'route' => 'government.hosting'],
         'maintenance' => ['title' => 'Maintenance & Support', 'description' => 'Patches, updates, and incident response on contract.', 'route' => 'government.maintenance'],

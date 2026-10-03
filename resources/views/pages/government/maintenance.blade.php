@@ -119,6 +119,106 @@
     </div>
 </section>
 
+{{-- Who it's for --}}
+<section class="bg-white py-20">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid gap-12 lg:grid-cols-2 lg:gap-16">
+            <div>
+                <p class="text-sm font-semibold uppercase tracking-wider text-blue-700">Who it&rsquo;s for</p>
+                <h2 class="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                    Any agency with a site that has to stay up
+                </h2>
+                <p class="mt-6 text-lg text-slate-600">
+                    This fits an agency that launched a new site and has no developer on staff to keep it current. It
+                    also fits an older site you are not ready to replace but that still needs patches and fixes. We can
+                    take on a site another vendor built, starting with a review of its code.
+                </p>
+                <p class="mt-4 text-lg text-slate-600">
+                    The warning signs are easy to spot. Plugins have not been updated in years. A contact form quietly
+                    stopped sending. Pages that passed an accessibility check at launch fail it now.
+                </p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-8">
+                <h3 class="text-lg font-semibold text-slate-900">What your agency provides</h3>
+                <ul class="mt-6 space-y-3 text-slate-700">
+                    @foreach (['Admin access to the site, hosting and code repository', 'A named contact who can approve changes', 'Your priorities for content and feature requests', 'Notice of events that will bring heavy traffic', 'Feedback on each performance report'] as $item)
+                        <li class="flex items-start gap-3">
+                            <svg class="mt-0.5 h-5 w-5 shrink-0 text-blue-700" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4" />
+                            </svg>
+                            <span>{{ $item }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{-- How the work runs --}}
+<section class="bg-slate-50 py-20">
+    <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+        <p class="text-sm font-semibold uppercase tracking-wider text-blue-700">The process</p>
+        <h2 class="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">How a support contract starts</h2>
+        <ol class="mt-10 space-y-6">
+            @foreach ([
+                ['title' => 'Discovery and scoping', 'body' => 'We review the code, hosting, plugins and open issues, and agree a tier with you. You get a written scope.'],
+                ['title' => 'Design and architecture', 'body' => 'We plan the patch schedule, monitoring and accessibility scans for your tier, and write the runbooks.'],
+                ['title' => 'Build and iterate', 'body' => 'We clear urgent fixes and apply overdue updates, testing each one in staging first.'],
+                ['title' => 'Test, train and launch', 'body' => 'Your team checks the updated site, we deploy, and we show your editors how to open support tickets.'],
+                ['title' => 'Hypercare and transition', 'body' => 'Routine coverage begins: patches, monitoring, reports and ticket support for the life of the contract.'],
+            ] as $i => $step)
+                <li class="flex gap-4">
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-bold text-blue-700 ring-1 ring-inset ring-blue-100">{{ $i + 1 }}</span>
+                    <div>
+                        <h3 class="font-semibold text-slate-900">{{ $step['title'] }}</h3>
+                        <p class="mt-1 text-slate-600">{{ $step['body'] }}</p>
+                    </div>
+                </li>
+            @endforeach
+        </ol>
+        <p class="mt-8 text-slate-600">
+            For a site we just launched, this happens during hypercare. The full phase plan is on our
+            <a href="{{ route('government.implementation') }}" class="font-medium text-blue-700 underline hover:text-blue-800">implementation page</a>.
+        </p>
+    </div>
+</section>
+
+{{-- How it fits, and FAQ --}}
+@php
+    $faqs = [
+        ['q' => 'Can a maintenance contract run for several years?', 'a' => 'Yes. It runs as a fixed-fee contract that renews each year or is written as a multi-year term, whichever your procurement rules allow.'],
+        ['q' => 'How soon can coverage start?', 'a' => 'Coverage starts once the onboarding review is done and urgent fixes are cleared. The written scope sets the dates for each step.'],
+        ['q' => 'Do we keep ownership of the site?', 'a' => 'Yes. Your agency keeps its content and accounts. The contract sets ownership of the code, and the runbooks we write stay with you if you change vendors.'],
+        ['q' => 'How do you keep the site accessible over time?', 'a' => 'Every tier includes accessibility scans, from quarterly to continuous. Code issues go into the ticket queue, and content issues go back to the editor with a plain fix.'],
+        ['q' => 'What is covered outside business hours?', 'a' => 'Essentials is business-hours support. Standard adds round-the-clock uptime monitoring, and Premier adds on-call response at any hour.'],
+    ];
+@endphp
+<section class="bg-white py-20">
+    <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+        <p class="text-sm font-semibold uppercase tracking-wider text-blue-700">Related work</p>
+        <h2 class="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">How it fits with our other services</h2>
+        <ul class="mt-8 space-y-4 text-slate-600">
+            <li>Pair it with our <a href="{{ route('government.hosting') }}" class="font-medium text-blue-700 underline hover:text-blue-800">managed hosting</a> so one team owns both the server and the site.</li>
+            <li>If scans find deeper problems, an <a href="{{ route('government.accessibility') }}" class="font-medium text-blue-700 underline hover:text-blue-800">accessibility audit</a> and remediation project fixes them.</li>
+            <li>When a site is past saving, a <a href="{{ route('government.website-redesign') }}" class="font-medium text-blue-700 underline hover:text-blue-800">website redesign</a> starts fresh, and maintenance picks up after launch.</li>
+            <li>Editor support covers your <a href="{{ route('government.cms') }}" class="font-medium text-blue-700 underline hover:text-blue-800">content management system</a>, whether we built it or inherited it.</li>
+        </ul>
+        <p class="mt-8 text-slate-600">
+            Every service is listed on our
+            <a href="{{ route('government.capabilities') }}" class="font-medium text-blue-700 underline hover:text-blue-800">capabilities statement</a>.
+            To compare tiers for your site, reach us through our
+            <a href="{{ route('contact') }}" class="font-medium text-blue-700 underline hover:text-blue-800">contact page</a>.
+        </p>
+
+        <p class="mt-16 text-sm font-semibold uppercase tracking-wider text-blue-700">FAQ</p>
+        <h2 class="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Questions about maintenance</h2>
+        <x-seo.faq class="mt-10" card="zinc" :items="$faqs" />
+    </div>
+</section>
+
 @include('pages.government.partials.related', ['exclude' => 'maintenance'])
 @include('pages.government.partials.cta')
 @endsection

@@ -9,8 +9,8 @@
     // Say "U.S.-based" only; no city or state.
     $since = config('company.in_business_since');
     $capabilities = [
-        ['route' => 'government.website-redesign', 'title' => 'Website redesign', 'body' => 'Mobile-first redesigns of legacy agency websites, built to WCAG 2.2 AA and Section 508.'],
-        ['route' => 'government.accessibility', 'title' => 'Accessibility and Section 508', 'body' => 'Section 508, ADA and WCAG 2.2 AA audits, remediation and VPATs.'],
+        ['route' => 'government.website-redesign', 'title' => 'Website redesign', 'body' => "Mobile-first redesigns of legacy agency websites, built to WCAG 2.2 AA, which covers ADA Title II's WCAG 2.1 AA standard, with Section 508 where it applies."],
+        ['route' => 'government.accessibility', 'title' => 'Accessibility and ADA Title II', 'body' => "Audits, remediation and VPATs to ADA Title II's WCAG 2.1 AA standard (and WCAG 2.2 AA), with Section 508 where it applies."],
         ['route' => 'government.cms', 'title' => 'Content management (CMS)', 'body' => 'Editor-friendly content management with role-based publishing and multi-department workflows.'],
         ['route' => 'government.hosting', 'title' => 'Hosting and infrastructure', 'body' => 'Hardened, U.S.-based hosting with monitoring, automated backups and security patching.'],
         ['route' => 'government.maintenance', 'title' => 'Maintenance and support', 'body' => 'Security patching, content updates, accessibility monitoring and incident response on contract.'],

@@ -189,6 +189,8 @@ Route::prefix('government')->name('government.')->group(function () {
     Route::view('integrations', 'pages.government.integrations')->name('integrations');
     Route::view('implementation', 'pages.government.implementation')->name('implementation');
     Route::view('capabilities', 'pages.government.capabilities')->name('capabilities');
+    Route::view('florida', 'pages.government.florida')->name('florida');
+    Route::view('north-carolina', 'pages.government.north-carolina')->name('north-carolina');
 
     // Sales demos (noindex, shareable by direct URL only)
     // Two design options for EOG–RFQ–26-03; cross-link via banner.

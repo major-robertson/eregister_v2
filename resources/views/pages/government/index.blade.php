@@ -112,7 +112,7 @@
                     [
                         'route' => 'government.accessibility',
                         'title' => 'Accessibility',
-                        'description' => 'Accessibility audits, remediation, and documentation aligned with ADA, Section 508, and WCAG AA requirements.',
+                        'description' => "Accessibility audits, remediation, and documentation to ADA Title II's WCAG 2.1 AA standard (and WCAG 2.2 AA), with Section 508 where it applies.",
                         'icon' => 'M12 4v16m8-8H4',
                     ],
                     [
@@ -182,6 +182,13 @@
         <p class="mt-10 text-center text-slate-600">
             Need it all on one page for procurement?
             <a href="{{ route('government.capabilities') }}" class="font-semibold text-blue-700 underline hover:text-blue-800">Read our capabilities statement</a>.
+        </p>
+        <p class="mt-4 text-center text-slate-600">
+            Serving Florida and North Carolina agencies: see the
+            <a href="{{ route('government.florida') }}" class="font-semibold text-blue-700 underline hover:text-blue-800">Florida</a>
+            and
+            <a href="{{ route('government.north-carolina') }}" class="font-semibold text-blue-700 underline hover:text-blue-800">North Carolina</a>
+            website accessibility and procurement rules.
         </p>
     </div>
 </section>

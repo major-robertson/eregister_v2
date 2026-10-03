@@ -39,8 +39,9 @@ class KentuckyCertificate extends BaseStateCertificate
         $this->writeAt($pdf, 35, 14.6, $data->businessName);
         $this->writeAt($pdf, 92, 14.6, $data->businessFullAddress);
 
-        // "Sales and Use Tax Permit, Account No. ____"
-        $this->writeAt($pdf, 67, 20.6, $data->businessTaxId);
+        // "Sales and Use Tax Permit, Account No. ____": no field for the
+        // state, so an out-of-state number carries its state ("CT 123")
+        $this->writeAt($pdf, 66.5, 20.6, $this->labelledTaxId($certificate, 'KY'));
 
         // "engaged in the business of selling ... the following:"
         $this->writeAt($pdf, 8.5, 27, $data->productDescription);

@@ -36,9 +36,11 @@ class ArizonaCertificate extends BaseStateCertificate
         // -----------------------------
         // A. Business Name and Address
         // -----------------------------
-        // Business Name (left box) and TPT/Sales Tax License No. (right box)
+        // Business Name (left box) and TPT/Sales Tax License No. (right box).
+        // The form accepts another state's license but has no field for the
+        // state, so an out-of-state number carries its state ("CT 123").
         $this->writeAt($pdf, 13, 73, $data->businessName);
-        $this->writeAt($pdf, 78, 73, $data->businessTaxId);
+        $this->writeAt($pdf, 78, 73, $this->labelledTaxId($certificate, 'AZ'));
 
         // Address line
         $this->writeAt($pdf, 13, 82, $data->businessStreetAddress);
@@ -73,10 +75,8 @@ class ArizonaCertificate extends BaseStateCertificate
         // ----------------------------------------------------
         $this->writeAt($pdf, 15, 142, $data->productDescription);
 
-        // ----------------------------------------------------
-        // E.
-        // ----------------------------------------------------
-        $this->writeAt($pdf, 13, 167, $data->checkmarkX);
+        // Section E (sales that need no TPT license: U.S. government, school
+        // districts, charities) is left blank. The buyer is a licensed reseller.
 
         // ---------------------------------------------
         // F. Certification — print name / sign / title / date

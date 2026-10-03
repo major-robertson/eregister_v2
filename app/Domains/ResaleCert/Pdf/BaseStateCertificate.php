@@ -21,6 +21,24 @@ abstract class BaseStateCertificate implements StateCertificateInterface
     }
 
     /**
+     * The buyer's tax id for a form with no field for the state that issued
+     * it: bare when $formState issued it, otherwise prefixed with the issuing
+     * state ("CT 123456789") so an out-of-state number is never unlabelled.
+     */
+    protected function labelledTaxId(ResaleCertificate $certificate, string $formState): string
+    {
+        $business = $certificate->business_snapshot;
+        $taxId = (string) ($business['tax_id'] ?? '');
+        $sourceState = $business['tax_id_source_state'] ?? null;
+
+        if ($taxId === '' || $sourceState === null || $sourceState === $formState) {
+            return $taxId;
+        }
+
+        return $sourceState.' '.$taxId;
+    }
+
+    /**
      * Add the creator's signature image at the default height (20mm).
      */
     protected function addSignature(Fpdi $pdf, ResaleCertificate $certificate, float $x, float $y): void

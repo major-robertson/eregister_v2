@@ -8,17 +8,6 @@ use setasign\Fpdi\Fpdi;
 
 class KansasCertificate extends BaseStateCertificate
 {
-    /**
-     * Coordinates for in-state (KS) tax ID
-     */
-    protected $inStateTaxIdCoordinates = ['x' => 49.4, 'y' => 54.6];
-
-    /**
-     * Coordinates for out-of-state tax ID
-     * TODO: Update these coordinates using the dev grid overlay tool
-     */
-    protected $outOfStateTaxIdCoordinates = ['x' => 49.4, 'y' => 62.0];
-
     public function getTemplatePath(): string
     {
         return 'pdfs/state_resale_certificates/kansas.pdf';
@@ -35,12 +24,10 @@ class KansasCertificate extends BaseStateCertificate
 
         // Coordinates are in millimeters (mm) - FPDI default unit
         // Note: Y coordinates include a +4mm offset adjustment for PDF rendering alignment
-        // Business Information - Tax ID uses appropriate coordinates
-        $business = $certificate->business_snapshot;
-        $taxIdSourceState = $business['tax_id_source_state'] ?? null;
-        $isInState = ($taxIdSourceState === 'KS');
-        $taxIdCoords = $isInState ? $this->inStateTaxIdCoordinates : $this->outOfStateTaxIdCoordinates;
-        $this->writeAt($pdf, $taxIdCoords['x'], $taxIdCoords['y'], $data->businessTaxId);
+        // "tax registration number ____": the form's only number line, with no
+        // field for the state, so an out-of-state number carries its state
+        // ("CT 123") on the same line.
+        $this->writeAt($pdf, 49.4, 54.6, $this->labelledTaxId($certificate, 'KS'));
         $this->writeAt($pdf, 28.5, 104.7, $data->businessName);
         $this->writeAt($pdf, 25.6, 115.7, $data->businessAddress1);
         $this->writeAt($pdf, 112.9, 115.7, $data->businessCity);

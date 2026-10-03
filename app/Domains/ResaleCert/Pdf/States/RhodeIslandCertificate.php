@@ -24,8 +24,10 @@ class RhodeIslandCertificate extends BaseStateCertificate
 
         // Coordinates are in millimeters (mm) - FPDI default unit
         // Note: Y coordinates include a +4mm offset adjustment for PDF rendering alignment
-        // Business Information
-        $this->writeAt($pdf, 50.3, 81.4, $data->businessTaxId);
+        // Business Information. "Permit to Make Sales at Retail No. ____" has
+        // no field for the state, so an out-of-state number carries its
+        // state ("CT 123").
+        $this->writeAt($pdf, 50.3, 81.4, $this->labelledTaxId($certificate, 'RI'));
         $this->writeAt($pdf, 102.3, 209.6, $data->businessName);
         $this->writeAt($pdf, 102.3, 217.8, $data->businessStreetAddress);
         $this->writeAt($pdf, 102.3, 225.8, $data->businessCityStateZip);

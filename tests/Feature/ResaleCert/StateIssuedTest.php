@@ -177,19 +177,36 @@ it('never offers an individual form for a state without a generator', function (
         expect(array_intersect($individual, $states))->toBe([]);
     }
 
-    // Without MTC only the SST form (MS) covers anything; FL, LA, DC stay uncovered.
-    $this->business->resaleProfile->update(['mtc_enabled' => false]);
-    $result = $service->calculateMinimumForms($states, $this->business->resaleProfile->fresh());
-    $covered = collect($result['minimum'])->pluck('covers_states')->flatten()->all();
+    // Without MTC no form covers any of them; with MTC only FL (the one of
+    // the four that still accepts the MTC form) is covered.
+    $covered = function (bool $mtcEnabled) use ($service, $states): array {
+        $this->business->resaleProfile->update(['mtc_enabled' => $mtcEnabled]);
+        $result = $service->calculateMinimumForms($states, $this->business->resaleProfile->fresh());
 
-    expect($covered)->toBe(['MS']);
+        return collect($result['minimum'])->pluck('covers_states')->flatten()->all();
+    };
+
+    expect($covered(false))->toBe([])
+        ->and($covered(true))->toBe(['FL']);
 });
 
-it('hides Louisiana from an unregistered buyer until MTC is enabled', function () {
-    // LA accepts out-of-state ids, but with no generator only a uniform form can cover it.
-    expect(($this->option)(Livewire::test(CertificateWizard::class), 'LA'))->toBeNull();
+it('hides Florida from an unregistered buyer until MTC is enabled', function () {
+    // FL accepts the MTC form but has no generator, so only MTC can cover it.
+    expect(($this->option)(Livewire::test(CertificateWizard::class), 'FL'))->toBeNull();
 
     $this->business->resaleProfile->update(['mtc_enabled' => true]);
 
-    expect(($this->option)(Livewire::test(CertificateWizard::class), 'LA')['selectable'])->toBeTrue();
+    expect(($this->option)(Livewire::test(CertificateWizard::class), 'FL')['selectable'])->toBeTrue();
+});
+
+it('keeps Louisiana locked for an unregistered buyer, with or without MTC', function () {
+    // LA accepts neither uniform form nor out-of-state ids, and has no generator.
+    foreach ([false, true] as $mtcEnabled) {
+        $this->business->resaleProfile->update(['mtc_enabled' => $mtcEnabled]);
+
+        $louisiana = ($this->option)(Livewire::test(CertificateWizard::class), 'LA');
+
+        expect($louisiana['selectable'])->toBeFalse()
+            ->and($louisiana['reason'])->toBe('State tax registration required');
+    }
 });

@@ -56,32 +56,33 @@ it('prefers SST over MTC over individual forms', function () {
     $profile = $this->business->resaleProfile;
     $profile->update(['mtc_enabled' => true]);
 
-    // WA accepts MTC only (per seeder: accepts_sst=false, accepts_mtc=true);
-    // OH accepts both (SST wins); TX accepts neither uniform.
-    $result = app(MinimumFormsService::class)->calculateMinimumForms(['OH', 'WA', 'TX'], $profile->fresh());
+    // MD accepts MTC only (per seeder: accepts_sst=false, accepts_mtc=true);
+    // OH accepts both (SST wins); NY accepts neither uniform.
+    $result = app(MinimumFormsService::class)->calculateMinimumForms(['OH', 'MD', 'NY'], $profile->fresh());
 
     $minimumCodes = array_column($result['minimum'], 'state_code');
 
     expect($minimumCodes)->toContain('SST')
         ->toContain('MTC')
-        ->toContain('TX');
+        ->toContain('NY');
 
     $sst = collect($result['minimum'])->firstWhere('state_code', 'SST');
     $mtc = collect($result['minimum'])->firstWhere('state_code', 'MTC');
 
     expect($sst['covers_states'])->toContain('OH')
-        ->and($mtc['covers_states'])->toContain('WA')
+        ->and($mtc['covers_states'])->toContain('MD')
         ->and($mtc['covers_states'])->not->toContain('OH');
 });
 
 it('skips MTC when the business has not opted in', function () {
     $result = app(MinimumFormsService::class)
-        ->calculateMinimumForms(['WA'], $this->business->resaleProfile);
+        ->calculateMinimumForms(['MD'], $this->business->resaleProfile);
 
     $minimumCodes = array_column($result['minimum'], 'state_code');
 
-    // WA accepts SST=false in old data? (WA accepts_mtc only) -> individual form
-    expect($minimumCodes)->not->toContain('MTC');
+    // MD accepts MTC but not SST -> its individual form
+    expect($minimumCodes)->not->toContain('MTC')
+        ->toContain('MD');
 });
 
 it('generates certificates with frozen snapshots and PDFs', function () {
@@ -155,11 +156,11 @@ it('blocks generation without a signature', function () {
 });
 
 it('rejects states that are not selectable for this business', function () {
-    // CA does not accept out-of-state ids or uniform forms; business is
-    // registered only in TX, so CA is locked.
+    // MA does not accept out-of-state ids or uniform forms; business is
+    // registered only in TX, so MA is locked.
     Livewire::test(CertificateWizard::class)
         ->set('vendorId', (string) $this->vendor->id)
-        ->set('selectedStates', ['CA'])
+        ->set('selectedStates', ['MA'])
         ->call('continueToReview')
         ->assertHasErrors(['selectedStates']);
 });

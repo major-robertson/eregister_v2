@@ -33,7 +33,10 @@ class VermontCertificate extends BaseStateCertificate
         $this->writeAt($pdf, 136.6, 102.5, $data->businessState);
         $this->writeAt($pdf, 150.5, 102.5, $data->businessZip);
         $this->writeAt($pdf, 16.9, 111.2, $data->businessType);
-        $this->writeAt($pdf, 154.3, 177.8, $data->businessTaxId);
+        // "For resale/wholesale ... Vermont Sales & Use Tax Account Number:"
+        // has no field for the state, so an out-of-state number carries its
+        // state ("CT 123").
+        $this->writeAt($pdf, 154.3, 177.8, $this->labelledTaxId($certificate, 'VT'));
 
         // Vendor Information
         $this->writeAt($pdf, 16.9, 127.5, $data->vendorName);

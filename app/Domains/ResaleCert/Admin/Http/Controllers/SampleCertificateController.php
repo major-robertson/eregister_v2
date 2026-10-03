@@ -3,6 +3,7 @@
 namespace App\Domains\ResaleCert\Admin\Http\Controllers;
 
 use App\Domains\ResaleCert\Models\ResaleCertificate;
+use App\Domains\ResaleCert\Pdf\StateCertificateFactory;
 use App\Domains\ResaleCert\Services\CertificatePdfService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -17,11 +18,11 @@ use setasign\Fpdi\Fpdi;
  */
 class SampleCertificateController
 {
-    public function __invoke(Request $request, string $stateCode, CertificatePdfService $pdfService): Response
+    public function __invoke(Request $request, string $stateCode, CertificatePdfService $pdfService, StateCertificateFactory $factory): Response
     {
         $stateCode = strtoupper($stateCode);
 
-        abort_unless(config()->has("resale_cert.states.{$stateCode}"), 404, 'Unknown state.');
+        abort_unless($factory->has($stateCode), 404, 'No certificate form for this state.');
 
         $showGrid = $request->boolean('grid', true);
 

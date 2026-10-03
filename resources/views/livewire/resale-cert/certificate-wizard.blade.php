@@ -48,9 +48,12 @@
                             <label
                                 wire:key="state-{{ $option['code'] }}"
                                 @class([
-                                    'flex items-center gap-2 rounded-lg px-3 py-2 text-sm',
+                                    'flex gap-2 rounded-lg px-3 py-2 text-sm',
+                                    'items-start' => $option['guidance'],
+                                    'items-center' => ! $option['guidance'],
                                     'cursor-pointer hover:bg-zinc-50' => $option['selectable'],
-                                    'cursor-not-allowed opacity-50' => ! $option['selectable'],
+                                    'cursor-not-allowed' => ! $option['selectable'],
+                                    'opacity-50' => ! $option['selectable'] && ! $option['guidance'],
                                 ])
                             >
                                 <input
@@ -59,13 +62,25 @@
                                     wire:click="toggleState('{{ $option['code'] }}')"
                                     @checked(in_array($option['code'], $selectedStates, true))
                                     @disabled(! $option['selectable'])
-                                    class="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+                                    @class([
+                                        'h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500',
+                                        'mt-0.5' => $option['guidance'],
+                                    ])
                                 />
-                                <span class="flex-1 text-text-primary">{{ $option['name'] }}</span>
+                                <span class="flex-1">
+                                    <span class="block text-text-primary">{{ $option['name'] }}</span>
+                                    @if ($option['guidance'])
+                                        <span class="mt-1 block text-xs text-zinc-500">
+                                            {{ $option['guidance'] }}
+                                            <a href="{{ $option['state_issued']['url'] }}" target="_blank" rel="noopener" class="underline">Open the {{ $option['state_issued']['issuer'] }} site</a>
+                                        </span>
+                                    @endif
+                                </span>
+                                @if (! $option['selectable'])
+                                    <flux:icon name="lock-closed" class="size-3.5 text-zinc-400" title="{{ $option['reason'] }}" />
+                                @endif
                                 @if ($option['registered'])
                                     <flux:badge color="green" size="sm">Registered</flux:badge>
-                                @elseif (! $option['selectable'])
-                                    <flux:icon name="lock-closed" class="size-3.5 text-zinc-400" title="{{ $option['reason'] }}" />
                                 @endif
                             </label>
                         @endforeach

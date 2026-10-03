@@ -39,6 +39,15 @@ return [
     'price_family' => 'resale_cert',
     'price_key' => 'resale_cert_generator',
 
+    /*
+    | 'state_issued' marks a state that issues the resale certificate itself
+    | (document, issuer, url, guidance shown to the customer).
+    | 'registered_buyers' => 'blocked': a buyer registered there must use the
+    | state's document, so the wizard locks the state for them and no blank
+    | form is offered. 'note': the state stays selectable and the wizard
+    | shows the guidance as a note. A state with 'class' => null has no
+    | generator: it can only be covered by a uniform form it accepts.
+    */
     'states' => [
         'AL' => [
             'class' => \App\Domains\ResaleCert\Pdf\States\AlabamaCertificate::class,
@@ -81,14 +90,28 @@ return [
         //     'name' => 'Delaware',
         // ],  // TODO: Delaware - No sales tax, no certificate needed
         'DC' => [
-            'class' => \App\Domains\ResaleCert\Pdf\States\DistrictOfColumbiaCertificate::class,
-            'template' => 'district_of_columbia.pdf',
+            'class' => null,
+            'template' => '',
             'name' => 'District of Columbia',
+            'state_issued' => [
+                'document' => 'Certificate of Resale (OTR-368)',
+                'issuer' => 'District of Columbia Office of Tax and Revenue',
+                'url' => 'https://mytax.dc.gov/',
+                'guidance' => 'The District issues this certificate to registered businesses. Request your Certificate of Resale (OTR-368) through MyTax.DC.gov. It expires after one year.',
+                'registered_buyers' => 'blocked',
+            ],
         ],
         'FL' => [
-            'class' => \App\Domains\ResaleCert\Pdf\States\MtcUniformCertificate::class,
-            'template' => 'mtc.pdf',
+            'class' => null,
+            'template' => '',
             'name' => 'Florida',
+            'state_issued' => [
+                'document' => 'Annual Resale Certificate (Form DR-13)',
+                'issuer' => 'Florida Department of Revenue',
+                'url' => 'https://floridarevenue.com/taxes/printcertificate',
+                'guidance' => 'Florida issues this certificate to registered dealers. Print your Annual Resale Certificate (Form DR-13) from your Florida Department of Revenue account.',
+                'registered_buyers' => 'blocked',
+            ],
         ],
         'GA' => [
             'class' => \App\Domains\ResaleCert\Pdf\States\GeorgiaCertificate::class,
@@ -132,14 +155,28 @@ return [
             'name' => 'Kentucky',
         ],
         'LA' => [
-            'class' => \App\Domains\ResaleCert\Pdf\States\LouisianaCertificate::class,
-            'template' => '',  // Uses custom generation
+            'class' => null,
+            'template' => '',
             'name' => 'Louisiana',
+            'state_issued' => [
+                'document' => 'Louisiana Resale Certificate (Form R-1064)',
+                'issuer' => 'Louisiana Department of Revenue',
+                'url' => 'https://latap.revenue.louisiana.gov/',
+                'guidance' => 'Louisiana issues this certificate to registered dealers. Get your Louisiana Resale Certificate (Form R-1064) from the Department of Revenue through LaTAP.',
+                'registered_buyers' => 'blocked',
+            ],
         ],
         'ME' => [
             'class' => \App\Domains\ResaleCert\Pdf\States\MtcUniformCertificate::class,
             'template' => 'mtc.pdf',
             'name' => 'Maine',
+            'state_issued' => [
+                'document' => 'Resale Certificate',
+                'issuer' => 'Maine Revenue Services',
+                'url' => 'https://www.maine.gov/revenue/',
+                'guidance' => 'Maine Revenue Services issues a Resale Certificate to registered retailers. Give suppliers a copy of the certificate Maine issued to you.',
+                'registered_buyers' => 'blocked',
+            ],
         ],
         'MD' => [
             'class' => \App\Domains\ResaleCert\Pdf\States\MarylandCertificate::class,
@@ -162,9 +199,16 @@ return [
             'name' => 'Minnesota',
         ],
         'MS' => [
-            'class' => \App\Domains\ResaleCert\Pdf\States\MississippiCertificate::class,
-            'template' => 'mississippi.pdf',
+            'class' => null,
+            'template' => '',
             'name' => 'Mississippi',
+            'state_issued' => [
+                'document' => 'Mississippi sales tax permit',
+                'issuer' => 'Mississippi Department of Revenue',
+                'url' => 'https://tap.dor.ms.gov/',
+                'guidance' => 'Mississippi has no resale certificate form. Give each supplier a copy of your Mississippi sales tax permit, which you can get from TAP.',
+                'registered_buyers' => 'blocked',
+            ],
         ],
         'MO' => [
             'class' => \App\Domains\ResaleCert\Pdf\States\MissouriCertificate::class,
@@ -201,6 +245,13 @@ return [
             'class' => \App\Domains\ResaleCert\Pdf\States\MtcUniformCertificate::class,
             'template' => 'mtc.pdf',
             'name' => 'New Mexico',
+            'state_issued' => [
+                'document' => 'Nontaxable Transaction Certificate, Type 2',
+                'issuer' => 'New Mexico Taxation and Revenue Department',
+                'url' => 'https://tap.state.nm.us/',
+                'guidance' => 'New Mexico buyers use a Type 2 Nontaxable Transaction Certificate. Execute yours in the Taxpayer Access Point (TAP).',
+                'registered_buyers' => 'blocked',
+            ],
         ],
         'NY' => [
             'class' => \App\Domains\ResaleCert\Pdf\States\NewYorkCertificate::class,
@@ -253,9 +304,16 @@ return [
             'name' => 'South Dakota',
         ],
         'TN' => [
-            'class' => \App\Domains\ResaleCert\Pdf\States\TennesseeCertificate::class,
-            'template' => 'tennessee.pdf',
+            'class' => \App\Domains\ResaleCert\Pdf\States\SstUniformCertificate::class,
+            'template' => 'sst.pdf',
             'name' => 'Tennessee',
+            'state_issued' => [
+                'document' => 'Blanket Certificate of Resale',
+                'issuer' => 'Tennessee Department of Revenue',
+                'url' => 'https://tntap.tn.gov/eservices/',
+                'guidance' => 'Tennessee issues a Blanket Certificate of Resale to registered dealers through TNTAP (More... > View Letters). The Streamlined Sales Tax certificate is an accepted alternative, and it is the form we generate.',
+                'registered_buyers' => 'note',
+            ],
         ],
         'TX' => [
             'class' => \App\Domains\ResaleCert\Pdf\States\TexasCertificate::class,
@@ -281,6 +339,13 @@ return [
             'class' => \App\Domains\ResaleCert\Pdf\States\SstUniformCertificate::class,
             'template' => 'sst.pdf',
             'name' => 'Washington',
+            'state_issued' => [
+                'document' => 'Reseller Permit',
+                'issuer' => 'Washington State Department of Revenue',
+                'url' => 'https://secure.dor.wa.gov/',
+                'guidance' => 'Washington issues a Reseller Permit to registered businesses. Apply for yours in My DOR and give suppliers a copy.',
+                'registered_buyers' => 'blocked',
+            ],
         ],
         'WV' => [
             'class' => \App\Domains\ResaleCert\Pdf\States\SstUniformCertificate::class,

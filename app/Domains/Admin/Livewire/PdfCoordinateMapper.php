@@ -139,7 +139,8 @@ class PdfCoordinateMapper extends Component
     }
 
     /**
-     * Resale states offered for sample renders through the real pipeline.
+     * Resale states offered for sample renders through the real pipeline
+     * (states with a generator class only).
      *
      * @return array<string, string>
      */
@@ -147,6 +148,7 @@ class PdfCoordinateMapper extends Component
     public function sampleStates(): array
     {
         return collect(config('resale_cert.states', []))
+            ->filter(fn ($config) => ! empty($config['class']))
             ->map(fn ($config) => $config['name'])
             ->sort()
             ->all();

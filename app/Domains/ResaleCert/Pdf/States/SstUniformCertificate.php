@@ -83,6 +83,15 @@ class SstUniformCertificate extends BaseStateCertificate
         $business = $certificate->business_snapshot;
         $selectedStatesTaxIds = $business['selected_states_tax_ids'] ?? [];
 
+        // A single state's form on this template (e.g. TN on sst.pdf) carries
+        // one tax id in the snapshot instead of a per-state list.
+        if ($selectedStatesTaxIds === [] && ! empty($business['tax_id'])) {
+            $selectedStatesTaxIds = [$certificate->state_code => [
+                'tax_id' => $business['tax_id'],
+                'source_state' => $business['tax_id_source_state'] ?? $certificate->state_code,
+            ]];
+        }
+
         if (! empty($selectedStatesTaxIds)) {
             // Write tax IDs for each selected state covered by this SST certificate
             foreach ($selectedStatesTaxIds as $stateCode => $taxIdInfo) {

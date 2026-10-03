@@ -14,11 +14,6 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  */
 class BlankFormDownloadController
 {
-    /**
-     * FL and ME blanks are state-issued documents we can't distribute.
-     */
-    public const EXCLUDED_STATES = ['FL', 'ME'];
-
     public function __invoke(Request $request, string $state): BinaryFileResponse
     {
         $state = strtoupper($state);
@@ -52,11 +47,12 @@ class BlankFormDownloadController
     /**
      * The blank template filename for a state, or null when none can be
      * offered: the state's own form when one exists, else the MTC uniform
-     * form when the state accepts it.
+     * form when the state accepts it. None for a state that issues its own
+     * document to registered buyers (config 'state_issued' => blocked).
      */
     public static function templateFor(string $state): ?string
     {
-        if (in_array($state, self::EXCLUDED_STATES, true)) {
+        if (config("resale_cert.states.{$state}.state_issued.registered_buyers") === 'blocked') {
             return null;
         }
 

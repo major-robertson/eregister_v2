@@ -66,6 +66,29 @@ describe('resale certificate state pages', function () {
             ->assertSee('<link rel="canonical" href="'.url('/resale-certificates/florida').'" />', escape: false);
     });
 
+    it('points to the state, not the generator, where the state issues the certificate', function (string $code, string $slug) {
+        $html = $this->get('/resale-certificates/'.$slug)->assertOk()->getContent();
+        $name = States::name($code);
+
+        expect($html)->toContain(e(config("resale_cert.states.{$code}.state_issued.guidance")))
+            ->not->toContain('Our generator')
+            ->not->toContain("{$name} certificate on")
+            ->not->toContain('Generate a '.$name.' certificate')
+            ->not->toContain('"@type":"Service"');
+    })->with([
+        ['FL', 'florida'],
+        ['LA', 'louisiana'],
+        ['MS', 'mississippi'],
+        ['DC', 'district-of-columbia'],
+    ]);
+
+    it('says the Tennessee generator uses the Streamlined Sales Tax form', function () {
+        $this->get('/resale-certificates/tennessee')
+            ->assertOk()
+            ->assertSee('Our generator produces the Streamlined Sales Tax certificate.')
+            ->assertDontSee('fills in the Tennessee form');
+    });
+
     it('301-redirects codes to slugs and 404s unknown states', function () {
         $this->get('/resale-certificates/fl')->assertRedirect('/resale-certificates/florida')->assertStatus(301);
         $this->get('/resale-certificates/atlantis')->assertNotFound();
@@ -108,8 +131,8 @@ describe('cached state pages', function () {
 
     it('caches under versioned keys', function () {
         expect(LienStatePage::cacheKey('tx'))->toBe('seo.lien-state.v4.TX')
-            ->and(ResaleStatePage::cacheKey('fl'))->toBe('seo.resale-state.v4.FL')
-            ->and(ResaleStatePage::statesCacheKey())->toBe('seo.resale-states.v4');
+            ->and(ResaleStatePage::cacheKey('fl'))->toBe('seo.resale-state.v5.FL')
+            ->and(ResaleStatePage::statesCacheKey())->toBe('seo.resale-states.v5');
     });
 });
 

@@ -5,6 +5,7 @@ namespace App\Domains\ResaleCert\Livewire;
 use App\Domains\ResaleCert\Livewire\Concerns\ResolvesResaleContext;
 use App\Domains\ResaleCert\Models\ResaleCertificate;
 use App\Domains\ResaleCert\Models\ResaleVendor;
+use App\Domains\ResaleCert\Pdf\StateCertificateFactory;
 use App\Domains\ResaleCert\ResaleFollowUp;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -103,7 +104,7 @@ class Dashboard extends Component
     {
         $state = strtoupper((string) (($this->business->business_address ?? [])['state'] ?? ''));
 
-        return $state !== '' && config()->has("resale_cert.states.{$state}") ? $state : 'TX';
+        return $state !== '' && app(StateCertificateFactory::class)->has($state) ? $state : 'TX';
     }
 
     public function render(): View

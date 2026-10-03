@@ -10,7 +10,7 @@ use setasign\Fpdi\Fpdi;
 /**
  * Renders a resale certificate PDF: imports the official state form and
  * stamps coordinate-mapped text via FPDI, or draws a generic certificate
- * from scratch for template-less states (AL, LA, OK). Ported from the
+ * from scratch for template-less states (AL, OK). Ported from the
  * original TaxResaleCertificate app — DOMPDF can't fill existing PDFs,
  * so this domain deliberately deviates from the blade-template convention.
  */

@@ -5,6 +5,7 @@ namespace App\Domains\ResaleCert\Livewire;
 use App\Domains\ResaleCert\Livewire\Concerns\ResolvesResaleContext;
 use App\Domains\ResaleCert\Models\ResaleStateRule;
 use App\Domains\ResaleCert\Models\ResaleVendor;
+use App\Domains\ResaleCert\Pdf\StateCertificateFactory;
 use App\Domains\ResaleCert\Services\CertificateGenerator;
 use App\Domains\ResaleCert\Services\MinimumFormsService;
 use Illuminate\Contracts\View\View;
@@ -20,7 +21,8 @@ use Livewire\Component;
  * Step 1: pick a vendor + the states to cover. A state is selectable when
  * the business is registered there, or the state accepts out-of-state tax
  * ids, or a uniform form (SST / opted-in MTC) covers it. MTC-only states
- * hide entirely until MTC is enabled in settings.
+ * hide entirely until MTC is enabled in settings. States that issue their
+ * own certificate lock (or annotate) the state for buyers registered there.
  *
  * Step 2: review the minimum form set (SST > MTC > individual), optionally
  * add individual forms for uniform-covered states, and generate. Unchecking
@@ -84,27 +86,39 @@ class CertificateWizard extends Component
     /**
      * All selectable states with the reason they're available (or locked).
      *
-     * @return list<array{code: string, name: string, selectable: bool, registered: bool, reason: string}>
+     * States that issue their own certificate (config 'state_issued') are
+     * locked for a buyer registered there when the state requires its own
+     * document ('blocked'), or stay selectable with the guidance as a note
+     * ('note'). A state without a generator class can only be covered by a
+     * uniform form it accepts, never by an individual form.
+     *
+     * @return list<array{code: string, name: string, selectable: bool, registered: bool, reason: string, state_issued: ?array<string, string>, guidance: ?string}>
      */
     #[Computed]
     public function stateOptions(): array
     {
         $registered = $this->registeredStateCodes;
         $mtcEnabled = (bool) $this->resaleProfile()?->mtc_enabled;
+        $factory = app(StateCertificateFactory::class);
 
         return ResaleStateRule::statesOnly()
             ->orderBy('state_name')
             ->get()
-            ->map(function (ResaleStateRule $rule) use ($registered, $mtcEnabled) {
+            ->map(function (ResaleStateRule $rule) use ($registered, $mtcEnabled, $factory) {
                 $isRegistered = in_array($rule->state_code, $registered, true);
-                $selectable = $isRegistered
-                    || $rule->accepts_out_of_state
-                    || $rule->accepts_sst
-                    || ($rule->accepts_mtc && $mtcEnabled);
+                $hasGenerator = $factory->has($rule->state_code);
+                $stateIssued = $factory->stateIssued($rule->state_code);
+                $blocked = $isRegistered && ($stateIssued['registered_buyers'] ?? null) === 'blocked';
+                $viaUniform = $rule->accepts_sst || ($rule->accepts_mtc && $mtcEnabled);
 
-                // MTC-only states stay hidden until the MTC opt-in.
+                $selectable = ! $blocked && ($hasGenerator
+                    ? $isRegistered || $rule->accepts_out_of_state || $viaUniform
+                    : $viaUniform);
+
+                // MTC-only states stay hidden until the MTC opt-in. A state
+                // without a generator can't use the out-of-state path.
                 $mtcOnly = ! $isRegistered
-                    && ! $rule->accepts_out_of_state
+                    && ! ($rule->accepts_out_of_state && $hasGenerator)
                     && ! $rule->accepts_sst
                     && $rule->accepts_mtc;
 
@@ -112,12 +126,20 @@ class CertificateWizard extends Component
                     return null;
                 }
 
+                $guidance = $isRegistered ? ($stateIssued['guidance'] ?? null) : null;
+
                 return [
                     'code' => $rule->state_code,
                     'name' => $rule->state_name,
                     'selectable' => $selectable,
                     'registered' => $isRegistered,
-                    'reason' => $selectable ? '' : 'State tax registration required',
+                    'reason' => match (true) {
+                        $selectable => '',
+                        $blocked => $stateIssued['guidance'],
+                        default => 'State tax registration required',
+                    },
+                    'state_issued' => $stateIssued,
+                    'guidance' => $guidance,
                 ];
             })
             ->filter()

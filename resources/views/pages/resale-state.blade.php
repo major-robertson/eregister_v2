@@ -98,11 +98,14 @@
 </section>
 @endif
 @else
+{{-- No Service schema where the state issues the certificate and the generator makes none (FL, LA, MS, DC). --}}
+@if ($page->hasGenerator())
 <x-seo.service
     name="{{ $name }} Resale Certificate Generator"
     description="Generate signed {{ $name }} resale certificates on the accepted form, with the state's rules for uniform certificates, out-of-state buyers, blanket certificates, and expiration applied automatically."
     :url="$page->url()"
     category="Resale certificate generation" />
+@endif
 
 {{-- Hero --}}
 <section class="relative overflow-hidden bg-gradient-to-b from-zinc-900 via-zinc-900 to-zinc-800 py-20 lg:py-24">
@@ -120,11 +123,15 @@
         <p class="mt-6 max-w-2xl text-lg font-semibold text-zinc-200">{{ $page->heroLine() }}</p>
         @endif
         <p class="mt-6 max-w-2xl text-lg text-zinc-400">
+            @if ($page->hasGenerator())
             What {{ $a }} {{ $name }} resale certificate has to say, who can sign one, how long it lasts, and how to produce a signed copy for every vendor in minutes.
+            @else
+            What {{ $a }} {{ $name }} resale certificate has to say, how long it lasts, and where to get one.
+            @endif
         </p>
         <div class="mt-10 flex flex-wrap gap-4">
             <a href="{{ route('register') }}" class="group inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#B91C1C]">
-                Generate {{ $a }} {{ $name }} certificate
+                {{ $page->hasGenerator() ? "Generate {$a} {$name} certificate" : 'Certificates for your other states' }}
                 <svg class="h-4 w-4 transition group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
@@ -249,10 +256,17 @@
 {{-- CTA --}}
 <section class="{{ $page->content ? 'border-t border-zinc-200 ' : '' }}bg-white py-20">
     <div class="mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
+        @if ($page->hasGenerator())
         <h2 class="text-3xl font-bold tracking-tight text-zinc-900">Unlimited signed {{ $name }} resale certificates</h2>
         <p class="mx-auto mt-4 max-w-2xl text-zinc-600">
             Enter your business once, add each vendor, and download a signed {{ $name }} certificate on {{ $page->generatorFormPhrase() }}. One flat yearly price covers every state where you buy inventory.
         </p>
+        @else
+        <h2 class="text-3xl font-bold tracking-tight text-zinc-900">Buying inventory in other states?</h2>
+        <p class="mx-auto mt-4 max-w-2xl text-zinc-600">
+            {{ $page->stateIssuedGuidance() }} For your other states, enter your business once, add each vendor, and download signed certificates. One flat yearly price covers them all.
+        </p>
+        @endif
         <div class="mt-8 flex flex-wrap justify-center gap-4">
             <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:bg-[#B91C1C]">Start generating certificates</a>
             <a href="{{ route('sales-tax-registration') }}" class="inline-flex items-center gap-2 rounded-lg border border-zinc-300 px-8 py-4 text-base font-semibold text-zinc-800 transition hover:bg-zinc-50">Need {{ $page->salesTaxPermitPhrase() }} first?</a>

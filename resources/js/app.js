@@ -1,0 +1,1 @@
+import './esign-signature-capture';

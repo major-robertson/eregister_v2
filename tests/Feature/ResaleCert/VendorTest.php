@@ -40,6 +40,19 @@ it('creates a vendor scoped to the current business', function () {
         ->and($vendor->created_by_user_id)->toBe($this->user->id);
 });
 
+it('accepts a 5-digit ZIP that the ZIP+4 mask left with a trailing dash', function () {
+    Livewire::test(VendorForm::class)
+        ->set('legal_name', 'Masked Zip Supply')
+        ->set('address_line1', '500 Commerce St')
+        ->set('city', 'Dallas')
+        ->set('state', 'TX')
+        ->set('postal_code', '75201-')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(ResaleVendor::withoutGlobalScopes()->where('legal_name', 'Masked Zip Supply')->value('postal_code'))->toBe('75201');
+});
+
 it('validates required vendor fields', function () {
     Livewire::test(VendorForm::class)
         ->call('save')

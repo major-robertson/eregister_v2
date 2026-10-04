@@ -62,6 +62,10 @@ class VendorForm extends Component
 
     public function save(): void
     {
+        // The ZIP+4 input mask appends its dash as soon as five digits are
+        // typed, so a plain ZIP arrives as "75201-".
+        $this->postal_code = rtrim(trim($this->postal_code), '-');
+
         $validated = $this->validate([
             'legal_name' => ['required', 'string', 'max:255'],
             'address_line1' => ['required', 'string', 'max:255'],

@@ -3,6 +3,7 @@
 use App\Domains\Billing\Livewire\Checkout;
 use App\Domains\Business\Livewire\BusinessSwitcher;
 use App\Domains\Business\Livewire\OnboardingWizard;
+use App\Http\Controllers\HappyWebsitesController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -35,6 +36,13 @@ Route::middleware('auth')->group(function (): void {
                 // Checkout for a specific application
                 Route::get('/checkout/{application}', Checkout::class)
                     ->name('portal.checkout');
+
+                // Happy Websites (sister company): the offer, and a one-click
+                // request for a free mockup
+                Route::get('/websites', [HappyWebsitesController::class, 'show'])
+                    ->name('portal.websites');
+                Route::post('/websites', [HappyWebsitesController::class, 'store'])
+                    ->name('portal.websites.request');
             });
         });
 });

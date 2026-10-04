@@ -71,6 +71,45 @@
             </div>
         </section>
 
+        {{-- Happy Websites, our sister company. Styled apart from the workspace
+             cards because it is an offer, not an eRegister product. Gone once
+             the customer has asked for a mockup, or dismissed it on this device. --}}
+        @unless (\App\Support\HappyWebsites::requestedBy(auth()->user()))
+            <section
+                class="mb-12"
+                x-data="{ hidden: localStorage.getItem('websites-card-dismissed') === '1' }"
+                x-show="! hidden"
+                x-cloak
+            >
+                <div class="flex flex-col gap-5 rounded-xl border border-border bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-start gap-4">
+                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-zinc-500/10 text-zinc-600">
+                            <flux:icon name="globe-alt" class="size-6" />
+                        </div>
+                        <div>
+                            <h2 class="text-base font-semibold text-text-primary">
+                                {{ __('Could :business use a new website?', ['business' => $business->name ?? __('your business')]) }}
+                            </h2>
+                            <p class="mt-1 text-sm text-text-secondary">
+                                {{ __("Happy Websites, our sister company, will make you a free mockup. If you like it, it's $:price a month.", ['price' => config('happy_websites.price_one_page')]) }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex shrink-0 items-center gap-2">
+                        <flux:button :href="route('portal.websites')" variant="primary" wire:navigate>
+                            {{ __('See how it works') }}
+                        </flux:button>
+                        <flux:button
+                            variant="ghost"
+                            x-on:click="localStorage.setItem('websites-card-dismissed', '1'); hidden = true"
+                        >
+                            {{ __('Not now') }}
+                        </flux:button>
+                    </div>
+                </div>
+            </section>
+        @endunless
+
         {{-- Recent Applications --}}
         <section class="mb-12">
             <h2 class="mb-6 text-lg font-semibold text-text-primary">Recent Applications</h2>

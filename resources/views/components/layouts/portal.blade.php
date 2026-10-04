@@ -93,6 +93,19 @@
                         @endforeach
                     </flux:sidebar.group>
                 @endforeach
+
+                {{-- Happy Websites, our sister company. Not a workspace: it
+                     is an offer, so it sits apart from the product groups. --}}
+                <flux:sidebar.item
+                    icon="globe-alt"
+                    :href="route('portal.websites')"
+                    :current="request()->routeIs('portal.websites')"
+                    :accent="false"
+                    :badge="__('New')"
+                    wire:navigate
+                >
+                    {{ __('Websites') }}
+                </flux:sidebar.item>
             </flux:sidebar.nav>
 
             <flux:spacer />

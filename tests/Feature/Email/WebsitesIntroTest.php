@@ -255,7 +255,14 @@ describe('the emails', function () {
             ->assertSeeInText('I can hold a spot for you through Friday, October 16. If you want it, just reply "yes" and I\'ll make the intro.')
             // Any mailer but Postmark gets our own preferences page.
             ->assertSeeInText('Unsubscribe: '.URL::signedRoute('email.preferences', ['user' => $dana->id]))
-            ->assertSeeInText(config('app.name').', 1 Test St, Louisville, KY 40207');
+            ->assertSeeInText(config('app.name').', 1 Test St, Louisville, KY 40207')
+            // The HTML part says the same, with the links as words.
+            ->assertSeeInHtml("I'd like Smith Roofing to be one of them.", false)
+            ->assertSeeInHtml('I can hold a spot for you through Friday, October 16.', false)
+            ->assertSeeInHtml('<a href="https://happywebsites.com/work?utm_source=eregister&amp;utm_medium=email&amp;utm_campaign=websites">happywebsites.com/work</a>', false)
+            ->assertSeeInHtml('<a href="'.URL::signedRoute('email.preferences', ['user' => $dana->id]).'" style="color: #888888;">Unsubscribe</a>', false)
+            ->assertSeeInHtml(config('app.name').', 1 Test St, Louisville, KY 40207', false)
+            ->assertDontSeeInHtml('Unsubscribe:', false);
     });
 
     it('leaves the unsubscribe link to Postmark on the broadcast stream', function () {
@@ -265,7 +272,14 @@ describe('the emails', function () {
         config()->set('services.postmark.key', 'test-key');
         [$dana, $business] = websitesIntroCustomer();
 
-        (new WebsitesIntro(websitesIntroInvitation($dana, $business)))
+        $invitation = websitesIntroInvitation($dana, $business);
+
+        // The reader sees the word. The long URL only shows in the plain-text part.
+        (new WebsitesIntro($invitation))
+            ->assertSeeInHtml('<a href="{{{ pm:unsubscribe }}}" style="color: #888888;">Unsubscribe</a>', false)
+            ->assertSeeInText('Unsubscribe: {{{ pm:unsubscribe }}}');
+        (new WebsitesIntroReminder($invitation))
+            ->assertSeeInHtml('<a href="{{{ pm:unsubscribe }}}" style="color: #888888;">Unsubscribe</a>', false)
             ->assertSeeInText('Unsubscribe: {{{ pm:unsubscribe }}}');
     });
 
@@ -298,7 +312,9 @@ describe('the emails', function () {
         expect($first->getHeaders()->get('X-PM-Message-Stream')->getBodyAsString())->toBe('broadcast')
             ->and($first->getHeaders()->get('Message-ID')->getBodyAsString())->toBe("<{$invitation->message_id}>")
             ->and($first->getHeaders()->get('X-PM-KeepID')->getBodyAsString())->toBe('true')
-            ->and($first->getHtmlBody())->toBeNull();
+            // Both parts go out: the note as HTML, and the same note as plain text.
+            ->and($first->getHtmlBody())->toContain('>Unsubscribe</a>')
+            ->and($first->getTextBody())->toContain('Major here from eRegister.');
 
         expect($reminder->getSubject())->toBe('Re: Dana, can I introduce you to someone?')
             ->and($reminder->getHeaders()->get('X-PM-Message-Stream')->getBodyAsString())->toBe('broadcast')
@@ -307,7 +323,9 @@ describe('the emails', function () {
             ->and($reminder->getTextBody())->toContain("Quick reminder, I've got your spot with Happy Websites held until Friday, October 16. Free site, free first month, only pay if you want to keep it.")
             ->and($reminder->getTextBody())->toContain('Reply "yes" if you want it. If not, no worries.')
             ->and($reminder->getTextBody())->toContain('Unsubscribe: ')
-            ->and($reminder->getTextBody())->toContain(config('app.name').', 1 Test St, Louisville, KY 40207');
+            ->and($reminder->getTextBody())->toContain(config('app.name').', 1 Test St, Louisville, KY 40207')
+            ->and($reminder->getHtmlBody())->toContain("Quick reminder, I've got your spot with Happy Websites held until Friday, October 16.")
+            ->and($reminder->getHtmlBody())->toContain('>Unsubscribe</a>');
     });
 
     it('sends a "yes" to every inbox, and to the app when Postmark inbound is set up', function () {

@@ -17,8 +17,10 @@ use Symfony\Component\Mime\Email;
  * transactional one: Postmark pauses sending when it finds promotional mail
  * there, and that would stop e-sign requests, reminders and receipts.
  *
- * Every such email needs a way to unsubscribe and our postal address; the
- * views print unsubscribeUrl() and postalLine() at the bottom.
+ * Every such email needs a way to unsubscribe and our postal address. The
+ * HTML part ends with mail.partials.broadcast-footer, where "Unsubscribe" is
+ * a link (the URL is long); the plain-text part prints unsubscribeUrl() and
+ * postalLine() at the bottom.
  *
  * The queue-failure fallback in AppServiceProvider looks for this class: an
  * "inactive recipient" rejection on the broadcast stream usually means the

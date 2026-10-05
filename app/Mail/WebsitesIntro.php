@@ -14,8 +14,9 @@ use Illuminate\Support\Str;
 /**
  * The owner inviting a customer to Happy Websites: a free site, the first
  * month free, and a spot held through a date. Sent once per person by
- * email:send-websites-intro. The wording is the owner's own; plain text so it
- * reads like a note he typed.
+ * email:send-websites-intro. The wording is the owner's own. The HTML part is
+ * bare paragraphs so it reads like a note he typed; it exists so links can be
+ * words instead of long URLs.
  *
  * WebsitesIntroReminder follows 3 days before the date, in the same thread.
  */
@@ -40,12 +41,15 @@ class WebsitesIntro extends BroadcastMailable
         $user = $this->invitation->user;
 
         return new Content(
+            html: 'mail.websites-intro-html',
             text: 'mail.websites-intro',
             with: [
                 'firstName' => self::firstName($user) ?? 'there',
                 'businessName' => $this->invitation->business?->name ?? 'your business',
                 'price' => config('happy_websites.price_one_page'),
                 'workUrl' => HappyWebsites::url('/work', 'email'),
+                // What the link reads as: "happywebsites.com/work".
+                'workLabel' => Str::after(config('happy_websites.url'), '://').'/work',
                 'deadline' => $this->invitation->deadlineForHumans(),
                 'unsubscribeUrl' => $this->unsubscribeUrl($user),
                 'postalLine' => $this->postalLine(),

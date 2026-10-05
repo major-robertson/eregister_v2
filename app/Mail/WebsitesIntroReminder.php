@@ -33,6 +33,7 @@ class WebsitesIntroReminder extends BroadcastMailable
         $user = $this->invitation->user;
 
         return new Content(
+            html: 'mail.websites-intro-reminder-html',
             text: 'mail.websites-intro-reminder',
             with: [
                 'firstName' => WebsitesIntro::firstName($user) ?? 'there',

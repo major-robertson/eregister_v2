@@ -15,6 +15,7 @@ use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Sleep;
 use Illuminate\Support\Str;
 
 /**
@@ -42,6 +43,9 @@ class SendWebsitesIntro extends Command
         {--test-to= : Send both emails to this account\'s address as a sample, without inviting anyone}';
 
     protected $description = 'Invite customers to Happy Websites by email and send the reminder 3 days before their date';
+
+    /** How long the --test-to sample waits between the invitation and the reminder. */
+    private const SAMPLE_GAP_SECONDS = 30;
 
     public function handle(): int
     {
@@ -243,6 +247,14 @@ class SendWebsitesIntro extends Command
         $invitation->setRelation('business', $business);
 
         Mail::to($user)->sendNow(new WebsitesIntro($invitation));
+
+        // The reminder is a reply to the first email. Sent in the same second,
+        // a mailbox can file it before the email it answers has arrived, and
+        // then shows the two as separate conversations. Real reminders follow
+        // days later, so give the sample a head start too.
+        $this->line("Sent the invitation to {$address}. Waiting ".self::SAMPLE_GAP_SECONDS.' seconds before the reminder, so the first email is in the inbox when it arrives.');
+        Sleep::for(self::SAMPLE_GAP_SECONDS)->seconds();
+
         Mail::to($user)->sendNow(new WebsitesIntroReminder($invitation));
 
         $this->info("Sent the invitation and the reminder to {$address} as a sample. Nobody was invited.");

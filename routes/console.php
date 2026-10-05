@@ -37,3 +37,11 @@ Schedule::command('email:send-review-requests')
     ->dailyAt('10:00')
     ->timezone('America/New_York')
     ->withoutOverlapping();
+
+// Happy Websites intro emails and their reminders - weekdays at 10:30 AM
+// Eastern. Sends nothing until HAPPY_WEBSITES_INTRO_ENABLED is on.
+Schedule::command('email:send-websites-intro')
+    ->weekdays()
+    ->dailyAt('10:30')
+    ->timezone('America/New_York')
+    ->withoutOverlapping();

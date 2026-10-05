@@ -170,7 +170,7 @@ describe('queue failure fallback', function () {
     it('flags users named in a Postmark inactive-recipient rejection', function () {
         $user = User::factory()->create();
 
-        event(new JobFailed('database', Mockery::mock(\Illuminate\Contracts\Queue\Job::class), new Exception(
+        event(new JobFailed('database', Mockery::mock(\Illuminate\Contracts\Queue\Job::class, ['resolveName' => \App\Mail\WelcomeEmail::class]), new Exception(
             "Unable to send an email: You tried to send to recipient(s) that have been marked as inactive. Found inactive addresses: {$user->email}. Inactive recipients are ones that have generated a hard bounce, a spam complaint, or a manual suppression. (code 406)."
         )));
 
@@ -182,7 +182,7 @@ describe('queue failure fallback', function () {
     it('ignores unrelated failures', function () {
         $user = User::factory()->create();
 
-        event(new JobFailed('database', Mockery::mock(\Illuminate\Contracts\Queue\Job::class), new Exception(
+        event(new JobFailed('database', Mockery::mock(\Illuminate\Contracts\Queue\Job::class, ['resolveName' => \App\Mail\WelcomeEmail::class]), new Exception(
             'No query results for model [App\Models\User].'
         )));
 

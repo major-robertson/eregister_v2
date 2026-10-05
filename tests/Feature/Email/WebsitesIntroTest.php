@@ -260,6 +260,9 @@ describe('the emails', function () {
 
     it('leaves the unsubscribe link to Postmark on the broadcast stream', function () {
         config()->set('mail.default', 'postmark');
+        // Rendering builds the Postmark mailer, which needs a key to exist
+        // (CI has none). Nothing is sent.
+        config()->set('services.postmark.key', 'test-key');
         [$dana, $business] = websitesIntroCustomer();
 
         (new WebsitesIntro(websitesIntroInvitation($dana, $business)))

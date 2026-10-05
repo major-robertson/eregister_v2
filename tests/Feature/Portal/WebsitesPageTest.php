@@ -81,6 +81,19 @@ describe('Portal Websites page', function () {
             ->assertDontSee('Want to see your mockup?');
     });
 
+    it('sends the request to every inbox on the list', function () {
+        Mail::fake();
+        config()->set('happy_websites.lead_email', ['hello@happywebsites.com', 'owner@example.com']);
+        [$user] = websitesCustomer();
+
+        $this->actingAs($user)->post('/portal/websites')->assertRedirect(route('portal.websites'));
+
+        Mail::assertSent(HappyWebsitesRequest::class, function (HappyWebsitesRequest $mail) {
+            return $mail->hasTo('hello@happywebsites.com') && $mail->hasTo('owner@example.com');
+        });
+        Mail::assertSentCount(1);
+    });
+
     it('tells Happy Websites who asked and where they are', function () {
         [$user, $business] = websitesCustomer(['first_name' => 'Dana', 'last_name' => 'Smith']);
 

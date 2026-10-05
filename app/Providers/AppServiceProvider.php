@@ -14,6 +14,9 @@ use App\Domains\Lien\Policies\LienFilingPolicy;
 use App\Domains\Lien\Policies\LienProjectPolicy;
 use App\Domains\Portal\Policies\BusinessPolicy;
 use App\Domains\Portal\Policies\FormApplicationPolicy;
+use App\Mail\BroadcastMailable;
+use App\Models\EmailUnsubscribe;
+use App\Models\User;
 use App\Support\Email\RecordEmailBounce;
 use App\Support\Workspaces\WorkspaceRegistry;
 use Carbon\CarbonImmutable;
@@ -171,11 +174,27 @@ class AppServiceProvider extends ServiceProvider
                 return;
             }
 
+            // Promotional mail goes out on its own stream with its own
+            // suppression list, and an inactive address there usually means
+            // the person unsubscribed. Their address works: record the
+            // marketing opt-out and leave the bounce flag alone.
+            $promotional = is_a((string) $event->job->resolveName(), BroadcastMailable::class, true);
+
             foreach (array_map('trim', explode(',', $matches[1])) as $email) {
                 $email = rtrim($email, '.');
 
-                if (filter_var($email, FILTER_VALIDATE_EMAIL) !== false) {
+                if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+                    continue;
+                }
+
+                if (! $promotional) {
                     RecordEmailBounce::record($email, 'postmark_inactive');
+
+                    continue;
+                }
+
+                foreach (User::query()->where('email', $email)->get() as $user) {
+                    EmailUnsubscribe::unsubscribe($user, EmailUnsubscribe::CATEGORY_MARKETING);
                 }
             }
         });

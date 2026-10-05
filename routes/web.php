@@ -24,6 +24,11 @@ Route::post('/webhooks/postgrid', [PostGridWebhookController::class, 'handle'])
 Route::post('/webhooks/postmark', [PostmarkWebhookController::class, 'handle'])
     ->name('webhooks.postmark');
 
+// Postmark inbound mail: a customer answered a Happy Websites intro email, so
+// the reminder skips them (no auth, CSRF excluded in bootstrap/app.php)
+Route::post('/webhooks/postmark/inbound', [PostmarkWebhookController::class, 'inbound'])
+    ->name('webhooks.postmark.inbound');
+
 // Marketing redirects (banner ads, partnerships)
 Route::get('/r/{slug}', [MarketingRedirectController::class, 'handle'])
     ->name('marketing.redirect');

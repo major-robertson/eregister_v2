@@ -17,6 +17,10 @@ return [
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
         'webhook_token' => env('POSTMARK_WEBHOOK_TOKEN'),
+        // The message stream for promotional mail ("eRegister offers and
+        // updates" in Postmark). Postmark pauses sending when it finds
+        // promotional mail on the transactional stream.
+        'broadcast_stream' => env('POSTMARK_BROADCAST_STREAM_ID', 'broadcast'),
     ],
 
     'resend' => [

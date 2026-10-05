@@ -376,6 +376,8 @@
                         <li><a href="{{ route('sales-tax-registration') }}" class="text-sm text-zinc-400 transition hover:text-white">Sales Tax</a></li>
                         <li><a href="{{ route('resale-certificates') }}" class="text-sm text-zinc-400 transition hover:text-white">Resale Certificates</a></li>
                         <li><a href="{{ route('government.home') }}" class="text-sm text-zinc-400 transition hover:text-white">Government</a></li>
+                        {{-- Happy Websites, our sister company --}}
+                        <li><a href="{{ \App\Support\HappyWebsites::url('/', 'site') }}" class="text-sm text-zinc-400 transition hover:text-white">Small Business Websites</a></li>
                     </ul>
                 </div>
 

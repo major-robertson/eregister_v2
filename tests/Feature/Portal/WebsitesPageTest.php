@@ -37,11 +37,15 @@ describe('Portal Websites page', function () {
             ->get('/portal/websites')
             ->assertOk()
             ->assertSee('A website for Smith Roofing')
-            ->assertSee('They are our sister company.')
-            ->assertSee('$99 a month for a one-page site. $199 a month for 5 to 7 pages.')
+            ->assertSee('Built and run by Happy Websites, our sister company.')
+            ->assertSee('A free mockup first. $99 a month only if you like it.')
+            ->assertSee('Happy Websites will design a website for Smith Roofing and show it to you.')
+            ->assertSee('Same features in both. Only the number of pages changes.')
             ->assertSee('Make my free mockup')
-            // The page says what the request email carries (see HappyWebsitesRequest).
-            ->assertSee("We'll send your name, email, business name, city and state to Happy Websites.")
+            ->assertSee('Want to see your mockup?')
+            // Step 1 says what the request email carries (see HappyWebsitesRequest).
+            ->assertSee('We send Happy Websites your name, email, business name, city and state.')
+            ->assertSee('https://happywebsites.com/work/painting-company?utm_source=eregister&utm_medium=portal&utm_campaign=websites')
             ->assertSee('https://happywebsites.com/work?utm_source=eregister&utm_medium=portal&utm_campaign=websites')
             ->assertDontSee('Happy Websites has your request');
     });
@@ -71,7 +75,10 @@ describe('Portal Websites page', function () {
             ->assertOk()
             ->assertSee('Done. Happy Websites has your request.')
             ->assertSee($user->email)
-            ->assertDontSee('Make my free mockup');
+            ->assertSee('Have a logo or photos? Keep them handy.')
+            // Both buttons are gone: the one in the offer card and the bottom band.
+            ->assertDontSee('Make my free mockup')
+            ->assertDontSee('Want to see your mockup?');
     });
 
     it('tells Happy Websites who asked and where they are', function () {

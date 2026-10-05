@@ -17,8 +17,8 @@ use Illuminate\View\View;
  * The portal's Websites page: what Happy Websites (our sister company)
  * offers, and a one-click request for a free mockup. The request emails the
  * customer's name, email, business name, city and state to their inbox, once
- * per person. The page tells the customer exactly that, so keep the two in
- * step if the email ever carries more.
+ * per person. Step 1 of the page's "How it works" tells the customer exactly
+ * that, so keep the two in step if the email ever carries more.
  */
 class HappyWebsitesController extends Controller
 {

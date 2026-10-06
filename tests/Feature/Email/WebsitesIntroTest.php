@@ -14,6 +14,7 @@ use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Sleep;
 use Spatie\Permission\Models\Role;
 
 /*
@@ -123,14 +124,18 @@ describe('the command', function () {
 
     it('sends both emails to one account as a sample without inviting anyone', function () {
         Mail::fake();
+        Sleep::fake();
         [$dana] = websitesIntroCustomer();
 
         $this->artisan('email:send-websites-intro', ['--test-to' => $dana->email])
+            ->expectsOutputToContain('Waiting 30 seconds before the reminder')
             ->expectsOutputToContain('as a sample')
             ->assertSuccessful();
 
         Mail::assertSent(WebsitesIntro::class, fn (WebsitesIntro $mail) => $mail->hasTo($dana->email));
         Mail::assertSent(WebsitesIntroReminder::class, fn (WebsitesIntroReminder $mail) => $mail->hasTo($dana->email));
+        // The reminder answers the first email, so that one gets a head start.
+        Sleep::assertSequence([Sleep::for(30)->seconds()]);
         expect(WebsiteInvitation::count())->toBe(0);
 
         $this->artisan('email:send-websites-intro', ['--test-to' => 'nobody@example.com'])

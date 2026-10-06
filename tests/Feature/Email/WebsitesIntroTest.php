@@ -509,7 +509,8 @@ describe('postmark', function () {
         [$dana, $business] = websitesIntroCustomer();
         $invitation = websitesIntroInvitation($dana, $business);
 
-        $this->postJson(route('webhooks.postmark.inbound', ['token' => 'test-token']), [
+        // No token in the URL: the signed hash in the reply address is the proof.
+        $this->postJson(route('webhooks.postmark.inbound'), [
             'From' => $dana->email,
             'MailboxHash' => HappyWebsites::replyHash($dana->id),
             'StrippedTextReply' => 'Yes',
@@ -526,8 +527,11 @@ describe('postmark', function () {
     it('treats "stop" as an opt-out and ignores a hash that is not ours', function () {
         [$dana, $business] = websitesIntroCustomer();
         $invitation = websitesIntroInvitation($dana, $business);
-        $inbound = fn (array $payload) => $this->postJson(route('webhooks.postmark.inbound', ['token' => 'test-token']), $payload);
+        $inbound = fn (array $payload) => $this->postJson(route('webhooks.postmark.inbound'), $payload);
 
+        // Another customer's hash with this customer's id, a made-up signature, and no hash at all.
+        [$other] = websitesIntroCustomer(['email' => 'other@example.com']);
+        $inbound(['MailboxHash' => str_replace("w{$other->id}s", "w{$dana->id}s", HappyWebsites::replyHash($other->id)), 'StrippedTextReply' => 'stop'])->assertSuccessful();
         $inbound(['MailboxHash' => "w{$dana->id}s000000000000", 'StrippedTextReply' => 'stop'])->assertSuccessful();
         $inbound(['MailboxHash' => '', 'TextBody' => 'stop'])->assertSuccessful();
         expect($invitation->refresh()->replied_at)->toBeNull()
@@ -537,8 +541,14 @@ describe('postmark', function () {
         expect($invitation->refresh()->replied_at)->not->toBeNull()
             ->and(EmailUnsubscribe::isUnsubscribed($dana, EmailUnsubscribe::CATEGORY_MARKETING))->toBeTrue();
 
-        $this->postJson(route('webhooks.postmark.inbound', ['token' => 'wrong']), ['MailboxHash' => HappyWebsites::replyHash($dana->id)])
-            ->assertUnauthorized();
+        // None of that touched the other customer.
+        expect(EmailUnsubscribe::isUnsubscribed($other, EmailUnsubscribe::CATEGORY_MARKETING))->toBeFalse();
+    });
+
+    it('rate limits the inbound webhook, which carries no token', function () {
+        $route = app('router')->getRoutes()->getByName('webhooks.postmark.inbound');
+
+        expect($route->gatherMiddleware())->toContain('throttle:120,1');
     });
 
     it('reads a rejected promotional email as an opt-out, not a dead address', function () {

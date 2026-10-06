@@ -25,8 +25,10 @@ Route::post('/webhooks/postmark', [PostmarkWebhookController::class, 'handle'])
     ->name('webhooks.postmark');
 
 // Postmark inbound mail: a customer answered a Happy Websites intro email, so
-// the reminder skips them (no auth, CSRF excluded in bootstrap/app.php)
+// the reminder skips them (the reply address is signed per customer, so no
+// token; CSRF excluded in bootstrap/app.php)
 Route::post('/webhooks/postmark/inbound', [PostmarkWebhookController::class, 'inbound'])
+    ->middleware('throttle:120,1')
     ->name('webhooks.postmark.inbound');
 
 // Marketing redirects (banner ads, partnerships)

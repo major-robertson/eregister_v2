@@ -66,16 +66,16 @@ class PostmarkWebhookController extends Controller
      * the reminder skips them (HappyWebsites::replyTrackingAddress).
      *
      * Configure in Postmark on the inbound stream, pointing at
-     * /webhooks/postmark/inbound?token={POSTMARK_WEBHOOK_TOKEN}.
+     * /webhooks/postmark/inbound.
+     *
+     * No token on this one: the address a reply is sent to is signed per
+     * customer (HappyWebsites::replyHash), and a request does nothing unless
+     * it carries a hash that only that customer's email holds. The most it
+     * can do is stop that customer's own reminder or opt them out. So the
+     * webhook URL holds no secret, and the route is rate limited instead.
      */
     public function inbound(Request $request): JsonResponse
     {
-        if (! $this->verifyToken($request)) {
-            Log::warning('Postmark inbound webhook token verification failed');
-
-            return response()->json(['error' => 'Invalid token'], 401);
-        }
-
         $userId = HappyWebsites::userIdFromReplyHash($request->input('MailboxHash'));
 
         if ($userId !== null) {

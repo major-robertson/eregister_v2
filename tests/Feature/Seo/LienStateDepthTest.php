@@ -211,8 +211,8 @@ it('keeps every popular state page title and description within budget', functio
     foreach (LienStateDepth::POPULAR as $code) {
         $page = LienStatePage::forCode($code);
 
-        // Titles are unchanged by the depth work; the sitemap contract caps them at 70.
-        expect(mb_strlen($page->title()))->toBeLessThanOrEqual(70, $page->title())
+        // Titles are unchanged by the depth work and stay within the 60-char budget.
+        expect(mb_strlen($page->title()))->toBeLessThanOrEqual(60, $page->title())
             ->and(mb_strlen($page->metaDescription()))->toBeGreaterThanOrEqual(70, $page->metaDescription())
             ->toBeLessThanOrEqual(165, $page->metaDescription())
             ->and($page->extraFaqs())->toHaveCount(6)

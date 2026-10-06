@@ -92,7 +92,9 @@ final class LienStatePage
 
     public function title(): string
     {
-        return "{$this->name} Mechanics Lien Deadlines & Filing Requirements";
+        $title = "{$this->name} Mechanics Lien Deadlines & Filing Requirements";
+
+        return mb_strlen($title) <= 60 ? $title : "{$this->name} Mechanics Lien Deadlines & Filing Rules";
     }
 
     public function metaDescription(): string

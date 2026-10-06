@@ -91,7 +91,7 @@ describe('the command', function () {
         [$dana] = websitesIntroCustomer();
 
         $this->artisan('email:send-websites-intro --dry-run')
-            ->expectsOutputToContain("Would invite user #{$dana->id} ({$dana->email}): Smith Roofing, spot held through Friday, October 16")
+            ->expectsOutputToContain("Would invite user #{$dana->id} ({$dana->email}): \"Hi Dana\", Smith Roofing, spot held through Friday, October 16")
             ->expectsOutputToContain('Dry run: 1 invitation(s) and 0 reminder(s) would go out.')
             ->expectsOutputToContain('Customers who could still be invited, in all: 1')
             ->assertSuccessful();
@@ -301,6 +301,48 @@ describe('the emails', function () {
         (new WebsitesIntroReminder($invitation))
             ->assertHasSubject('Re: Can I introduce you to someone?')
             ->assertSeeInText('Hi there,');
+    });
+
+    it('prints a first name the way a person would write it', function (string $typed, ?string $printed) {
+        expect(WebsitesIntro::firstName(new User(['first_name' => $typed])))->toBe($printed);
+    })->with([
+        'all caps' => ['JOHN', 'John'],
+        'all lower case' => ['mary ann', 'Mary Ann'],
+        'spaces around it' => ['  dana ', 'Dana'],
+        'mixed case stays' => ['DeShawn', 'DeShawn'],
+        'two capital letters stay' => ['AJ', 'AJ'],
+        'a placeholder' => ['None', null],
+        'another placeholder' => ['n/a', null],
+        'no letters' => ['123', null],
+        'empty' => ['', null],
+    ]);
+
+    it('prints a business name without what people leave around it, and never a placeholder', function (?string $typed, string $printed) {
+        expect(WebsitesIntro::businessName($typed === null ? null : new Business(['name' => $typed])))->toBe($printed);
+    })->with([
+        'a trailing space' => ['Sonny’s Professional Window Cleaning ', 'Sonny’s Professional Window Cleaning'],
+        'a trailing comma' => ['T and T Construction Llc,', 'T and T Construction Llc'],
+        'a closing period stays' => ['Smith Roofing Inc.', 'Smith Roofing Inc.'],
+        'capitals stay as the customer typed them' => ['LAKEFRONT LEAK & DRAIN LLC', 'LAKEFRONT LEAK & DRAIN LLC'],
+        'doubled spaces' => ['Freedom  Lawncare', 'Freedom Lawncare'],
+        'the word None' => ['None', 'your business'],
+        'N/A' => ['N/A', 'your business'],
+        'none with a period' => ['none.', 'your business'],
+        'only spaces' => ['   ', 'your business'],
+        'no business at all' => [null, 'your business'],
+    ]);
+
+    it('never writes a placeholder name into the email', function () {
+        [$someone, $business] = websitesIntroCustomer(['first_name' => 'NONE']);
+        $business->update(['name' => 'None']);
+        $invitation = websitesIntroInvitation($someone, $business);
+
+        (new WebsitesIntro($invitation))
+            ->assertHasSubject('Can I introduce you to someone?')
+            ->assertSeeInText('Hi there,')
+            ->assertSeeInText("I'd like your business to be one of them.")
+            ->assertSeeInHtml("I'd like your business to be one of them.", false)
+            ->assertDontSeeInText('None');
     });
 
     it('goes out on the broadcast stream with its own Message-ID, and the reminder joins that thread', function () {

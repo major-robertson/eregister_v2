@@ -148,7 +148,9 @@ class SendWebsitesIntro extends Command
         foreach ($users as $user) {
             $business = $user->businesses()->orderBy('businesses.id')->first();
             $who = "user #{$user->id} ({$user->email})";
-            $what = ($business?->name ?? 'no business name').', spot held through '.$deadline->format('l, F j');
+            // The names as the email will print them, so a dry run shows what a customer reads.
+            $what = '"Hi '.(WebsitesIntro::firstName($user) ?? 'there').'", '
+                .WebsitesIntro::businessName($business).', spot held through '.$deadline->format('l, F j');
 
             if ($dryRun) {
                 $this->line("  Would invite {$who}: {$what}");

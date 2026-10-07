@@ -146,13 +146,27 @@ describe('state page titles and descriptions', function () {
                 ->toBeLessThanOrEqual(165, "{$code}: {$description}")
                 ->and($description)->not->toEndWith('...')
                 ->toContain($page->name)
-                ->and(mb_strlen($page->title()))->toBeLessThanOrEqual(70, $page->title());
+                ->and(mb_strlen($page->title()))->toBeLessThanOrEqual(60, $page->title());
 
             // The no-sales-tax pages sell nothing (NoSalesTaxStatePagesTest covers them).
             if (! $page->noSalesTax()) {
                 expect($description)->toContain('Generate signed certificates');
             }
         }
+    });
+
+    it('shortens the resale and lien titles for long state names', function () {
+        foreach (['DC', 'NC'] as $code) {
+            $page = ResaleStatePage::forCode($code);
+
+            expect(mb_strlen($page->title()))->toBeLessThanOrEqual(60, $page->title())
+                ->and($page->title())->toStartWith($page->name)->toContain('Resale Certificate');
+        }
+
+        $lien = LienStatePage::forCode('NC');
+
+        expect(mb_strlen($lien->title()))->toBeLessThanOrEqual(60, $lien->title())
+            ->and($lien->title())->toStartWith($lien->name)->toContain('Mechanics Lien');
     });
 
     it('keeps every waiver page title and description within budget', function () {

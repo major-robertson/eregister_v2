@@ -134,7 +134,9 @@ final class ResaleStatePage
             return mb_strlen($title) <= 60 ? $title : "{$this->name} Resale Certificate: No Sales Tax, What to Use";
         }
 
-        return "{$this->name} Resale Certificate | Rules, Forms & Expiration";
+        $title = "{$this->name} Resale Certificate | Rules, Forms & Expiration";
+
+        return mb_strlen($title) <= 60 ? $title : "{$this->name} Resale Certificate | Rules & Forms";
     }
 
     /**

@@ -535,6 +535,11 @@ class ApplicationDataDump
                 $payment->refunded_at ? 'refunded '.$this->dateTime($payment->refunded_at) : null,
                 $payment->stripe_payment_intent_id,
                 $payment->livemode === false ? 'test mode' : null,
+                // The resale certificate add-on (EREG-116) is a separate
+                // subscription; show whether it started.
+                ! empty($payment->meta['resale_certs'])
+                    ? 'resale certificates '.($payment->meta['resale_certs_result']['status'] ?? 'pending')
+                    : null,
             ])->filter()->implode(' · ')];
         }
 

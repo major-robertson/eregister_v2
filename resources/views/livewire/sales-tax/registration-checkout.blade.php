@@ -26,6 +26,18 @@
                 </flux:radio.group>
             </div>
 
+            {{-- Resale certificate add-on: only for people who came from a
+                 resale certificate page, and only without a subscription. --}}
+            @if ($resaleCertFormatted)
+                <div class="mt-6 rounded-lg border border-zinc-200 p-4 dark:border-zinc-700" data-resale-addon>
+                    <flux:checkbox
+                        wire:model.live="addResaleCerts"
+                        label="Add resale certificates: {{ $resaleCertPrice }} a year, unlimited, every state you buy in"
+                        description="Make signed resale certificates for your vendors once your permit number arrives."
+                    />
+                </div>
+            @endif
+
             {{-- Totals --}}
             <div class="mt-6 space-y-2 border-t border-zinc-200 pt-4 text-sm dark:border-zinc-700">
                 <div class="flex items-center justify-between text-zinc-600 dark:text-zinc-400">
@@ -38,10 +50,24 @@
                         <span>{{ $rushFormatted }}</span>
                     </div>
                 @endif
-                <div class="flex items-center justify-between text-base font-semibold text-zinc-900 dark:text-zinc-100">
-                    <span>Total</span>
-                    <span>{{ $formattedPrice }}</span>
-                </div>
+                @if ($wantsResaleCerts)
+                    <div class="flex items-center justify-between text-zinc-600 dark:text-zinc-400">
+                        <span>Resale certificates, first year</span>
+                        <span>{{ $resaleCertFormatted }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                        <span>Total today</span>
+                        <span>{{ $todayFormatted }}</span>
+                    </div>
+                    <p class="text-xs text-zinc-500">
+                        Resale certificates renew each year at {{ $resaleCertFormatted }}. You can cancel anytime.
+                    </p>
+                @else
+                    <div class="flex items-center justify-between text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                        <span>Total</span>
+                        <span>{{ $formattedPrice }}</span>
+                    </div>
+                @endif
             </div>
 
             <flux:button wire:click="continueToPayment" variant="primary" icon:trailing="arrow-right" class="mt-6 w-full justify-center">
@@ -83,10 +109,25 @@
                         <span>{{ $rushFormatted }}</span>
                     </div>
                 @endif
-                <div class="flex items-center justify-between border-t border-zinc-200 pt-2 font-medium text-zinc-900 dark:border-zinc-700 dark:text-zinc-100">
-                    <span>Total</span>
-                    <span>{{ $formattedPrice }}</span>
-                </div>
+                @if ($wantsResaleCerts)
+                    <div class="flex items-center justify-between text-zinc-600 dark:text-zinc-400">
+                        <span>Resale certificates, first year</span>
+                        <span>{{ $resaleCertFormatted }}</span>
+                    </div>
+                    <div class="flex items-center justify-between border-t border-zinc-200 pt-2 font-medium text-zinc-900 dark:border-zinc-700 dark:text-zinc-100">
+                        <span>Total today</span>
+                        <span>{{ $todayFormatted }}</span>
+                    </div>
+                    <p class="text-xs text-zinc-500">
+                        Your card is charged twice: {{ $formattedPrice }} for the registration, then {{ $resaleCertFormatted }} for the certificates.
+                        The certificates renew each year. You can cancel anytime.
+                    </p>
+                @else
+                    <div class="flex items-center justify-between border-t border-zinc-200 pt-2 font-medium text-zinc-900 dark:border-zinc-700 dark:text-zinc-100">
+                        <span>Total</span>
+                        <span>{{ $formattedPrice }}</span>
+                    </div>
+                @endif
             </div>
 
             <div>
@@ -95,7 +136,7 @@
                     :payment-intent-id="$paymentIntentId"
                     :payment-id="$paymentId"
                     :return-url="$returnUrl"
-                    :formatted-amount="$formattedPrice"
+                    :formatted-amount="$todayFormatted"
                     :is-ready="$isReady"
                 />
             </div>

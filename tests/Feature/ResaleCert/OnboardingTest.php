@@ -1,8 +1,11 @@
 <?php
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Forms\Livewire\StateSelector;
+use App\Domains\ResaleCert\Livewire\ProfileSettings;
 use App\Domains\ResaleCert\Livewire\ResaleOnboarding;
 use App\Domains\ResaleCert\Models\ResaleProfile;
+use App\Domains\ResaleCert\Models\ResaleTaxRegistration;
 use App\Models\User;
 use App\Models\UserSignature;
 use Livewire\Livewire;
@@ -126,4 +129,63 @@ it('redirects to the dashboard when the profile is already complete', function (
 
     $this->get(route('resale-cert.onboarding'))
         ->assertRedirect(route('resale-cert.dashboard'));
+});
+
+// EREG-116: no permit number yet, so the tax registration step offers the
+// sales tax registration with the state picker already on their state.
+describe('no permit number yet', function () {
+    beforeEach(function () {
+        $this->business->update(['business_address' => ['line1' => '1 Main St', 'city' => 'Tulsa', 'state' => 'OK', 'zip' => '74103']]);
+    });
+
+    it('starts a registration on the state in the first row', function () {
+        Livewire::test(ResaleOnboarding::class)
+            ->set('step', 2)
+            ->assertSee('Register me first')
+            ->set('registrations.0.state_code', 'TX')
+            ->call('startRegistration')
+            ->assertRedirect(route('sales-tax.registrations.start', ['state' => 'TX']));
+    });
+
+    it("falls back to the business's own state", function () {
+        Livewire::test(ResaleOnboarding::class)
+            ->set('step', 2)
+            ->call('startRegistration')
+            ->assertRedirect(route('sales-tax.registrations.start', ['state' => 'OK']));
+    });
+
+    it('opens the state picker on that state', function () {
+        Livewire::withQueryParams(['state' => 'TX'])
+            ->test(StateSelector::class, ['formType' => 'sales_tax_permit'])
+            ->assertSet('selectedStates', ['TX']);
+    });
+
+    it('starts one from settings on a state added without a tax id', function () {
+        ResaleProfile::factory()->create(['business_id' => $this->business->id]);
+        ResaleTaxRegistration::factory()->homeState()->create([
+            'business_id' => $this->business->id,
+            'state_code' => 'TX',
+            'tax_id' => '11122233344',
+        ]);
+
+        Livewire::test(ProfileSettings::class)
+            ->assertSee('Register me')
+            ->call('addRegistration')
+            ->set('registrations.1.state_code', 'CA')
+            ->call('startRegistration')
+            ->assertRedirect(route('sales-tax.registrations.start', ['state' => 'CA']));
+    });
+
+    it('lets the state picker choose when every settings row has a tax id', function () {
+        ResaleProfile::factory()->create(['business_id' => $this->business->id]);
+        ResaleTaxRegistration::factory()->homeState()->create([
+            'business_id' => $this->business->id,
+            'state_code' => 'TX',
+            'tax_id' => '11122233344',
+        ]);
+
+        Livewire::test(ProfileSettings::class)
+            ->call('startRegistration')
+            ->assertRedirect(route('sales-tax.registrations.start'));
+    });
 });

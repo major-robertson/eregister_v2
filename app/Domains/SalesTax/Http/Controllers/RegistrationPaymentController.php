@@ -4,7 +4,9 @@ namespace App\Domains\SalesTax\Http\Controllers;
 
 use App\Domains\Forms\Models\FormApplication;
 use App\Domains\SalesTax\Services\RegistrationPaymentService;
+use App\Domains\SalesTax\Services\ResaleCertAddOn;
 use App\Enums\PaymentStatus;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
@@ -13,7 +15,8 @@ use Stripe\StripeClient;
 class RegistrationPaymentController
 {
     public function __construct(
-        protected RegistrationPaymentService $paymentService
+        protected RegistrationPaymentService $paymentService,
+        protected ResaleCertAddOn $resaleCertAddOn,
     ) {}
 
     /**
@@ -39,7 +42,7 @@ class RegistrationPaymentController
 
         // Webhook (or stub) already processed.
         if ($payment?->status === PaymentStatus::Succeeded) {
-            return view('sales-tax.registration.payment-success', compact('application', 'payment', 'trackConversion'));
+            return $this->success($application, $payment, $trackConversion);
         }
 
         // Server-side fallback: ask Stripe directly.
@@ -50,7 +53,7 @@ class RegistrationPaymentController
             if ($pi->status === 'succeeded') {
                 $this->paymentService->markSucceeded($payment, $pi);
 
-                return view('sales-tax.registration.payment-success', compact('application', 'payment', 'trackConversion'));
+                return $this->success($application, $payment->fresh(), $trackConversion);
             }
         }
 
@@ -58,10 +61,22 @@ class RegistrationPaymentController
         // checkout) even if no succeeded Stripe payment is retrievable here -
         // still show the receipt rather than polling forever.
         if ($application->isPaid()) {
-            return view('sales-tax.registration.payment-success', compact('application', 'payment', 'trackConversion'));
+            return $this->success($application, $payment, $trackConversion);
         }
 
         return view('sales-tax.registration.payment-processing', compact('application'));
+    }
+
+    /**
+     * The receipt page. An order with the resale certificate add-on starts
+     * it here too when the webhook has not yet (it runs once either way),
+     * so the page can say whether the certificates are active.
+     */
+    private function success(FormApplication $application, ?Payment $payment, bool $trackConversion): View
+    {
+        $resaleCerts = $payment ? $this->resaleCertAddOn->outcome($payment) : null;
+
+        return view('sales-tax.registration.payment-success', compact('application', 'payment', 'trackConversion', 'resaleCerts'));
     }
 
     /**

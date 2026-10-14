@@ -22,9 +22,14 @@ use Stripe\StripeObject;
  *
  * Mirrors the Lien LienPaymentService pattern (amount/currency mismatch is
  * flagged for manual review and skips the auto-submit).
+ *
+ * An order with the resale certificate add-on starts that subscription
+ * afterwards (ResaleCertAddOn), outside the registration's transaction.
  */
 class RegistrationPaymentService
 {
+    public function __construct(private ResaleCertAddOn $resaleCertAddOn) {}
+
     public function markSucceeded(Payment $payment, StripeObject $stripePaymentIntent): void
     {
         $sendEmails = false;
@@ -79,23 +84,25 @@ class RegistrationPaymentService
             app(OpenAiConversionsApi::class)->queuePurchase($conversionPayment);
         }
 
-        if (! $sendEmails) {
-            return;
+        if ($sendEmails) {
+            DB::afterCommit(function () use ($payment) {
+                $payment = $payment->fresh();
+
+                $user = $payment->business->users()->first();
+
+                if (! $user) {
+                    return;
+                }
+
+                SentEmail::recordOrSkip('payment_receipt', $payment, $user, function () use ($payment, $user) {
+                    Mail::to($user)->queue(new PaymentReceipt($payment));
+                });
+            });
         }
 
-        DB::afterCommit(function () use ($payment) {
-            $payment = $payment->fresh();
-
-            $user = $payment->business->users()->first();
-
-            if (! $user) {
-                return;
-            }
-
-            SentEmail::recordOrSkip('payment_receipt', $payment, $user, function () use ($payment, $user) {
-                Mail::to($user)->queue(new PaymentReceipt($payment));
-            });
-        });
+        // The resale certificate add-on, once the registration is recorded.
+        // It runs once however many callers get here, and never throws.
+        $this->resaleCertAddOn->fulfil($payment->fresh());
     }
 
     /**

@@ -113,6 +113,22 @@ class ResaleOnboarding extends Component
         $this->registrations = array_values($this->registrations);
     }
 
+    /**
+     * No permit number yet: start a sales tax registration with the state
+     * picker on the state they were filling in (the first row), or on the
+     * business's own state.
+     */
+    public function startRegistration(): void
+    {
+        $state = strtoupper((string) ($this->registrations[0]['state_code'] ?? ''));
+
+        if (! preg_match('/^[A-Z]{2}$/', $state)) {
+            $state = strtoupper((string) ($this->business->business_address['state'] ?? ''));
+        }
+
+        $this->redirect(route('sales-tax.registrations.start', preg_match('/^[A-Z]{2}$/', $state) ? ['state' => $state] : []), navigate: true);
+    }
+
     public function nextStep(): void
     {
         $this->validateStep();

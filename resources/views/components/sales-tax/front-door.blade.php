@@ -1,5 +1,5 @@
 @props([
-    // 'sales-tax' or 'resale-cert': the service the ad promised, shown first.
+    // 'sales-tax' or 'resale-cert': the service the ad promised.
     'product' => 'sales-tax',
     'state' => null,
     'intent' => null,
@@ -11,41 +11,74 @@
 ])
 
 @php
-    // Three doors, the advertised one first. A company with permits in some
-    // states may still need registration in others, so nothing here turns a
-    // visitor away because of a permit they already hold.
     $stateName = $state ? config("states.{$state}") : null;
     $article = $stateName ? \App\Support\Seo\Text::article($stateName) : 'a';
-    $q = array_filter(['state' => $state, 'intent' => $intent]);
-    $registerUrl = route('register', ['product' => 'sales-tax'] + $q);
     $certificateUrl = route('register', ['product' => 'resale-cert'] + array_filter(['state' => $state]));
-    $doors = [
-        'sales-tax' => [
-            'title' => $stateName ? "Register for {$article} {$stateName} ".($term ?? 'sales tax permit') : 'Register for a sales tax permit',
-            'text' => "One state or several. We prepare and file the registration and send you the number. {$permitPrice} per state.",
-            'button' => 'Start my registration',
-            'href' => $registerUrl,
-        ],
-        'resale-cert' => [
-            'title' => $stateName ? "Create {$article} {$stateName} resale certificate" : 'Create a resale certificate',
-            'text' => "Already registered? Generate signed, vendor-ready certificates for every state you buy in. {$generatorPrice} a year, unlimited.",
-            'button' => 'Create my certificate',
-            'href' => $certificateUrl,
-        ],
-        'not-sure' => [
-            'title' => 'Not sure what I need',
-            'text' => 'Tell us your state and what you sell. If you have no permit yet, registration comes first and the certificates follow.',
-            'button' => 'Help me choose',
-            // Registration is the safe default: a resale certificate needs a permit number.
-            'href' => route('register', ['product' => 'sales-tax', 'intent' => 'not-sure'] + array_filter(['state' => $state])),
-        ],
-    ];
-    $order = $product === 'resale-cert' ? ['resale-cert', 'sales-tax', 'not-sure'] : ['sales-tax', 'resale-cert', 'not-sure'];
+    // Registration is the safe default: a resale certificate needs a permit number.
+    $notSureUrl = route('register', ['product' => 'sales-tax', 'intent' => 'not-sure'] + array_filter(['state' => $state]));
+
+    if ($product === 'resale-cert') {
+        // EREG-116. A resale certificate carries a sales tax permit number,
+        // and most people searching for one have no permit yet. Ask that
+        // first: "no" goes to the registration (the resale intent lets the
+        // order screen offer the certificates as an add-on), "yes" goes to
+        // the generator.
+        $title = $stateName
+            ? "Do you have {$article} {$stateName} sales tax permit number?"
+            : 'Do you have a sales tax permit number?';
+        $subtitle = 'A resale certificate needs one.'.($stateName && $term ? " In {$stateName} it is called the {$term}." : '');
+        $doors = [
+            'sales-tax' => [
+                'title' => 'No, register me first',
+                'text' => 'We prepare and file your '.($stateName ? "{$stateName} " : '')."registration and send you the number. {$permitPrice} per state. Then you can add resale certificates.",
+                'button' => 'Start my registration',
+                'href' => route('register', ['product' => 'sales-tax'] + array_filter([
+                    'state' => $state,
+                    'intent' => \App\Domains\SalesTax\Services\ResaleCertAddOn::INTENT,
+                ])),
+            ],
+            'resale-cert' => [
+                'title' => 'Yes, I have one',
+                'text' => 'Make your '.($stateName ? "{$stateName} " : '')."resale certificate now. Unlimited certificates for every state you buy in. {$generatorPrice} a year.",
+                'button' => 'Create my certificate',
+                'href' => $certificateUrl,
+            ],
+        ];
+        $order = ['sales-tax', 'resale-cert'];
+    } else {
+        // Three doors, the registration first. A company with permits in
+        // some states may still need registration in others, so nothing here
+        // turns a visitor away because of a permit they already hold.
+        $title = $heading ?? 'What do you need today?';
+        $subtitle = 'Pick one. You can change your mind inside your account.';
+        $q = array_filter(['state' => $state, 'intent' => $intent]);
+        $doors = [
+            'sales-tax' => [
+                'title' => $stateName ? "Register for {$article} {$stateName} ".($term ?? 'sales tax permit') : 'Register for a sales tax permit',
+                'text' => "One state or several. We prepare and file the registration and send you the number. {$permitPrice} per state.",
+                'button' => 'Start my registration',
+                'href' => route('register', ['product' => 'sales-tax'] + $q),
+            ],
+            'resale-cert' => [
+                'title' => $stateName ? "Create {$article} {$stateName} resale certificate" : 'Create a resale certificate',
+                'text' => "Already registered? Generate signed, vendor-ready certificates for every state you buy in. {$generatorPrice} a year, unlimited.",
+                'button' => 'Create my certificate',
+                'href' => $certificateUrl,
+            ],
+            'not-sure' => [
+                'title' => 'Not sure what I need',
+                'text' => 'Tell us your state and what you sell. If you have no permit yet, registration comes first and the certificates follow.',
+                'button' => 'Help me choose',
+                'href' => $notSureUrl,
+            ],
+        ];
+        $order = ['sales-tax', 'resale-cert', 'not-sure'];
+    }
 @endphp
 
 <div id="start" {{ $attributes->merge(['class' => 'scroll-mt-6 rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl sm:p-7']) }}>
-    <h2 class="text-xl font-bold text-zinc-900">{{ $heading ?? 'What do you need today?' }}</h2>
-    <p class="mt-1 text-sm text-zinc-500">Pick one. You can change your mind inside your account.</p>
+    <h2 class="text-xl font-bold text-zinc-900">{{ $title }}</h2>
+    <p class="mt-1 text-sm text-zinc-500">{{ $subtitle }}</p>
     <div class="mt-5 space-y-3">
         @foreach ($order as $i => $key)
             @php $door = $doors[$key]; $primary = $i === 0; @endphp
@@ -68,5 +101,10 @@
             </a>
         @endforeach
     </div>
+    @if ($product === 'resale-cert')
+        <p class="mt-4 text-sm text-zinc-600">
+            <a href="{{ $notSureUrl }}" data-door="not-sure" class="font-medium text-zinc-900 underline decoration-amber-400 underline-offset-2">Not sure if you have one? Help me choose.</a>
+        </p>
+    @endif
     <p class="mt-4 text-xs text-zinc-500">Free to create your account. Nothing to pay until you order.</p>
 </div>

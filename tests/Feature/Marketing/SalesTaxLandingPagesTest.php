@@ -99,16 +99,42 @@ describe('resale certificate ads landing pages', function () {
         ['mi', 'Form 3372'],
     ]);
 
-    it('puts the certificate door first and keeps registration available', function () {
+    // EREG-116: most resale searchers have no permit yet, so the page asks first.
+    it('asks for the permit number first and sends "no" to the registration', function () {
+        $this->get('/lp/resale-certificate/tx')
+            ->assertOk()
+            ->assertSee('Texas Resale Certificate, Signed in Minutes')
+            ->assertSee('Do you have a Texas sales tax permit number?')
+            ->assertSee('In Texas it is called the Sales and Use Tax Permit.')
+            ->assertSeeInOrder(['data-door="sales-tax"', 'No, register me first', 'data-door="resale-cert"', 'Yes, I have one', 'data-door="not-sure"'], false)
+            ->assertSee('/register?product=sales-tax&amp;state=TX&amp;intent=resale-certificate', false)
+            ->assertSee('/register?product=resale-cert&amp;state=TX', false)
+            ->assertSee('/register?product=sales-tax&amp;intent=not-sure&amp;state=TX', false)
+            ->assertSee('Not sure if you have one? Help me choose.')
+            ->assertSee('A Texas resale certificate needs your Texas sales tax permit number.')
+            ->assertDontSeeText('What do you need today?');
+    });
+
+    it('shows the permit price before the certificate price', function () {
         $this->get('/lp/resale-certificate/ny')
             ->assertOk()
-            ->assertSeeInOrder(['data-door="resale-cert"', 'data-door="sales-tax"', 'data-door="not-sure"'], false)
-            ->assertSee('/register?product=resale-cert&amp;state=NY', false)
-            ->assertSee('/register?product=sales-tax&amp;state=NY', false);
+            ->assertSeeInOrder(['Two flat prices. No per-certificate fees.', 'Need the permit first?', '$199', 'per state', 'Resale certificates', '$297'], false);
     });
 
     it('renders the generic page and 404s for unknown states', function () {
-        $this->get('/lp/resale-certificate')->assertOk()->assertSee('Resale Certificates, Signed in Minutes');
+        $this->get('/lp/resale-certificate')
+            ->assertOk()
+            ->assertSee('Resale Certificates, Signed in Minutes')
+            ->assertSee('Do you have a sales tax permit number?')
+            ->assertSee('/register?product=sales-tax&amp;intent=resale-certificate', false);
         $this->get('/lp/resale-certificate/zz')->assertNotFound();
+    });
+
+    it('keeps the three doors on the sales tax pages', function () {
+        $this->get('/lp/sales-tax/tx')
+            ->assertOk()
+            ->assertSeeInOrder(['data-door="sales-tax"', 'data-door="resale-cert"', 'data-door="not-sure"'], false)
+            ->assertDontSeeText('Do you have a Texas sales tax permit number?')
+            ->assertDontSee('intent=resale-certificate', false);
     });
 });

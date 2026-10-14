@@ -5,6 +5,7 @@ namespace App\Domains\SalesTax\Livewire;
 use App\Domains\Business\Models\Business;
 use App\Domains\Forms\Models\FormApplication;
 use App\Domains\SalesTax\Services\RegistrationPaymentService;
+use App\Domains\SalesTax\Services\ResaleCertAddOn;
 use App\Enums\PaymentStatus;
 use App\Models\EmailSequence;
 use App\Models\Payment;
@@ -32,6 +33,13 @@ use Stripe\StripeClient;
  * Payment Element's scripts are @push'ed by the view and only reach the
  * layout on the initial render.
  *
+ * People who came from a resale certificate page also see "Add resale
+ * certificates" on the order screen (EREG-116). The choice travels to the
+ * pay step as ?certificates=1. The PaymentIntent still charges only the
+ * registration, but saves the card for off-session use; the yearly
+ * certificate subscription starts on that card once the registration is
+ * paid (ResaleCertAddOn).
+ *
  * Payment comes BEFORE the questions (form_types.sales_tax_permit.pay_first):
  * RegistrationPaymentService::applyPayment marks the application paid and
  * leaves it open for the wizard. Drafts that already finished the questions
@@ -54,6 +62,12 @@ class RegistrationCheckout extends Component
 
     /** Null when no rush price is configured; the option is then not offered. */
     public ?int $rushCents = null;
+
+    /** The yearly resale certificate price; null when the add-on is not offered. */
+    public ?int $resaleCertCents = null;
+
+    /** "Add resale certificates" on the order screen. */
+    public bool $addResaleCerts = false;
 
     public string $paymentIntentId = '';
 
@@ -99,6 +113,8 @@ class RegistrationCheckout extends Component
         $this->rushCents = $this->resolveRushCents();
         $this->stateCount = $application->stateCount();
         $this->processing = $application->isRush() && $this->rushCents !== null ? 'rush' : 'standard';
+        $this->resaleCertCents = app(ResaleCertAddOn::class)->offerCents(Auth::user(), $business);
+        $this->addResaleCerts = $this->resaleCertCents !== null && request()->query('certificates') === '1';
         $this->amountCents = $this->expectedAmount();
 
         $this->step = $this->showsOrderScreen() && request()->query('step') !== 'pay' ? 'order' : 'pay';
@@ -111,6 +127,7 @@ class RegistrationCheckout extends Component
             'value' => $this->amountCents / 100,
             'states' => $this->stateCount,
             'rush' => $this->wantsRush(),
+            'resale_certs' => $this->wantsResaleCerts(),
             'items' => [[
                 'item_name' => 'Sales Tax Registration',
                 'quantity' => $this->stateCount,
@@ -157,6 +174,11 @@ class RegistrationCheckout extends Component
         $this->amountCents = $this->expectedAmount();
     }
 
+    public function updatedAddResaleCerts(): void
+    {
+        $this->addResaleCerts = $this->addResaleCerts && $this->resaleCertCents !== null;
+    }
+
     /**
      * Stamp the rush choice on the application (the admin board and the
      * receipt read it) and reload into the payment step.
@@ -167,15 +189,30 @@ class RegistrationCheckout extends Component
             'rush_requested_at' => $this->wantsRush() ? ($this->application->rush_requested_at ?? now()) : null,
         ]);
 
-        $this->redirect(route('sales-tax.registrations.checkout', [
+        $this->redirect(route('sales-tax.registrations.checkout', array_filter([
             'application' => $this->application,
             'step' => 'pay',
-        ]));
+            'certificates' => $this->wantsResaleCerts() ? 1 : null,
+        ])));
     }
 
     protected function wantsRush(): bool
     {
         return $this->processing === 'rush' && $this->rushCents !== null;
+    }
+
+    protected function wantsResaleCerts(): bool
+    {
+        return $this->addResaleCerts && $this->resaleCertCents !== null;
+    }
+
+    /**
+     * What the card pays today: the registration plus, with the add-on, the
+     * first year of certificates (a separate charge right after).
+     */
+    protected function todayCents(): int
+    {
+        return $this->amountCents + ($this->wantsResaleCerts() ? (int) $this->resaleCertCents : 0);
     }
 
     protected function expectedAmount(): int
@@ -257,12 +294,16 @@ class RegistrationCheckout extends Component
             }
 
             // Reconcile a stale amount (state count or rush changed since the
-            // PI was created). Stripe allows updating an open PI's amount, so
-            // the same client_secret keeps working.
-            if ((int) $pi->amount !== $expected) {
+            // PI was created) or a changed add-on choice. Stripe allows
+            // updating an open PI, so the same client_secret keeps working;
+            // an empty setup_future_usage stops it saving the card.
+            $savesCard = ($pi->setup_future_usage ?? null) === 'off_session';
+
+            if ((int) $pi->amount !== $expected || $savesCard !== $this->wantsResaleCerts()) {
                 $pi = $stripe->paymentIntents->update($pi->id, [
                     'amount' => $expected,
                     'metadata' => $metadata,
+                    'setup_future_usage' => $this->wantsResaleCerts() ? 'off_session' : '',
                 ]);
             }
 
@@ -283,13 +324,16 @@ class RegistrationCheckout extends Component
             $payment->update(['amount_cents' => $expected, 'meta' => $meta]);
         }
 
-        $pi = $stripe->paymentIntents->create([
+        $pi = $stripe->paymentIntents->create(array_filter([
             'amount' => $expected,
             'currency' => 'usd',
             'customer' => $this->business->stripeId(),
             'payment_method_types' => ['card'],
             'metadata' => $metadata,
-        ], [
+            // With the add-on, the yearly certificate subscription charges
+            // this card off-session right after the registration is paid.
+            'setup_future_usage' => $this->wantsResaleCerts() ? 'off_session' : null,
+        ]), [
             'idempotency_key' => 'payment_'.$payment->id.'_'.$payment->created_at->timestamp,
         ]);
 
@@ -312,7 +356,10 @@ class RegistrationCheckout extends Component
      * The order breakdown, recorded on the payment row so the receipt and
      * the admin side can itemize it without re-deriving prices later.
      *
-     * @return array{state_count: int, per_state_cents: int, rush: bool, rush_cents: int}
+     * The add-on is recorded here too, though this payment does not charge
+     * it: ResaleCertAddOn reads it once the payment has succeeded.
+     *
+     * @return array{state_count: int, per_state_cents: int, rush: bool, rush_cents: int, resale_certs: bool, resale_certs_cents: int}
      */
     protected function paymentMeta(): array
     {
@@ -321,6 +368,8 @@ class RegistrationCheckout extends Component
             'per_state_cents' => $this->perStateCents,
             'rush' => $this->wantsRush(),
             'rush_cents' => $this->wantsRush() ? (int) $this->rushCents : 0,
+            'resale_certs' => $this->wantsResaleCerts(),
+            'resale_certs_cents' => $this->wantsResaleCerts() ? (int) $this->resaleCertCents : 0,
         ];
     }
 
@@ -336,6 +385,7 @@ class RegistrationCheckout extends Component
             'sales_tax_application_id' => $this->application->id,
             'state_count' => $this->stateCount,
             'rush' => $this->wantsRush() ? 1 : 0,
+            'resale_certs' => $this->wantsResaleCerts() ? 1 : 0,
         ];
     }
 
@@ -344,13 +394,13 @@ class RegistrationCheckout extends Component
      * application (paid and open for the questions, or locked when the
      * questions were already finished) without touching Stripe.
      *
-     * @param  array{state_count: int, per_state_cents: int, rush: bool, rush_cents: int}  $meta
+     * @param  array{state_count: int, per_state_cents: int, rush: bool, rush_cents: int, resale_certs: bool, resale_certs_cents: int}  $meta
      */
     protected function stubCheckout(int $expected, array $meta): void
     {
         $price = Price::resolve('tax', 'sales_tax_permit', 'per_state', 'one_time');
 
-        DB::transaction(function () use ($expected, $price, $meta) {
+        $payment = DB::transaction(function () use ($expected, $price, $meta) {
             $payment = Payment::create([
                 'purchasable_type' => $this->application->getMorphClass(),
                 'purchasable_id' => $this->application->id,
@@ -368,7 +418,11 @@ class RegistrationCheckout extends Component
             app(RegistrationPaymentService::class)->applyPayment($this->application, null, $meta['rush']);
 
             $this->paymentId = $payment->id;
+
+            return $payment;
         });
+
+        app(ResaleCertAddOn::class)->fulfil($payment);
 
         session()->flash('success', $this->application->isLocked()
             ? 'Your application has been submitted successfully.'
@@ -388,10 +442,17 @@ class RegistrationCheckout extends Component
             'perStateFormatted' => '$'.number_format($this->perStateCents / 100, 2),
             'statesSubtotal' => '$'.number_format($this->perStateCents * $this->stateCount / 100, 2),
             'rushFormatted' => $this->rushCents !== null ? '$'.number_format($this->rushCents / 100, 2) : null,
+            'resaleCertFormatted' => $this->resaleCertCents !== null ? '$'.number_format($this->resaleCertCents / 100, 2) : null,
+            'resaleCertPrice' => $this->resaleCertCents !== null ? '$'.number_format($this->resaleCertCents / 100) : null,
+            'wantsResaleCerts' => $this->wantsResaleCerts(),
             'formattedPrice' => '$'.number_format($this->amountCents / 100, 2),
+            'todayFormatted' => '$'.number_format($this->todayCents() / 100, 2),
             'showsOrderLink' => $this->showsOrderScreen(),
             'returnUrl' => route('sales-tax.registrations.payment-confirmation', $this->application),
-            'orderUrl' => route('sales-tax.registrations.checkout', $this->application),
+            'orderUrl' => route('sales-tax.registrations.checkout', array_filter([
+                'application' => $this->application,
+                'certificates' => $this->wantsResaleCerts() ? 1 : null,
+            ])),
             'changeStatesUrl' => route('sales-tax.registrations.start'),
         ])->layout('layouts.minimal', ['title' => $this->step === 'pay' ? 'Checkout' : 'Your order']);
     }

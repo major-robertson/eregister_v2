@@ -82,5 +82,5 @@ it('lists the calculator in the sitemap and links it from the lien hub and the l
 });
 
 it('caches the rules under a versioned key next to the page cache', function () {
-    expect(DeadlineRulesExport::cacheKey('tx'))->toBe('seo.lien-deadline-rules.v1.TX');
+    expect(DeadlineRulesExport::cacheKey('tx'))->toBe('seo.lien-deadline-rules.v2.TX');
 });

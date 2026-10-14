@@ -154,8 +154,8 @@ it('skips test accounts, bounced addresses and people who turned reminders off',
 
     match ($case) {
         'bounced' => $dana->forceFill(['email_bounced_at' => now()])->save(),
-        'order reminders off' => EmailUnsubscribe::create(['user_id' => $dana->id, 'category' => EmailUnsubscribe::CATEGORY_ABANDON_CHECKOUT]),
-        'marketing off' => EmailUnsubscribe::create(['user_id' => $dana->id, 'category' => EmailUnsubscribe::CATEGORY_MARKETING]),
+        'order reminders off' => EmailUnsubscribe::unsubscribe($dana, EmailUnsubscribe::CATEGORY_ABANDON_CHECKOUT),
+        'marketing off' => EmailUnsubscribe::unsubscribe($dana, EmailUnsubscribe::CATEGORY_MARKETING),
         default => null,
     };
 

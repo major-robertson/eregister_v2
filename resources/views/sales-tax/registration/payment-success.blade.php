@@ -18,6 +18,37 @@
             conversionId: "purchase-{{ $payment->id }}"
         });
     </script>
+    @if (($resaleCerts['status'] ?? null) === 'created' && ! empty($resaleCerts['payment_id']) && ($resaleCerts['amount_cents'] ?? 0) > 0)
+        @php
+            // The resale certificate add-on is its own $297 charge and payment
+            // row, so it reports as the generator checkout does: a GA4
+            // purchase and the Google Ads subscription conversion, keyed to
+            // the add-on payment so neither double-counts the registration.
+            $addOnValue = number_format($resaleCerts['amount_cents'] / 100, 2, '.', '');
+        @endphp
+        <!-- GA4 purchase (resale certificate add-on) -->
+        <script data-navigate-once>
+            window.gtag && gtag('event', 'purchase', {
+                transaction_id: @js((string) $resaleCerts['payment_id']),
+                value: {{ $addOnValue }},
+                currency: "USD",
+                items: [{
+                    item_name: "Resale Certificate Generator",
+                    price: {{ $addOnValue }},
+                    quantity: 1
+                }]
+            });
+        </script>
+        <!-- Google Ads Conversion Tracking (annual subscription: resale certificate add-on) -->
+        <script data-navigate-once>
+            window.gtag && gtag('event', 'conversion', {
+                send_to: "AW-984288380/_vCOCIitwbgZEPyYrNUD",
+                value: {{ $addOnValue }},
+                currency: "USD",
+                transaction_id: @js((string) $resaleCerts['payment_id'])
+            });
+        </script>
+    @endif
     <!-- OpenAI Ads Conversion (one-time purchase) -->
     <script data-navigate-once>
         oaiq("measure", "order_created", {
@@ -42,6 +73,13 @@
     $stateNames = collect($application->selected_states ?? [])
         ->map(fn (string $code) => config("states.{$code}", $code))
         ->implode(', ');
+
+    // The resale certificate add-on (EREG-116): null when not ordered, else
+    // created, failed, skipped (already subscribed) or pending.
+    $resaleStatus = $resaleCerts['status'] ?? null;
+    $resaleAmount = isset($resaleCerts['amount_cents']) ? '$'.number_format($resaleCerts['amount_cents'] / 100, 2) : null;
+    $resaleSubscribedNow = $resaleStatus !== null
+        && $application->business?->subscribed(config('resale_cert.subscription_type'));
 @endphp
 
 <x-layouts.portal :title="$awaitingAnswers ? 'Payment received' : 'Application submitted'">
@@ -56,7 +94,10 @@
                     <flux:heading size="lg">Payment received. Now the questions.</flux:heading>
 
                     <flux:text class="text-zinc-600 dark:text-zinc-400">
-                        @if ($payment)
+                        @if ($payment && $resaleStatus === 'created' && $resaleAmount)
+                            Thank you. We charged {{ $payment->formattedAmount() }} for the registration
+                            and {{ $resaleAmount }} for a year of resale certificates.
+                        @elseif ($payment)
                             Thank you. We charged {{ $payment->formattedAmount() }}.
                         @endif
                         Next, answer about 10 minutes of questions about your business so we can
@@ -87,8 +128,41 @@
                             {{ $payment->formattedAmount() }}
                         </x-ui.info-list.item>
                     @endif
+                    @if ($resaleStatus === 'created')
+                        <x-ui.info-list.item label="Resale Certificates">
+                            {{ $resaleAmount ? $resaleAmount.' a year. ' : '' }}Renews each year. Cancel anytime.
+                        </x-ui.info-list.item>
+                    @endif
                 </x-ui.info-list>
             </div>
+
+            @if ($resaleStatus === 'created')
+                <flux:callout color="emerald" icon="check-circle" class="mt-6" data-resale-addon="created">
+                    <flux:callout.heading>Your resale certificates are active</flux:callout.heading>
+                    <flux:callout.text>
+                        When your permit number arrives, add it to your resale profile. Then you can make certificates for your vendors.
+                    </flux:callout.text>
+                </flux:callout>
+            @elseif ($resaleStatus === 'failed' && ! $resaleSubscribedNow)
+                <flux:callout color="amber" icon="exclamation-triangle" class="mt-6" data-resale-addon="failed">
+                    <flux:callout.heading>We could not start your resale certificates</flux:callout.heading>
+                    <flux:callout.text>
+                        Your registration is paid and on its way. We did not charge you for the certificates.
+                        You can subscribe to them from the resale certificates page.
+                    </flux:callout.text>
+                    <x-slot name="actions">
+                        <flux:button href="{{ route('resale-cert.checkout') }}" variant="primary" size="sm">
+                            Subscribe to resale certificates
+                        </flux:button>
+                    </x-slot>
+                </flux:callout>
+            @elseif ($resaleStatus === 'pending')
+                <flux:callout color="zinc" icon="clock" class="mt-6" data-resale-addon="pending">
+                    <flux:callout.text>
+                        We are still setting up your resale certificates. Check the resale certificates page in a few minutes.
+                    </flux:callout.text>
+                </flux:callout>
+            @endif
 
             @unless ($awaitingAnswers)
                 <ol class="mt-6 space-y-3 border-t border-zinc-200 pt-6 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
@@ -127,7 +201,7 @@
             @endif
         </div>
 
-        @unless ($awaitingAnswers)
+        @unless ($awaitingAnswers || $resaleStatus === 'created')
             <p class="text-center text-sm text-zinc-500">
                 Once your permit arrives we can generate your resale certificates for every state you buy in.
                 We will show you how on your dashboard.

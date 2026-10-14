@@ -51,14 +51,18 @@
                     Resale Certificates, Signed in Minutes
                 @endif
             </h1>
+            {{-- A resale certificate carries a permit number, and most visitors
+                 have none yet (EREG-116), so the hero says so before the price. --}}
             <p class="mt-5 text-lg text-zinc-300">
-                Enter your business details once. We fill in {{ $form ? "the official {$form}" : "the official state form" }}, apply your signature, and hand you a vendor-ready PDF. Every state you buy in, including New York.
+                {{ $stateName ? "A {$stateName} resale certificate needs your {$stateName} sales tax permit number." : 'A resale certificate needs your sales tax permit number.' }}
+                No permit yet? We register you first for {{ $permitPrice }} per state.
+                Then you make unlimited certificates for {{ $price }} a year.
             </p>
             <x-reviews.google-line dark class="mt-5" />
             <ul class="mt-6 hidden space-y-2.5 text-zinc-300 sm:block">
-                <li class="flex items-start gap-2.5"><span class="mt-0.5 text-amber-400">&#10003;</span> Official state forms, blanket and multistate certificates</li>
-                <li class="flex items-start gap-2.5"><span class="mt-0.5 text-amber-400">&#10003;</span> Saved vendors and expiration alerts</li>
                 <li class="flex items-start gap-2.5"><span class="mt-0.5 text-amber-400">&#10003;</span> No permit yet? We register you first, {{ $permitPrice }} per state</li>
+                <li class="flex items-start gap-2.5"><span class="mt-0.5 text-amber-400">&#10003;</span> Have a permit? Your certificate is filled in and signed in minutes</li>
+                <li class="flex items-start gap-2.5"><span class="mt-0.5 text-amber-400">&#10003;</span> Unlimited certificates for every state you buy in, {{ $price }} a year</li>
             </ul>
         </div>
 
@@ -68,7 +72,6 @@
             :term="$facts['term'] ?? null"
             :permit-price="$permitPrice"
             :generator-price="$price"
-            :heading="$stateName ? 'Get your '.$stateName.' certificate' : 'Get your certificate'"
         />
     </div>
 </section>
@@ -136,19 +139,11 @@
 <section id="pricing" class="scroll-mt-6 bg-white py-16 lg:py-20">
     <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <div class="text-center">
-            <h2 class="text-3xl font-bold text-zinc-900">One flat price. No per-certificate fees.</h2>
+            <h2 class="text-3xl font-bold text-zinc-900">Two flat prices. No per-certificate fees.</h2>
         </div>
+        {{-- The permit comes first: it is the step most visitors still need,
+             and the certificates follow it. --}}
         <div class="mt-10 grid gap-6 md:grid-cols-2">
-            <div class="rounded-2xl border-2 border-amber-500 bg-white p-7 shadow-lg">
-                <h3 class="text-lg font-semibold text-zinc-900">Resale certificates</h3>
-                <p class="mt-2 text-4xl font-bold text-zinc-900">{{ $price }}<span class="text-base font-normal text-zinc-500"> a year</span></p>
-                <ul class="mt-5 space-y-2.5 text-zinc-600">
-                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Unlimited certificates, every state you buy in</li>
-                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Official state forms, MTC and SST where accepted</li>
-                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> E-signature, saved vendors, expiration alerts</li>
-                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Cancel anytime</li>
-                </ul>
-            </div>
             <div class="rounded-2xl border border-zinc-200 bg-zinc-50 p-7">
                 <h3 class="text-lg font-semibold text-zinc-900">Need the permit first?</h3>
                 <p class="mt-2 text-4xl font-bold text-zinc-900">{{ $permitPrice }}<span class="text-base font-normal text-zinc-500"> per state</span></p>
@@ -158,6 +153,16 @@
                     <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Our fee refunded in full until we file</li>
                 </ul>
                 <a href="{{ route('lp.sales-tax', array_filter(['state' => $code ? strtolower($code) : null])) }}" class="mt-6 inline-block font-medium text-zinc-900 underline decoration-amber-400 underline-offset-2">About the registration</a>
+            </div>
+            <div class="rounded-2xl border-2 border-amber-500 bg-white p-7 shadow-lg">
+                <h3 class="text-lg font-semibold text-zinc-900">Resale certificates</h3>
+                <p class="mt-2 text-4xl font-bold text-zinc-900">{{ $price }}<span class="text-base font-normal text-zinc-500"> a year</span></p>
+                <ul class="mt-5 space-y-2.5 text-zinc-600">
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Unlimited certificates, every state you buy in</li>
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Official state forms, MTC and SST where accepted</li>
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> E-signature, saved vendors, expiration alerts</li>
+                    <li class="flex items-start gap-2"><span class="mt-1 text-emerald-500">&#10003;</span> Cancel anytime</li>
+                </ul>
             </div>
         </div>
     </div>

@@ -46,9 +46,13 @@
                 <flux:callout color="emerald" icon="receipt-percent">
                     <flux:callout.text>
                         Don't have a sales &amp; use tax registration ID for a state you need?
-                        <a href="{{ route('sales-tax.registrations.start') }}" class="font-medium underline">
-                            We can register you</a> — paperwork prepared and filed for you.
+                        We can register you. We prepare and file the paperwork for you.
                     </flux:callout.text>
+                    <x-slot name="actions">
+                        <flux:button type="button" wire:click="startRegistration" variant="primary" size="sm" icon:trailing="arrow-right">
+                            Register me
+                        </flux:button>
+                    </x-slot>
                 </flux:callout>
 
                 <flux:error name="registrations" />

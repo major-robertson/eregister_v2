@@ -108,6 +108,21 @@ class ProfileSettings extends Component
         }
     }
 
+    /**
+     * Need a permit for another state: start a sales tax registration on the
+     * first state they picked without a tax id. Every saved row already has
+     * one, so with none picked the state picker chooses as usual.
+     */
+    public function startRegistration(): void
+    {
+        $state = collect($this->registrations)
+            ->first(fn (array $registration) => filled($registration['state_code'] ?? null) && blank($registration['tax_id'] ?? null));
+
+        $code = strtoupper((string) ($state['state_code'] ?? ''));
+
+        $this->redirect(route('sales-tax.registrations.start', preg_match('/^[A-Z]{2}$/', $code) ? ['state' => $code] : []), navigate: true);
+    }
+
     public function save(): void
     {
         $this->validate([

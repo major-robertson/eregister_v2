@@ -88,11 +88,14 @@
                 <flux:callout color="emerald" icon="receipt-percent">
                     <flux:callout.heading>Don't have a sales &amp; use tax registration ID?</flux:callout.heading>
                     <flux:callout.text>
-                        We can register your business for a sales tax permit in any state — we prepare and
-                        file the paperwork for you.
-                        <a href="{{ route('sales-tax.registrations.start') }}" class="font-medium underline">
-                            Get registered here</a>, then come back and add your new permit.
+                        We can register your business for a sales tax permit in any state. We prepare and
+                        file the paperwork for you. When your permit number arrives, come back and add it here.
                     </flux:callout.text>
+                    <x-slot name="actions">
+                        <flux:button type="button" wire:click="startRegistration" variant="primary" size="sm" icon:trailing="arrow-right">
+                            Register me first
+                        </flux:button>
+                    </x-slot>
                 </flux:callout>
 
                 <flux:error name="registrations" />

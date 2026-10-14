@@ -170,4 +170,33 @@ it('calculates state-specific mechanics lien deadlines', function (string $state
     'VA Jan 15' => ['VA', '2026-01-15', [], '2026-05-01'],
     'VA Jan 31 end of month' => ['VA', '2026-01-31', [], '2026-05-01'],
     'VA Feb 1' => ['VA', '2026-02-01', [], '2026-05-29'],
+    // Va. Code § 43-4: and in no event later than 90 days after completion (EREG-113).
+    'VA completion before the last work caps it' => ['VA', '2026-07-20', ['completion_date' => '2026-07-16'], '2026-10-14'],
+    'VA completion on the last work day' => ['VA', '2026-07-20', ['completion_date' => '2026-07-20'], '2026-10-18'],
+    'VA completion late in the month: end of month still sooner' => ['VA', '2026-07-03', ['completion_date' => '2026-08-25'], '2026-10-29'],
 ]);
+
+it('anchors a Virginia lien on the completion date when that cap sets the deadline', function () {
+    $project = LienProject::factory()->forBusiness($this->business)->create([
+        'jobsite_state' => 'VA',
+        'claimant_type' => 'gc',
+        'property_class' => 'residential',
+        'first_furnish_date' => '2026-07-16',
+        'last_furnish_date' => '2026-07-20',
+        'completion_date' => '2026-07-16',
+    ]);
+
+    $this->calculator->calculateForProject($project);
+
+    $lien = $project->deadlines()->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))->first();
+
+    expect($lien->due_date->toDateString())->toBe('2026-10-14')
+        ->and($lien->computed_from_date->toDateString())->toBe('2026-07-16');
+
+    // Without a completion date only the end-of-month rule applies.
+    $project->update(['completion_date' => null]);
+    $this->calculator->calculateForProject($project->fresh());
+
+    expect($lien->fresh()->due_date->toDateString())->toBe('2026-10-29')
+        ->and($lien->fresh()->computed_from_date->toDateString())->toBe('2026-07-20');
+});

@@ -19,7 +19,8 @@ use Closure;
  * (DeadlineRulesExport) can share it:
  *   calc_method (string|CalcMethod|null), trigger_event (string),
  *   offset_days, offset_months, day_of_month (int|null),
- *   conditions (array|null: conditions_json, e.g. anchor: later_of + dates).
+ *   conditions (array|null: conditions_json, e.g. anchor: later_of + dates,
+ *   or a cap: a second date the due date may never fall after).
  *
  * Dates are either an array keyed by field name (Y-m-d strings or Carbon
  * instances) or a closure that resolves one field, which is how the engine
@@ -86,7 +87,47 @@ final class RuleDateMath
             return [];
         }
 
-        return self::anchorSpec($rule, $stateAnchorLogic)['fields'];
+        $fields = self::anchorSpec($rule, $stateAnchorLogic)['fields'];
+        $cap = self::cap($rule);
+
+        return $cap && ! in_array($cap['trigger_event'], $fields, true) ? [...$fields, $cap['trigger_event']] : $fields;
+    }
+
+    /**
+     * A rule's "in no event later than" date, from conditions_json.cap: a
+     * trigger_event with its own calc_method and offsets. Va. Code § 43-4 is
+     * 90 days after the end of the month of last furnishing, but never later
+     * than 90 days after completion.
+     *
+     * @return array{trigger_event: string, calc_method: ?string, offset_days: ?int, offset_months: ?int, day_of_month: ?int}|null
+     */
+    public static function cap(array $rule): ?array
+    {
+        $cap = ((array) ($rule['conditions'] ?? []))['cap'] ?? null;
+
+        return is_array($cap) && ! empty($cap['trigger_event']) ? $cap : null;
+    }
+
+    /**
+     * Apply the rule's cap to a computed due date. The cap wins only when the
+     * project has its date and it falls sooner; then it is also the anchor.
+     *
+     * @return array{date: CarbonInterface, anchor: CarbonInterface, capped: bool}
+     */
+    public static function applyCap(array $rule, CarbonInterface $date, CarbonInterface $anchor, array|Closure $dates): array
+    {
+        $cap = self::cap($rule);
+        $capAnchor = $cap ? self::lookup($dates)($cap['trigger_event']) : null;
+
+        if ($capAnchor) {
+            $capDate = self::apply($capAnchor, self::method($cap), $cap['offset_days'] ?? null, $cap['offset_months'] ?? null, $cap['day_of_month'] ?? null);
+
+            if ($capDate->lessThan($date)) {
+                return ['date' => $capDate, 'anchor' => $capAnchor, 'capped' => true];
+            }
+        }
+
+        return ['date' => $date, 'anchor' => $anchor, 'capped' => false];
     }
 
     public static function resolveAnchor(array $rule, ?string $stateAnchorLogic, array|Closure $dates): ?CarbonInterface
@@ -114,7 +155,9 @@ final class RuleDateMath
      *   missing_anchor          a date the rule reads is not known (see missing)
      *   missing_lien_deadline   a days_before_date rule with no lien deadline
      *
-     * @return array{date: ?CarbonInterface, anchor: ?CarbonInterface, reason: ?string, missing: array<int, string>}
+     * capped is true when the rule's cap set the date (the anchor is then the cap's date).
+     *
+     * @return array{date: ?CarbonInterface, anchor: ?CarbonInterface, capped?: bool, reason: ?string, missing: array<int, string>}
      */
     public static function dueDate(array $rule, ?string $stateAnchorLogic, array|Closure $dates): array
     {
@@ -132,9 +175,13 @@ final class RuleDateMath
             }
         }
 
+        $due = self::apply($anchor, $method, $rule['offset_days'] ?? null, $rule['offset_months'] ?? null, $rule['day_of_month'] ?? null);
+        $capped = self::applyCap($rule, $due, $anchor, $dates);
+
         return [
-            'date' => self::apply($anchor, $method, $rule['offset_days'] ?? null, $rule['offset_months'] ?? null, $rule['day_of_month'] ?? null),
-            'anchor' => $anchor,
+            'date' => $capped['date'],
+            'anchor' => $capped['anchor'],
+            'capped' => $capped['capped'],
             'reason' => null,
             'missing' => [],
         ];

@@ -109,11 +109,19 @@ function dueDate(rule, dates) {
         return { date: null, anchor: null, missing: [rule.trigger_event] };
     }
 
-    return {
-        date: applyMethod(anchor, rule.calc_method, rule.offset_days, rule.offset_months, rule.day_of_month),
-        anchor,
-        missing: [],
-    };
+    const date = applyMethod(anchor, rule.calc_method, rule.offset_days, rule.offset_months, rule.day_of_month);
+
+    // RuleDateMath::applyCap(): "in no event later than" the cap's date, when known.
+    const cap = rule.cap;
+    const capAnchor = cap ? lookup(dates, cap.trigger_event) : null;
+    if (capAnchor !== null) {
+        const capDate = applyMethod(capAnchor, cap.calc_method, cap.offset_days, cap.offset_months, cap.day_of_month);
+        if (capDate < date) {
+            return { date: capDate, anchor: capAnchor, missing: [] };
+        }
+    }
+
+    return { date, anchor, missing: [] };
 }
 
 function nocLogic(state, noc, base, prelimBeforeNoc) {

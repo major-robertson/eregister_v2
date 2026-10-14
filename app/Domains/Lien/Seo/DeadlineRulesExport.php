@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\DB;
 final class DeadlineRulesExport
 {
     /** Bump when the shape changes: cached exports are replaced on the next request. */
-    public const CACHE_VERSION = 1;
+    public const CACHE_VERSION = 2;
 
     /** Rule and project date fields => JSON keys. */
     public const DATE_KEYS = [
@@ -113,6 +113,7 @@ final class DeadlineRulesExport
                 'conditions' => $conditions,
             ];
             $anchor = RuleDateMath::anchorSpec($rule, $state->lien_anchor_logic);
+            $cap = RuleDateMath::cap($rule);
 
             $rules[] = array_filter([
                 'doc' => $row->document_type,
@@ -126,6 +127,14 @@ final class DeadlineRulesExport
                 // The anchor the engine will use: the rule's own, else the state's.
                 'anchor' => $anchor['logic'] === 'single' ? null : $anchor['logic'],
                 'dates' => $anchor['logic'] === 'single' ? null : array_map(self::key(...), $anchor['fields']),
+                // "In no event later than": the due date never falls after this one.
+                'cap' => $cap ? [
+                    'trigger_event' => self::key($cap['trigger_event']),
+                    'calc_method' => $cap['calc_method'] ?? null,
+                    'offset_days' => self::int($cap['offset_days'] ?? null),
+                    'offset_months' => self::int($cap['offset_months'] ?? null),
+                    'day_of_month' => self::int($cap['day_of_month'] ?? null),
+                ] : null,
                 'display' => $display,
                 'is_required' => (bool) $row->is_required,
                 'inputs' => $display ? null : array_map(self::key(...), RuleDateMath::inputs($rule, $state->lien_anchor_logic)),
@@ -287,15 +296,22 @@ final class DeadlineRulesExport
     {
         $field = array_flip(self::DATE_KEYS);
 
+        $conditions = [];
+        if (isset($rule['anchor'])) {
+            $conditions['anchor'] = $rule['anchor'];
+            $conditions['dates'] = array_map(fn (string $key) => $field[$key], $rule['dates'] ?? []);
+        }
+        if (isset($rule['cap'])) {
+            $conditions['cap'] = ['trigger_event' => $field[$rule['cap']['trigger_event']]] + $rule['cap'];
+        }
+
         return [
             'calc_method' => $rule['calc_method'],
             'trigger_event' => $field[$rule['trigger_event']],
             'offset_days' => $rule['offset_days'] ?? null,
             'offset_months' => $rule['offset_months'] ?? null,
             'day_of_month' => $rule['day_of_month'] ?? null,
-            'conditions' => isset($rule['anchor'])
-                ? ['anchor' => $rule['anchor'], 'dates' => array_map(fn (string $key) => $field[$key], $rule['dates'] ?? [])]
-                : null,
+            'conditions' => $conditions ?: null,
         ];
     }
 

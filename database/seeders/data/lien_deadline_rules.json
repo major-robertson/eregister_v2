@@ -11371,7 +11371,7 @@
         "is_required": true,
         "effective_scope": "residential",
         "is_placeholder": false,
-        "conditions_json": "{\"anchor\":\"later_of\",\"dates\":[\"last_furnish_date\",\"contract_terminated_date\"]}",
+        "conditions_json": "{\"cap\":{\"trigger_event\":\"completion_date\",\"calc_method\":\"days_after_date\",\"offset_days\":90}}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -11387,7 +11387,7 @@
         "is_required": true,
         "effective_scope": "commercial",
         "is_placeholder": false,
-        "conditions_json": "{\"anchor\":\"later_of\",\"dates\":[\"last_furnish_date\",\"contract_terminated_date\"]}",
+        "conditions_json": "{\"cap\":{\"trigger_event\":\"completion_date\",\"calc_method\":\"days_after_date\",\"offset_days\":90}}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -11403,7 +11403,7 @@
         "is_required": true,
         "effective_scope": "residential",
         "is_placeholder": false,
-        "conditions_json": "{\"anchor\":\"later_of\",\"dates\":[\"last_furnish_date\",\"contract_terminated_date\"]}",
+        "conditions_json": "{\"cap\":{\"trigger_event\":\"completion_date\",\"calc_method\":\"days_after_date\",\"offset_days\":90}}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -11419,7 +11419,7 @@
         "is_required": true,
         "effective_scope": "commercial",
         "is_placeholder": false,
-        "conditions_json": "{\"anchor\":\"later_of\",\"dates\":[\"last_furnish_date\",\"contract_terminated_date\"]}",
+        "conditions_json": "{\"cap\":{\"trigger_event\":\"completion_date\",\"calc_method\":\"days_after_date\",\"offset_days\":90}}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -11435,7 +11435,7 @@
         "is_required": true,
         "effective_scope": "residential",
         "is_placeholder": false,
-        "conditions_json": "{\"anchor\":\"later_of\",\"dates\":[\"last_furnish_date\",\"contract_terminated_date\"]}",
+        "conditions_json": "{\"cap\":{\"trigger_event\":\"completion_date\",\"calc_method\":\"days_after_date\",\"offset_days\":90}}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -11451,7 +11451,7 @@
         "is_required": true,
         "effective_scope": "commercial",
         "is_placeholder": false,
-        "conditions_json": "{\"anchor\":\"later_of\",\"dates\":[\"last_furnish_date\",\"contract_terminated_date\"]}",
+        "conditions_json": "{\"cap\":{\"trigger_event\":\"completion_date\",\"calc_method\":\"days_after_date\",\"offset_days\":90}}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -11467,7 +11467,7 @@
         "is_required": true,
         "effective_scope": "residential",
         "is_placeholder": false,
-        "conditions_json": "{\"anchor\":\"later_of\",\"dates\":[\"last_furnish_date\",\"contract_terminated_date\"]}",
+        "conditions_json": "{\"cap\":{\"trigger_event\":\"completion_date\",\"calc_method\":\"days_after_date\",\"offset_days\":90}}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -11483,7 +11483,7 @@
         "is_required": true,
         "effective_scope": "commercial",
         "is_placeholder": false,
-        "conditions_json": "{\"anchor\":\"later_of\",\"dates\":[\"last_furnish_date\",\"contract_terminated_date\"]}",
+        "conditions_json": "{\"cap\":{\"trigger_event\":\"completion_date\",\"calc_method\":\"days_after_date\",\"offset_days\":90}}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -11499,7 +11499,7 @@
         "is_required": true,
         "effective_scope": "residential",
         "is_placeholder": false,
-        "conditions_json": "{\"anchor\":\"later_of\",\"dates\":[\"last_furnish_date\",\"contract_terminated_date\"]}",
+        "conditions_json": "{\"cap\":{\"trigger_event\":\"completion_date\",\"calc_method\":\"days_after_date\",\"offset_days\":90}}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -11515,7 +11515,7 @@
         "is_required": true,
         "effective_scope": "commercial",
         "is_placeholder": false,
-        "conditions_json": "{\"anchor\":\"later_of\",\"dates\":[\"last_furnish_date\",\"contract_terminated_date\"]}",
+        "conditions_json": "{\"cap\":{\"trigger_event\":\"completion_date\",\"calc_method\":\"days_after_date\",\"offset_days\":90}}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -11531,7 +11531,7 @@
         "is_required": true,
         "effective_scope": "residential",
         "is_placeholder": false,
-        "conditions_json": "{\"anchor\":\"later_of\",\"dates\":[\"last_furnish_date\",\"contract_terminated_date\"]}",
+        "conditions_json": "{\"cap\":{\"trigger_event\":\"completion_date\",\"calc_method\":\"days_after_date\",\"offset_days\":90}}",
         "notes": null,
         "data_source": "csv_v3"
     },
@@ -11547,7 +11547,7 @@
         "is_required": true,
         "effective_scope": "commercial",
         "is_placeholder": false,
-        "conditions_json": "{\"anchor\":\"later_of\",\"dates\":[\"last_furnish_date\",\"contract_terminated_date\"]}",
+        "conditions_json": "{\"cap\":{\"trigger_event\":\"completion_date\",\"calc_method\":\"days_after_date\",\"offset_days\":90}}",
         "notes": null,
         "data_source": "csv_v3"
     },

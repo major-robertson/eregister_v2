@@ -110,8 +110,8 @@ class DeadlineCalculator
                 continue;
             }
 
-            // 4. Calculate base deadline
-            $dueDate = $this->calculateDueDate($anchorDate, $rule);
+            // 4. Calculate base deadline (a cap that falls sooner becomes the anchor)
+            ['date' => $dueDate, 'anchor' => $anchorDate] = $this->calculateDueDate($project, $anchorDate, $rule);
 
             // 5. Apply NOC logic (BLOCKS take priority) - only for mechanics lien
             if ($docSlug === 'mechanics_lien') {
@@ -226,7 +226,7 @@ class DeadlineCalculator
             ];
         }
 
-        $dueDate = $this->calculateDueDate($anchorDate, $lienRule);
+        $dueDate = $this->calculateDueDate($project, $anchorDate, $lienRule)['date'];
 
         // Apply NOC shortening if applicable
         $nocResult = $this->applyNocLogic($project, $stateRule, $dueDate);
@@ -510,11 +510,21 @@ class DeadlineCalculator
     }
 
     /**
-     * Calculate the due date based on the anchor date and rule's calc_method.
+     * Calculate the due date based on the anchor date and rule's calc_method,
+     * then apply the rule's "in no event later than" cap, if any.
+     *
+     * @return array{date: CarbonInterface, anchor: CarbonInterface, capped: bool}
      */
-    protected function calculateDueDate(CarbonInterface $anchorDate, LienDeadlineRule $rule): CarbonInterface
+    protected function calculateDueDate(LienProject $project, CarbonInterface $anchorDate, LienDeadlineRule $rule): array
     {
-        return RuleDateMath::apply($anchorDate, $rule->calc_method, $rule->offset_days, $rule->offset_months, $rule->day_of_month);
+        $dueDate = RuleDateMath::apply($anchorDate, $rule->calc_method, $rule->offset_days, $rule->offset_months, $rule->day_of_month);
+
+        return RuleDateMath::applyCap(
+            RuleDateMath::fromModel($rule),
+            $dueDate,
+            $anchorDate,
+            fn (string $field) => $this->getEventDate($project, $field),
+        );
     }
 
     /**

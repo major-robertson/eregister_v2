@@ -42,6 +42,12 @@ const CONTRACT_PROFILES = [
         'dates' => ['first_furnish' => '2026-01-31', 'last_furnish' => '2026-01-31', 'completion' => '2026-02-28', 'noc' => '2026-03-05'],
         'prelim_before_noc' => true,
     ],
+    // Completion recorded before the last day of work: Virginia's 90 days
+    // after completion falls before 90 days after the end of the month.
+    'Virginia GC' => [
+        'claimant' => 'gc', 'scope' => 'residential',
+        'dates' => ['first_furnish' => '2026-07-16', 'last_furnish' => '2026-07-20', 'completion' => '2026-07-16'],
+    ],
 ];
 
 const CONTRACT_CLAIMANTS = ['gc', 'subcontractor', 'sub_sub_contractor', 'supplier_to_owner', 'supplier_to_contractor', 'supplier_to_subcontractor'];
@@ -170,6 +176,26 @@ it('gives the named cases their expected dates in their own states', function ()
     // A notice of completion before the preliminary notice ends Utah lien rights.
     $ut = assertMatchesEngine($this, 'UT', CONTRACT_PROFILES['California GC'], 'UT');
     expect($ut['mechanics_lien']['status'])->toBe('blocked');
+
+    // Virginia: the earlier of 90 days after the end of the month of last
+    // work (Oct 29) and 90 days after completion (Oct 14), counted from completion.
+    $va = assertMatchesEngine($this, 'VA', CONTRACT_PROFILES['Virginia GC'], 'VA');
+    expect($va['mechanics_lien']['date'])->toBe('2026-10-14')
+        ->and($va['mechanics_lien']['anchor'])->toBe('2026-07-16');
+
+    $vaNoCompletion = CONTRACT_PROFILES['Virginia GC'];
+    unset($vaNoCompletion['dates']['completion']);
+    $va = assertMatchesEngine($this, 'VA', $vaNoCompletion, 'VA without completion');
+    expect($va['mechanics_lien']['date'])->toBe('2026-10-29');
+});
+
+it('exports the Virginia completion cap and asks for the completion date', function () {
+    $lien = collect(DeadlineRulesExport::forState('VA')['rules'])->firstWhere(fn ($r) => $r['doc'] === 'mechanics_lien' && $r['claimant'] === 'gc');
+
+    expect($lien['inputs'])->toBe(['last_furnish', 'completion'])
+        ->and($lien['cap'])->toMatchArray(['trigger_event' => 'completion', 'calc_method' => 'days_after_date', 'offset_days' => 90])
+        ->and($lien)->not->toHaveKey('anchor')
+        ->and($lien['when'])->toBe('within 90 days after the end of the month of last furnishing labor or materials (or within 90 days after completion of the project, whichever is earlier)');
 });
 
 it('asks for the dates each rule reads and never leaks raw column names', function () {

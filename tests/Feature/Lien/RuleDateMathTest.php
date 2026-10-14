@@ -115,6 +115,28 @@ describe('calendar math', function () {
         expect(RuleDateMath::dueDate($contract, null, ['first_furnish_date' => '2026-01-01'])['date']->toDateString())->toBe('2026-01-06');
     });
 
+    it('never lets the due date fall after the cap, when the cap date is known', function () {
+        // Va. Code § 43-4: 90 days after the end of the month of last work, and
+        // in no event later than 90 days after completion.
+        $rule = mathRule('days_after_end_of_month_of_date', ['offset_days' => 90, 'conditions' => [
+            'cap' => ['trigger_event' => 'completion_date', 'calc_method' => 'days_after_date', 'offset_days' => 90],
+        ]]);
+
+        $capped = RuleDateMath::dueDate($rule, null, ['last_furnish_date' => '2026-07-20', 'completion_date' => '2026-07-16']);
+        expect($capped['date']->toDateString())->toBe('2026-10-14')
+            ->and($capped['anchor']->toDateString())->toBe('2026-07-16')
+            ->and($capped['capped'])->toBeTrue();
+
+        $later = RuleDateMath::dueDate($rule, null, ['last_furnish_date' => '2026-07-03', 'completion_date' => '2026-08-25']);
+        expect($later['date']->toDateString())->toBe('2026-10-29')
+            ->and($later['anchor']->toDateString())->toBe('2026-07-03')
+            ->and($later['capped'])->toBeFalse();
+
+        $unknown = RuleDateMath::dueDate($rule, null, ['last_furnish_date' => '2026-07-20']);
+        expect($unknown['date']->toDateString())->toBe('2026-10-29')
+            ->and(RuleDateMath::inputs($rule))->toBe(['last_furnish_date', 'completion_date']);
+    });
+
     it('falls back to the state anchor logic, which with no dates listed never resolves', function () {
         $rule = mathRule('days_after_date', ['trigger_event' => 'first_furnish_date', 'offset_days' => 0]);
 

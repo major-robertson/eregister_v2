@@ -59,8 +59,9 @@ describe('LienStateRuleSeeder', function () {
         $va = LienStateRule::find('VA');
         expect($va)->not->toBeNull();
         expect($va->pre_notice_required)->toBeFalse();
-        expect($va->lien_anchor_logic)->toBe('later_of');
-        expect($va->lien_anchor_alt_field)->toBe('contract_terminated_date');
+        // The earlier of two dates is a cap on the deadline rows, not an anchor (EREG-113).
+        expect($va->lien_anchor_logic)->toBe('single');
+        expect($va->lien_anchor_alt_field)->toBeNull();
     });
 });
 
@@ -154,5 +155,6 @@ describe('LienDeadlineRuleSeeder', function () {
         expect($vaRule)->not->toBeNull();
         expect($vaRule->calc_method)->toBe(CalcMethod::DaysAfterEndOfMonthOfDate);
         expect($vaRule->offset_days)->toBe(90);
+        expect($vaRule->conditions_json)->toEqual(['cap' => ['trigger_event' => 'completion_date', 'calc_method' => 'days_after_date', 'offset_days' => 90]]);
     });
 });

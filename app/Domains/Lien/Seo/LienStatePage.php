@@ -650,23 +650,13 @@ final class LienStatePage
      */
     public static function describe(object $rule): ?string
     {
-        $trigger = self::triggerLabel($rule->trigger_event);
-        $days = (int) $rule->offset_days;
-        $months = (int) $rule->offset_months;
         $conditions = is_string($rule->conditions_json) ? json_decode($rule->conditions_json, true) : (array) $rule->conditions_json;
 
         if (! empty($conditions['display'])) {
             return $conditions['display'];
         }
 
-        $text = match ($rule->calc_method) {
-            'days_after_date' => $days > 0 ? "within {$days} days after {$trigger}" : null,
-            'months_after_date' => 'within '.($months === 1 ? '1 month' : "{$months} months")." after {$trigger}",
-            'month_day_after_month_of_date' => 'by the '.Text::ordinal((int) $rule->day_of_month).' day of the '.Text::ordinal($months)." month after the month of {$trigger}",
-            'days_after_end_of_month_of_date' => "within {$days} days after the end of the month of {$trigger}",
-            'days_before_date' => $days > 0 ? "at least {$days} days before {$trigger}" : "before {$trigger}",
-            default => "see statute ({$trigger})",
-        };
+        $text = self::phrase($rule->calc_method, $rule->trigger_event, (int) $rule->offset_days, (int) $rule->offset_months, (int) $rule->day_of_month);
 
         if ($text === null) {
             return null;
@@ -679,7 +669,30 @@ final class LienStatePage
             }
         }
 
+        // "In no event later than" (RuleDateMath::cap).
+        $cap = $conditions['cap'] ?? null;
+        if (is_array($cap) && ! empty($cap['trigger_event'])) {
+            $capText = self::phrase($cap['calc_method'] ?? 'days_after_date', $cap['trigger_event'], (int) ($cap['offset_days'] ?? 0), (int) ($cap['offset_months'] ?? 0), (int) ($cap['day_of_month'] ?? 0));
+            if ($capText !== null) {
+                $text .= ' (or '.$capText.', whichever is earlier)';
+            }
+        }
+
         return $text;
+    }
+
+    private static function phrase(?string $method, string $triggerEvent, int $days, int $months, int $dayOfMonth): ?string
+    {
+        $trigger = self::triggerLabel($triggerEvent);
+
+        return match ($method) {
+            'days_after_date' => $days > 0 ? "within {$days} days after {$trigger}" : null,
+            'months_after_date' => 'within '.($months === 1 ? '1 month' : "{$months} months")." after {$trigger}",
+            'month_day_after_month_of_date' => 'by the '.Text::ordinal($dayOfMonth).' day of the '.Text::ordinal($months)." month after the month of {$trigger}",
+            'days_after_end_of_month_of_date' => "within {$days} days after the end of the month of {$trigger}",
+            'days_before_date' => $days > 0 ? "at least {$days} days before {$trigger}" : "before {$trigger}",
+            default => "see statute ({$trigger})",
+        };
     }
 
     private static function triggerLabel(string $trigger): string

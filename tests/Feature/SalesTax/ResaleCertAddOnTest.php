@@ -519,6 +519,45 @@ describe('confirmation page', function () {
             ->assertDontSeeText('Your card was declined.');
     });
 
+    it('reports the $297 add-on to Google Ads and GA4 on the post-payment landing', function () {
+        subscribeToResaleCerts($this->business);
+        $application = paidAddOnOrder($this->business, $this->user, ['status' => 'created', 'amount_cents' => 29700, 'payment_id' => 98765]);
+        $registration = $application->payments()->first();
+
+        $html = $this->get(route('sales-tax.registrations.payment-confirmation', $application).'?payment_intent='.$registration->stripe_payment_intent_id)
+            ->assertOk()
+            ->getContent();
+
+        // The registration's own conversion is unchanged: $199, keyed to its payment.
+        expect($html)
+            ->toContain('send_to: "AW-984288380/7C62CMuqrbYBEPyYrNUD",'."\n".'            value: 199.00,')
+            ->toContain('transaction_id: "'.$registration->id.'"');
+
+        // The add-on: the subscription conversion and a GA4 purchase, $297, keyed to the add-on payment.
+        expect($html)
+            ->toContain("window.gtag && gtag('event', 'conversion', {\n                send_to: \"AW-984288380/_vCOCIitwbgZEPyYrNUD\",\n                value: 297.00,\n                currency: \"USD\",\n                transaction_id: '98765'")
+            ->toContain("transaction_id: '98765',\n                value: 297.00,")
+            ->and(substr_count($html, 'AW-984288380/_vCOCIitwbgZEPyYrNUD'))->toBe(1)
+            ->and(substr_count($html, "gtag('event', 'purchase'"))->toBe(2);
+    });
+
+    it('reports nothing for the add-on unless it started, or on a later visit', function (array $result, bool $landing) {
+        $application = paidAddOnOrder($this->business, $this->user, $result);
+        $registration = $application->payments()->first();
+        $query = $landing ? '?payment_intent='.$registration->stripe_payment_intent_id : '';
+
+        $html = $this->get(route('sales-tax.registrations.payment-confirmation', $application).$query)
+            ->assertOk()
+            ->getContent();
+
+        expect($html)->not->toContain('AW-984288380/_vCOCIitwbgZEPyYrNUD')
+            ->and(substr_count($html, "gtag('event', 'purchase'"))->toBe($landing ? 1 : 0);
+    })->with([
+        'failed' => [['status' => 'failed', 'error' => 'Your card was declined.'], true],
+        'already subscribed' => [['status' => 'skipped', 'reason' => 'already_subscribed'], true],
+        'created, but a later visit' => [['status' => 'created', 'amount_cents' => 29700, 'payment_id' => 98765], false],
+    ]);
+
     it('says nothing about certificates for an order without them', function () {
         $application = addOnDraft($this->business, $this->user);
         $application->update(['paid_at' => now()]);

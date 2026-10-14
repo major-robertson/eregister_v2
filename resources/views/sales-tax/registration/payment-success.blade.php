@@ -18,6 +18,37 @@
             conversionId: "purchase-{{ $payment->id }}"
         });
     </script>
+    @if (($resaleCerts['status'] ?? null) === 'created' && ! empty($resaleCerts['payment_id']) && ($resaleCerts['amount_cents'] ?? 0) > 0)
+        @php
+            // The resale certificate add-on is its own $297 charge and payment
+            // row, so it reports as the generator checkout does: a GA4
+            // purchase and the Google Ads subscription conversion, keyed to
+            // the add-on payment so neither double-counts the registration.
+            $addOnValue = number_format($resaleCerts['amount_cents'] / 100, 2, '.', '');
+        @endphp
+        <!-- GA4 purchase (resale certificate add-on) -->
+        <script data-navigate-once>
+            window.gtag && gtag('event', 'purchase', {
+                transaction_id: @js((string) $resaleCerts['payment_id']),
+                value: {{ $addOnValue }},
+                currency: "USD",
+                items: [{
+                    item_name: "Resale Certificate Generator",
+                    price: {{ $addOnValue }},
+                    quantity: 1
+                }]
+            });
+        </script>
+        <!-- Google Ads Conversion Tracking (annual subscription: resale certificate add-on) -->
+        <script data-navigate-once>
+            window.gtag && gtag('event', 'conversion', {
+                send_to: "AW-984288380/_vCOCIitwbgZEPyYrNUD",
+                value: {{ $addOnValue }},
+                currency: "USD",
+                transaction_id: @js((string) $resaleCerts['payment_id'])
+            });
+        </script>
+    @endif
     <!-- OpenAI Ads Conversion (one-time purchase) -->
     <script data-navigate-once>
         oaiq("measure", "order_created", {

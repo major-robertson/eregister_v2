@@ -169,7 +169,7 @@ return [
     | Notification Settings
     |--------------------------------------------------------------------------
     |
-    | Configuration for deadline reminder notifications.
+    | Deadline reminder notifications and the internal lien ops inbox.
     |
     */
     'notifications' => [
@@ -188,6 +188,10 @@ return [
         // reports an error. Production ran at 2-10 emails a day in 2026-09,
         // all in one 8am Eastern run; the backlog this guards against was 345.
         'max_emails_per_run' => env('LIEN_DEADLINE_REMINDERS_MAX_PER_RUN', 50),
+
+        // Internal inbox for lien ops notices such as a signed demand letter.
+        // Leave blank to send none.
+        'ops_email' => env('LIEN_OPS_EMAIL', 'liens@eregister.com'),
     ],
 
     /*

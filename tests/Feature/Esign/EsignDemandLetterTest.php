@@ -19,6 +19,7 @@ use App\Domains\Lien\Models\LienDocumentType;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
+use App\Mail\DemandLetterSigned;
 use App\Mail\FilingActionReminder;
 use App\Mail\SignerInvitation;
 use App\Mail\SignerReminder;
@@ -281,6 +282,43 @@ describe('signer flow', function () {
         $filing->refresh();
         expect($filing->status)->toBe(FilingStatus::NeedsReview);
         expect(EmailSequence::where('sequenceable_id', $filing->id)->whereNull('suppressed_at')->where('trigger_status', 'awaiting_esign')->exists())->toBeFalse();
+
+        // Lien ops hears that the letters are signed.
+        Mail::assertQueued(DemandLetterSigned::class, fn (DemandLetterSigned $mail) => $mail->hasTo('liens@eregister.com'));
+    });
+
+    it('emails lien ops a summary that links to the admin filing page', function () {
+        Mail::fake();
+        $request = esignSendFor(esignDemandFiling());
+        $filing = $request->signable;
+        $filing->business->update(['name' => 'Acme Framing LLC']);
+        $filing->project->update(['name' => 'Harbor View Remodel', 'jobsite_address1' => '12 Harbor Way', 'jobsite_address2' => null, 'jobsite_city' => 'San Diego', 'jobsite_state' => 'CA', 'jobsite_zip' => '92101']);
+        esignCompleteSign($request, $request->signer);
+
+        $mailable = new DemandLetterSigned($request->fresh());
+        $html = $mailable->render();
+
+        $mailable->assertHasSubject('Demand letter signed: Acme Framing LLC');
+        expect($html)
+            ->toContain('Acme Framing LLC')
+            ->toContain('Carl Claimant')
+            ->toContain('Letters:</strong> 2')
+            ->toContain('Harbor View Remodel')
+            ->toContain('12 Harbor Way, San Diego, CA, 92101')
+            ->toContain(route('admin.liens.show', $filing))
+            ->toContain('Open filing');
+    });
+
+    it('sends no ops email when the ops inbox is not set', function () {
+        Mail::fake();
+        config(['lien.notifications.ops_email' => null]);
+        $request = esignSendFor(esignDemandFiling());
+
+        esignCompleteSign($request, $request->signer);
+
+        expect($request->fresh()->status)->toBe(SignatureRequestStatus::Completed);
+        expect($request->signable->fresh()->status)->toBe(FilingStatus::NeedsReview);
+        Mail::assertNotQueued(DemandLetterSigned::class);
     });
 
     it('logs a signer download into the audit chain', function () {

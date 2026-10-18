@@ -11,8 +11,10 @@ use App\Domains\Lien\Documents\DemandLetterSignedGenerator;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienParty;
+use App\Mail\DemandLetterSigned;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Mail;
 use Spatie\LaravelPdf\Facades\Pdf;
 
 /**
@@ -119,6 +121,19 @@ class DemandLetterSignable implements Signable
             ],
             'created_by' => $request->signer_user_id,
         ]);
+
+        // Tell lien ops the letters are signed and the filing needs review.
+        // The letters are already stored and the request is Completed, so a
+        // queue-push failure is logged rather than surfaced to the signer.
+        $ops = config('lien.notifications.ops_email');
+
+        if (filled($ops)) {
+            try {
+                Mail::to($ops)->queue(new DemandLetterSigned($request));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
     }
 
     private function label(LienParty $party): string

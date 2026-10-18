@@ -11,6 +11,7 @@ return [
     'state' => 'VA',
     'name' => 'Virginia',
     'researched_on' => '2026-10-02',
+    'seo_title' => 'Virginia Sales Tax Certificate of Registration',
     'agency' => [
         'name' => 'Virginia Department of Taxation',
         'short' => 'Virginia Tax',

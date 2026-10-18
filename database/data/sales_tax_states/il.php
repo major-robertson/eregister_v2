@@ -11,6 +11,7 @@ return [
     'state' => 'IL',
     'name' => 'Illinois',
     'researched_on' => '2026-10-02',
+    'seo_title' => 'Illinois Sales Tax Certificate of Registration',
     'agency' => [
         'name' => 'Illinois Department of Revenue',
         'short' => 'IDOR',

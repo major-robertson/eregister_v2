@@ -11,6 +11,7 @@ return [
     'state' => 'IN',
     'name' => 'Indiana',
     'researched_on' => '2026-10-02',
+    'seo_title' => 'Indiana Sales Tax Registration | Retail Merchant Certificate',
     'agency' => [
         'name' => 'Indiana Department of Revenue',
         'short' => 'DOR',

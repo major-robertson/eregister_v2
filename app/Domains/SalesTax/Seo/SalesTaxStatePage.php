@@ -21,7 +21,7 @@ use Carbon\Carbon;
 final class SalesTaxStatePage
 {
     /** Bump when the shape of this object or the page copy changes: the cached instances are replaced on the next request. */
-    public const CACHE_VERSION = 1;
+    public const CACHE_VERSION = 2;
 
     /** Clauses and parentheticals that talk about the research rather than the state. */
     private const RESEARCH_NOTE = '/\b(?:not (?:separately )?(?:confirmed|re-checked|re-verified|verified)|was found|were found|no [\w\' -]+ (?:found|confirmed)|pages reviewed|read today|secondary (?:sources|sites)|automated reads|resale (?:certificate )?research|research packet|is confirmed here|not stated (?:on|by)|this pass)\b/i';
@@ -80,8 +80,14 @@ final class SalesTaxStatePage
         return Urls::absolute(route('sales-tax-registration.state', ['state' => $this->slug], absolute: false));
     }
 
+    /** The data file's seo_title when set; otherwise "{State} Sales Tax Registration | {term}", or the generic title past 60 characters. */
     public function title(): string
     {
+        $override = $this->content['seo_title'] ?? null;
+        if (is_string($override) && $override !== '') {
+            return $override;
+        }
+
         $title = "{$this->name} Sales Tax Registration | {$this->termTitle()}";
 
         return mb_strlen($title) <= 60 ? $title : "{$this->name} Sales Tax Permit Registration";

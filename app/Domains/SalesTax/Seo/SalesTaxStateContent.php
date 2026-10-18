@@ -11,6 +11,7 @@ namespace App\Domains\SalesTax\Seo;
  *
  *   'state' => 'TX', 'name' => 'Texas', 'researched_on' => '2026-10-02',
  *   'term_label' => '…', // optional: display name when the researched term carries a long qualifier
+ *   'seo_title' => '…', // optional: the full page title when the default formula would exceed 60 characters; no brand suffix
  *   'agency' => ['name' => '…', 'short' => 'the Comptroller', 'url' => 'https://…'],
  *   'registration' => [
  *       'term' => 'Sales and Use Tax Permit',

@@ -11,6 +11,7 @@ return [
     'state' => 'MA',
     'name' => 'Massachusetts',
     'researched_on' => '2026-10-02',
+    'seo_title' => 'Massachusetts Sales Tax Registration Certificate (ST-1)',
     'agency' => [
         'name' => 'Massachusetts Department of Revenue',
         'short' => 'DOR',

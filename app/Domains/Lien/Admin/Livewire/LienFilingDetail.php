@@ -1113,6 +1113,7 @@ class LienFilingDetail extends Component
                 'county' => $original['county'] ?? LienCountyKey::displayName($recordedLien?->jurisdiction_county),
                 'recorded_at' => $original['recorded_at'] ?? $recordedLien?->recorded_at?->eastern()->format('Y-m-d'),
                 'amount_received' => $this->centsToDollars($original['amount_received_cents'] ?? null),
+                'other_info' => $original['other_info'] ?? null,
             ],
         ];
     }
@@ -1210,6 +1211,7 @@ class LienFilingDetail extends Component
             'documentForm.original_lien.county' => ['nullable', 'string', 'max:255'],
             'documentForm.original_lien.recorded_at' => ['nullable', 'date', 'before_or_equal:today'],
             'documentForm.original_lien.amount_received' => ['nullable', 'numeric', 'min:0'],
+            'documentForm.original_lien.other_info' => ['nullable', 'string', 'max:1000'],
         ];
     }
 

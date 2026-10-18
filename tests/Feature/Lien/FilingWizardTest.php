@@ -547,3 +547,159 @@ describe('Filing Wizard entry', function () {
         expect(LienFiling::where('project_deadline_id', $this->deadline->id)->count())->toBe(1);
     });
 });
+
+describe('Lien release original lien', function () {
+    beforeEach(function () {
+        $this->releaseDeadline = $this->project->deadlines()
+            ->whereHas('documentType', fn ($q) => $q->where('slug', 'lien_release'))
+            ->first();
+
+        expect($this->releaseDeadline)->not->toBeNull();
+
+        $this->release = LienFiling::factory()->forProject($this->project)->create([
+            'document_type_id' => $this->releaseDeadline->document_type_id,
+            'project_deadline_id' => $this->releaseDeadline->id,
+            'status' => FilingStatus::Draft,
+            'created_by_user_id' => $this->user->id,
+        ]);
+
+        // Steps 1 and 2 are already complete from the project; fill the rest of the Work step.
+        $this->releaseWorkStep = fn () => Livewire::test(FilingWizard::class, [
+            'project' => $this->project,
+            'deadline' => $this->releaseDeadline,
+        ])->call('nextStep')
+            ->call('nextStep')
+            ->assertSet('step', 3)
+            ->set('has_written_contract', '1')
+            ->set('amount_claimed', 5000.00)
+            ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.');
+    });
+
+    it('asks for the recorded date and the document number when no lien is recorded with us', function () {
+        ($this->releaseWorkStep)()
+            ->assertSee('The lien being released')
+            ->assertDontSee('We recorded this lien')
+            ->assertSet('original_lien_recorded_at', null)
+            ->assertSet('original_lien_reference', null)
+            ->call('nextStep')
+            ->assertHasErrors([
+                'original_lien_recorded_at' => 'required',
+                'original_lien_reference' => 'required_without_all',
+            ])
+            ->assertSee('Enter the date the lien was recorded.')
+            ->assertSee('Enter the document number, or the book and page.')
+            ->assertSet('step', 3);
+
+        expect($this->release->fresh()->document_details_json)->toBeNull();
+    });
+
+    it('accepts a book and page instead of a document number', function () {
+        ($this->releaseWorkStep)()
+            ->set('original_lien_recorded_at', now()->subMonth()->format('Y-m-d'))
+            ->set('original_lien_book', '4021')
+            ->set('original_lien_page', '117')
+            ->call('nextStep')
+            ->assertHasNoErrors()
+            ->assertSet('step', 4);
+    });
+
+    it('needs the page when the book is given, and a recorded date in the past', function () {
+        ($this->releaseWorkStep)()
+            ->set('original_lien_recorded_at', now()->addDay()->format('Y-m-d'))
+            ->set('original_lien_book', '4021')
+            ->call('nextStep')
+            ->assertHasErrors([
+                'original_lien_page' => 'required_with',
+                'original_lien_recorded_at' => 'before_or_equal',
+            ])
+            ->assertHasNoErrors(['original_lien_reference', 'original_lien_book'])
+            ->assertSet('step', 3);
+    });
+
+    it('prefills the date and number of the lien we recorded', function () {
+        $this->filing->update([
+            'status' => FilingStatus::Recorded,
+            'paid_at' => now(),
+            'recorded_at' => '2026-09-10 20:51:00',
+            'recording_reference' => '2026-28904',
+        ]);
+
+        ($this->releaseWorkStep)()
+            ->assertSet('original_lien_recorded_at', '2026-09-10')
+            ->assertSet('original_lien_reference', '2026-28904')
+            ->assertSet('original_lien_book', null)
+            ->assertSet('original_lien_page', null)
+            ->assertSee('We recorded this lien on September 10, 2026 as 2026-28904. Check the details below and correct anything that has changed.')
+            ->call('nextStep')
+            ->assertHasNoErrors()
+            ->assertSet('step', 4);
+
+        expect($this->release->fresh()->document_details_json)->toEqual([
+            'original_lien' => [
+                'recording_reference' => '2026-28904',
+                'recorded_at' => '2026-09-10',
+            ],
+        ]);
+    });
+
+    it('stores what the customer entered and keeps what an admin already set', function () {
+        $this->release->update([
+            'document_details_json' => [
+                'signer_name' => 'Kathryn Melendez',
+                'original_lien' => ['county' => 'Maricopa', 'amount_received_cents' => 67500],
+            ],
+        ]);
+
+        $recordedOn = now()->subMonths(2)->format('Y-m-d');
+
+        ($this->releaseWorkStep)()
+            ->set('original_lien_recorded_at', $recordedOn)
+            ->set('original_lien_reference', ' 20260512345 ')
+            ->set('original_lien_book', '')
+            ->set('original_lien_page', '')
+            ->set('original_lien_other_info', 'Recorded under Desert Roofing LLC')
+            ->call('nextStep')
+            ->assertHasNoErrors()
+            ->assertSet('step', 4);
+
+        $release = $this->release->fresh();
+
+        expect($release->document_details_json)->toEqual([
+            'signer_name' => 'Kathryn Melendez',
+            'original_lien' => [
+                'recording_reference' => '20260512345',
+                'county' => 'Maricopa',
+                'recorded_at' => $recordedOn,
+                'amount_received_cents' => 67500,
+                'other_info' => 'Recorded under Desert Roofing LLC',
+            ],
+        ]);
+        expect($release->payload_json)->toBeNull();
+
+        // Coming back to the wizard shows what was saved.
+        Livewire::test(FilingWizard::class, [
+            'project' => $this->project,
+            'deadline' => $this->releaseDeadline,
+        ])->assertSet('original_lien_recorded_at', $recordedOn)
+            ->assertSet('original_lien_reference', '20260512345')
+            ->assertSet('original_lien_other_info', 'Recorded under Desert Roofing LLC');
+    });
+
+    it('does not ask a mechanics lien for a lien being released', function () {
+        Livewire::test(FilingWizard::class, [
+            'project' => $this->project,
+            'deadline' => $this->deadline,
+        ])->call('nextStep')
+            ->call('nextStep')
+            ->assertSet('step', 3)
+            ->assertDontSee('The lien being released')
+            ->set('has_written_contract', '1')
+            ->set('amount_claimed', 5000.00)
+            ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->call('nextStep')
+            ->assertHasNoErrors()
+            ->assertSet('step', 4);
+
+        expect($this->filing->fresh()->document_details_json)->toBeNull();
+    });
+});

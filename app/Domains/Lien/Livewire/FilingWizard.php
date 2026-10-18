@@ -2,6 +2,7 @@
 
 namespace App\Domains\Lien\Livewire;
 
+use App\Domains\Lien\Admin\Actions\Concerns\NormalizesLienInput;
 use App\Domains\Lien\Engine\DeadlineCalculator;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Enums\PartyRole;
@@ -26,6 +27,7 @@ use Livewire\WithFileUploads;
 
 class FilingWizard extends Component
 {
+    use NormalizesLienInput;
     use WithFileUploads;
 
     public LienProject $project;
@@ -61,6 +63,18 @@ class FilingWizard extends Component
     public ?string $last_furnish_date = null;
 
     public ?string $completion_date = null;
+
+    // Step 3: The lien being released (releases only; stored in
+    // document_details_json.original_lien, not payload_json)
+    public ?string $original_lien_recorded_at = null;
+
+    public ?string $original_lien_reference = null;
+
+    public ?string $original_lien_book = null;
+
+    public ?string $original_lien_page = null;
+
+    public ?string $original_lien_other_info = null;
 
     // Step 3: Amount & Contract
     public ?float $amount_claimed = null;
@@ -245,6 +259,53 @@ class FilingWizard extends Component
             $this->payments_received = $breakdown['payments_received'] ?? null;
             $this->uncompleted_work = $breakdown['uncompleted_work'] ?? null;
         }
+
+        if ($this->isLienRelease()) {
+            $this->populateOriginalLien();
+        }
+    }
+
+    /**
+     * The lien being released: what the customer (or an admin) already saved
+     * on this filing, else the date and number of the lien we recorded on
+     * this project, so they only check them.
+     */
+    private function populateOriginalLien(): void
+    {
+        $original = $this->storedOriginalLien();
+
+        $recordedLien = empty($original['recording_reference']) && empty($original['recorded_at'])
+            ? $this->recordedLien()
+            : null;
+
+        $this->original_lien_recorded_at = $original['recorded_at'] ?? $recordedLien?->recorded_at?->eastern()->format('Y-m-d');
+        $this->original_lien_reference = $original['recording_reference'] ?? $recordedLien?->recording_reference;
+        $this->original_lien_book = $original['book'] ?? null;
+        $this->original_lien_page = $original['page'] ?? null;
+        $this->original_lien_other_info = $original['other_info'] ?? null;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function storedOriginalLien(): array
+    {
+        $original = ($this->filing->document_details_json ?? [])['original_lien'] ?? null;
+
+        return is_array($original) ? $original : [];
+    }
+
+    /**
+     * The mechanics lien we recorded on this project, if any.
+     */
+    private function recordedLien(): ?LienFiling
+    {
+        return $this->project->latestRecordedLien($this->filing);
+    }
+
+    private function isLienRelease(): bool
+    {
+        return $this->deadline->documentType?->slug === 'lien_release';
     }
 
     public function nextStep(): void
@@ -344,7 +405,35 @@ class FilingWizard extends Component
             $messages["{$fieldName}.required"] = "The {$label} is required to file in this state.";
         }
 
-        $this->validate($rules, $messages);
+        $attributes = [];
+
+        if ($this->isLienRelease()) {
+            $rules += [
+                'original_lien_recorded_at' => ['required', 'date', 'before_or_equal:today'],
+                'original_lien_reference' => ['required_without_all:original_lien_book,original_lien_page', 'nullable', 'string', 'max:255'],
+                'original_lien_book' => ['required_with:original_lien_page', 'nullable', 'string', 'max:50'],
+                'original_lien_page' => ['required_with:original_lien_book', 'nullable', 'string', 'max:50'],
+                'original_lien_other_info' => ['nullable', 'string', 'max:1000'],
+            ];
+
+            $messages += [
+                'original_lien_recorded_at.required' => 'Enter the date the lien was recorded.',
+                'original_lien_recorded_at.before_or_equal' => "The recorded date can't be in the future.",
+                'original_lien_reference.required_without_all' => 'Enter the document number, or the book and page.',
+                'original_lien_book.required_with' => 'Enter the book as well as the page.',
+                'original_lien_page.required_with' => 'Enter the page as well as the book.',
+            ];
+
+            $attributes = [
+                'original_lien_recorded_at' => 'recorded date',
+                'original_lien_reference' => 'document number',
+                'original_lien_book' => 'book',
+                'original_lien_page' => 'page',
+                'original_lien_other_info' => 'other identifying information',
+            ];
+        }
+
+        $this->validate($rules, $messages, $attributes);
     }
 
     /**
@@ -495,11 +584,49 @@ class FilingWizard extends Component
             app(DeadlineCalculator::class)->calculateForProject($this->project->fresh());
         }
 
-        $this->filing->update([
+        $filingData = [
             'amount_claimed_cents' => $this->amount_claimed ? (int) ($this->amount_claimed * 100) : null,
             'description_of_work' => $this->description_of_work,
             'service_level' => $this->service_level,
-        ]);
+        ];
+
+        if ($this->step >= 3 && $this->isLienRelease()) {
+            $filingData['document_details_json'] = $this->documentDetailsWithOriginalLien();
+        }
+
+        $this->filing->update($filingData);
+    }
+
+    /**
+     * The filing's document details with the lien being released as the
+     * customer entered it. Other details, and the county and amount received
+     * an admin may have set on the lien, are kept. Only set values are
+     * stored, the same shape the admin Document details card writes.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function documentDetailsWithOriginalLien(): ?array
+    {
+        $details = $this->filing->document_details_json ?? [];
+        $existing = $this->storedOriginalLien();
+
+        $original = array_filter([
+            'recording_reference' => $this->nullIfBlank($this->original_lien_reference),
+            'book' => $this->nullIfBlank($this->original_lien_book),
+            'page' => $this->nullIfBlank($this->original_lien_page),
+            'county' => $this->nullIfBlank($existing['county'] ?? null),
+            'recorded_at' => $this->nullableDate($this->original_lien_recorded_at),
+            'amount_received_cents' => $this->asCents($existing['amount_received_cents'] ?? null),
+            'other_info' => $this->nullIfBlank($this->original_lien_other_info),
+        ], fn ($value) => $value !== null);
+
+        if ($original === []) {
+            unset($details['original_lien']);
+        } else {
+            $details['original_lien'] = $original;
+        }
+
+        return $details === [] ? null : $details;
     }
 
     public function proceedToCheckout(): void
@@ -865,6 +992,8 @@ class FilingWizard extends Component
             'claimantInfo' => $this->claimantInfo,
             'partyRoles' => collect(PartyRole::cases())->filter(fn ($role) => $role !== PartyRole::Claimant)->values(),
             'requiredDateFields' => $this->requiredDateFields,
+            'isLienRelease' => $this->isLienRelease(),
+            'recordedLien' => $this->step === 3 && $this->isLienRelease() ? $this->recordedLien() : null,
         ])->layout('components.layouts.portal', ['title' => 'Create '.$this->deadline->documentType->name]);
     }
 }

@@ -251,6 +251,53 @@ describe('saving document details', function () {
             ->toContain('receipt of $675.00 in');
     });
 
+    it('keeps the other identifying information the customer gave, logs edits to it and leaves it off the release', function () {
+        $release = docdetFiling(docdetProject(), 'lien_release', [
+            'document_details_json' => [
+                'original_lien' => [
+                    'recording_reference' => '2026-28904',
+                    'recorded_at' => '2026-09-10',
+                    'other_info' => 'Case 26-CV-118',
+                ],
+            ],
+        ]);
+
+        $this->actingAs(docdetAdmin());
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $release])
+            ->assertSee('Other lien info')
+            ->assertSee('Case 26-CV-118')
+            ->call('editDocumentDetails')
+            ->assertSet('documentForm.original_lien.other_info', 'Case 26-CV-118')
+            ->set('documentForm.original_lien.other_info', str_repeat('x', 1001))
+            ->call('updateDocumentDetails')
+            ->assertHasErrors(['documentForm.original_lien.other_info' => 'max'])
+            ->set('documentForm.original_lien.other_info', ' Case 26-CV-118; lien in the name of Kathryn Melendez ')
+            ->call('updateDocumentDetails')
+            ->assertHasNoErrors();
+
+        $fresh = $release->fresh();
+
+        expect($fresh->document_details_json['original_lien'])->toEqual([
+            'recording_reference' => '2026-28904',
+            'recorded_at' => '2026-09-10',
+            'other_info' => 'Case 26-CV-118; lien in the name of Kathryn Melendez',
+        ]);
+
+        $changes = $fresh->events()->where('event_type', 'document_details_updated')->first()->payload_json['changes'];
+        expect($changes['original_lien.other_info'])->toEqual([
+            'from' => 'Case 26-CV-118',
+            'to' => 'Case 26-CV-118; lien in the name of Kathryn Melendez',
+        ]);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $fresh])
+            ->assertSee('Original lien other info:');
+
+        $text = html_entity_decode(strip_tags(app(LienDocumentGenerator::class)->render($fresh)->getHtml()));
+        expect($text)->toContain('recorded on September 10, 2026 as 2026-28904')
+            ->not->toContain('Case 26-CV-118');
+    });
+
     it('shows the card and the timeline entry, and hides editing from view-only admins', function () {
         $filing = docdetFiling(docdetProject(), 'mechanics_lien', [
             'document_details_json' => ['signer_name' => 'Kathryn Melendez', 'signer_title' => 'Owner', 'months_of_work' => 'June 2026'],

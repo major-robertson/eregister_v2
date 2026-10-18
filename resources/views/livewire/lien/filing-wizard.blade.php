@@ -55,12 +55,12 @@
             <x-slot:header>Important Dates</x-slot:header>
 
             <div class="space-y-4">
-                @if(array_key_exists('completion_date', $requiredDateFields))
+                @if(array_key_exists('first_furnish_date', $requiredDateFields))
                     <flux:field>
-                        <flux:label>Completion Date *</flux:label>
-                        <flux:date-picker wire:model="completion_date" />
-                        <flux:description>When the project was substantially complete</flux:description>
-                        <flux:error name="completion_date" />
+                        <flux:label>First Furnish Date *</flux:label>
+                        <flux:date-picker wire:model="first_furnish_date" />
+                        <flux:description>When you first provided labor/materials</flux:description>
+                        <flux:error name="first_furnish_date" />
                     </flux:field>
                 @endif
 
@@ -73,12 +73,12 @@
                     </flux:field>
                 @endif
 
-                @if(array_key_exists('first_furnish_date', $requiredDateFields))
+                @if(array_key_exists('completion_date', $requiredDateFields))
                     <flux:field>
-                        <flux:label>First Furnish Date *</flux:label>
-                        <flux:date-picker wire:model="first_furnish_date" />
-                        <flux:description>When you first provided labor/materials</flux:description>
-                        <flux:error name="first_furnish_date" />
+                        <flux:label>Completion Date *</flux:label>
+                        <flux:date-picker wire:model="completion_date" />
+                        <flux:description>When the project was substantially complete</flux:description>
+                        <flux:error name="completion_date" />
                     </flux:field>
                 @endif
             </div>

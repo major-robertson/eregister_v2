@@ -229,6 +229,10 @@
                                 </div>
                             </div>
 
+                            @if ($filing->datesChangedAfterDeadlineBlock())
+                            <flux:badge color="amber" size="sm" class="mt-1">Dates changed after deadline notice</flux:badge>
+                            @endif
+
                             @if ($filing->createdBy)
                             <flux:text class="mt-1 text-xs text-gray-500 truncate">
                                 {{ $filing->createdBy->name }} &middot; {{ $filing->createdBy->email }}

@@ -11,6 +11,7 @@ use App\Domains\Lien\Admin\Enums\SearchMode;
 use App\Domains\Lien\Admin\Support\BoardCard;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Models\LienFiling;
+use App\Domains\Lien\Models\LienFilingEvent;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -164,6 +165,7 @@ class LienBoard extends Component
                 'createdBy',
                 'events' => fn ($q) => $q->where('event_type', 'note_added')->latest()->limit(1),
             ])
+            ->withExists(['events as dates_changed_after_deadline_block_exists' => fn ($q) => $q->where('event_type', LienFilingEvent::DATES_CHANGED_AFTER_DEADLINE_BLOCK)])
             ->orderBy('paid_at', 'asc')
             ->get()
             ->groupBy(fn (LienFiling $filing) => $filing->status->value);

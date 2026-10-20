@@ -4,6 +4,7 @@ namespace App\Domains\Lien\Admin\Support;
 
 use App\Domains\Lien\Admin\Enums\KanbanColumn;
 use App\Domains\Lien\Models\LienFiling;
+use App\Domains\Lien\Models\LienFilingEvent;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -58,6 +59,7 @@ final class BoardCard
             ->whereNotNull('paid_at')
             ->whereNotIn('status', KanbanColumn::offBoardStatuses())
             ->with(self::relations())
+            ->withExists(['events as dates_changed_after_deadline_block_exists' => fn ($q) => $q->where('event_type', LienFilingEvent::DATES_CHANGED_AFTER_DEADLINE_BLOCK)])
             ->get();
 
         $staffIds = self::staffUserIds();

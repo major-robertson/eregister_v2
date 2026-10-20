@@ -3,25 +3,36 @@
 namespace App\Domains\Lien\Livewire;
 
 use App\Domains\Lien\Admin\Actions\Concerns\NormalizesLienInput;
+use App\Domains\Lien\Documents\LienCountyKey;
+use App\Domains\Lien\Documents\LienDocumentRegistry;
+use App\Domains\Lien\Engine\BusinessDays;
 use App\Domains\Lien\Engine\DeadlineCalculator;
+use App\Domains\Lien\Engine\RuleDateMath;
+use App\Domains\Lien\Engine\StepStatusCalculator;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Enums\PartyRole;
 use App\Domains\Lien\Enums\ServiceLevel;
 use App\Domains\Lien\Models\LienDeadlineRule;
 use App\Domains\Lien\Models\LienFiling;
+use App\Domains\Lien\Models\LienFilingEvent;
 use App\Domains\Lien\Models\LienFilingRecipient;
 use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienProjectDeadline;
 use App\Domains\Lien\Models\LienStateRule;
+use App\Domains\Lien\Seo\NoticeOfIntentStatePage;
 use App\Mail\AttorneyReferral;
 use App\Models\EmailSequence;
+use App\Models\Price;
+use Carbon\CarbonImmutable;
+use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use InvalidArgumentException;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -29,6 +40,29 @@ class FilingWizard extends Component
 {
     use NormalizesLienInput;
     use WithFileUploads;
+
+    /** Documents with a deadline panel, and a block once the deadline has passed. */
+    private const DEADLINE_DOCUMENTS = ['mechanics_lien', 'prelim_notice', 'noi'];
+
+    /** Notices are served; liens are recorded. */
+    private const NOTICES = ['prelim_notice', 'noi'];
+
+    /** The work dates, in the order the Work step asks for them. */
+    private const WORK_DATE_LABELS = [
+        'first_furnish_date' => 'First Furnish Date',
+        'last_furnish_date' => 'Last Furnish Date',
+        'completion_date' => 'Completion Date',
+    ];
+
+    /** Their noi rule rows count back from filing where the statute counts forward from last furnishing (EREG-91). */
+    private const NOI_LEAD_TIME_UNRELIABLE_STATES = ['KY', 'MD'];
+
+    /** Who a notice of intent was served on. */
+    private const NOI_SERVED_TO = [
+        'owner' => 'The property owner',
+        'gc' => 'The general contractor',
+        'both' => 'Both',
+    ];
 
     public LienProject $project;
 
@@ -75,6 +109,16 @@ class FilingWizard extends Component
     public ?string $original_lien_page = null;
 
     public ?string $original_lien_other_info = null;
+
+    // Step 3: Notice of intent served (mechanics liens in states that require
+    // one; stored in document_details_json, not payload_json)
+    public ?string $noi_served = null; // yes | no | not_applicable
+
+    public ?string $noi_served_on = null;
+
+    public ?string $noi_served_to = null;
+
+    public bool $noi_confirmed = false;
 
     // Step 3: Amount & Contract
     public ?float $amount_claimed = null;
@@ -263,6 +307,28 @@ class FilingWizard extends Component
         if ($this->isLienRelease()) {
             $this->populateOriginalLien();
         }
+
+        if ($this->noiRequirement() !== null) {
+            $this->populateNoiAnswer();
+        }
+    }
+
+    /**
+     * The notice-of-intent answer the customer already gave on this filing.
+     * A "No" is not stored, so it is asked again.
+     */
+    private function populateNoiAnswer(): void
+    {
+        $details = $this->filing->document_details_json ?? [];
+
+        if (! empty($details['noi_served_on'])) {
+            $this->noi_served = 'yes';
+            $this->noi_served_on = $details['noi_served_on'];
+            $this->noi_served_to = $details['noi_served_to'] ?? null;
+            $this->noi_confirmed = ! empty($details['noi_confirmed_at']);
+        } elseif (! empty($details['noi_not_applicable_reason'])) {
+            $this->noi_served = 'not_applicable';
+        }
     }
 
     /**
@@ -308,6 +374,25 @@ class FilingWizard extends Component
         return $this->deadline->documentType?->slug === 'lien_release';
     }
 
+    /**
+     * The state's entry in database/data/lien_variants/notice_of_intent.php
+     * when this is a mechanics lien in a state that requires a notice of
+     * intent from every claimant ('required') or from some ('required_some').
+     * Null otherwise, and for liens only an attorney can file.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function noiRequirement(): ?array
+    {
+        if ($this->deadline->documentType?->slug !== 'mechanics_lien' || $this->requiresAttorneyReferral) {
+            return null;
+        }
+
+        $entry = NoticeOfIntentStatePage::entries()[strtoupper((string) $this->project->jobsite_state)] ?? null;
+
+        return in_array($entry['status'] ?? null, ['required', 'required_some'], true) ? $entry : null;
+    }
+
     public function nextStep(): void
     {
         $this->validateStep();
@@ -316,6 +401,36 @@ class FilingWizard extends Component
         if ($this->step < $this->totalSteps) {
             $this->step++;
         }
+
+        // Checkout redirects when nothing blocks it, so show these on arrival.
+        if ($this->step === $this->totalSteps) {
+            $this->warnings = $this->workDateWarnings();
+        }
+    }
+
+    /**
+     * Work dates that look wrong but can be right: a last furnish date after
+     * the completion date (punch-list work can follow substantial
+     * completion). Only where the Work step asks for the completion date.
+     *
+     * @return list<string>
+     */
+    private function workDateWarnings(): array
+    {
+        if (! $this->completion_date || ! $this->last_furnish_date || ! array_key_exists('completion_date', $this->requiredDateFields)) {
+            return [];
+        }
+
+        try {
+            $completion = CarbonImmutable::parse($this->completion_date)->startOfDay();
+            $lastFurnish = CarbonImmutable::parse($this->last_furnish_date)->startOfDay();
+        } catch (\Throwable) {
+            return [];
+        }
+
+        return $completion->lessThan($lastFurnish)
+            ? ['Your last furnish date is after the completion date. Check both dates.']
+            : [];
     }
 
     public function previousStep(): void
@@ -405,8 +520,10 @@ class FilingWizard extends Component
             'has_written_contract.required' => 'Please indicate whether the work was done pursuant to a written contract.',
         ];
 
+        $notTooOld = $this->notMoreThanThreeYearsAgo();
+
         foreach ($this->requiredDateFields as $fieldName => $label) {
-            $rules[$fieldName] = ['required', 'date', 'before_or_equal:today'];
+            $rules[$fieldName] = ['required', 'date', 'before_or_equal:today', $notTooOld];
             $messages["{$fieldName}.required"] = in_array($fieldName, ['first_furnish_date', 'last_furnish_date'], true)
                 ? "The {$label} is required."
                 : "The {$label} is required to file in this state.";
@@ -417,6 +534,29 @@ class FilingWizard extends Component
         }
 
         $attributes = [];
+
+        if (($noi = $this->noiRequirement()) !== null) {
+            $rules += [
+                'noi_served' => ['required', Rule::in($noi['status'] === 'required_some' ? ['yes', 'no', 'not_applicable'] : ['yes', 'no'])],
+                'noi_served_on' => ['exclude_unless:noi_served,yes', 'required', 'date', 'before_or_equal:today'],
+                'noi_served_to' => ['exclude_unless:noi_served,yes', 'required', Rule::in(array_keys(self::NOI_SERVED_TO))],
+                'noi_confirmed' => ['exclude_unless:noi_served,yes', 'accepted'],
+            ];
+
+            $messages += [
+                'noi_served.required' => 'Tell us whether the notice of intent has been served.',
+                'noi_served_on.required' => 'Enter the date the notice of intent was served.',
+                'noi_served_on.before_or_equal' => "The date served can't be in the future.",
+                'noi_served_to.required' => 'Choose who received the notice of intent.',
+                'noi_confirmed.accepted' => 'Confirm the notice of intent was served.',
+            ];
+
+            $attributes += [
+                'noi_served' => 'answer',
+                'noi_served_on' => 'date served',
+                'noi_served_to' => 'who received it',
+            ];
+        }
 
         if ($this->isLienRelease()) {
             $rules += [
@@ -435,7 +575,7 @@ class FilingWizard extends Component
                 'original_lien_page.required_with' => 'Enter the page as well as the book.',
             ];
 
-            $attributes = [
+            $attributes += [
                 'original_lien_recorded_at' => 'recorded date',
                 'original_lien_reference' => 'document number',
                 'original_lien_book' => 'book',
@@ -445,6 +585,27 @@ class FilingWizard extends Component
         }
 
         $this->validate($rules, $messages, $attributes);
+    }
+
+    /**
+     * Customers type the wrong year: a work date more than three years back
+     * is almost always one.
+     */
+    private function notMoreThanThreeYearsAgo(): Closure
+    {
+        $earliest = now()->eastern()->startOfDay()->subYears(3);
+
+        return function (string $attribute, mixed $value, Closure $fail) use ($earliest): void {
+            try {
+                $date = CarbonImmutable::parse((string) $value, BusinessDays::TIMEZONE)->startOfDay();
+            } catch (\Throwable) {
+                return; // the date rule reports it
+            }
+
+            if ($date->lessThan($earliest)) {
+                $fail('That date is more than 3 years ago. Check the year.');
+            }
+        };
     }
 
     /**
@@ -482,7 +643,7 @@ class FilingWizard extends Component
      */
     private function validateReviewStep(): void
     {
-        $this->warnings = [];
+        $this->warnings = $this->workDateWarnings();
 
         $docType = $this->deadline->documentType->slug;
         $owner = $this->project->ownerParty();
@@ -520,6 +681,300 @@ class FilingWizard extends Component
         if (in_array($docType, ['mechanics_lien', 'lien_enforcement'])) {
             $this->validateJurisdictionRights();
         }
+
+        // Past the deadline: no path reaches checkout.
+        if ($this->deadlineGate()['passed'] ?? false) {
+            $this->addError('deadline_passed', $docType === 'noi'
+                ? 'The lien deadline for this project has passed.'
+                : 'The deadline for this '.Str::lower($this->deadline->documentType->name).' has passed.');
+        }
+
+        if ($this->noiRequirement() !== null) {
+            if ($this->noi_served === null) {
+                $this->addError('noi_answer', 'Go back to the Work step and tell us whether the notice of intent has been served.');
+            } elseif ($this->noi_served === 'yes' && (! $this->noi_served_on || ! $this->noi_served_to || ! $this->noi_confirmed)) {
+                $this->addError('noi_answer', 'Go back to the Work step and confirm the notice of intent.');
+            } elseif (($block = $this->noiBlock()) !== null) {
+                $this->addError('noi_block', $block);
+            }
+        }
+    }
+
+    /**
+     * Why the customer's notice-of-intent answer stops checkout, or null: no
+     * notice served yet, or one served too late for the state's lead time
+     * (the day count on the state's lien_deadline_rules noi rows) to run out
+     * before the lien deadline. No day count on the rows, no lead-time check.
+     */
+    private function noiBlock(): ?string
+    {
+        if ($this->noiRequirement() === null) {
+            return null;
+        }
+
+        $state = $this->stateName();
+
+        if ($this->noi_served === 'no') {
+            return "{$state} requires a notice of intent before the lien. Order the notice of intent first.";
+        }
+
+        if ($this->noi_served !== 'yes' || ! $this->noi_served_on) {
+            return null;
+        }
+
+        $leadDays = $this->noiLeadDays();
+        $lienDeadline = $this->deadline->fresh()?->due_date;
+
+        if ($leadDays === null || $lienDeadline === null) {
+            return null;
+        }
+
+        try {
+            $servedOn = CarbonImmutable::parse($this->noi_served_on)->startOfDay();
+        } catch (\Throwable) {
+            return null;
+        }
+
+        $deadline = CarbonImmutable::parse($lienDeadline->format('Y-m-d'));
+
+        if ($servedOn->addDays($leadDays)->lessThanOrEqualTo($deadline)) {
+            return null;
+        }
+
+        return "The notice of intent was served on {$servedOn->format('F j, Y')}. {$state} requires {$leadDays} days between the notice and the lien, which runs past the lien deadline of {$deadline->format('F j, Y')}.";
+    }
+
+    /**
+     * Days the state requires between the notice of intent and the lien: the
+     * offset on its noi deadline rule rows (every row carries the same
+     * number), or null when no row has one or the rows can't be trusted.
+     */
+    private function noiLeadDays(): ?int
+    {
+        if (in_array(strtoupper((string) $this->project->jobsite_state), self::NOI_LEAD_TIME_UNRELIABLE_STATES, true)) {
+            return null;
+        }
+
+        $days = LienDeadlineRule::where('state', $this->project->jobsite_state)
+            ->whereHas('documentType', fn ($q) => $q->where('slug', 'noi'))
+            ->where('offset_days', '>', 0)
+            ->max('offset_days');
+
+        return $days === null ? null : (int) $days;
+    }
+
+    /**
+     * The link that starts this project's notice of intent, or null.
+     */
+    private function noiOrderUrl(): ?string
+    {
+        $noi = $this->project->getDeadlineForType('noi');
+
+        return $noi ? route('lien.filings.start', ['project' => $this->project, 'deadline' => $noi]) : null;
+    }
+
+    /**
+     * What step 4 shows about the deadline of a mechanics lien, preliminary
+     * notice or notice of intent. Null for other documents, and when there
+     * is nothing to show or block.
+     *
+     * - panel: the document's own deadline and submit-by date, shown when its
+     *   deadline row has a rule (otherwise it is optional, with no deadline).
+     * - passed: checkout is blocked. A mechanics lien past its own deadline;
+     *   a notice of intent once the project's lien deadline has passed (the
+     *   lien it announces can no longer be filed). Its own row is not used:
+     *   some states' noi rows count the wrong way (EREG-91).
+     * - late: a preliminary notice past its usual deadline. Never blocked,
+     *   since a late notice can still protect part of a claim in some states.
+     *
+     * The submit-by date is the deadline less the county's recording lead
+     * (config lien.recording_lead_business_days), counted back from the last
+     * business day on or before the deadline, since the county only takes
+     * filings on business days.
+     *
+     * @return array{document: string, slug: string, isNotice: bool, panel: bool, known: bool, passed: bool, late: bool, lienDeadline: ?CarbonImmutable, deadline?: CarbonImmutable, method?: string, mustSubmitBy?: CarbonImmutable, businessDaysLeft?: int, datesUsed?: array<string, string>}|null
+     */
+    private function deadlineGate(): ?array
+    {
+        $slug = $this->deadline->documentType?->slug;
+
+        if (! in_array($slug, self::DEADLINE_DOCUMENTS, true)) {
+            return null;
+        }
+
+        $deadline = $this->deadline->fresh() ?? $this->deadline;
+        $hasRule = $deadline->deadline_rule_id !== null;
+        $today = now()->eastern()->startOfDay();
+        $lienDeadline = $slug === 'noi' ? $this->lienDeadlineDate() : null;
+
+        $gate = [
+            'document' => $this->deadline->documentType->name,
+            'slug' => $slug,
+            'isNotice' => in_array($slug, self::NOTICES, true),
+            'panel' => $hasRule,
+            'known' => false,
+            'passed' => false,
+            'late' => false,
+            'lienDeadline' => $lienDeadline,
+        ];
+
+        $ownDeadline = $hasRule ? app(StepStatusCalculator::class)->forDeadline($deadline)->deadlineDate : null;
+
+        if ($ownDeadline !== null) {
+            $due = CarbonImmutable::createFromFormat('!Y-m-d', $ownDeadline->format('Y-m-d'), BusinessDays::TIMEZONE);
+            $method = $this->recordingMethod();
+            $lead = max(0, (int) config("lien.recording_lead_business_days.{$method}", $method === 'mail' ? 5 : 1));
+            $lastBusinessDay = BusinessDays::isBusinessDay($due) ? $due : BusinessDays::subtract($due, 1);
+            $mustSubmitBy = BusinessDays::subtract($lastBusinessDay, $lead);
+
+            $gate = array_replace($gate, [
+                'known' => true,
+                'deadline' => $due,
+                'method' => $method,
+                'mustSubmitBy' => $mustSubmitBy,
+                'businessDaysLeft' => BusinessDays::between($today, $mustSubmitBy),
+            ]);
+        }
+
+        $ownDeadlinePassed = isset($gate['deadline']) && $gate['deadline']->lessThan($today);
+
+        $gate['passed'] = match ($slug) {
+            'mechanics_lien' => $ownDeadlinePassed,
+            'noi' => $lienDeadline !== null && $lienDeadline->lessThan($today),
+            default => false,
+        };
+        $gate['late'] = $slug === 'prelim_notice' && $ownDeadlinePassed;
+
+        if ($gate['passed'] || $gate['late']) {
+            $gate['datesUsed'] = $this->datesUsed($deadline);
+        }
+
+        return $gate['panel'] || $gate['passed'] ? $gate : null;
+    }
+
+    /**
+     * The project's mechanics lien deadline row (the one with a rule, most
+     * recently calculated), or null.
+     */
+    private function lienDeadlineRow(): ?LienProjectDeadline
+    {
+        return $this->project->deadlines()
+            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
+            ->whereNotNull('deadline_rule_id')
+            ->latest('updated_at')
+            ->latest('id')
+            ->first();
+    }
+
+    /**
+     * The project's mechanics lien deadline as a calendar date, or null when
+     * it is not known.
+     */
+    private function lienDeadlineDate(): ?CarbonImmutable
+    {
+        $lien = $this->lienDeadlineRow();
+        $date = $lien ? app(StepStatusCalculator::class)->forDeadline($lien)->deadlineDate : null;
+
+        return $date ? CarbonImmutable::createFromFormat('!Y-m-d', $date->format('Y-m-d'), BusinessDays::TIMEZONE) : null;
+    }
+
+    /**
+     * How the county takes the document: 'mail' when the county or state
+     * data file (database/data/lien_counties, lien_documents) says its office
+     * takes mail, else 'erecord' (e-recording, an office that takes either,
+     * or nothing known).
+     */
+    private function recordingMethod(): string
+    {
+        $state = strtoupper((string) ($this->filing->jurisdiction_state ?: $this->project->jobsite_state));
+
+        if ($state === '') {
+            return 'erecord';
+        }
+
+        $method = LienDocumentRegistry::for($state)['recording']['filing_office']['method'] ?? null;
+        $county = LienDocumentRegistry::county($state, LienCountyKey::forFiling($this->filing));
+        $method = $county['recording']['filing_office']['method'] ?? $method;
+
+        return $method === 'mail' ? 'mail' : 'erecord';
+    }
+
+    /**
+     * The project dates the deadline was computed from, label => date, in
+     * Work-step order. A notice of intent counts back from the lien
+     * deadline, so it lists the lien rule's dates. With nothing to go on,
+     * every work date the project has.
+     *
+     * @return array<string, string>
+     */
+    private function datesUsed(LienProjectDeadline $deadline): array
+    {
+        $source = $deadline;
+
+        if ($this->deadline->documentType?->slug === 'noi') {
+            $source = $this->lienDeadlineRow();
+        }
+
+        $fields = [];
+
+        if ($source?->rule) {
+            $anchorLogic = LienStateRule::query()->find($this->project->jobsite_state)?->lien_anchor_logic;
+
+            // The engine reads the first furnish date as the contract date.
+            $fields = array_map(
+                fn (string $field) => $field === 'contract_date' ? 'first_furnish_date' : $field,
+                RuleDateMath::inputs(RuleDateMath::fromModel($source->rule), $anchorLogic),
+            );
+        }
+
+        $dates = [];
+
+        foreach (self::WORK_DATE_LABELS as $field => $label) {
+            if (in_array($field, $fields, true) && $this->project->{$field}) {
+                $dates[$label] = $this->project->{$field}->format('F j, Y');
+            }
+        }
+
+        if (($source?->status_meta['noc_shortened'] ?? false) && $this->project->noc_filed_date) {
+            $dates['Notice of Completion Filed'] = $this->project->noc_filed_date->format('F j, Y');
+        }
+
+        if ($dates === []) {
+            foreach (self::WORK_DATE_LABELS as $field => $label) {
+                if ($this->project->{$field}) {
+                    $dates[$label] = $this->project->{$field}->format('F j, Y');
+                }
+            }
+        }
+
+        return $dates;
+    }
+
+    /**
+     * The demand letter offered once the deadline has passed: the link that
+     * starts it on this project and its price, or null when the project has
+     * no demand-letter step.
+     *
+     * @return array{url: string, price: ?string}|null
+     */
+    private function demandLetterOffer(): ?array
+    {
+        $demand = $this->project->getDeadlineForType('demand_letter');
+
+        if (! $demand) {
+            return null;
+        }
+
+        try {
+            $price = Price::resolveLien('demand_letter', 'full_service', $this->project->jobsite_state)->formattedAmount();
+        } catch (InvalidArgumentException) {
+            $price = null;
+        }
+
+        return [
+            'url' => route('lien.filings.start', ['project' => $this->project, 'deadline' => $demand]),
+            'price' => $price,
+        ];
     }
 
     /**
@@ -587,6 +1042,8 @@ class FilingWizard extends Component
             $projectData['first_furnish_date'] = $this->first_furnish_date ?: null;
             $projectData['last_furnish_date'] = $this->last_furnish_date ?: null;
             $projectData['completion_date'] = $this->completion_date ?: null;
+
+            $this->logDatesChangedAfterDeadlineBlock($projectData);
         }
 
         $this->project->update($projectData);
@@ -605,7 +1062,73 @@ class FilingWizard extends Component
             $filingData['document_details_json'] = $this->documentDetailsWithOriginalLien();
         }
 
+        if ($this->step >= 3 && $this->noiRequirement() !== null) {
+            $filingData['document_details_json'] = $this->documentDetailsWithNoiAnswer();
+        }
+
         $this->filing->update($filingData);
+    }
+
+    /**
+     * Once the wizard has told the customer the deadline passed, log any
+     * change to the work dates: they go on a sworn document, so staff check
+     * dates that moved after a block.
+     *
+     * @param  array<string, mixed>  $projectData
+     */
+    private function logDatesChangedAfterDeadlineBlock(array $projectData): void
+    {
+        if ($this->filing->deadline_block_shown_at === null) {
+            return;
+        }
+
+        $before = [];
+        $after = [];
+
+        foreach (array_keys(self::WORK_DATE_LABELS) as $field) {
+            $before[$field] = $this->project->{$field}?->format('Y-m-d');
+            $after[$field] = $projectData[$field] ? CarbonImmutable::parse($projectData[$field])->format('Y-m-d') : null;
+        }
+
+        if ($before === $after) {
+            return;
+        }
+
+        $this->filing->events()->create([
+            'business_id' => $this->filing->business_id,
+            'event_type' => LienFilingEvent::DATES_CHANGED_AFTER_DEADLINE_BLOCK,
+            'payload_json' => ['before' => $before, 'after' => $after],
+            'created_by' => auth()->id(),
+        ]);
+    }
+
+    /**
+     * The filing's document details with the customer's notice-of-intent
+     * answer in place of any earlier one; other details are kept. The
+     * confirmation time stays put while the date and recipient don't change.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function documentDetailsWithNoiAnswer(): ?array
+    {
+        $previous = $this->filing->document_details_json ?? [];
+        $details = array_diff_key($previous, array_flip(LienFiling::NOI_ANSWER_KEYS));
+
+        if ($this->noi_served === 'yes' && $this->noi_served_on && $this->noi_confirmed) {
+            $servedOn = CarbonImmutable::parse($this->noi_served_on)->toDateString();
+            $unchanged = ($previous['noi_served_on'] ?? null) === $servedOn
+                && ($previous['noi_served_to'] ?? null) === $this->noi_served_to;
+
+            $details['noi_served_on'] = $servedOn;
+            $details['noi_served_to'] = $this->noi_served_to;
+            $details['noi_confirmed_at'] = $unchanged && ! empty($previous['noi_confirmed_at'])
+                ? $previous['noi_confirmed_at']
+                : now()->toIso8601String();
+        } elseif ($this->noi_served === 'not_applicable') {
+            $details['noi_not_applicable_reason'] = 'customer_says_not_applicable';
+        }
+
+        return $details === [] ? null : $details;
     }
 
     /**
@@ -670,10 +1193,14 @@ class FilingWizard extends Component
         // Create recipient records from parties
         $this->createRecipients();
 
-        // Snapshot data
+        // Snapshot data, and the submit-by date the board and rush fees read
+        $gate = $this->deadlineGate();
+
         $this->filing->update([
             'payload_json' => $this->buildPayloadSnapshot(),
             'parties_snapshot_json' => $this->buildPartiesSnapshot(),
+            'must_submit_by' => isset($gate['mustSubmitBy']) ? $gate['mustSubmitBy']->toDateString() : null,
+            'deadline_business_days_left' => $gate['businessDaysLeft'] ?? null,
         ]);
 
         // Transition to awaiting payment
@@ -952,9 +1479,17 @@ class FilingWizard extends Component
      */
     public function getReferralStateNameProperty(): string
     {
+        return $this->stateName();
+    }
+
+    /**
+     * The jobsite state's name ("Colorado"), or its code when unknown.
+     */
+    private function stateName(): string
+    {
         $states = config('states', []);
 
-        return $states[$this->project->jobsite_state] ?? $this->project->jobsite_state;
+        return $states[$this->project->jobsite_state] ?? (string) $this->project->jobsite_state;
     }
 
     /**
@@ -995,6 +1530,16 @@ class FilingWizard extends Component
             config("lien.state_pricing.{$state}.{$slug}", []),
         );
 
+        $noiRequirement = $this->noiRequirement();
+        $deadlineGate = $this->step === 4 && ! $this->requiresAttorneyReferral ? $this->deadlineGate() : null;
+        $deadlineBlocked = $deadlineGate['passed'] ?? false;
+
+        // The first time the customer is told the deadline has passed; date
+        // changes after it are logged (logDatesChangedAfterDeadlineBlock).
+        if ($deadlineBlocked && $this->filing->deadline_block_shown_at === null) {
+            $this->filing->update(['deadline_block_shown_at' => now()]);
+        }
+
         return view('livewire.lien.filing-wizard', [
             'parties' => $this->project->parties,
             'documentType' => $this->deadline->documentType,
@@ -1005,6 +1550,14 @@ class FilingWizard extends Component
             'requiredDateFields' => $this->requiredDateFields,
             'isLienRelease' => $this->isLienRelease(),
             'recordedLien' => $this->step === 3 && $this->isLienRelease() ? $this->recordedLien() : null,
+            'stateName' => $this->stateName(),
+            'noiRequirement' => $noiRequirement,
+            'noiServedTo' => self::NOI_SERVED_TO,
+            'noiOrderUrl' => $noiRequirement !== null && in_array($this->step, [3, 4], true) ? $this->noiOrderUrl() : null,
+            'noiBlock' => $this->step === 4 ? $this->noiBlock() : null,
+            'deadlineGate' => $deadlineGate,
+            'deadlineBlocked' => $deadlineBlocked,
+            'demandLetter' => $deadlineBlocked ? $this->demandLetterOffer() : null,
         ])->layout('components.layouts.portal', ['title' => 'Create '.$this->deadline->documentType->name]);
     }
 }

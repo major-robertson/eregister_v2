@@ -11,6 +11,7 @@ return [
     'state' => 'NC',
     'name' => 'North Carolina',
     'researched_on' => '2026-10-02',
+    'seo_title' => 'North Carolina Sales Tax Certificate of Registration',
     'agency' => [
         'name' => 'North Carolina Department of Revenue',
         'short' => 'NCDOR',

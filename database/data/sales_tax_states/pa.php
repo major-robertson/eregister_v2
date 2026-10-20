@@ -11,6 +11,7 @@ return [
     'state' => 'PA',
     'name' => 'Pennsylvania',
     'researched_on' => '2026-10-02',
+    'seo_title' => 'Pennsylvania Sales Tax Registration | Sales Tax License',
     'agency' => [
         'name' => 'Pennsylvania Department of Revenue',
         'short' => 'the Department of Revenue',

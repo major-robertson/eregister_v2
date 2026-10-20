@@ -12,6 +12,7 @@ return [
     'state' => 'GA',
     'name' => 'Georgia',
     'researched_on' => '2026-10-02',
+    'seo_title' => 'Georgia Sales Tax Registration | Sales Tax Number',
     'agency' => [
         'name' => 'Georgia Department of Revenue',
         'short' => 'DOR',

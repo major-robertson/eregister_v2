@@ -11,6 +11,7 @@ return [
     'state' => 'KS',
     'name' => 'Kansas',
     'researched_on' => '2026-10-02',
+    'seo_title' => 'Kansas Sales Tax Registration Certificate',
     'agency' => [
         'name' => 'Kansas Department of Revenue',
         'short' => 'KDOR',

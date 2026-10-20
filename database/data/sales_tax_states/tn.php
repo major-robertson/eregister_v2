@@ -11,6 +11,7 @@ return [
     'state' => 'TN',
     'name' => 'Tennessee',
     'researched_on' => '2026-10-02',
+    'seo_title' => 'Tennessee Sales Tax Certificate of Registration',
     'agency' => [
         'name' => 'Tennessee Department of Revenue',
         'short' => 'the Department of Revenue',

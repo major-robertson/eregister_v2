@@ -217,12 +217,27 @@ describe('sales tax state pages', function () {
 
             expect(mb_strlen($page->title()))->toBeLessThanOrEqual(60, $page->title())
                 ->and($page->title())->toStartWith($page->name.' Sales Tax')
+                ->not->toEndWith(' | eRegister')
+                ->not->toContain('eRegister')
                 ->and(mb_strlen($description))->toBeGreaterThanOrEqual(70, "{$code}: {$description}")
                 ->toBeLessThanOrEqual(165, "{$code}: {$description}")
                 ->and($description)->not->toEndWith('...')
                 ->toContain($page->name)
                 ->toContain('remote sellers register after $');
         }
+    });
+
+    it('uses a data file seo_title over the formula, and the formula or generic title without one', function () {
+        expect(SalesTaxStatePage::forCode('IL')->title())->toBe('Illinois Sales Tax Certificate of Registration')
+            ->and(SalesTaxStatePage::forCode('AZ')->title())->toBe('Arizona Sales Tax Registration | TPT License')
+            ->and(SalesTaxStatePage::forCode('TX')->title())->toBe('Texas Sales Tax Registration | Sales and Use Tax Permit')
+            ->and(SalesTaxStatePage::forCode('CT')->title())->toBe('Connecticut Sales Tax Permit Registration');
+    });
+
+    it('renders the seo_title in the Illinois page head', function () {
+        $this->get('/sales-tax-registration/illinois')
+            ->assertOk()
+            ->assertSee('<title>Illinois Sales Tax Certificate of Registration</title>', escape: false);
     });
 
     it('says "the District of Columbia" after "in"', function () {
@@ -236,8 +251,8 @@ describe('sales tax state pages', function () {
         $page = SalesTaxStatePage::forCode('TX');
         $copy = unserialize(serialize($page));
 
-        expect(SalesTaxStatePage::cacheKey('tx'))->toBe('seo.sales-tax-state.v1.TX')
-            ->and(SalesTaxStatePage::statesCacheKey())->toBe('seo.sales-tax-states.v1')
+        expect(SalesTaxStatePage::cacheKey('tx'))->toBe('seo.sales-tax-state.v2.TX')
+            ->and(SalesTaxStatePage::statesCacheKey())->toBe('seo.sales-tax-states.v2')
             ->and($copy->title())->toBe($page->title())
             ->and($copy->metaDescription())->toBe($page->metaDescription())
             ->and($copy->keyFacts())->toBe($page->keyFacts())

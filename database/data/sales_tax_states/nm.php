@@ -12,6 +12,7 @@ return [
     'state' => 'NM',
     'name' => 'New Mexico',
     'researched_on' => '2026-10-02',
+    'seo_title' => 'New Mexico Sales Tax Registration | Form ACD-31015',
     'agency' => [
         'name' => 'New Mexico Taxation and Revenue Department',
         'short' => 'TRD',

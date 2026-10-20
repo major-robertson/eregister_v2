@@ -11,6 +11,7 @@ return [
     'state' => 'AZ',
     'name' => 'Arizona',
     'researched_on' => '2026-10-02',
+    'seo_title' => 'Arizona Sales Tax Registration | TPT License',
     'agency' => [
         'name' => 'Arizona Department of Revenue',
         'short' => 'ADOR',

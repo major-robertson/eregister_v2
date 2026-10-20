@@ -42,7 +42,10 @@ it('can create a project using wizard', function () {
         ->set('property_class', 'commercial')
         ->call('nextStep')
         ->assertSet('step', 3)
+        ->set('first_furnish_date', now()->subDays(30)->format('Y-m-d'))
+        ->set('last_furnish_date', now()->subDays(5)->format('Y-m-d'))
         ->call('save')
+        ->assertHasNoErrors()
         ->assertRedirect();
 
     $this->assertDatabaseHas('lien_projects', [
@@ -54,6 +57,8 @@ it('can create a project using wizard', function () {
         'provided_type' => 'labor',
         'hired_by' => 'direct_contractor',
         'claimant_type' => 'subcontractor',
+        'first_furnish_date' => now()->subDays(30)->toDateString(),
+        'last_furnish_date' => now()->subDays(5)->toDateString(),
     ]);
 });
 
@@ -76,6 +81,8 @@ it('can edit a project using wizard', function () {
         'name' => 'Original Name',
         'claimant_type' => 'subcontractor',
         'property_class' => 'commercial',
+        'first_furnish_date' => now()->subDays(30),
+        'last_furnish_date' => now()->subDays(5),
     ]);
 
     Livewire::test(\App\Domains\Lien\Livewire\ProjectForm::class, ['project' => $project])
@@ -100,6 +107,8 @@ it('derives gc (direct contractor) when hired by the owner, requiring no GC part
         ->set('jobsite_state', 'CA')
         ->set('property_class', 'commercial')
         ->call('nextStep')
+        ->set('first_furnish_date', now()->subDays(30)->format('Y-m-d'))
+        ->set('last_furnish_date', now()->subDays(5)->format('Y-m-d'))
         ->call('save')
         ->assertRedirect();
 
@@ -120,6 +129,8 @@ it('derives supplier_to_owner for materials-only supplied to the owner', functio
         ->set('jobsite_state', 'CA')
         ->set('property_class', 'commercial')
         ->call('nextStep')
+        ->set('first_furnish_date', now()->subDays(30)->format('Y-m-d'))
+        ->set('last_furnish_date', now()->subDays(5)->format('Y-m-d'))
         ->call('save')
         ->assertRedirect();
 
@@ -163,10 +174,74 @@ it('calculates deadlines when project is saved', function () {
         ->set('property_class', 'commercial')
         ->call('nextStep')
         ->set('first_furnish_date', now()->subDays(10)->format('Y-m-d'))
+        ->set('last_furnish_date', now()->subDays(2)->format('Y-m-d'))
         ->call('save')
         ->assertRedirect();
 
     $project = LienProject::where('name', 'Deadline Test Project')->first();
 
     expect($project->deadlines()->count())->toBeGreaterThan(0);
+});
+
+it('requires both furnish dates to save the project', function () {
+    Livewire::test(\App\Domains\Lien\Livewire\ProjectForm::class)
+        ->set('name', 'Missing Dates Project')
+        ->set('provided_type', 'labor')
+        ->set('hired_by', 'direct_contractor')
+        ->call('nextStep')
+        ->set('jobsite_state', 'CA')
+        ->set('property_class', 'commercial')
+        ->call('nextStep')
+        ->assertSet('step', 3)
+        ->assertSee('First Furnish Date *')
+        ->assertSee('Last Furnish Date *')
+        ->assertSee('California lien deadlines run from this date.')
+        ->assertDontSee('Skip for now')
+        ->call('save')
+        ->assertHasErrors([
+            'first_furnish_date' => 'required',
+            'last_furnish_date' => 'required',
+        ])
+        ->assertHasNoErrors('completion_date')
+        ->assertSet('step', 3)
+        ->assertNoRedirect();
+
+    $project = LienProject::where('name', 'Missing Dates Project')->firstOrFail();
+
+    expect($project->wizard_completed_at)->toBeNull()
+        ->and($project->first_furnish_date)->toBeNull()
+        ->and($project->last_furnish_date)->toBeNull();
+});
+
+it('rejects a last furnish date before the first furnish date', function () {
+    Livewire::test(\App\Domains\Lien\Livewire\ProjectForm::class)
+        ->set('name', 'Backwards Dates Project')
+        ->set('provided_type', 'labor')
+        ->set('hired_by', 'direct_contractor')
+        ->call('nextStep')
+        ->set('jobsite_state', 'TX')
+        ->set('property_class', 'commercial')
+        ->call('nextStep')
+        ->set('first_furnish_date', now()->subDays(5)->format('Y-m-d'))
+        ->set('last_furnish_date', now()->subDays(30)->format('Y-m-d'))
+        ->call('save')
+        ->assertHasErrors(['last_furnish_date' => 'after_or_equal'])
+        ->assertHasNoErrors('first_furnish_date')
+        ->assertNoRedirect();
+});
+
+it('requires both furnish dates when editing a project that has none', function () {
+    $project = LienProject::factory()->forBusiness($this->business)->create([
+        'claimant_type' => 'subcontractor',
+        'property_class' => 'commercial',
+        'first_furnish_date' => null,
+        'last_furnish_date' => null,
+    ]);
+
+    Livewire::test(\App\Domains\Lien\Livewire\ProjectForm::class, ['project' => $project])
+        ->call('nextStep')
+        ->call('nextStep')
+        ->call('save')
+        ->assertHasErrors(['first_furnish_date', 'last_furnish_date'])
+        ->assertNoRedirect();
 });

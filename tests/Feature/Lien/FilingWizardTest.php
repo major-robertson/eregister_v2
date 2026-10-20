@@ -116,7 +116,12 @@ describe('Filing Wizard required dates', function () {
             ->set('amount_claimed', 5000.00)
             ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
             ->call('nextStep')
-            ->assertHasErrors(['completion_date']);
+            ->assertHasErrors(['completion_date' => 'required'])
+            ->assertHasNoErrors(['first_furnish_date', 'last_furnish_date'])
+            ->assertSet('step', 3);
+
+        expect($component->errors()->first('completion_date'))
+            ->toBe('The completion date is required to file in this state.');
     });
 
     it('passes step 3 validation when required completion_date is provided', function () {
@@ -173,6 +178,8 @@ describe('Filing Wizard required dates', function () {
             'jobsite_state' => 'IL',
             'claimant_type' => 'gc',
             'property_class' => 'residential',
+            'first_furnish_date' => null,
+            'last_furnish_date' => null,
         ]);
 
         app(\App\Domains\Lien\Engine\DeadlineCalculator::class)->calculateForProject($project);
@@ -199,6 +206,8 @@ describe('Filing Wizard required dates', function () {
             'created_by_user_id' => $this->user->id,
         ]);
 
+        $firstFurnishDate = now()->subDays(40)->format('Y-m-d');
+        $lastFurnishDate = now()->subDays(12)->format('Y-m-d');
         $completionDate = now()->subDays(10)->format('Y-m-d');
 
         $component = Livewire::test(FilingWizard::class, [
@@ -209,14 +218,133 @@ describe('Filing Wizard required dates', function () {
         $component->set('project_type_category', 'residential')
             ->call('nextStep')
             ->call('nextStep')
+            ->set('first_furnish_date', $firstFurnishDate)
+            ->set('last_furnish_date', $lastFurnishDate)
             ->set('completion_date', $completionDate)
             ->set('has_written_contract', '0')
             ->set('amount_claimed', 5000.00)
             ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
-            ->call('nextStep');
+            ->call('nextStep')
+            ->assertHasNoErrors()
+            ->assertSet('step', 4);
 
         $project->refresh();
-        expect($project->completion_date->format('Y-m-d'))->toBe($completionDate);
+        expect($project->completion_date->format('Y-m-d'))->toBe($completionDate)
+            ->and($project->first_furnish_date->format('Y-m-d'))->toBe($firstFurnishDate)
+            ->and($project->last_furnish_date->format('Y-m-d'))->toBe($lastFurnishDate);
+    });
+
+    it('always requires both furnish dates at the Work step', function () {
+        // AZ runs its lien deadline from completion; blank every date.
+        $this->project->update([
+            'first_furnish_date' => null,
+            'last_furnish_date' => null,
+            'completion_date' => null,
+        ]);
+
+        $component = Livewire::test(FilingWizard::class, [
+            'project' => $this->project->fresh(),
+            'deadline' => $this->deadline,
+        ]);
+
+        $component->set('project_type_category', 'residential')
+            ->call('nextStep')
+            ->call('nextStep')
+            ->assertSet('step', 3)
+            ->assertSee('First Furnish Date *')
+            ->assertSee('Last Furnish Date *')
+            ->assertSee('Completion Date *')
+            ->set('has_written_contract', '0')
+            ->set('amount_claimed', 5000.00)
+            ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->call('nextStep')
+            ->assertHasErrors([
+                'first_furnish_date' => 'required',
+                'last_furnish_date' => 'required',
+                'completion_date' => 'required',
+            ])
+            ->assertSet('step', 3);
+
+        expect($component->errors()->first('first_furnish_date'))->toBe('The first furnish date is required.')
+            ->and($component->errors()->first('last_furnish_date'))->toBe('The last furnish date is required.')
+            ->and($component->errors()->first('completion_date'))->toBe('The completion date is required to file in this state.');
+    });
+
+    it('requires both furnish dates in a state whose deadline runs from the last furnish date', function () {
+        $project = LienProject::factory()->forBusiness($this->business)->create([
+            'jobsite_state' => 'GA',
+            'claimant_type' => 'gc',
+            'property_class' => 'residential',
+            'first_furnish_date' => null,
+            'last_furnish_date' => null,
+            'completion_date' => null,
+        ]);
+
+        app(\App\Domains\Lien\Engine\DeadlineCalculator::class)->calculateForProject($project);
+
+        LienParty::create([
+            'business_id' => $this->business->id,
+            'project_id' => $project->id,
+            'role' => 'owner',
+            'name' => 'Test Owner',
+            'address1' => '123 Peachtree St',
+            'city' => 'Atlanta',
+            'state' => 'GA',
+            'zip' => '30303',
+        ]);
+
+        $deadline = $project->deadlines()
+            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
+            ->first();
+
+        $component = Livewire::test(FilingWizard::class, [
+            'project' => $project,
+            'deadline' => $deadline,
+        ]);
+
+        expect(array_keys($component->instance()->requiredDateFields))
+            ->toBe(['first_furnish_date', 'last_furnish_date']);
+
+        $component->set('project_type_category', 'residential')
+            ->call('nextStep')
+            ->call('nextStep')
+            ->assertDontSee('Completion Date *')
+            ->set('has_written_contract', '0')
+            ->set('amount_claimed', 5000.00)
+            ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->call('nextStep')
+            ->assertHasErrors([
+                'first_furnish_date' => 'required',
+                'last_furnish_date' => 'required',
+            ])
+            ->assertHasNoErrors('completion_date')
+            ->assertSet('step', 3);
+
+        $component->set('first_furnish_date', now()->subDays(30)->format('Y-m-d'))
+            ->set('last_furnish_date', now()->subDays(5)->format('Y-m-d'))
+            ->call('nextStep')
+            ->assertHasNoErrors()
+            ->assertSet('step', 4);
+    });
+
+    it('rejects a last furnish date before the first furnish date at the Work step', function () {
+        $component = Livewire::test(FilingWizard::class, [
+            'project' => $this->project,
+            'deadline' => $this->deadline,
+        ]);
+
+        $component->set('project_type_category', 'residential')
+            ->call('nextStep')
+            ->call('nextStep')
+            ->set('first_furnish_date', now()->subDays(5)->format('Y-m-d'))
+            ->set('last_furnish_date', now()->subDays(30)->format('Y-m-d'))
+            ->set('has_written_contract', '0')
+            ->set('amount_claimed', 5000.00)
+            ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->call('nextStep')
+            ->assertHasErrors(['last_furnish_date' => 'after_or_equal'])
+            ->assertHasNoErrors('first_furnish_date')
+            ->assertSet('step', 3);
     });
 });
 

@@ -156,69 +156,40 @@
     </div>
 
     @elseif($step === 3)
-    {{-- Step 3: Important Dates (Optional) --}}
-    <x-slot:header>
-        <div class="flex items-center gap-2">
-            Important Dates
-            <flux:badge color="blue" size="sm">Optional</flux:badge>
-        </div>
-    </x-slot:header>
+    {{-- Step 3: Important Dates --}}
+    <x-slot:header>Important Dates</x-slot:header>
 
     <div class="space-y-6">
         <flux:callout color="blue" icon="information-circle">
-            Enter your key date below to calculate filing deadlines.
+            We need your first and last furnish dates to calculate your filing deadlines.
         </flux:callout>
 
-        {{-- Primary date field based on state rules --}}
         <div class="space-y-4">
-            @if($primaryDateField === 'completion_date')
-                <flux:field>
-                    <flux:label>Completion Date</flux:label>
-                    <flux:date-picker wire:model="completion_date" />
-                    <flux:description>When the project was substantially complete</flux:description>
-                    <flux:error name="completion_date" />
-                </flux:field>
-            @else
-                <flux:field>
-                    <flux:label>Last Furnish Date</flux:label>
-                    <flux:date-picker wire:model="last_furnish_date" />
-                    <flux:description>When you last provided labor/materials</flux:description>
-                    <flux:error name="last_furnish_date" />
-                </flux:field>
-            @endif
-        </div>
+            <flux:field>
+                <flux:label>First Furnish Date *</flux:label>
+                <flux:date-picker wire:model="first_furnish_date" />
+                <flux:description>When you first provided labor/materials</flux:description>
+                <flux:error name="first_furnish_date" />
+            </flux:field>
 
-        {{-- Additional optional dates --}}
-        <flux:accordion>
-        <flux:accordion.item heading="Additional Dates (optional)">
-        <flux:accordion.content>
-            <div class="space-y-4">
-                <flux:field>
-                    <flux:label>First Furnish Date</flux:label>
-                    <flux:date-picker wire:model="first_furnish_date" />
-                    <flux:description>When you first provided labor/materials</flux:description>
-                    <flux:error name="first_furnish_date" />
-                </flux:field>
+            <flux:field>
+                <flux:label>Last Furnish Date *</flux:label>
+                <flux:date-picker wire:model="last_furnish_date" />
+                <flux:description>When you last provided labor/materials</flux:description>
+                <flux:error name="last_furnish_date" />
+            </flux:field>
 
+            <flux:field>
+                <flux:label>Completion Date</flux:label>
+                <flux:date-picker wire:model="completion_date" />
                 @if($primaryDateField === 'completion_date')
-                    <flux:field>
-                        <flux:label>Last Furnish Date</flux:label>
-                        <flux:date-picker wire:model="last_furnish_date" />
-                        <flux:description>When you last provided labor/materials</flux:description>
-                        <flux:error name="last_furnish_date" />
-                    </flux:field>
+                    <flux:description>When the project was substantially complete. {{ $states[strtoupper($jobsite_state)] ?? strtoupper($jobsite_state) }} lien deadlines run from this date.</flux:description>
                 @else
-                    <flux:field>
-                        <flux:label>Completion Date</flux:label>
-                        <flux:date-picker wire:model="completion_date" />
-                        <flux:description>When the project was substantially complete</flux:description>
-                        <flux:error name="completion_date" />
-                    </flux:field>
+                    <flux:description>When the project was substantially complete</flux:description>
                 @endif
-            </div>
-        </flux:accordion.content>
-        </flux:accordion.item>
-        </flux:accordion>
+                <flux:error name="completion_date" />
+            </flux:field>
+        </div>
 
         {{-- NOC Question - only for CA, NV, AZ, OR --}}
         @if($this->showNocQuestion())
@@ -272,11 +243,6 @@
             <span wire:loading wire:target="nextStep">Saving...</span>
             </flux:button>
             @elseif($step === 3)
-            {{-- Step 3: Show Skip and Save buttons --}}
-            <flux:button wire:click="skipStep" wire:loading.attr="disabled" variant="ghost">
-                <span wire:loading.remove wire:target="skipStep">Skip for now</span>
-                <span wire:loading wire:target="skipStep">Saving...</span>
-            </flux:button>
             <flux:button wire:click="save" wire:loading.attr="disabled" variant="primary" icon-trailing="check">
                 <span wire:loading.remove wire:target="save">{{ $isEditing ? 'Save Changes' : 'Create Project' }}</span>
                 <span wire:loading wire:target="save">Saving...</span>

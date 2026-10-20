@@ -176,20 +176,6 @@ class ProjectForm extends Component
         }
     }
 
-    /**
-     * Skip step 3 (Important Dates) - saves without requiring dates.
-     */
-    public function skipStep(): void
-    {
-        if ($this->step === 3) {
-            $this->saveProgress();
-            $this->project->markWizardComplete();
-
-            session()->flash('message', 'Project saved successfully.');
-            $this->redirect(route('lien.projects.show', $this->project));
-        }
-    }
-
     protected function validateStep(): void
     {
         $rules = $this->getStepRules();
@@ -227,13 +213,15 @@ class ProjectForm extends Component
      */
     private function getStep3Rules(): array
     {
-        $lastFurnishRules = ['nullable', 'date', 'before_or_equal:today'];
+        // Both furnish dates are required. Only compare them once the first
+        // is set, so a blank first date shows one error, not two.
+        $lastFurnishRules = ['required', 'date', 'before_or_equal:today'];
         if ($this->first_furnish_date) {
             $lastFurnishRules[] = 'after_or_equal:first_furnish_date';
         }
 
         $rules = [
-            'first_furnish_date' => ['nullable', 'date', 'before_or_equal:today'],
+            'first_furnish_date' => ['required', 'date', 'before_or_equal:today'],
             'last_furnish_date' => $lastFurnishRules,
             'completion_date' => ['nullable', 'date', 'before_or_equal:today'],
         ];

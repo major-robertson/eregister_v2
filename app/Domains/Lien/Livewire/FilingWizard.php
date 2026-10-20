@@ -272,7 +272,9 @@ class FilingWizard extends Component
     }
 
     /**
-     * Get the required date fields for this filing based on state deadline rules.
+     * Get the required date fields for this filing: the first and last
+     * furnish dates (always required), plus any date the state's deadline
+     * rules run from.
      *
      * @return array<string, string> Map of field name => human label
      */
@@ -301,12 +303,15 @@ class FilingWizard extends Component
             ->get();
 
         $labels = config('lien.missing_field_labels', []);
-        $fields = [];
+        $fields = [
+            'first_furnish_date' => $labels['first_furnish_date'] ?? 'first furnish date',
+            'last_furnish_date' => $labels['last_furnish_date'] ?? 'last furnish date',
+        ];
 
         foreach ($rules as $rule) {
             $fieldName = $rule->trigger_event->value;
             if (in_array($fieldName, ['completion_date', 'last_furnish_date', 'first_furnish_date'])) {
-                $fields[$fieldName] = $labels[$fieldName] ?? $fieldName;
+                $fields[$fieldName] ??= $labels[$fieldName] ?? $fieldName;
             }
         }
 
@@ -341,7 +346,13 @@ class FilingWizard extends Component
 
         foreach ($this->requiredDateFields as $fieldName => $label) {
             $rules[$fieldName] = ['required', 'date', 'before_or_equal:today'];
-            $messages["{$fieldName}.required"] = "The {$label} is required to file in this state.";
+            $messages["{$fieldName}.required"] = in_array($fieldName, ['first_furnish_date', 'last_furnish_date'], true)
+                ? "The {$label} is required."
+                : "The {$label} is required to file in this state.";
+        }
+
+        if ($this->first_furnish_date) {
+            $rules['last_furnish_date'][] = 'after_or_equal:first_furnish_date';
         }
 
         $this->validate($rules, $messages);

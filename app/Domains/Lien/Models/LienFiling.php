@@ -16,6 +16,7 @@ use App\Models\User;
 use Carbon\CarbonInterface;
 use Database\Factories\Lien\LienFilingFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -160,6 +161,14 @@ class LienFiling extends Model implements HasMedia
         // phones label HEIC photos inconsistently.
         $this->addMediaCollection('customer_uploads')
             ->useDisk('s3');
+
+        // Drafts an admin sends the customer to approve (EREG-140). Every
+        // version is kept; custom properties: version (1, 2, ...),
+        // uploaded_by_user_id and source ('upload', or 'generated' when
+        // copied from the generated document).
+        $this->addMediaCollection('drafts')
+            ->acceptsMimeTypes(['application/pdf'])
+            ->useDisk('s3');
     }
 
     /**
@@ -219,13 +228,14 @@ class LienFiling extends Model implements HasMedia
 
     /**
      * The customer's newest answer to us: a client_response (answered on the
-     * filing page) or document_uploaded event. Eager-load it for lists.
+     * filing page), document_uploaded, draft_approved or
+     * draft_changes_requested event. Eager-load it for lists.
      */
     public function latestCustomerReply(): HasOne
     {
         return $this->hasOne(LienFilingEvent::class, 'filing_id')->ofMany(
             ['created_at' => 'max', 'id' => 'max'],
-            fn (Builder $query) => $query->whereIn('event_type', ['client_response', 'document_uploaded']),
+            fn (Builder $query) => $query->whereIn('event_type', ['client_response', 'document_uploaded', 'draft_approved', 'draft_changes_requested']),
         );
     }
 
@@ -391,7 +401,9 @@ class LienFiling extends Model implements HasMedia
      *
      * Moving into a waiting status (Awaiting Client / E-Signature / Notary)
      * with $meta['customer_message'] (and optionally
-     * $meta['attachment_media_id'], a 'requests' media id) opens a request:
+     * $meta['attachment_media_id'], a 'requests' media id, or for a draft
+     * review request_type 'review', draft_media_id and needs_signature,
+     * see SendDraftForReview) opens a request:
      * it is stored in client_request_json and emailed to the filing's creator
      * at once (see ChangeFilingStatus). Leaving a waiting status closes the
      * open request.
@@ -438,6 +450,16 @@ class LienFiling extends Model implements HasMedia
                 'status' => $newStatus->value,
                 'resolved_at' => null,
             ];
+
+            // A draft sent for review (SendDraftForReview): the customer
+            // approves it or asks for changes on the filing page.
+            if (($meta['request_type'] ?? null) === 'review') {
+                $updates['client_request_json'] += [
+                    'type' => 'review',
+                    'draft_media_id' => $meta['draft_media_id'] ?? null,
+                    'needs_signature' => (bool) ($meta['needs_signature'] ?? false),
+                ];
+            }
         }
 
         $this->update($updates);
@@ -464,8 +486,10 @@ class LienFiling extends Model implements HasMedia
     /**
      * The request we sent the customer, while the filing still waits on it:
      * {text, requested_at, requested_by_user_id, attachment_media_id, status,
-     * resolved_at}. Null once answered or the filing has moved on, and for
-     * filings moved to a waiting status before requests were stored.
+     * resolved_at}, plus {type: 'review', draft_media_id, needs_signature}
+     * for a draft sent for review. Null once answered or the filing has
+     * moved on, and for filings moved to a waiting status before requests
+     * were stored.
      */
     public function openClientRequest(): ?array
     {
@@ -476,6 +500,49 @@ class LienFiling extends Model implements HasMedia
         }
 
         return $request;
+    }
+
+    /**
+     * The open request when it is a draft sent for review, else null.
+     */
+    public function openReviewRequest(): ?array
+    {
+        $request = $this->openClientRequest();
+
+        return ($request['type'] ?? null) === 'review' ? $request : null;
+    }
+
+    /**
+     * The draft the latest review request was about, if it still exists.
+     */
+    public function reviewDraft(): ?Media
+    {
+        $mediaId = $this->client_request_json['draft_media_id'] ?? null;
+
+        return $mediaId
+            ? $this->media()->where('collection_name', 'drafts')->whereKey($mediaId)->first()
+            : null;
+    }
+
+    /**
+     * Every draft version, newest first.
+     *
+     * @return EloquentCollection<int, Media>
+     */
+    public function draftVersions(): EloquentCollection
+    {
+        return $this->media()
+            ->where('collection_name', 'drafts')
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    /**
+     * The number the next draft gets (1 for the first).
+     */
+    public function nextDraftVersion(): int
+    {
+        return (int) $this->draftVersions()->max(fn (Media $draft) => (int) $draft->getCustomProperty('version', 0)) + 1;
     }
 
     /**
@@ -530,6 +597,7 @@ class LienFiling extends Model implements HasMedia
                 'text' => $request['text'],
                 'attachment_media_id' => $request['attachment_media_id'],
                 'status' => $request['status'],
+                'type' => $request['type'] ?? null,
                 'sent_to' => $user->email,
             ],
             'created_by' => auth()->id(),

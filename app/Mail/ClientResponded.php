@@ -15,18 +15,34 @@ use Spatie\MediaLibrary\Support\File;
 /**
  * Tells the internal lien ops inbox (config lien.notifications.ops_email)
  * that a customer answered our request on their filing page, so someone can
- * pick the filing back up. The filing is in Needs Review by then.
+ * pick the filing back up. The filing is in Needs Review by then (Ready to
+ * File after a plain draft approval).
  *
- * Two modes, picked by the event passed in: a client_response (answered the
- * request) or a document_uploaded (sent back the signed document through
- * the upload box, with or without an open request).
+ * Modes, picked by the event passed in: a client_response (answered the
+ * request), a document_uploaded (sent back the signed document through the
+ * upload box, with or without an open request), and for a draft sent for
+ * review (EREG-140) a draft_approved or a draft_changes_requested.
  */
 class ClientResponded extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
+    /** answered, uploaded_document, draft_approved or draft_changes_requested. */
+    public string $mode;
+
     /** True for a document_uploaded event: the "uploaded a document" variant. */
     public bool $uploadedDocument;
+
+    /** The draft version approved or sent back, for the two draft modes. */
+    public ?int $draftVersion;
+
+    public ?string $draftFileName;
+
+    /** The approved draft still needs the customer's signature. */
+    public bool $needsSignature;
+
+    /** Where the filing is now (Needs Review, Ready to File). */
+    public string $statusLabel;
 
     public ?string $fileSize;
 
@@ -51,7 +67,7 @@ class ClientResponded extends Mailable implements ShouldQueue
     public string $filingPublicId;
 
     /**
-     * @param  LienFilingEvent  $response  the client_response or document_uploaded event
+     * @param  LienFilingEvent  $response  the client_response, document_uploaded, draft_approved or draft_changes_requested event
      * @param  array<string, mixed>|null  $request  the request they answered (client_request_json)
      */
     public function __construct(LienFiling $filing, LienFilingEvent $response, ?array $request)
@@ -60,9 +76,22 @@ class ClientResponded extends Mailable implements ShouldQueue
 
         $business = $filing->business;
         $customer = $response->creator;
-        $size = $response->payload_json['size'] ?? null;
+        $payload = $response->payload_json ?? [];
+        $size = $payload['size'] ?? null;
 
-        $this->uploadedDocument = $response->event_type === 'document_uploaded';
+        $this->mode = match ($response->event_type) {
+            'document_uploaded' => 'uploaded_document',
+            'draft_approved' => 'draft_approved',
+            'draft_changes_requested' => 'draft_changes_requested',
+            default => 'answered',
+        };
+        $this->uploadedDocument = $this->mode === 'uploaded_document';
+        $this->draftVersion = isset($payload['version']) ? (int) $payload['version'] : null;
+        $this->draftFileName = $this->mode === 'draft_approved'
+            ? ($payload['file_name'] ?? null)
+            : ($payload['draft_file_name'] ?? null);
+        $this->needsSignature = (bool) ($payload['needs_signature'] ?? false);
+        $this->statusLabel = $filing->status->label();
         $this->fileSize = is_int($size) ? File::getHumanReadableSize($size) : null;
 
         $this->businessName = $business?->name ?: ($business?->legal_name ?: 'Unknown business');
@@ -71,18 +100,26 @@ class ClientResponded extends Mailable implements ShouldQueue
         $this->customerName = $customer?->name ?: 'The customer';
         $this->customerEmail = $customer?->email;
         $this->requestText = $request['text'] ?? null;
-        $this->answerText = $response->payload_json['text'] ?? null;
-        $this->fileName = $response->payload_json['original_name'] ?? $response->payload_json['file_name'] ?? null;
+        $this->answerText = $payload['text'] ?? null;
+        // The customer's own file; an approval has none (file_name is the draft).
+        $this->fileName = $this->mode === 'draft_approved'
+            ? null
+            : ($payload['original_name'] ?? $payload['file_name'] ?? null);
         $this->adminUrl = route('admin.liens.show', $filing);
         $this->filingPublicId = $filing->public_id;
     }
 
     public function envelope(): Envelope
     {
+        $lead = match ($this->mode) {
+            'uploaded_document' => 'Customer uploaded a document',
+            'draft_approved' => 'Draft approved',
+            'draft_changes_requested' => 'Changes requested',
+            default => 'Customer answered',
+        };
+
         return new Envelope(
-            subject: $this->uploadedDocument
-                ? "Customer uploaded a document: {$this->businessName} — {$this->documentName}"
-                : "Customer answered: {$this->businessName} — {$this->documentName}",
+            subject: "{$lead}: {$this->businessName} — {$this->documentName}",
         );
     }
 

@@ -49,6 +49,7 @@ class FilingActionRequested extends Mailable implements ShouldQueue
 
         $request = $filing->client_request_json;
         $status = FilingStatus::from($request['status']);
+        $isReview = ($request['type'] ?? null) === 'review';
         $sender = $filing->clientRequestSender();
         $cta = self::callToAction($filing, $status);
 
@@ -58,24 +59,27 @@ class FilingActionRequested extends Mailable implements ShouldQueue
             ? "{$sender->first_name} at eRegister wrote:"
             : 'The eRegister team wrote:';
         $this->requestText = $request['text'];
-        $this->subjectLine = self::subjectFor($status, $filing->documentType?->name);
+        $this->subjectLine = self::subjectFor($status, $filing->documentType?->name, $isReview);
         $this->ctaLabel = $cta['label'];
         $this->ctaUrl = $cta['url'];
         $this->projectName = $filing->project?->name;
-        $this->attachment = $filing->clientRequestAttachment();
+        // A draft sent for review travels with the email (EREG-140).
+        $this->attachment = $isReview ? $filing->reviewDraft() : $filing->clientRequestAttachment();
         $this->attachmentName = $this->attachment?->file_name;
     }
 
     /**
-     * The subject line, also previewed in the admin status form.
+     * The subject line, also previewed in the admin status form and the
+     * "Send for review" dialog ($review: a draft sent for review).
      */
-    public static function subjectFor(FilingStatus $status, ?string $documentName): string
+    public static function subjectFor(FilingStatus $status, ?string $documentName, bool $review = false): string
     {
         $documentName = $documentName ?: 'filing';
 
-        $lead = match ($status) {
-            FilingStatus::AwaitingEsign => 'Please sign your',
-            FilingStatus::AwaitingNotary => 'Please notarize your',
+        $lead = match (true) {
+            $review => 'Please review the draft of your',
+            $status === FilingStatus::AwaitingEsign => 'Please sign your',
+            $status === FilingStatus::AwaitingNotary => 'Please notarize your',
             default => 'We need information for your',
         };
 
@@ -85,7 +89,7 @@ class FilingActionRequested extends Mailable implements ShouldQueue
     /**
      * The one button in the request email and in reminders that quote it:
      * the signing page when an e-signature is waiting, else the filing page,
-     * where the customer can answer.
+     * where the customer can answer (or review the draft we sent).
      *
      * @return array{label: string, url: string}
      */
@@ -95,8 +99,12 @@ class FilingActionRequested extends Mailable implements ShouldQueue
             ? FilingActionReminder::signingUrlFor($filing)
             : null;
 
-        return $signingUrl !== null
-            ? ['label' => 'Sign now', 'url' => $signingUrl]
+        if ($signingUrl !== null) {
+            return ['label' => 'Sign now', 'url' => $signingUrl];
+        }
+
+        return ($filing->client_request_json['type'] ?? null) === 'review'
+            ? ['label' => 'Review the draft', 'url' => route('lien.filings.show', $filing)]
             : ['label' => 'Answer here', 'url' => route('lien.filings.show', $filing)];
     }
 

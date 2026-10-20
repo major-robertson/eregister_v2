@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Lien\Http\Controllers\FilingDownloadController;
+use App\Domains\Lien\Http\Controllers\FilingDraftController;
 use App\Domains\Lien\Http\Controllers\FilingPaymentController;
 use App\Domains\Lien\Http\Controllers\WaiverDownloadController;
 use App\Domains\Lien\Http\Controllers\WaiverPaymentController;
@@ -63,6 +64,12 @@ Route::middleware(['auth', 'business.current', 'business.complete', 'lien.onboar
             ->name('lien.filings.payment-confirmation');
         Route::get('/filings/{filing}/download', [FilingDownloadController::class, 'download'])
             ->name('lien.filings.download');
+        // The draft sent for review, shown inline on the filing page; {media}
+        // is a drafts media id on that filing, and the link is signed.
+        Route::get('/filings/{filing}/drafts/{media}', [FilingDraftController::class, 'show'])
+            ->middleware('signed')
+            ->whereNumber('media')
+            ->name('lien.filings.drafts.show');
 
         // Filings list
         Route::get('/filings', FilingList::class)->name('lien.filings.index');

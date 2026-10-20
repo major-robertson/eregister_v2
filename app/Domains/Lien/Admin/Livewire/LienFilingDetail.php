@@ -10,6 +10,7 @@ use App\Domains\Esign\Exceptions\EsignException;
 use App\Domains\Lien\Admin\Actions\AddFilingComment;
 use App\Domains\Lien\Admin\Actions\ChangeFilingStatus;
 use App\Domains\Lien\Admin\Actions\RefundPayment;
+use App\Domains\Lien\Admin\Actions\SendDraftForReview;
 use App\Domains\Lien\Admin\Actions\SyncResult;
 use App\Domains\Lien\Admin\Actions\UpdateLienDocumentDetails;
 use App\Domains\Lien\Admin\Actions\UpdateLienFilingDetails;
@@ -20,7 +21,9 @@ use App\Domains\Lien\Admin\Actions\UpdateRecordingDetails;
 use App\Domains\Lien\Admin\Enums\KanbanColumn;
 use App\Domains\Lien\Admin\Support\BoardCard;
 use App\Domains\Lien\Documents\LienCountyKey;
+use App\Domains\Lien\Documents\LienDocumentGenerator;
 use App\Domains\Lien\Documents\LienDocumentPackage;
+use App\Domains\Lien\Documents\LienDocumentUnavailable;
 use App\Domains\Lien\Enums\DeadlineStatus;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Enums\PartyRole;
@@ -29,6 +32,7 @@ use App\Domains\Lien\Esign\Actions\SendDemandLetterForSignature;
 use App\Domains\Lien\Esign\Actions\SendDemandLetterReminder;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienStateRule;
+use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Carbon;
@@ -63,6 +67,19 @@ class LienFilingDetail extends Component
     public bool $showDeleteModal = false;
 
     public bool $showSendEsignModal = false;
+
+    /**
+     * "Draft for review" card (EREG-140): a PDF draft to upload as a new
+     * version, and the Send for review dialog (the customer message and
+     * whether the document needs their signature afterwards).
+     */
+    public $draftFile = null;
+
+    public bool $showSendDraftModal = false;
+
+    public string $draftMessage = '';
+
+    public bool $draftNeedsSignature = false;
 
     /**
      * Parties checked in the Send for E-Sign dialog. Only these get a letter.
@@ -146,6 +163,7 @@ class LienFilingDetail extends Component
         'document_details_updated', 'recipient_added', 'recipient_updated',
         'esign_sent', 'esign_reminder_sent', 'esign_completed',
         'client_request_sent', 'client_response', 'document_uploaded',
+        'draft_sent_for_review', 'draft_approved', 'draft_changes_requested',
     ];
 
     public function mount(string|LienFiling $lienFiling): void
@@ -279,16 +297,38 @@ class LienFilingDetail extends Component
             ->filter(fn ($event) => $event->event_type === SignatureEventType::ReminderSent)
             ->values() ?? collect();
 
-        // Requests we emailed and the customer's answers (FilingShow).
+        // Requests we emailed and the customer's answers (FilingShow),
+        // including approvals of and changes to a draft sent for review.
         $clientResponses = $this->lienFiling->events()
-            ->where('event_type', 'client_response')
+            ->whereIn('event_type', ['client_response', 'draft_approved', 'draft_changes_requested'])
             ->with('creator')
             ->latest()
+            ->orderByDesc('id')
             ->get();
 
         // Files on both sides, keyed by media id for the links.
         $requestFiles = $this->lienFiling->media()
-            ->whereIn('collection_name', ['requests', 'customer_uploads'])
+            ->whereIn('collection_name', ['requests', 'customer_uploads', 'drafts'])
+            ->get()
+            ->keyBy('id');
+
+        // Draft versions, newest first, each with what last happened to it
+        // (sent for review, approved, changes requested).
+        $drafts = $requestFiles
+            ->where('collection_name', 'drafts')
+            ->sortByDesc('id')
+            ->values();
+
+        $draftOutcomes = $drafts->isEmpty() ? collect() : $this->lienFiling->events()
+            ->whereIn('event_type', ['draft_sent_for_review', 'draft_approved', 'draft_changes_requested'])
+            ->oldest('id')
+            ->get()
+            ->mapWithKeys(fn ($event) => [
+                (int) ($event->payload_json[$event->event_type === 'draft_changes_requested' ? 'draft_media_id' : 'media_id'] ?? 0) => $event->event_type,
+            ]);
+
+        $draftUploaders = $drafts->isEmpty() ? collect() : User::query()
+            ->whereIn('id', $drafts->map(fn ($draft) => $draft->getCustomProperty('uploaded_by_user_id'))->filter()->unique())
             ->get()
             ->keyBy('id');
 
@@ -330,6 +370,16 @@ class LienFilingDetail extends Component
             'clientResponses' => $clientResponses,
             'requestFiles' => $requestFiles,
             'customerUploads' => $customerUploads,
+            'drafts' => $drafts,
+            'draftOutcomes' => $draftOutcomes,
+            'draftUploaders' => $draftUploaders,
+            // Send for review moves the filing to Awaiting Client, so it needs
+            // a draft and that transition (not while a request is open).
+            'canSendDraft' => $canChangeStatus
+                && $drafts->isNotEmpty()
+                && $this->lienFiling->canTransitionTo(FilingStatus::AwaitingClient),
+            'canUseGeneratedDraft' => $canChangeStatus && ($documentPackage?->isAvailable() ?? false),
+            'reviewOpen' => $this->lienFiling->openReviewRequest() !== null,
             'canRemindSigner' => $esignAwaiting && $canChangeStatus && $esignRequest->invitation_bounced_at === null,
             'signingUrl' => $esignAwaiting && $canChangeStatus && ! $esignRequest->isExpired()
                 ? $esignRequest->signingUrl()
@@ -844,6 +894,156 @@ class LienFilingDetail extends Component
         } else {
             session()->flash('error', "Audit chain INVALID at event #{$result->brokenAtEventId}: {$result->reason}");
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Draft for review (EREG-140): versioned PDFs in the drafts
+    // collection, sent to the customer to approve or send back.
+    // ------------------------------------------------------------------
+
+    /**
+     * Upload a PDF as the next draft version. Every version is kept.
+     */
+    public function uploadDraft(): void
+    {
+        $this->authorize('changeStatus', $this->lienFiling);
+
+        $this->validate([
+            'draftFile' => ['required', 'file', 'mimes:pdf', 'max:20480'],
+        ], [
+            'draftFile.required' => 'Choose the PDF to upload.',
+            'draftFile.file' => 'The draft did not upload. Please try again.',
+            'draftFile.mimes' => 'The draft must be a PDF.',
+            'draftFile.max' => 'The draft must be 20 MB or smaller.',
+        ]);
+
+        $version = $this->lienFiling->nextDraftVersion();
+
+        $this->lienFiling->addMedia($this->draftFile->getRealPath())
+            ->usingFileName($this->draftFile->getClientOriginalName())
+            ->withCustomProperties($this->draftProperties($version, 'upload'))
+            ->toMediaCollection('drafts');
+
+        $this->reset('draftFile');
+
+        session()->flash('success', "Draft v{$version} uploaded.");
+    }
+
+    /**
+     * Copy the generated document (prelim notice, NOI, lien, release), as it
+     * renders right now, into the drafts as the next version, so generated
+     * and hand-built drafts go through the same review.
+     */
+    public function useGeneratedDraft(): void
+    {
+        $this->authorize('changeStatus', $this->lienFiling);
+
+        if (! $this->lienFiling->hasGeneratedDocuments()) {
+            session()->flash('error', 'This filing has no generated document.');
+
+            return;
+        }
+
+        // The relations the document renders from, scoped as the page loads them.
+        $this->loadFilingRelations();
+        $generator = app(LienDocumentGenerator::class);
+
+        try {
+            $form = $generator->resolve($this->lienFiling);
+        } catch (LienDocumentUnavailable $e) {
+            session()->flash('error', $e->getMessage());
+
+            return;
+        }
+
+        if (! view()->exists($form->body)) {
+            session()->flash('error', "The {$form->stateName} {$form->title} template isn't built yet.");
+
+            return;
+        }
+
+        $version = $this->lienFiling->nextDraftVersion();
+
+        $this->lienFiling->addMediaFromString(base64_decode($generator->render($this->lienFiling, $form)->base64()))
+            ->usingFileName($generator->filename($this->lienFiling, $form))
+            ->withCustomProperties($this->draftProperties($version, 'generated'))
+            ->toMediaCollection('drafts');
+
+        session()->flash('success', "The generated document was saved as draft v{$version}.");
+    }
+
+    /**
+     * Open the Send for review dialog with the message prefilled.
+     */
+    public function confirmSendDraftForReview(): void
+    {
+        $this->authorize('changeStatus', $this->lienFiling);
+
+        $documentName = $this->lienFiling->documentType?->name ?: 'filing';
+
+        $this->draftMessage = "Please review the attached draft of your {$documentName}. If everything is correct, approve it. If something needs to change, tell us what.";
+        $this->draftNeedsSignature = false;
+        $this->resetErrorBag();
+        $this->showSendDraftModal = true;
+    }
+
+    /**
+     * Send the newest draft for review: a review request through the usual
+     * request mechanism (Awaiting Client, emailed at once with the draft
+     * attached, reminders as for any request).
+     */
+    public function sendDraftForReview(): void
+    {
+        $this->authorize('changeStatus', $this->lienFiling);
+
+        $this->validate([
+            'draftMessage' => ['required', 'string', 'max:2000'],
+            'draftNeedsSignature' => ['boolean'],
+        ], [
+            'draftMessage.required' => 'Write the message for the customer. It is emailed to them with the draft.',
+            'draftMessage.max' => 'Keep the message under 2,000 characters.',
+        ]);
+
+        $draft = $this->lienFiling->draftVersions()->first();
+
+        if ($draft === null || ! $this->lienFiling->canTransitionTo(FilingStatus::AwaitingClient)) {
+            $this->showSendDraftModal = false;
+            session()->flash('error', $draft === null
+                ? 'Upload a draft first.'
+                : "A draft can't be sent for review from the “{$this->lienFiling->status->label()}” status.");
+
+            return;
+        }
+
+        app(SendDraftForReview::class)->execute(
+            $this->lienFiling,
+            $draft,
+            $this->draftMessage,
+            $this->draftNeedsSignature,
+        );
+
+        $this->showSendDraftModal = false;
+        $this->reset(['draftMessage', 'draftNeedsSignature']);
+        $this->afterEdit();
+
+        $recipient = $this->lienFiling->createdBy?->email;
+        $version = $draft->getCustomProperty('version');
+
+        session()->flash('success', $recipient
+            ? "Draft v{$version} sent for review. We emailed {$recipient}."
+            : "Draft v{$version} sent for review.");
+    }
+
+    /**
+     * @return array{version: int, uploaded_by_user_id: int|null, source: string}
+     */
+    private function draftProperties(int $version, string $source): array
+    {
+        return [
+            'version' => $version,
+            'uploaded_by_user_id' => auth()->id(),
+            'source' => $source,
+        ];
     }
 
     // ------------------------------------------------------------------

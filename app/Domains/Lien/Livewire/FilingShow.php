@@ -3,9 +3,11 @@
 namespace App\Domains\Lien\Livewire;
 
 use App\Domains\Lien\Enums\FilingStatus;
+use App\Domains\Lien\Enums\RecordingMethod;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienFilingEvent;
 use App\Mail\ClientResponded;
+use App\Mail\FilingMilestone;
 use App\Mail\UploadReceived;
 use Closure;
 use Illuminate\Contracts\View\View;
@@ -14,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -443,6 +446,152 @@ class FilingShow extends Component
     }
 
     /**
+     * The filing's history for the customer, oldest first (EREG-130): each
+     * user-visible status change (FilingStatus::isUserMilestone) with its
+     * description, plus for the recording and mailing milestones the method,
+     * county, recording reference, tracking link and documents; and our
+     * requests, their answers, uploads and draft reviews.
+     *
+     * @return list<array{at: \Carbon\CarbonInterface, icon: string, title: string, text: ?string, quote: ?string, details: list<string>, tracking: ?array{number: string, url: string}, links: list<array{label: string, url: string}>}>
+     */
+    private function timeline(): array
+    {
+        $files = $this->filing->media()
+            ->whereIn('collection_name', ['recorded', 'proof_of_service'])
+            ->get()
+            ->keyBy('id');
+
+        $items = [];
+
+        foreach ($this->filing->events->sortBy([['created_at', 'asc'], ['id', 'asc']]) as $event) {
+            $payload = $event->payload_json ?? [];
+            $version = isset($payload['version']) ? " (version {$payload['version']})" : '';
+
+            $item = match ($event->event_type) {
+                'status_changed' => $this->statusTimelineItem($payload, $files),
+                // A draft sent for review shows as draft_sent_for_review below.
+                'client_request_sent' => ($payload['type'] ?? null) === 'review' ? null : [
+                    'icon' => 'chat-bubble-left-ellipsis',
+                    'title' => 'We asked you:',
+                    'quote' => Str::limit((string) ($payload['text'] ?? ''), 500) ?: null,
+                ],
+                'draft_sent_for_review' => [
+                    'icon' => 'document-magnifying-glass',
+                    'title' => "We sent you a draft to review{$version}",
+                ],
+                'client_response' => [
+                    'icon' => 'chat-bubble-left-right',
+                    'title' => 'You answered',
+                    'quote' => Str::limit((string) ($payload['text'] ?? ''), 500) ?: null,
+                    'details' => filled($payload['file_name'] ?? null) ? ["You attached {$payload['file_name']}."] : [],
+                ],
+                'document_uploaded' => [
+                    'icon' => 'arrow-up-tray',
+                    'title' => 'You uploaded '.($payload['original_name'] ?? $payload['file_name'] ?? 'a document'),
+                ],
+                'draft_approved' => [
+                    'icon' => 'check',
+                    'title' => "You approved the draft{$version}",
+                ],
+                'draft_changes_requested' => [
+                    'icon' => 'pencil-square',
+                    'title' => "You asked for changes to the draft{$version}",
+                    'quote' => Str::limit((string) ($payload['text'] ?? ''), 500) ?: null,
+                ],
+                default => null,
+            };
+
+            if ($item !== null) {
+                $items[] = array_merge([
+                    'at' => $event->created_at,
+                    'icon' => 'information-circle',
+                    'text' => null,
+                    'quote' => null,
+                    'details' => [],
+                    'tracking' => null,
+                    'links' => [],
+                ], $item);
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * A status change on the timeline, or null for Draft / Awaiting Payment
+     * and for a change that opened a request (the request is its own item).
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  \Illuminate\Support\Collection<int, \Spatie\MediaLibrary\MediaCollections\Models\Media>  $files
+     * @return array<string, mixed>|null
+     */
+    private function statusTimelineItem(array $payload, $files): ?array
+    {
+        $status = FilingStatus::tryFrom($payload['to'] ?? '');
+        $meta = $payload['meta'] ?? [];
+
+        if ($status === null || ! $status->isUserMilestone()) {
+            return null;
+        }
+
+        if ($status->isWaitingOnCustomer() && filled($meta['customer_message'] ?? null)) {
+            return null;
+        }
+
+        $details = [];
+        $tracking = null;
+
+        if ($status === FilingStatus::SubmittedForRecording) {
+            $method = RecordingMethod::tryFrom($meta['recording_method'] ?? '') ?? $this->filing->recording_method;
+            $how = FilingMilestone::isInPerson($this->filing->recording_provider) ? 'In person' : $method?->label();
+            $county = FilingMilestone::countyName($this->filing);
+
+            if ($how) {
+                $details[] = "Method: {$how}";
+            }
+
+            if ($county) {
+                $details[] = "County: {$county}";
+            }
+        }
+
+        if ($status === FilingStatus::Recorded) {
+            $reference = ($meta['recording_reference'] ?? null) ?: $this->filing->recording_reference;
+
+            if (filled($reference)) {
+                $details[] = "Recording reference: {$reference}";
+            }
+        }
+
+        if ($status === FilingStatus::Mailed) {
+            $number = ($meta['tracking_number'] ?? null) ?: $this->filing->mailing_tracking_number;
+
+            if (filled($number)) {
+                $tracking = ['number' => $number, 'url' => FilingMilestone::trackingUrl($number)];
+            }
+        }
+
+        $links = [];
+
+        foreach (['recorded_media_id' => 'Recorded copy', 'proof_of_service_media_id' => 'Proof of service'] as $key => $label) {
+            $file = isset($meta[$key]) ? $files->get($meta[$key]) : null;
+
+            if ($file !== null) {
+                $links[] = ['label' => "{$label} ({$file->file_name})", 'url' => $file->getTemporaryUrl(now()->addMinutes(30))];
+            }
+        }
+
+        return [
+            'icon' => $status->icon(),
+            'title' => $status->label(),
+            'text' => $status->userDescription(),
+            'details' => $details,
+            'tracking' => $tracking,
+            'links' => $links,
+        ];
+    }
+
+    /**
      * The file's type read from its content (magic bytes), or null when the
      * file cannot be read.
      */
@@ -528,6 +677,7 @@ class FilingShow extends Component
             'reviewDraftUrl' => $reviewDraft
                 ? URL::temporarySignedRoute('lien.filings.drafts.show', now()->addHours(2), ['filing' => $this->filing, 'media' => $reviewDraft->id])
                 : null,
+            'timeline' => $this->timeline(),
         ])->layout('components.layouts.portal', ['title' => $this->filing->documentType->name]);
     }
 }

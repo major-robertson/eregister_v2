@@ -755,6 +755,96 @@
                     </div>
                     @endif
 
+                    {{-- Milestone documents (EREG-130): the recorded copy at Recorded, the proof of
+                         service and tracking number at Mailed, both at Complete. All optional; the
+                         milestone email attaches them and the customer's timeline links them. --}}
+                    @php
+                        $milestoneStatus = \App\Domains\Lien\Enums\FilingStatus::tryFrom($newStatus);
+                        $isMilestone = $milestoneStatus !== null && in_array($milestoneStatus, \App\Mail\FilingMilestone::STATUSES, true);
+                        $takesRecordedCopy = in_array($newStatus, ['recorded', 'complete'], true);
+                        $takesProofOfService = in_array($newStatus, ['mailed', 'complete'], true);
+                    @endphp
+                    @if ($takesRecordedCopy || $takesProofOfService)
+                    <div class="space-y-3 rounded-lg border border-teal-200 bg-teal-50 p-4">
+                        <flux:text class="text-sm font-medium text-teal-900">
+                            Documents for the customer
+                        </flux:text>
+
+                        @if ($newStatus === 'recorded')
+                        <flux:field>
+                            <flux:label>Recording reference (instrument number, or book and page)</flux:label>
+                            <flux:input wire:model="recordingReference" placeholder="2026-0012345" />
+                            <flux:error name="recordingReference" />
+                        </flux:field>
+                        @endif
+
+                        @if ($takesRecordedCopy)
+                        <flux:field>
+                            <flux:label>Recorded copy (optional)</flux:label>
+                            <flux:file-upload wire:model="recordedCopy" accept=".pdf,application/pdf">
+                                <flux:file-upload.dropzone
+                                    inline
+                                    heading="Drop the recorded PDF here or click to browse"
+                                    text="PDF, up to 10 MB"
+                                    with-progress
+                                />
+                            </flux:file-upload>
+                            @if ($recordedCopy)
+                            <flux:text class="mt-1 text-sm">{{ $recordedCopy->getClientOriginalName() }}</flux:text>
+                            @endif
+                            <flux:error name="recordedCopy" />
+                        </flux:field>
+                        @endif
+
+                        @if ($newStatus === 'mailed')
+                        <flux:field>
+                            <flux:label>Certified mail tracking number (optional)</flux:label>
+                            <flux:input wire:model="trackingNumber" placeholder="9407 1118 9876 5432 1012 34" />
+                            <flux:error name="trackingNumber" />
+                        </flux:field>
+                        @endif
+
+                        @if ($takesProofOfService)
+                        <flux:field>
+                            <flux:label>Proof of service (optional)</flux:label>
+                            <flux:file-upload wire:model="proofOfService" accept=".pdf,application/pdf">
+                                <flux:file-upload.dropzone
+                                    inline
+                                    heading="Drop the proof of service PDF here or click to browse"
+                                    text="PDF, up to 10 MB"
+                                    with-progress
+                                />
+                            </flux:file-upload>
+                            @if ($proofOfService)
+                            <flux:text class="mt-1 text-sm">{{ $proofOfService->getClientOriginalName() }}</flux:text>
+                            @endif
+                            <flux:error name="proofOfService" />
+                        </flux:field>
+                        @endif
+                    </div>
+                    @endif
+
+                    @if ($isMilestone)
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        @if (! \App\Mail\FilingMilestone::sendsFor($filing, $milestoneStatus))
+                        <flux:text class="text-sm text-gray-600">Self-serve filing: no email goes out.</flux:text>
+                        @elseif ($filing->createdBy)
+                        <flux:text class="text-sm text-gray-700">
+                            We'll email {{ $filing->createdBy->name }} &lt;{{ $filing->createdBy->email }}&gt; when you save.
+                            @if ($takesRecordedCopy || $takesProofOfService)
+                            It attaches the newest {{ match (true) { $takesRecordedCopy && $takesProofOfService => 'recorded copy and proof of service', $takesRecordedCopy => 'recorded copy', default => 'proof of service' } }} on the filing, if there is one.
+                            @endif
+                        </flux:text>
+                        <flux:text class="mt-1 text-xs text-gray-500">
+                            <span class="font-medium">Subject:</span>
+                            {{ \App\Mail\FilingMilestone::subjectFor($milestoneStatus, $filing->documentType?->name, \App\Mail\FilingMilestone::countyName($filing)) }}
+                        </flux:text>
+                        @else
+                        <flux:text class="text-sm text-red-700">This filing has no customer user, so no email will go out.</flux:text>
+                        @endif
+                    </div>
+                    @endif
+
                     {{-- Awaiting Client / E-Signature / Notary: the customer is emailed this
                          message on save (FilingActionRequested), so it comes first and is required. --}}
                     @php
@@ -1431,6 +1521,33 @@
             </div>
             @endif
 
+            {{-- Recorded copies and proofs of service uploaded on the status form
+                 (EREG-130), newest first. The newest of each is what the
+                 milestone emails attach and the customer's timeline links. --}}
+            @if ($milestoneFiles->isNotEmpty())
+            <div class="rounded-lg border border-border bg-white p-6">
+                <flux:heading size="lg" class="mb-4">Recorded copy and proof of service</flux:heading>
+
+                <div class="space-y-2">
+                    @foreach ($milestoneFiles as $milestoneFile)
+                    <a wire:key="milestone-file-{{ $milestoneFile->id }}"
+                        href="{{ $milestoneFile->getTemporaryUrl(now()->addMinutes(30)) }}"
+                        target="_blank"
+                        class="flex items-center gap-3 rounded-lg border border-gray-200 p-2 hover:bg-gray-50">
+                        <flux:icon name="document-text" class="size-5 shrink-0 text-gray-400" />
+                        <div class="min-w-0 flex-1">
+                            <flux:text class="truncate text-sm font-medium">{{ $milestoneFile->file_name }}</flux:text>
+                            <flux:text class="text-xs text-gray-500">
+                                {{ $milestoneFile->collection_name === 'recorded' ? 'Recorded copy' : 'Proof of service' }} &middot; {{ $milestoneFile->human_readable_size }} &middot; {{ $milestoneFile->created_at->eastern()->format('M j, Y g:i A T') }}
+                            </flux:text>
+                        </div>
+                        <flux:icon name="arrow-down-tray" class="size-4 shrink-0 text-gray-400" />
+                    </a>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
             {{-- Recording Details Card: appears once recording_method has been set on this filing.
                  Lets admins fill in or correct provider/reference/submitted_at after the SubmittedForRecording
                  transition without needing to re-run a status change. --}}
@@ -1453,6 +1570,12 @@
                         <flux:label>Submitted At <span class="text-red-500">*</span></flux:label>
                         <flux:input type="datetime-local" wire:model="recordingSubmittedAt" />
                         <flux:error name="recordingSubmittedAt" />
+                    </flux:field>
+
+                    <flux:field>
+                        <flux:label>Recording reference</flux:label>
+                        <flux:input wire:model="recordingReference" placeholder="Instrument number, or book and page" />
+                        <flux:error name="recordingReference" />
                     </flux:field>
 
                     <flux:button type="submit" variant="primary" class="w-full">
@@ -1645,6 +1768,26 @@
                         @if ($note)
                         <flux:text class="mt-1 text-sm text-gray-600">{{ $note }}</flux:text>
                         @endif
+                        @php
+                            // Milestone details saved with the change (EREG-130).
+                            $eventMeta = $event->payload_json['meta'] ?? [];
+                            $eventMilestoneFiles = collect([$eventMeta['recorded_media_id'] ?? null, $eventMeta['proof_of_service_media_id'] ?? null])
+                                ->filter()
+                                ->map(fn ($mediaId) => $milestoneFiles->get($mediaId))
+                                ->filter();
+                        @endphp
+                        @if (! empty($eventMeta['recording_reference']))
+                        <flux:text class="mt-1 text-xs text-gray-600">Recording reference: {{ $eventMeta['recording_reference'] }}</flux:text>
+                        @endif
+                        @if (! empty($eventMeta['tracking_number']))
+                        <flux:text class="mt-1 text-xs text-gray-600">Tracking: {{ $eventMeta['tracking_number'] }}</flux:text>
+                        @endif
+                        @foreach ($eventMilestoneFiles as $eventMilestoneFile)
+                        <a href="{{ $eventMilestoneFile->getTemporaryUrl(now()->addMinutes(30)) }}" target="_blank"
+                           class="mt-1 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                            <flux:icon name="paper-clip" class="size-4" /> {{ $eventMilestoneFile->file_name }}
+                        </a>
+                        @endforeach
                         @elseif ($event->event_type === 'note_added')
                         <div class="flex items-start gap-2">
                             <flux:icon name="chat-bubble-left" class="mt-0.5 size-4 shrink-0 text-blue-400" />

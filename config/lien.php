@@ -152,6 +152,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Recording Turnaround
+    |--------------------------------------------------------------------------
+    |
+    | How long recording typically takes, by RecordingMethod value. The
+    | "Submitted for Recording" email says "Recording typically takes {words}."
+    | (App\Mail\FilingMilestone). Major sets the words. A county data file
+    | (database/data/lien_counties/{xx}/{county}.php) can override them with a
+    | `recording.turnaround` key: one string, or strings keyed by method. A
+    | method without words here gets no turnaround sentence.
+    |
+    */
+    'recording_turnaround' => [
+        'erecord' => '1 to 5 business days',
+        'mail' => '2 to 6 weeks',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Upload Constraints
     |--------------------------------------------------------------------------
     |

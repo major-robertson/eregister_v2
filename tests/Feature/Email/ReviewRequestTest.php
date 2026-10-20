@@ -114,7 +114,8 @@ describe('when it asks', function () {
         // Tuesday's run is too soon.
         $this->travelTo(Carbon::parse('2026-10-06 14:00:00', 'UTC'));
         $this->artisan('email:send-review-requests')->assertSuccessful();
-        Mail::assertNothingQueued();
+        // A full-service filing's "was recorded" email (FilingMilestone) goes out at once; no review request yet.
+        Mail::assertNotQueued(ReviewRequest::class);
 
         $this->travelTo(Carbon::parse('2026-10-07 14:00:00', 'UTC'));
         $this->artisan('email:send-review-requests')->assertSuccessful();

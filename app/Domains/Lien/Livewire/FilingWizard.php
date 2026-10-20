@@ -22,6 +22,8 @@ use App\Domains\Lien\Models\LienProjectDeadline;
 use App\Domains\Lien\Models\LienStateRule;
 use App\Domains\Lien\Seo\NoticeOfIntentStatePage;
 use App\Domains\Lien\Services\RushTier;
+use App\Domains\Lien\Support\PartyAddress;
+use App\Domains\Lien\Support\ZipStateRanges;
 use App\Mail\AttorneyReferral;
 use App\Models\EmailSequence;
 use App\Models\Price;
@@ -33,6 +35,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -100,6 +103,10 @@ class FilingWizard extends Component
     public ?string $multiple_parcels = null;
 
     public bool $owner_is_tenant = false;
+
+    // Step 2: "Is the property leased to someone else?" (yes | no; stored on
+    // the project). A yes offers to add the tenant, for the record only.
+    public ?string $property_leased = null;
 
     // Step 3: Important Dates
     public ?string $first_furnish_date = null;
@@ -204,6 +211,14 @@ class FilingWizard extends Component
 
     public ?string $partyPhone = null;
 
+    // The customer ticked "This is really their mailing address" for a
+    // general contractor, subcontractor or customer at the jobsite address.
+    public bool $partySameAsJobsiteConfirmed = false;
+
+    // The customer ticked "This address is correct as typed" for a ZIP code
+    // that seems to be in another state.
+    public bool $partyAddressConfirmed = false;
+
     // Track owner address source: copied_from_jobsite | manual | researched
     public ?string $ownerAddressSource = null;
 
@@ -292,6 +307,11 @@ class FilingWizard extends Component
         $this->legal_description = $this->project->legal_description;
         $this->apn = $this->project->apn;
         $this->owner_is_tenant = (bool) $this->project->owner_is_tenant;
+        $this->property_leased = match ($this->project->property_leased) {
+            true => 'yes',
+            false => 'no',
+            default => $this->project->parties()->where('role', PartyRole::Tenant->value)->exists() ? 'yes' : null,
+        };
         $this->has_written_contract = $this->project->has_written_contract !== null
             ? ($this->project->has_written_contract ? '1' : '0')
             : null;
@@ -787,8 +807,11 @@ class FilingWizard extends Component
     /**
      * Validate the Parties step: a property owner is always required, and a
      * General Contractor (and Subcontractor, where applicable) is required when
-     * the claimant is downstream of the GC. All gaps are collected so they
-     * surface together.
+     * the claimant is downstream of the GC. The party the claimant contracted
+     * with (and a customer party) needs a full mailing address, and the GC,
+     * a subcontractor or the customer can't use the jobsite address unless
+     * the customer confirmed it (the owner can). All gaps are collected so they surface
+     * together; party gaps under "party_{id}", shown on that party's card.
      */
     private function validatePartiesStep(): void
     {
@@ -808,9 +831,47 @@ class FilingWizard extends Component
             $messages['subcontractor_required'] = 'Add the Subcontractor you contracted under to continue.';
         }
 
-        if ($messages !== []) {
-            throw \Illuminate\Validation\ValidationException::withMessages($messages);
+        $hiringParty = $this->project->hiringParty();
+
+        foreach ($this->project->parties()->get() as $party) {
+            $hiredYou = $party->role === PartyRole::Customer || $party->is($hiringParty);
+
+            if ($hiredYou && ($missing = $party->missingMailingAddressParts()) !== []) {
+                $messages['party_'.$party->id][] = "{$this->partyLabel($party)} hired you, so we need their full mailing address. Add their ".$this->listInWords($missing).'.';
+            }
+
+            if ($this->project->mailingAddressMustDifferFromJobsite($party->role)
+                && ! $party->address_same_as_jobsite_confirmed
+                && $party->matchesJobsite($this->project)) {
+                $messages['party_'.$party->id][] = "The address for {$this->partyLabel($party)} is the jobsite address. Edit it to their mailing address. If the jobsite really is their mailing address, edit the party and tick the box.";
+            }
         }
+
+        if ($messages !== []) {
+            throw ValidationException::withMessages($messages);
+        }
+    }
+
+    /**
+     * A party as the Parties step names it: "Acme Builders (general contractor)".
+     */
+    private function partyLabel(LienParty $party): string
+    {
+        $name = $party->displayName() ?: 'This party';
+
+        return $party->role === null ? $name : "{$name} ({$party->role->phrase()})";
+    }
+
+    /**
+     * "street address, city and ZIP code".
+     *
+     * @param  list<string>  $items
+     */
+    private function listInWords(array $items): string
+    {
+        $last = array_pop($items);
+
+        return $items === [] ? (string) $last : implode(', ', $items).' and '.$last;
     }
 
     /**
@@ -1265,9 +1326,20 @@ class FilingWizard extends Component
             'legal_description' => $this->has_legal_description === 'yes' ? $this->legal_description : null,
             'apn' => $this->has_apn === 'yes' ? $this->apn : null,
             'owner_is_tenant' => $this->owner_is_tenant,
+            'property_leased' => match ($this->property_leased) {
+                'yes' => true,
+                'no' => false,
+                default => null,
+            },
             'property_class' => $this->project_type_category,
             'has_written_contract' => $this->has_written_contract === '1',
         ];
+
+        // Past the Parties step, an unanswered "who hired you" follows the
+        // hiring party the step required, so the documents name it too.
+        if ($this->step >= 2 && blank($this->project->hired_by) && ($hiredBy = $this->project->hiringPartyRole()?->hiredBy())) {
+            $projectData['hired_by'] = $hiredBy;
+        }
 
         if ($this->step >= 3) {
             $projectData['first_furnish_date'] = $this->first_furnish_date ?: null;
@@ -1622,6 +1694,8 @@ class FilingWizard extends Component
             $this->partyZip = $party->zip;
             $this->partyEmail = $party->email;
             $this->partyPhone = $party->phone;
+            $this->partySameAsJobsiteConfirmed = (bool) $party->address_same_as_jobsite_confirmed;
+            $this->partyAddressConfirmed = (bool) $party->address_confirmed_by_customer;
         } elseif ($defaultRole) {
             $this->partyRole = $defaultRole;
         }
@@ -1639,7 +1713,10 @@ class FilingWizard extends Component
     }
 
     /**
-     * Save a party (create or update).
+     * Save a party (create or update). A ZIP code that seems to be in another
+     * state needs the "This address is correct as typed" tick, and a general
+     * contractor, subcontractor or customer at the jobsite address needs the
+     * "This is really their mailing address" tick.
      */
     public function saveParty(): void
     {
@@ -1662,6 +1739,22 @@ class FilingWizard extends Component
             'partyZip' => 'ZIP code',
         ]);
 
+        $zipMismatch = ZipStateRanges::mismatchMessage($this->partyZip, $this->partyState) !== null;
+        $atJobsite = $this->partyAddressIsJobsite();
+        $unconfirmed = [];
+
+        if ($zipMismatch && ! $this->partyAddressConfirmed) {
+            $unconfirmed['partyAddressConfirmed'] = 'Fix the ZIP code or the state. If the address is right, tick the box.';
+        }
+
+        if ($atJobsite && ! $this->partySameAsJobsiteConfirmed) {
+            $unconfirmed['partySameAsJobsiteConfirmed'] = 'This is the jobsite address. Enter their mailing address. If this really is their mailing address, tick the box.';
+        }
+
+        if ($unconfirmed !== []) {
+            throw ValidationException::withMessages($unconfirmed);
+        }
+
         $data = [
             'role' => $this->partyRole,
             'name' => $this->partyName,
@@ -1671,6 +1764,8 @@ class FilingWizard extends Component
             'city' => $this->partyCity,
             'state' => $this->partyState ? strtoupper($this->partyState) : null,
             'zip' => $this->partyZip,
+            'address_same_as_jobsite_confirmed' => $atJobsite,
+            'address_confirmed_by_customer' => $zipMismatch ? true : null,
             'email' => $this->partyEmail,
             'phone' => $this->partyPhone,
         ];
@@ -1678,6 +1773,8 @@ class FilingWizard extends Component
         if ($this->editingPartyId) {
             $party = $this->project->parties()->findOrFail($this->editingPartyId);
             $party->update($data);
+            // The Parties step's gaps for this party are rechecked on Continue.
+            $this->resetValidation('party_'.$party->id);
         } else {
             $data['business_id'] = $this->project->business_id;
             $data['project_id'] = $this->project->id;
@@ -1686,6 +1783,30 @@ class FilingWizard extends Component
 
         $this->project->refresh();
         $this->closePartyModal();
+    }
+
+    /**
+     * Whether the modal holds a general contractor, subcontractor or customer
+     * whose address is the jobsite address.
+     */
+    private function partyAddressIsJobsite(): bool
+    {
+        return $this->project->mailingAddressMustDifferFromJobsite(PartyRole::tryFrom($this->partyRole))
+            && PartyAddress::sameAsJobsite($this->project, $this->partyAddress1, $this->partyCity, $this->partyZip);
+    }
+
+    /**
+     * Google Places pick for the party modal's street-address input
+     * (see livewire.lien._places-autocomplete).
+     *
+     * @param  array<string, mixed>  $addressData
+     */
+    public function updatePartyAddressFromAutocomplete(array $addressData): void
+    {
+        $this->partyAddress1 = $addressData['line1'] ?? null;
+        $this->partyCity = $addressData['city'] ?? null;
+        $this->partyState = $addressData['state'] ?? null;
+        $this->partyZip = $addressData['zip'] ?? null;
     }
 
     /**
@@ -1714,11 +1835,14 @@ class FilingWizard extends Component
         $this->partyZip = null;
         $this->partyEmail = null;
         $this->partyPhone = null;
+        $this->partySameAsJobsiteConfirmed = false;
+        $this->partyAddressConfirmed = false;
         $this->ownerAddressSource = null;
         $this->resetValidation([
             'partyRole', 'partyName', 'partyCompanyName', 'partyAddress1',
             'partyAddress2', 'partyCity', 'partyState', 'partyZip',
-            'partyEmail', 'partyPhone',
+            'partyEmail', 'partyPhone', 'partySameAsJobsiteConfirmed',
+            'partyAddressConfirmed',
         ]);
     }
 
@@ -1883,6 +2007,9 @@ class FilingWizard extends Component
             'serviceLevels' => ServiceLevel::cases(),
             'claimantInfo' => $this->claimantInfo,
             'partyRoles' => collect(PartyRole::cases())->filter(fn ($role) => $role !== PartyRole::Claimant)->values(),
+            'hiringPartyRole' => $this->step === 2 ? $this->project->hiringPartyRole() : null,
+            'partyAtJobsite' => $this->showPartyModal && $this->partyAddressIsJobsite(),
+            'partyZipWarning' => $this->showPartyModal ? ZipStateRanges::mismatchMessage($this->partyZip, $this->partyState) : null,
             'requiredDateFields' => $this->requiredDateFields,
             'isLienRelease' => $this->isLienRelease(),
             'amountMode' => $this->amountMode(),

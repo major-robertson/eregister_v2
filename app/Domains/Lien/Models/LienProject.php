@@ -49,6 +49,7 @@ class LienProject extends Model
         'apn',
         'property_class',
         'owner_is_tenant',
+        'property_leased',
         'has_written_contract',
         'base_contract_amount_cents',
         'change_orders_cents',
@@ -72,6 +73,7 @@ class LienProject extends Model
         return [
             'claimant_type' => ClaimantType::class,
             'owner_is_tenant' => 'boolean',
+            'property_leased' => 'boolean',
             'has_written_contract' => 'boolean',
             'base_contract_amount_cents' => 'integer',
             'change_orders_cents' => 'integer',
@@ -244,11 +246,47 @@ class LienProject extends Model
     }
 
     /**
-     * Get the customer/hiring party for this project.
+     * Get the customer/hiring party for this project: the Customer party when
+     * one was added, else the party the claimant contracted with (the same
+     * order the lien documents use).
      */
     public function customerParty(): ?LienParty
     {
-        return $this->parties()->where('role', 'customer')->first();
+        return $this->parties()->where('role', PartyRole::Customer->value)->first()
+            ?? $this->hiringParty();
+    }
+
+    /**
+     * The role of the party the claimant contracted with: the general
+     * contractor for a subcontractor or a supplier to one, the subcontractor
+     * one tier down, and the owner for a general contractor or a supplier to
+     * the owner. Falls back to the "who hired you" answer.
+     */
+    public function hiringPartyRole(): ?PartyRole
+    {
+        return PartyRole::forHiredBy($this->claimant_type?->hiredBy() ?? $this->hired_by);
+    }
+
+    /**
+     * The party the claimant contracted with (see hiringPartyRole()).
+     */
+    public function hiringParty(): ?LienParty
+    {
+        $role = $this->hiringPartyRole();
+
+        return $role === null ? null : $this->parties()->where('role', $role->value)->first();
+    }
+
+    /**
+     * Whether a party of this role must have a mailing address other than
+     * the jobsite, unless the customer confirms it: the general contractor,
+     * the subcontractor and the customer (so the hiring party too, when it
+     * is one of them). Never the owner: an owner who hired the claimant
+     * often lives at the jobsite.
+     */
+    public function mailingAddressMustDifferFromJobsite(?PartyRole $role): bool
+    {
+        return in_array($role, [PartyRole::Gc, PartyRole::Subcontractor, PartyRole::Customer], true);
     }
 
     /**
@@ -268,16 +306,17 @@ class LienProject extends Model
     }
 
     /**
-     * Every party except the claimant — i.e. the parties a demand letter can be
-     * addressed to (the claimant is always the sender). Reads from the loaded
-     * `parties` collection so it reuses eager-loaded data.
+     * Every party except the claimant and the parties kept for the record
+     * only (tenant, property manager) — i.e. the parties a demand letter can
+     * be addressed to (the claimant is always the sender). Reads from the
+     * loaded `parties` collection so it reuses eager-loaded data.
      *
      * @return Collection<int, LienParty>
      */
     public function nonClaimantParties(): Collection
     {
         return $this->parties
-            ->reject(fn (LienParty $party) => $party->role === PartyRole::Claimant)
+            ->reject(fn (LienParty $party) => $party->role === PartyRole::Claimant || $party->role?->isInformational())
             ->values();
     }
 

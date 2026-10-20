@@ -333,6 +333,8 @@
                 $otherParties = $parties->filter(fn($p) => $p->role->value !== 'owner');
                 $gcParty = $parties->firstWhere('role.value', 'gc');
                 $subParty = $parties->firstWhere('role.value', 'subcontractor');
+                $tenantParty = $parties->firstWhere('role.value', 'tenant');
+                $hiringParty = $hiringPartyRole ? $parties->firstWhere('role.value', $hiringPartyRole->value) : null;
                 $needsGc = $project->claimant_type?->requiresGcParty() ?? false;
                 $needsSub = $project->claimant_type?->requiresSubcontractorParty() ?? false;
             @endphp
@@ -354,49 +356,92 @@
                     </div>
                 @endif
 
-                {{-- Property Owner --}}
-                @if($ownerParty)
-                    <div class="flex items-start justify-between p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                {{-- Property owner (owner of record) --}}
+                <div @class([
+                    'p-4 rounded-lg',
+                    'border border-zinc-200 dark:border-zinc-700' => $ownerParty,
+                    'border-2 border-dashed border-zinc-400 dark:border-zinc-500 bg-zinc-50 dark:bg-zinc-800/50' => ! $ownerParty,
+                ])>
+                    <div class="flex items-start justify-between gap-3">
                         <div class="flex-1">
                             <div class="flex items-center gap-2">
-                                <span class="font-medium">{{ $ownerParty->displayName() }}</span>
-                                <flux:badge size="sm" color="green">Property Owner</flux:badge>
+                                <span class="font-semibold text-zinc-700 dark:text-zinc-300">Property owner (owner of record)</span>
+                                @unless($ownerParty)
+                                    <flux:badge size="sm" color="red">Required</flux:badge>
+                                @endunless
                             </div>
-                            @if($ownerParty->name !== $ownerParty->displayName())
-                                <div class="text-xs text-zinc-500">{{ $ownerParty->name }}</div>
-                            @endif
-                            @if($ownerParty->addressLine())
-                                <div class="text-sm text-zinc-500 mt-1">{{ $ownerParty->addressLine() }}</div>
-                            @endif
-                            @if($ownerParty->email || $ownerParty->phone)
-                                <div class="text-xs text-zinc-500 mt-1">
-                                    {{ implode(' | ', array_filter([$ownerParty->email, $ownerParty->phone])) }}
+                            <div class="text-sm text-zinc-500 mt-1">The person or company on the deed. Not the tenant, the property manager or the HOA.</div>
+
+                            @if($ownerParty)
+                                <div class="mt-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-medium">{{ $ownerParty->displayName() }}</span>
+                                        @if($ownerParty->is($hiringParty))
+                                            <flux:badge size="sm" color="blue">Hired you</flux:badge>
+                                        @endif
+                                    </div>
+                                    @if($ownerParty->name !== $ownerParty->displayName())
+                                        <div class="text-xs text-zinc-500">{{ $ownerParty->name }}</div>
+                                    @endif
+                                    @if($ownerParty->addressLine())
+                                        <div class="text-sm text-zinc-500 mt-1">{{ $ownerParty->addressLine() }}</div>
+                                    @endif
+                                    @if($ownerParty->email || $ownerParty->phone)
+                                        <div class="text-xs text-zinc-500 mt-1">
+                                            {{ implode(' | ', array_filter([$ownerParty->email, $ownerParty->phone])) }}
+                                        </div>
+                                    @endif
+                                    @if($ownerParty->lacksStreetNumber())
+                                        <div class="text-sm text-amber-600 dark:text-amber-400 mt-1">This address has no street number. Check it before you continue.</div>
+                                    @endif
+                                    @foreach($errors->get('party_'.$ownerParty->id) as $message)
+                                        <flux:error :message="$message" />
+                                    @endforeach
                                 </div>
                             @endif
                         </div>
                         <div class="flex gap-1">
-                            <flux:button wire:click="openPartyModal({{ $ownerParty->id }})" size="sm" variant="ghost" icon="pencil" />
-                            <flux:button
-                                wire:click="deleteParty({{ $ownerParty->id }})"
-                                wire:confirm="Delete this party?"
-                                size="sm"
-                                variant="ghost"
-                                icon="trash"
-                            />
+                            @if($ownerParty)
+                                <flux:button wire:click="openPartyModal({{ $ownerParty->id }})" size="sm" variant="ghost" icon="pencil" />
+                                <flux:button
+                                    wire:click="deleteParty({{ $ownerParty->id }})"
+                                    wire:confirm="Delete this party?"
+                                    size="sm"
+                                    variant="ghost"
+                                    icon="trash"
+                                />
+                            @else
+                                <flux:button wire:click="openPartyModal" size="sm" variant="primary" icon="plus">
+                                    Add
+                                </flux:button>
+                            @endif
                         </div>
                     </div>
-                @else
-                    <div class="flex items-center justify-between py-6 px-5 border-2 border-dashed border-zinc-400 dark:border-zinc-500 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
-                        <div class="flex items-center gap-2">
-                            <span class="font-semibold text-zinc-700 dark:text-zinc-300">Property Owner</span>
-                            <flux:badge size="sm" color="red">Required</flux:badge>
+
+                    {{-- A leased property: the tenant is optional, for the record only --}}
+                    <div class="mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                        <div class="text-sm font-medium text-zinc-700 dark:text-zinc-300">Is the property leased to someone else?</div>
+                        <div class="flex gap-4 mt-2">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" wire:model.live="property_leased" value="yes" class="h-4 w-4 border-zinc-300 text-blue-600 focus:ring-blue-500" />
+                                <span class="text-sm text-zinc-700 dark:text-zinc-300">Yes</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" wire:model.live="property_leased" value="no" class="h-4 w-4 border-zinc-300 text-blue-600 focus:ring-blue-500" />
+                                <span class="text-sm text-zinc-700 dark:text-zinc-300">No</span>
+                            </label>
                         </div>
-                        <flux:button wire:click="openPartyModal" size="sm" variant="primary" icon="plus">
-                            Add
-                        </flux:button>
+                        @if($property_leased === 'yes' && ! $tenantParty)
+                            <div class="mt-3 flex items-center justify-between gap-3">
+                                <span class="text-sm text-zinc-500">You can add the tenant. It's optional and for our records only. The owner of record stays the owner.</span>
+                                <flux:button wire:click="openPartyModal(null, 'tenant')" size="sm" variant="ghost" icon="plus" class="shrink-0 border border-zinc-200 dark:border-zinc-600">
+                                    Add tenant
+                                </flux:button>
+                            </div>
+                        @endif
                     </div>
-                    <flux:error name="owner_required" />
-                @endif
+                </div>
+                <flux:error name="owner_required" />
 
                 {{-- General Contractor (required for subcontractor / supplier claimants) --}}
                 @if($needsGc && ! $gcParty)
@@ -433,6 +478,9 @@
                             <div class="flex items-center gap-2">
                                 <span class="font-medium">{{ $party->displayName() }}</span>
                                 <flux:badge size="sm">{{ $party->role->label() }}</flux:badge>
+                                @if($party->is($hiringParty))
+                                    <flux:badge size="sm" color="blue">Hired you</flux:badge>
+                                @endif
                             </div>
                             @if($party->name !== $party->displayName())
                                 <div class="text-xs text-zinc-500">{{ $party->name }}</div>
@@ -445,6 +493,12 @@
                                     {{ implode(' | ', array_filter([$party->email, $party->phone])) }}
                                 </div>
                             @endif
+                            @if($party->lacksStreetNumber())
+                                <div class="text-sm text-amber-600 dark:text-amber-400 mt-1">This address has no street number. Check it before you continue.</div>
+                            @endif
+                            @foreach($errors->get('party_'.$party->id) as $message)
+                                <flux:error :message="$message" />
+                            @endforeach
                         </div>
                         <div class="flex gap-1">
                             <flux:button wire:click="openPartyModal({{ $party->id }})" size="sm" variant="ghost" icon="pencil" />
@@ -1101,11 +1155,16 @@
             <form wire:submit="saveParty" class="space-y-4">
                 <flux:field>
                     <flux:label>Role *</flux:label>
-                    <flux:select wire:model="partyRole">
+                    <flux:select wire:model.live="partyRole">
                         @foreach($partyRoles as $roleOption)
                             <option value="{{ $roleOption->value }}">{{ $roleOption->label() }}</option>
                         @endforeach
                     </flux:select>
+                    @if($partyRole === 'owner')
+                        <flux:description>The owner of record: the person or company on the deed. Not the tenant, the property manager or the HOA.</flux:description>
+                    @elseif(\App\Domains\Lien\Enums\PartyRole::tryFrom($partyRole)?->isInformational())
+                        <flux:description>Optional. For our records only.</flux:description>
+                    @endif
                     <flux:error name="partyRole" />
                 </flux:field>
 
@@ -1147,6 +1206,7 @@
                                 Copied from jobsite address
                             </div>
                         </div>
+                        <flux:error name="partyZip" />
                     </div>
                 @else
                     {{-- Editable address fields --}}
@@ -1159,7 +1219,9 @@
                                 </flux:button>
                             @endif
                         </div>
-                        <flux:input wire:model="partyAddress1" placeholder="Street address" />
+                        <flux:input wire:model="partyAddress1" placeholder="Start typing to search..."
+                            autocomplete="off" data-places-autocomplete data-places-method="updatePartyAddressFromAutocomplete" />
+                        <flux:description>Can't find the address? Type it in.</flux:description>
                         <flux:error name="partyAddress1" />
                     </flux:field>
 
@@ -1193,6 +1255,26 @@
                     </div>
                 @endif
 
+                {{-- A ZIP code that seems to be in another state: a warning the customer can confirm --}}
+                @if($partyZipWarning || $partyAddressConfirmed)
+                    <flux:field>
+                        @if($partyZipWarning)
+                            <div class="text-sm text-amber-600 dark:text-amber-400">{{ $partyZipWarning }}</div>
+                        @endif
+                        <flux:checkbox wire:model="partyAddressConfirmed" label="This address is correct as typed" />
+                        <flux:error name="partyAddressConfirmed" />
+                    </flux:field>
+                @endif
+
+                {{-- A general contractor, subcontractor or customer at the jobsite address --}}
+                @if($partyAtJobsite || $partySameAsJobsiteConfirmed)
+                    <flux:field>
+                        <flux:checkbox wire:model="partySameAsJobsiteConfirmed" label="This is really their mailing address" />
+                        <flux:description>This is the jobsite address. Tick the box only if they get their mail there.</flux:description>
+                        <flux:error name="partySameAsJobsiteConfirmed" />
+                    </flux:field>
+                @endif
+
                 <flux:separator />
 
                 <flux:field>
@@ -1219,4 +1301,5 @@
         </div>
     </flux:modal>
 
+    @include('livewire.lien._places-autocomplete')
 </div>

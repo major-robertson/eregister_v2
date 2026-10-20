@@ -60,11 +60,16 @@
             <form wire:submit="save" class="space-y-4">
                 <flux:field>
                     <flux:label>Role *</flux:label>
-                    <flux:select wire:model="role">
+                    <flux:select wire:model.live="role">
                         @foreach($partyRoles as $roleOption)
                             <option value="{{ $roleOption->value }}">{{ $roleOption->label() }}</option>
                         @endforeach
                     </flux:select>
+                    @if($role === 'owner')
+                        <flux:description>The owner of record: the person or company on the deed. Not the tenant, the property manager or the HOA.</flux:description>
+                    @elseif(\App\Domains\Lien\Enums\PartyRole::tryFrom($role)?->isInformational())
+                        <flux:description>Optional. For our records only.</flux:description>
+                    @endif
                     <flux:error name="role" />
                 </flux:field>
 
@@ -86,6 +91,7 @@
                     <flux:label>Address *</flux:label>
                     <flux:input wire:model="address1" placeholder="Start typing to search..."
                         autocomplete="off" data-places-autocomplete data-places-method="updateAddressFromAutocomplete" />
+                    <flux:description>Can't find the address? Type it in.</flux:description>
                     <flux:error name="address1" />
                 </flux:field>
 
@@ -117,6 +123,26 @@
                         <flux:error name="zip" />
                     </flux:field>
                 </div>
+
+                {{-- A ZIP code that seems to be in another state: a warning the customer can confirm --}}
+                @if($zipWarning || $addressConfirmed)
+                    <flux:field>
+                        @if($zipWarning)
+                            <div class="text-sm text-amber-600 dark:text-amber-400">{{ $zipWarning }}</div>
+                        @endif
+                        <flux:checkbox wire:model="addressConfirmed" label="This address is correct as typed" />
+                        <flux:error name="addressConfirmed" />
+                    </flux:field>
+                @endif
+
+                {{-- A general contractor, subcontractor or customer at the jobsite address --}}
+                @if($atJobsite || $sameAsJobsiteConfirmed)
+                    <flux:field>
+                        <flux:checkbox wire:model="sameAsJobsiteConfirmed" label="This is really their mailing address" />
+                        <flux:description>This is the jobsite address. Tick the box only if they get their mail there.</flux:description>
+                        <flux:error name="sameAsJobsiteConfirmed" />
+                    </flux:field>
+                @endif
 
                 <flux:field>
                     <flux:label>County</flux:label>

@@ -5,8 +5,11 @@ namespace App\Domains\Lien\Livewire;
 use App\Domains\Lien\Enums\PartyRole;
 use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
+use App\Domains\Lien\Support\PartyAddress;
+use App\Domains\Lien\Support\ZipStateRanges;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -40,6 +43,14 @@ class PartyManager extends Component
     public ?string $email = null;
 
     public ?string $phone = null;
+
+    // "This is really their mailing address" for a general contractor,
+    // subcontractor or customer at the jobsite address.
+    public bool $sameAsJobsiteConfirmed = false;
+
+    // "This address is correct as typed" for a ZIP code that seems to be in
+    // another state.
+    public bool $addressConfirmed = false;
 
     public function mount(LienProject $project): void
     {
@@ -94,6 +105,8 @@ class PartyManager extends Component
             $this->zip = $party->zip;
             $this->email = $party->email;
             $this->phone = $party->phone;
+            $this->sameAsJobsiteConfirmed = (bool) $party->address_same_as_jobsite_confirmed;
+            $this->addressConfirmed = (bool) $party->address_confirmed_by_customer;
         }
 
         $this->showModal = true;
@@ -109,6 +122,22 @@ class PartyManager extends Component
     {
         $this->validate();
 
+        $zipMismatch = ZipStateRanges::mismatchMessage($this->zip, $this->state) !== null;
+        $atJobsite = $this->addressIsJobsite();
+        $unconfirmed = [];
+
+        if ($zipMismatch && ! $this->addressConfirmed) {
+            $unconfirmed['addressConfirmed'] = 'Fix the ZIP code or the state. If the address is right, tick the box.';
+        }
+
+        if ($atJobsite && ! $this->sameAsJobsiteConfirmed) {
+            $unconfirmed['sameAsJobsiteConfirmed'] = 'This is the jobsite address. Enter their mailing address. If this really is their mailing address, tick the box.';
+        }
+
+        if ($unconfirmed !== []) {
+            throw ValidationException::withMessages($unconfirmed);
+        }
+
         $data = [
             'role' => $this->role,
             'name' => $this->name,
@@ -119,6 +148,8 @@ class PartyManager extends Component
             'state' => $this->state ? strtoupper($this->state) : null,
             'county' => $this->county,
             'zip' => $this->zip,
+            'address_same_as_jobsite_confirmed' => $atJobsite,
+            'address_confirmed_by_customer' => $zipMismatch ? true : null,
             'email' => $this->email,
             'phone' => $this->phone,
         ];
@@ -173,7 +204,19 @@ class PartyManager extends Component
         $this->zip = null;
         $this->email = null;
         $this->phone = null;
+        $this->sameAsJobsiteConfirmed = false;
+        $this->addressConfirmed = false;
         $this->resetValidation();
+    }
+
+    /**
+     * Whether the form holds a general contractor, subcontractor or customer
+     * whose address is the jobsite address.
+     */
+    private function addressIsJobsite(): bool
+    {
+        return $this->project->mailingAddressMustDifferFromJobsite(PartyRole::tryFrom($this->role))
+            && PartyAddress::sameAsJobsite($this->project, $this->address1, $this->city, $this->zip);
     }
 
     /**
@@ -203,6 +246,8 @@ class PartyManager extends Component
         return view('livewire.lien.party-manager', [
             'parties' => $this->project->parties,
             'partyRoles' => PartyRole::cases(),
+            'atJobsite' => $this->showModal && $this->addressIsJobsite(),
+            'zipWarning' => $this->showModal ? ZipStateRanges::mismatchMessage($this->zip, $this->state) : null,
         ]);
     }
 }

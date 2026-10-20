@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
@@ -58,6 +59,8 @@ class LienFiling extends Model implements HasMedia
         'parties_snapshot_json',
         'document_details_json',
         'client_request_json',
+        'customer_emailed_at',
+        'customer_emailed_front_url',
         'stripe_checkout_session_id',
         'stripe_payment_intent_id',
         'paid_at',
@@ -83,6 +86,7 @@ class LienFiling extends Model implements HasMedia
             'parties_snapshot_json' => 'array',
             'document_details_json' => 'array',
             'client_request_json' => 'array',
+            'customer_emailed_at' => 'datetime',
             'paid_at' => 'datetime',
             'mailed_at' => 'datetime',
             'recording_method' => RecordingMethod::class,
@@ -240,16 +244,74 @@ class LienFiling extends Model implements HasMedia
     }
 
     /**
-     * When the customer last answered us, or null. The lien board shows it
-     * ("Answered", "Customer answered ...") and turns the card red when
-     * nothing from us follows within a business day.
-     *
-     * Hook for EREG-132: also count an emailed reply (customer_emailed_at)
-     * here, taking whichever is newest.
+     * When the customer last answered us, or null: on the filing page
+     * (latestCustomerReply) or by email (customer_emailed_at), whichever is
+     * newest. The lien board shows it ("Answered", "Customer answered ...")
+     * and turns the card red when nothing from us follows within a business
+     * day.
      */
     public function customerRepliedAt(): ?CarbonInterface
     {
-        return $this->latestCustomerReply?->created_at;
+        $answeredAt = $this->latestCustomerReply?->created_at;
+        $emailedAt = $this->customer_emailed_at;
+
+        if ($answeredAt === null || $emailedAt === null) {
+            return $answeredAt ?? $emailedAt;
+        }
+
+        return $emailedAt->gt($answeredAt) ? $emailedAt : $answeredAt;
+    }
+
+    /**
+     * Whether the customer emailed us about this filing and no one has acted
+     * on it yet (a status change or "Still waiting" clears it).
+     */
+    public function hasCustomerEmail(): bool
+    {
+        return $this->customer_emailed_at !== null;
+    }
+
+    /**
+     * The customer emailed us about this filing (Front webhook, EREG-132).
+     * Flag it for the agent with the Front link, log a customer_emailed event
+     * (one per conversation per 10 minutes; later emails only move the
+     * timestamp) and, while the filing waits on the customer, pause its
+     * reminders. The status stays where it is: the agent decides. Nothing
+     * from the message itself is stored.
+     */
+    public function recordCustomerEmail(string $conversationId, string $frontUrl, string $sender): void
+    {
+        DB::transaction(function () use ($conversationId, $frontUrl, $sender) {
+            $this->update([
+                'customer_emailed_at' => now(),
+                'customer_emailed_front_url' => $frontUrl,
+            ]);
+
+            $alreadyLogged = $this->events()
+                ->withoutGlobalScope('business')
+                ->where('event_type', 'customer_emailed')
+                ->where('payload_json->conversation_id', $conversationId)
+                ->where('created_at', '>=', now()->subMinutes(10))
+                ->exists();
+
+            if (! $alreadyLogged) {
+                $this->events()->create([
+                    'business_id' => $this->business_id,
+                    'event_type' => 'customer_emailed',
+                    'payload_json' => [
+                        'conversation_id' => $conversationId,
+                        'front_url' => $frontUrl,
+                        'sender' => $sender,
+                        'status' => $this->status->value,
+                    ],
+                    'created_by' => null,
+                ]);
+            }
+
+            if ($this->status->isWaitingOnCustomer()) {
+                EmailSequence::pauseReminderFor($this, 'customer_emailed');
+            }
+        });
     }
 
     /**
@@ -406,7 +468,8 @@ class LienFiling extends Model implements HasMedia
      * see SendDraftForReview) opens a request:
      * it is stored in client_request_json and emailed to the filing's creator
      * at once (see ChangeFilingStatus). Leaving a waiting status closes the
-     * open request.
+     * open request. Any status change clears the "customer emailed" flag
+     * (recordCustomerEmail).
      *
      * @throws InvalidStatusTransitionException
      */
@@ -439,6 +502,10 @@ class LienFiling extends Model implements HasMedia
         if ($oldStatus->isWaitingOnCustomer() && is_array($request) && ($request['resolved_at'] ?? null) === null) {
             $updates['client_request_json'] = array_merge($request, ['resolved_at' => now()->toIso8601String()]);
         }
+
+        // Any status change is the agent acting on the customer's email.
+        $updates['customer_emailed_at'] = null;
+        $updates['customer_emailed_front_url'] = null;
 
         $opensRequest = $newStatus->isWaitingOnCustomer() && filled($meta['customer_message'] ?? null);
         if ($opensRequest) {

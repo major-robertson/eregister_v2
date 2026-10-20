@@ -309,15 +309,34 @@
                                 @endif
                             </flux:text>
 
-                            @if ($card?->column === \App\Domains\Lien\Admin\Enums\KanbanColumn::New)
-                                @can('changeStatus', $filing)
-                                <x-slot:actions>
+                            @php
+                                $canChangeStatus = auth()->user()->can('changeStatus', $filing);
+                                $showStart = $card?->column === \App\Domains\Lien\Admin\Enums\KanbanColumn::New && $canChangeStatus;
+                                // The customer emailed us (Front webhook): the link to read it, and "Still waiting".
+                                $emailed = $card !== null && $filing->hasCustomerEmail();
+                            @endphp
+                            @if ($showStart || $emailed)
+                            <x-slot:actions>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    @if ($emailed)
+                                    <flux:badge size="sm" color="blue" icon="envelope">
+                                        Customer emailed &middot; {{ $filing->customer_emailed_at->diffForHumans() }}@if ($filing->customer_emailed_front_url) &middot; <a href="{{ $filing->customer_emailed_front_url }}" target="_blank" rel="noopener" class="ml-1 underline">Open in Front</a>@endif
+                                    </flux:badge>
+                                    @if ($canChangeStatus)
+                                    <flux:button size="xs" icon="clock"
+                                        wire:click="stillWaiting('{{ $filing->public_id }}')">
+                                        Still waiting
+                                    </flux:button>
+                                    @endif
+                                    @endif
+                                    @if ($showStart)
                                     <flux:button size="xs" variant="primary" icon="play"
                                         wire:click="start('{{ $filing->public_id }}')">
                                         Start
                                     </flux:button>
-                                </x-slot:actions>
-                                @endcan
+                                    @endif
+                                </div>
+                            </x-slot:actions>
                             @endif
                         </x-admin.kanban.card-frame>
                     @endforeach

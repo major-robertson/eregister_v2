@@ -30,6 +30,8 @@ class ProcessEmailSequences extends Command
             $sequences = EmailSequence::query()
                 ->whereNull('completed_at')
                 ->whereNull('suppressed_at')
+                // Paused (EmailSequence::pause): not over, just not now.
+                ->whereNull('paused_at')
                 ->where('next_send_at', '<=', now())
                 ->lockForUpdate()
                 ->limit(100)

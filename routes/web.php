@@ -2,6 +2,7 @@
 
 use App\Domains\Business\Http\Controllers\BusinessInvitationController;
 use App\Http\Controllers\EmailUnsubscribeController;
+use App\Http\Controllers\FrontWebhookController;
 use App\Http\Controllers\MarketingLandingController;
 use App\Http\Controllers\MarketingRedirectController;
 use App\Http\Controllers\PostGridWebhookController;
@@ -30,6 +31,12 @@ Route::post('/webhooks/postmark', [PostmarkWebhookController::class, 'handle'])
 Route::post('/webhooks/postmark/inbound', [PostmarkWebhookController::class, 'inbound'])
     ->middleware('throttle:120,1')
     ->name('webhooks.postmark.inbound');
+
+// Front: a rule on the contact@ inbox posts every inbound message, and a
+// customer's email flags their lien filings (signed by Front; no auth, CSRF
+// excluded in bootstrap/app.php)
+Route::post('/webhooks/front', [FrontWebhookController::class, 'handle'])
+    ->name('webhooks.front');
 
 // Marketing redirects (banner ads, partnerships)
 Route::get('/r/{slug}', [MarketingRedirectController::class, 'handle'])

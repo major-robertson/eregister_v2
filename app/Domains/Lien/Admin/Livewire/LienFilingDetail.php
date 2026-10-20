@@ -9,6 +9,7 @@ use App\Domains\Esign\Enums\SignatureRequestStatus;
 use App\Domains\Esign\Exceptions\EsignException;
 use App\Domains\Lien\Admin\Actions\AddFilingComment;
 use App\Domains\Lien\Admin\Actions\ChangeFilingStatus;
+use App\Domains\Lien\Admin\Actions\MarkStillWaiting;
 use App\Domains\Lien\Admin\Actions\RefundPayment;
 use App\Domains\Lien\Admin\Actions\SendDraftForReview;
 use App\Domains\Lien\Admin\Actions\SyncResult;
@@ -61,6 +62,9 @@ class LienFilingDetail extends Component
     public $customerAttachment = null;
 
     public string $comment = '';
+
+    /** The optional one-line note on "Still waiting" (the customer emailed us). */
+    public string $stillWaitingNote = '';
 
     public bool $showRefundModal = false;
 
@@ -164,6 +168,7 @@ class LienFilingDetail extends Component
         'esign_sent', 'esign_reminder_sent', 'esign_completed',
         'client_request_sent', 'client_response', 'document_uploaded',
         'draft_sent_for_review', 'draft_approved', 'draft_changes_requested',
+        'customer_emailed', 'reply_dismissed',
     ];
 
     public function mount(string|LienFiling $lienFiling): void
@@ -666,6 +671,34 @@ class LienFilingDetail extends Component
         $this->reset('comment');
 
         session()->flash('success', 'Comment added successfully.');
+    }
+
+    /**
+     * "Still waiting": the customer's email (Front) did not give us what we
+     * need. Clears the flag with an optional note and, while the filing waits
+     * on the customer, restarts the reminders. The status stays.
+     */
+    public function stillWaiting(): void
+    {
+        $this->authorize('changeStatus', $this->lienFiling);
+
+        $this->validate([
+            'stillWaitingNote' => ['nullable', 'string', 'max:255'],
+        ], [
+            'stillWaitingNote.max' => 'Keep the note to one line (255 characters).',
+        ]);
+
+        $waiting = $this->lienFiling->status->isWaitingOnCustomer();
+        $done = app(MarkStillWaiting::class)->execute($this->lienFiling, $this->stillWaitingNote ?: null);
+
+        $this->lienFiling->refresh();
+        $this->reset('stillWaitingNote');
+
+        if ($done) {
+            session()->flash('success', $waiting
+                ? 'Marked still waiting. The reminders start again from the first one.'
+                : 'Marked still waiting.');
+        }
     }
 
     /**

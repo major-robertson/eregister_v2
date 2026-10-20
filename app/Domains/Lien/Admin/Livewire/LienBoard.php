@@ -5,6 +5,7 @@ namespace App\Domains\Lien\Admin\Livewire;
 use App\Domains\Business\Models\Business;
 use App\Domains\Lien\Admin\Actions\AddFilingComment;
 use App\Domains\Lien\Admin\Actions\ChangeFilingStatus;
+use App\Domains\Lien\Admin\Actions\MarkStillWaiting;
 use App\Domains\Lien\Admin\Enums\KanbanColumn;
 use App\Domains\Lien\Admin\Enums\SearchMode;
 use App\Domains\Lien\Admin\Support\BoardCard;
@@ -74,6 +75,22 @@ class LienBoard extends Component
         } else {
             app(AddFilingComment::class)->execute($filing, 'Started from the board');
         }
+
+        unset($this->boardCards);
+    }
+
+    /**
+     * "Still waiting" on a card the customer emailed us about: clears the
+     * flag and, while the filing waits on the customer, restarts the
+     * reminders (MarkStillWaiting). No note from the board.
+     */
+    public function stillWaiting(string $publicId): void
+    {
+        $filing = LienFiling::withoutGlobalScope('business')->where('public_id', $publicId)->firstOrFail();
+
+        $this->authorize('changeStatus', $filing);
+
+        app(MarkStillWaiting::class)->execute($filing);
 
         unset($this->boardCards);
     }

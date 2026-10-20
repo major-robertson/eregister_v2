@@ -23,6 +23,11 @@
                 <span class="ml-1 opacity-80">— {{ $filing->recording_method->label() }}</span>
             @endif
         </flux:badge>
+        @if ($filing->hasCustomerEmail())
+        <flux:badge color="blue" size="lg" icon="envelope">
+            Customer emailed &middot; {{ $filing->customer_emailed_at->diffForHumans() }}@if ($filing->customer_emailed_front_url) &middot; <a href="{{ $filing->customer_emailed_front_url }}" target="_blank" rel="noopener" class="ml-1 underline">Open in Front</a>@endif
+        </flux:badge>
+        @endif
         @endif
     </div>
 
@@ -52,6 +57,22 @@
             This filing is no longer visible to the customer and all automated emails have been stopped.
         </flux:callout.text>
     </flux:callout>
+    @endif
+
+    {{-- The customer emailed us (Front webhook): reminders are paused until the status changes or "Still waiting". --}}
+    @if (! $isDeleted && $filing->hasCustomerEmail() && $canChangeStatus)
+    <form wire:submit="stillWaiting" class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+        <div class="flex flex-wrap items-center gap-3">
+            <flux:text class="text-sm text-blue-900">
+                Read the customer's email in Front, then change the status, or mark it still waiting{{ $filing->status->isWaitingOnCustomer() ? ' to restart the reminders' : '' }}.
+            </flux:text>
+            <div class="flex flex-1 items-center gap-2">
+                <flux:input size="sm" wire:model="stillWaitingNote" placeholder="Note (optional)" class="min-w-48 flex-1" />
+                <flux:button type="submit" size="sm" icon="clock">Still waiting</flux:button>
+            </div>
+        </div>
+        <flux:error name="stillWaitingNote" />
+    </form>
     @endif
 
     <!-- Quick Summary -->
@@ -1838,6 +1859,42 @@
                                    class="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
                                     <flux:icon name="paper-clip" class="size-3" /> {{ $draftEventFile->file_name }}
                                 </a>
+                                @endif
+                                <flux:text class="text-xs text-gray-400">
+                                    {{ $event->created_at->eastern()->format('M j, g:i A') }}
+                                    @if ($event->creator) &middot; {{ $event->creator->name }} @endif
+                                </flux:text>
+                            </div>
+                        </div>
+                        @elseif ($event->event_type === 'customer_emailed')
+                        <div class="flex items-start gap-2">
+                            <flux:icon name="envelope" class="mt-0.5 size-4 shrink-0 text-blue-500" />
+                            <div class="min-w-0">
+                                <flux:text class="text-sm font-medium text-blue-700">{{ $event->description() }}</flux:text>
+                                @if (! empty($event->payload_json['sender']))
+                                <flux:text class="text-xs text-gray-600">from {{ $event->payload_json['sender'] }}</flux:text>
+                                @endif
+                                @if (! empty($event->payload_json['front_url']))
+                                <a href="{{ $event->payload_json['front_url'] }}" target="_blank" rel="noopener"
+                                   class="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                                    <flux:icon name="arrow-top-right-on-square" class="size-3" /> Open in Front
+                                </a>
+                                @endif
+                                <flux:text class="text-xs text-gray-400">
+                                    {{ $event->created_at->eastern()->format('M j, g:i A') }}
+                                </flux:text>
+                            </div>
+                        </div>
+                        @elseif ($event->event_type === 'reply_dismissed')
+                        <div class="flex items-start gap-2">
+                            <flux:icon name="clock" class="mt-0.5 size-4 shrink-0 text-gray-400" />
+                            <div class="min-w-0">
+                                <flux:text class="text-sm font-medium text-gray-700">{{ $event->description() }}</flux:text>
+                                @if (! empty($event->payload_json['note']))
+                                <flux:text class="text-sm text-gray-600">{{ $event->payload_json['note'] }}</flux:text>
+                                @endif
+                                @if (! empty($event->payload_json['reminders_restarted']))
+                                <flux:text class="text-xs text-gray-500">Reminders restarted</flux:text>
                                 @endif
                                 <flux:text class="text-xs text-gray-400">
                                     {{ $event->created_at->eastern()->format('M j, g:i A') }}

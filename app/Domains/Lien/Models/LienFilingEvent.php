@@ -75,6 +75,8 @@ class LienFilingEvent extends Model
             'draft_sent_for_review' => 'Draft sent for review',
             'draft_approved' => 'Draft approved',
             'draft_changes_requested' => 'Changes requested',
+            'customer_emailed' => 'Customer emailed us',
+            'reply_dismissed' => 'Marked still waiting',
             default => ucfirst(str_replace('_', ' ', $this->event_type)),
         };
     }

@@ -22,7 +22,10 @@ final class BoardCard
     /** "No action for n business days" turns red past this many. */
     public const IDLE_BUSINESS_DAYS = 2;
 
-    /** A customer's answer with nothing from us since turns red at this many. */
+    /**
+     * A customer's answer with nothing from us since, or their email with no
+     * status change or "Still waiting", turns red at this many.
+     */
     public const ANSWER_BUSINESS_DAYS = 1;
 
     /** Columns where the next move is ours, so an idle card turns red. */
@@ -140,7 +143,7 @@ final class BoardCard
             'latestCustomerReply',
             // Newest first: our actions, and the note the card shows.
             'events' => fn ($query) => $query
-                ->whereIn('event_type', ['status_changed', 'note_added', 'client_request_sent'])
+                ->whereIn('event_type', ['status_changed', 'note_added', 'client_request_sent', 'reply_dismissed'])
                 ->latest()
                 ->orderByDesc('id'),
         ];
@@ -151,9 +154,10 @@ final class BoardCard
      */
     private static function make(LienFiling $filing, array $staffIds): self
     {
-        // Our actions: a note, a request to the customer, or a status change
-        // one of us made. The payment webhook, the customer's answer and a
-        // signer's e-signature log status changes too, and those don't count.
+        // Our actions: a note, a request to the customer, "Still waiting" on
+        // their email, or a status change one of us made. The payment
+        // webhook, the customer's answer and a signer's e-signature log
+        // status changes too, and those don't count.
         $lastActionAt = $filing->events->first(
             fn ($event) => $event->event_type !== 'status_changed' || in_array((int) $event->created_by, $staffIds, true)
         )?->created_at;
@@ -174,6 +178,16 @@ final class BoardCard
 
     private static function alertFor(LienFiling $filing, KanbanColumn $column, ?CarbonInterface $lastActionAt, ?CarbonInterface $repliedAt): ?string
     {
+        // The customer emailed us and no one has changed the status or
+        // marked it "Still waiting". A note does not clear this one.
+        if ($filing->hasCustomerEmail()) {
+            $days = self::businessDaysBetween($filing->customer_emailed_at, now());
+
+            if ($days >= self::ANSWER_BUSINESS_DAYS) {
+                return "Customer's email waiting {$days} ".Str::plural('business day', $days);
+            }
+        }
+
         // The customer answered and nothing from us has followed.
         if ($repliedAt !== null && ($lastActionAt === null || $repliedAt->gt($lastActionAt))) {
             $days = self::businessDaysBetween($repliedAt, now());
@@ -193,8 +207,8 @@ final class BoardCard
     }
 
     /**
-     * Within a column: the nearest deadline first (none last), then the
-     * oldest payment.
+     * Within a column: filings the customer emailed us about first, then the
+     * nearest deadline (none last), then the oldest payment.
      *
      * TODO EREG-138 merge: sort by lien_filings.must_submit_by (nulls last)
      * instead of the project's lien deadline.
@@ -205,6 +219,10 @@ final class BoardCard
     private static function sorted(Collection $filings): Collection
     {
         return $filings->sort(function (LienFiling $a, LienFiling $b): int {
+            if ($a->hasCustomerEmail() !== $b->hasCustomerEmail()) {
+                return $a->hasCustomerEmail() ? -1 : 1;
+            }
+
             $dueA = $a->projectDeadline?->due_date;
             $dueB = $b->projectDeadline?->due_date;
 

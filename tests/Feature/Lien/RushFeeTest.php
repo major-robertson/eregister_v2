@@ -101,6 +101,8 @@ if (! function_exists('rushProject')) {
             'jobsite_county' => 'Johnson County',
             'claimant_type' => ClaimantType::Gc,
             'property_class' => 'residential',
+            // Liens and releases need a legal description or parcel number (EREG-136).
+            'apn' => '087-123-04-0-11-02-005.00',
         ], $attributes));
 
         app(DeadlineCalculator::class)->calculateForProject($project);

@@ -203,6 +203,14 @@
                 </div>
             @endif
 
+            @if($propertyEntry)
+                <div class="mt-6">
+                    <flux:button href="#property-entry" variant="primary" icon="arrow-down">
+                        Enter legal description
+                    </flux:button>
+                </div>
+            @endif
+
             {{-- Primary Action --}}
             @if($filing->status->value === 'draft' && $filing->project_deadline_id)
                 <div class="mt-6">
@@ -256,6 +264,82 @@
             </div>
         @endif
     </div>
+
+    {{-- "Enter legal description" (EREG-136): the customer chose "I need help finding it" at order time.
+         TODO: EREG-128 request mechanism replaces this panel after merge. --}}
+    @if($propertyEntry)
+        <div id="property-entry" class="scroll-mt-6 rounded-xl border-2 border-orange-300 bg-white overflow-hidden">
+            <div class="p-6 space-y-4">
+                <div class="flex items-center gap-2">
+                    <flux:icon name="map" class="w-5 h-5 text-orange-600" />
+                    <h2 class="text-lg font-semibold text-zinc-900">Enter the legal description or parcel number</h2>
+                </div>
+
+                <p class="text-zinc-700">
+                    To record your {{ Str::lower($filing->documentType->name) }} we need the legal description or parcel number of the property.
+                </p>
+
+                @if($filing->project?->jobsiteAddressLine())
+                    <p class="text-sm text-zinc-600"><span class="font-medium">Property:</span> {{ $filing->project->jobsiteAddressLine() }}</p>
+                @endif
+
+                <ol class="list-decimal pl-5 space-y-1 text-sm text-zinc-700">
+                    <li>
+                        Look up the property on the
+                        @if($propertyLookup->assessorUrl)
+                            <a href="{{ $propertyLookup->assessorUrl }}" target="_blank" rel="noopener" class="text-blue-600 hover:underline">county assessor site</a>
+                        @else
+                            county assessor site
+                        @endif
+                        and copy the {{ $propertyLookup->parcelNumberPhrase() }}.
+                    </li>
+                    <li>The legal description is on your deed or the owner's deed. The county recorder's office can give you a copy.</li>
+                    <li>Enter it below. Copy it exactly as written.</li>
+                </ol>
+
+                <form wire:submit="saveProperty" class="space-y-4 border-t border-border pt-4">
+                    <flux:field>
+                        <flux:label>Legal description</flux:label>
+                        <flux:textarea wire:model="propertyLegalDescription" rows="4" placeholder="Lot 12, Block 3, Sunset Hills Subdivision, as recorded in Plat Book 44, Page 7" />
+                        <flux:description>As it appears on the deed.</flux:description>
+                        <flux:error name="propertyLegalDescription" />
+                    </flux:field>
+
+                    <flux:field>
+                        <flux:label>{{ Str::ucfirst($propertyLookup->parcelNumberPhrase()) }}</flux:label>
+                        <flux:input wire:model="propertyApn" placeholder="e.g., 123-456-789" />
+                        <flux:error name="propertyApn" />
+                    </flux:field>
+
+                    <flux:field>
+                        <flux:label>Deed or tax bill page (optional)</flux:label>
+                        <flux:file-upload wire:model="propertyFile" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif">
+                            <flux:file-upload.dropzone
+                                inline
+                                heading="Drop a file here or click to browse"
+                                text="PDF, JPG, PNG or HEIC, up to 10 MB"
+                                with-progress
+                            />
+                        </flux:file-upload>
+                        <flux:error name="propertyFile" />
+                    </flux:field>
+
+                    @if($propertyFile)
+                        <flux:text class="text-sm">{{ $propertyFile->getClientOriginalName() }}</flux:text>
+                    @endif
+
+                    <flux:field>
+                        <flux:checkbox wire:model="propertyConfirmed" :label="$propertyConfirmation" />
+                        <flux:error name="propertyConfirmed" />
+                    </flux:field>
+
+                    <flux:button type="submit" variant="primary">
+                        Save
+                    </flux:button>
+                </form>
+            </div>
+        </div>
+    @endif
 
     {{-- While the filing waits on the customer (Awaiting Client / E-Signature / Notary):
          the request we emailed, if there is one, answered right here, and the upload

@@ -246,6 +246,32 @@
                     </flux:callout>
                 @endif
 
+                {{-- Property identification (EREG-136): where to find it; required for liens and releases --}}
+                <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 space-y-2">
+                    <div class="font-medium">Legal description or parcel number{{ $propertyRequired ? ' *' : '' }}</div>
+                    <flux:text class="text-sm">
+                        @if($propertyRequired)
+                            A {{ Str::lower($documentType->name) }} must name the property by its legal description or its parcel number. Add at least one.
+                        @else
+                            Optional. It helps identify the property.
+                        @endif
+                    </flux:text>
+                    <ul class="list-disc pl-5 space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+                        <li>The legal description is on the deed.</li>
+                        <li>
+                            The parcel number is on the property tax bill and the county assessor's website.
+                            @if($propertyLookup?->localParcelLabel())
+                                In {{ $propertyLookup->stateName }} it is called the {{ $propertyLookup->localParcelLabel() }}.
+                            @endif
+                        </li>
+                    </ul>
+                    @if($propertyLookup?->assessorUrl)
+                        <flux:link href="{{ $propertyLookup->assessorUrl }}" target="_blank" rel="noopener" class="text-sm">
+                            Search the county assessor's records
+                        </flux:link>
+                    @endif
+                </div>
+
                 {{-- Legal Description --}}
                 <flux:field>
                     <flux:label>Do you have the Legal Description?</flux:label>
@@ -271,7 +297,7 @@
 
                 {{-- APN Question --}}
                 <flux:field>
-                    <flux:label>Do you have the Assessor Parcel Number (APN)?</flux:label>
+                    <flux:label>Do you have the {{ $propertyLookup?->parcelNumberPhrase() ?? 'parcel number' }}?</flux:label>
                     <div class="flex gap-4 mt-2">
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="radio" wire:model.live="has_apn" value="yes" class="h-4 w-4 border-zinc-300 text-blue-600 focus:ring-blue-500" />
@@ -286,9 +312,17 @@
 
                 @if($has_apn === 'yes')
                     <flux:field>
-                        <flux:label>Assessor Parcel Number (APN)</flux:label>
+                        <flux:label>{{ Str::ucfirst($propertyLookup?->parcelNumberPhrase() ?? 'parcel number') }}</flux:label>
                         <flux:input wire:model="apn" placeholder="e.g., 123-456-789" />
                         <flux:error name="apn" />
+                    </flux:field>
+                @endif
+
+                {{-- Neither one: pay now, enter it on the filing page (EREG-136) --}}
+                @if($propertyRequired && $has_legal_description !== 'yes' && $has_apn !== 'yes')
+                    <flux:field>
+                        <flux:checkbox wire:model.live="property_help" label="I need help finding it" />
+                        <flux:description>You can still pay now. We'll email you how to find it for your county, and you enter it on your filing page.</flux:description>
                     </flux:field>
                 @endif
 
@@ -920,7 +954,10 @@
                         <flux:callout color="red" icon="exclamation-circle">
                             <div class="space-y-1">
                                 @foreach($errors->get('property_identification') as $error)
-                                    <div>{{ $error }}</div>
+                                    <div>
+                                        {{ $error }}
+                                        <button type="button" wire:click="goToStep(1)" class="font-medium underline">Go to the Property step</button>
+                                    </div>
                                 @endforeach
                                 @foreach($errors->get('owner_party') as $error)
                                     <div>{{ $error }}</div>

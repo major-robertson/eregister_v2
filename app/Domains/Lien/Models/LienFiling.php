@@ -52,6 +52,17 @@ class LienFiling extends Model implements HasMedia
      */
     public const CLAIM_DOCUMENTS = ['mechanics_lien', 'noi'];
 
+    /**
+     * Recorded documents that must name the property by its legal
+     * description or parcel number (EREG-136). The wizard requires one at
+     * every service level, unless the customer chose "I need help finding
+     * it" (property_help_requested_at); notices leave it optional.
+     */
+    public const PROPERTY_ID_DOCUMENTS = ['mechanics_lien', 'lien_release'];
+
+    /** The status note when payment moves a filing to Awaiting Client for its property identification. */
+    public const PROPERTY_DESCRIPTION_NOTE = 'Legal description needed';
+
     protected static function newFactory(): LienFilingFactory
     {
         return LienFilingFactory::new();
@@ -83,6 +94,7 @@ class LienFiling extends Model implements HasMedia
         'rush_tier',
         'rush_elected',
         'rush_acknowledged_at',
+        'property_help_requested_at',
         'stripe_checkout_session_id',
         'stripe_payment_intent_id',
         'paid_at',
@@ -115,6 +127,7 @@ class LienFiling extends Model implements HasMedia
             'deadline_block_shown_at' => 'datetime',
             'rush_elected' => 'boolean',
             'rush_acknowledged_at' => 'datetime',
+            'property_help_requested_at' => 'datetime',
             'paid_at' => 'datetime',
             'mailed_at' => 'datetime',
             'recording_method' => RecordingMethod::class,
@@ -454,6 +467,39 @@ class LienFiling extends Model implements HasMedia
         }
 
         return $this->events()->where('event_type', LienFilingEvent::DATES_CHANGED_AFTER_DEADLINE_BLOCK)->exists();
+    }
+
+    /**
+     * Whether this document must name the property by its legal description
+     * or parcel number (PROPERTY_ID_DOCUMENTS).
+     */
+    public function requiresPropertyIdentification(): bool
+    {
+        return in_array($this->documentType?->slug, self::PROPERTY_ID_DOCUMENTS, true);
+    }
+
+    /**
+     * Whether we are waiting for the customer's legal description or parcel
+     * number: they chose "I need help finding it" in the wizard and the
+     * project has neither yet. The filing page shows the entry panel then.
+     */
+    public function needsPropertyDescription(): bool
+    {
+        return $this->property_help_requested_at !== null
+            && blank($this->project?->legal_description)
+            && blank($this->project?->apn);
+    }
+
+    /**
+     * The customer's latest entry of the legal description or parcel number
+     * on the filing page, or null.
+     */
+    public function latestPropertyEntry(): ?LienFilingEvent
+    {
+        return $this->events()
+            ->where('event_type', LienFilingEvent::PROPERTY_ENTERED)
+            ->latest('id')
+            ->first();
     }
 
     /**

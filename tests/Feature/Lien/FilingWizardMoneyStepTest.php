@@ -56,6 +56,8 @@ if (! function_exists('moneyProject')) {
             'first_furnish_date' => '2026-10-05',
             'last_furnish_date' => '2026-10-15',
             'completion_date' => '2026-10-15',
+            // Liens and releases need a legal description or parcel number (EREG-136).
+            'apn' => '087-123-04-0-11-02-005.00',
         ], $overrides));
 
         app(DeadlineCalculator::class)->calculateForProject($project);

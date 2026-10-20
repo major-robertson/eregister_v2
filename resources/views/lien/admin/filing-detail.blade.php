@@ -1092,6 +1092,7 @@
                             isset($originalLien['county']) ? $originalLien['county'].' County' : null,
                             $day($originalLien['recorded_at'] ?? null),
                         ]))) ?: null,
+                        'Other lien info' => $originalLien['other_info'] ?? null,
                         'Amount received' => $money($originalLien['amount_received_cents'] ?? null),
                         'Attachments' => $documentDetails['attachments_note'] ?? null,
                     ]);
@@ -2104,6 +2105,12 @@
                     <flux:error name="documentForm.original_lien.amount_received" />
                 </flux:field>
             </div>
+            <flux:field>
+                <flux:label>Other identifying information</flux:label>
+                <flux:textarea wire:model="documentForm.original_lien.other_info" rows="2" />
+                <flux:description>For our reference only; not printed on the release.</flux:description>
+                <flux:error name="documentForm.original_lien.other_info" />
+            </flux:field>
             @endif
 
             <div class="flex justify-end gap-2">

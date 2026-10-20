@@ -61,6 +61,7 @@
         'original_lien.county' => 'Original lien county',
         'original_lien.recorded_at' => 'Original lien recorded',
         'original_lien.amount_received_cents' => 'Amount received',
+        'original_lien.other_info' => 'Original lien other info',
         // recipient service facts
         'delivery_method' => 'Delivery method',
         'tracking_number' => 'Tracking number',

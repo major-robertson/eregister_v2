@@ -277,8 +277,9 @@ final class LienDocumentPayload
 
     /**
      * The per-document facts that live in lien_filings.document_details_json
-     * (written by the Document details card). Missing keys read as null so
-     * the views can be written once.
+     * (written by the Document details card; a release's original lien is
+     * first entered by the customer in the filing wizard). Missing keys read
+     * as null so the views can be written once.
      *
      * @return array<string, mixed>
      */
@@ -316,6 +317,8 @@ final class LienDocumentPayload
                 'recorded_at' => self::date($original['recorded_at'] ?? null),
                 'amount_received_cents' => $received,
                 'amount_received' => self::money($received),
+                // For the agent's reference; the release documents don't print it.
+                'other_info' => self::text($original['other_info'] ?? null),
             ],
         ];
     }
@@ -349,6 +352,7 @@ final class LienDocumentPayload
             'amount' => self::money($recorded?->amount_claimed_cents),
             'amount_received_cents' => null,
             'amount_received' => null,
+            'other_info' => null,
         ];
     }
 

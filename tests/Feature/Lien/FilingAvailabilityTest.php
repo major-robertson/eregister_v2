@@ -113,18 +113,19 @@ describe('LienProjectDeadline::canFile()', function () {
         expect($deadline->canFile())->toBeFalse();
     });
 
-    it('returns false for lien release when mechanics lien is not filed', function () {
+    it('returns true for lien release when the lien was recorded somewhere else', function () {
         $deadline = $this->project->deadlines()
             ->whereHas('documentType', fn ($q) => $q->where('slug', 'lien_release'))
             ->first();
 
-        // Ensure mechanics lien is not filed
+        // No mechanics lien filed through us: the wizard asks for the recorded lien instead
         $lienDeadline = $this->project->deadlines()
             ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
             ->first();
 
         expect($lienDeadline->completed_filing_id)->toBeNull();
-        expect($deadline->canFile())->toBeFalse();
+        expect($this->project->latestRecordedLien())->toBeNull();
+        expect($deadline->canFile())->toBeTrue();
     });
 
     it('returns true for lien release when mechanics lien is recorded', function () {
@@ -154,30 +155,14 @@ describe('LienProjectDeadline::canFile()', function () {
         expect($releaseDeadline->canFile())->toBeTrue();
     });
 
-    it('returns false for lien release when mechanics lien is paid but not recorded', function () {
-        $lienDeadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
-            ->first();
-
-        $documentType = LienDocumentType::where('slug', 'mechanics_lien')->first();
-        $filing = LienFiling::factory()->forProject($this->project)->create([
-            'document_type_id' => $documentType->id,
-            'project_deadline_id' => $lienDeadline->id,
-            'status' => FilingStatus::Paid,
-            'recorded_at' => null,
-        ]);
-
-        $lienDeadline->update([
-            'status' => DeadlineStatus::NotStarted,
-            'completed_filing_id' => null,
-        ]);
-
-        // Lien release should not be available
+    it('returns false for lien release once it is completed', function () {
         $releaseDeadline = $this->project->deadlines()
             ->whereHas('documentType', fn ($q) => $q->where('slug', 'lien_release'))
             ->first();
 
-        expect($releaseDeadline->canFile())->toBeFalse();
+        $releaseDeadline->update(['status' => DeadlineStatus::Completed]);
+
+        expect($releaseDeadline->refresh()->canFile())->toBeFalse();
     });
 });
 
@@ -199,7 +184,7 @@ describe('LienProjectDeadline::getFilingBlockerReason()', function () {
         'missing fields on lien → null' => ['mechanics_lien', ['missing_fields_json' => ['last_furnish_date']], null],
         'not applicable on prelim → Not Applicable' => ['prelim_notice', ['status' => DeadlineStatus::NotApplicable], 'Not Applicable'],
         'not applicable on lien → Not Applicable' => ['mechanics_lien', ['status' => DeadlineStatus::NotApplicable], 'Not Applicable'],
-        'lien release without lien → Lien Required' => ['lien_release', [], 'Lien Required'],
+        'lien release without a lien recorded with us → null' => ['lien_release', [], null],
         'ready → null' => ['prelim_notice', [], null],
     ]);
 });

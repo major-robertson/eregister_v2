@@ -196,21 +196,9 @@ class LienProjectDeadline extends Model
             return false;
         }
 
-        $slug = $this->documentType?->slug;
-
-        // Preliminary notice: always available unless already filed
-        // Can file even with missing dates - user can enter them during filing
-        if ($slug === 'prelim_notice') {
-            return true;
-        }
-
-        // Lien release: requires mechanics lien to be filed first
-        if ($slug === 'lien_release') {
-            return $this->hasPriorFilingCompleted();
-        }
-
-        // NOI and mechanics lien: can start even with missing info
-        // The wizard will collect missing info
+        // Every other document can be started, even with missing info: the
+        // wizard collects it. A lien release doesn't need a lien recorded
+        // through us; the wizard asks for the recorded lien's details.
         return true;
     }
 
@@ -234,52 +222,7 @@ class LienProjectDeadline extends Model
             return 'Locked';
         }
 
-        $slug = $this->documentType?->slug;
-
-        // Lien release: check if mechanics lien is filed
-        if ($slug === 'lien_release' && ! $this->hasPriorFilingCompleted()) {
-            return 'Lien Required';
-        }
-
         return null;
-    }
-
-    /**
-     * Check if this deadline requires a prior filing (e.g., lien release requires lien).
-     */
-    public function requiresPriorFiling(): bool
-    {
-        return $this->documentType?->slug === 'lien_release';
-    }
-
-    /**
-     * Check if the required prior filing has been completed.
-     * For lien release, this checks if a mechanics lien has been RECORDED
-     * (not just submitted - must have recorded_at timestamp set).
-     */
-    public function hasPriorFilingCompleted(): bool
-    {
-        if (! $this->requiresPriorFiling()) {
-            return true;
-        }
-
-        // Lien release requires mechanics lien to be RECORDED (not just submitted)
-        // OR completed externally
-        $hasRecordedFiling = $this->project->filings()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
-            ->whereNotNull('recorded_at')
-            ->exists();
-
-        if ($hasRecordedFiling) {
-            return true;
-        }
-
-        // Check if lien was completed externally
-        $lienDeadline = $this->project->deadlines()
-            ->whereHas('documentType', fn ($q) => $q->where('slug', 'mechanics_lien'))
-            ->first();
-
-        return $lienDeadline?->wasCompletedExternally() ?? false;
     }
 
     /**

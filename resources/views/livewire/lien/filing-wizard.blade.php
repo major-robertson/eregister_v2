@@ -49,7 +49,60 @@
 
     {{-- Step Content --}}
     @if($step === 3)
-        {{-- Step 3 uses two separate cards --}}
+        {{-- Step 3 uses separate cards --}}
+        @if($isLienRelease)
+        <x-ui.card>
+            <x-slot:header>The lien being released</x-slot:header>
+
+            <div class="space-y-4">
+                @if($recordedLien)
+                    <flux:callout color="blue" icon="information-circle">
+                        <flux:callout.text>
+                            We recorded this lien{{ $recordedLien->recorded_at ? ' on '.$recordedLien->recorded_at->eastern()->format('F j, Y') : '' }}{{ $recordedLien->recording_reference ? ' as '.$recordedLien->recording_reference : '' }}. Check the details below and correct anything that has changed.
+                        </flux:callout.text>
+                    </flux:callout>
+                @endif
+
+                <flux:field>
+                    <flux:label>Date the lien was recorded *</flux:label>
+                    <flux:date-picker wire:model="original_lien_recorded_at" />
+                    <flux:error name="original_lien_recorded_at" />
+                </flux:field>
+
+                <flux:field>
+                    <flux:label>Document or instrument number</flux:label>
+                    <flux:input wire:model="original_lien_reference" />
+                    <flux:description>The number the county stamped on the recorded lien.</flux:description>
+                    <flux:error name="original_lien_reference" />
+                </flux:field>
+
+                <div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <flux:field>
+                            <flux:label>Book</flux:label>
+                            <flux:input wire:model="original_lien_book" />
+                            <flux:error name="original_lien_book" />
+                        </flux:field>
+
+                        <flux:field>
+                            <flux:label>Page</flux:label>
+                            <flux:input wire:model="original_lien_page" />
+                            <flux:error name="original_lien_page" />
+                        </flux:field>
+                    </div>
+                    <flux:description class="mt-2 block">Only if your county records by book and page.</flux:description>
+                </div>
+
+                <flux:field>
+                    <flux:label>Other identifying information</flux:label>
+                    <flux:textarea wire:model="original_lien_other_info" rows="2" />
+                    <flux:description>Anything else that identifies the lien, such as a case number or the name on the recorded lien.</flux:description>
+                    <flux:error name="original_lien_other_info" />
+                </flux:field>
+            </div>
+        </x-ui.card>
+        @endif
+
         @if(count($requiredDateFields) > 0)
         <x-ui.card>
             <x-slot:header>Important Dates</x-slot:header>

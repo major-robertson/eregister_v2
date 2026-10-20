@@ -99,6 +99,7 @@ class UpdateLienDocumentDetails
             'county' => $this->nullIfBlank($original['county'] ?? null),
             'recorded_at' => $this->nullableDate($original['recorded_at'] ?? null),
             'amount_received_cents' => $this->asCents($original['amount_received_cents'] ?? null),
+            'other_info' => $this->nullIfBlank($original['other_info'] ?? null),
         ]);
 
         if ($originalLien !== []) {

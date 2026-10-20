@@ -104,6 +104,7 @@ if (! function_exists('gateProject')) {
             ->call('nextStep')
             ->assertSet('step', 3)
             ->set('has_written_contract', '1')
+            ->fill(['base_contract_amount' => '5000', 'credits_deductions' => '0', 'payments_received' => '0'])
             ->set('amount_claimed', 5000.00)
             ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.');
     }
@@ -158,6 +159,7 @@ describe('deadline panel', function () {
             ->assertSee('We must submit it to the county by December 11, 2026.')
             ->assertSee('36 business days left.')
             ->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->call('proceedToCheckout')
             ->assertHasNoErrors()
             ->assertRedirect(route('lien.filings.checkout', $filing));
@@ -181,6 +183,7 @@ describe('deadline panel', function () {
             ->assertSee('We must submit it to the county by December 7, 2026.')
             ->assertSee('32 business days left.')
             ->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->call('proceedToCheckout')
             ->assertRedirect(route('lien.filings.checkout', $filing));
 
@@ -213,9 +216,11 @@ describe('deadline panel', function () {
             ->assertDontSee('We must submit it')
             ->assertSee('Proceed to Payment')
             ->set('has_written_contract', '1')
+            ->fill(['base_contract_amount' => '5000', 'credits_deductions' => '0', 'payments_received' => '0'])
             ->set('amount_claimed', 5000.00)
             ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
             ->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->call('proceedToCheckout')
             ->assertHasNoErrors()
             ->assertRedirect(route('lien.filings.checkout', $filing));
@@ -389,6 +394,7 @@ describe('past the deadline', function () {
             ->assertDontSee('has passed')
             ->assertSee('Proceed to Payment')
             ->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->call('proceedToCheckout')
             ->assertHasNoErrors()
             ->assertRedirect(route('lien.filings.checkout', $filing));
@@ -410,6 +416,7 @@ describe('past the deadline', function () {
             ->assertSee("We'll confirm the deadline once we have your dates.", false)
             ->assertDontSee('has passed')
             ->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->call('proceedToCheckout')
             ->assertHasNoErrors('deadline_passed');
 
@@ -615,6 +622,7 @@ describe('notice of intent served', function () {
             ->assertSet('step', 4)
             ->assertDontSee('requires a notice of intent before the lien')
             ->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->call('proceedToCheckout')
             ->assertHasNoErrors()
             ->assertRedirect(route('lien.filings.checkout', $filing));
@@ -650,6 +658,7 @@ describe('notice of intent served', function () {
             ->assertSee($message)
             ->assertSee($noiUrl, false)
             ->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->call('proceedToCheckout')
             ->assertHasErrors('noi_block')
             ->assertNoRedirect();
@@ -669,6 +678,7 @@ describe('notice of intent served', function () {
             ->assertHasNoErrors()
             ->assertSet('step', 4)
             ->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->call('proceedToCheckout')
             ->assertHasNoErrors()
             ->assertRedirect(route('lien.filings.checkout', $filing));
@@ -700,6 +710,7 @@ describe('notice of intent served', function () {
         $component->set('noi_served_on', $servedOn->toDateString())
             ->assertSee("The notice of intent was served on {$servedOn->format('F j, Y')}. {$stateName} requires {$lead} days between the notice and the lien, which runs past the lien deadline of {$due->format('F j, Y')}.")
             ->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->call('proceedToCheckout')
             ->assertHasErrors('noi_block')
             ->assertNoRedirect();
@@ -733,6 +744,7 @@ describe('notice of intent served', function () {
         $component->set('noi_served_on', $servedOn->toDateString())
             ->assertDontSee('days between the notice and the lien')
             ->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             // Days from the deadline a full-service lien pays the expedite fee (EREG-146).
             ->set('rushAcknowledged', true)
             ->call('proceedToCheckout')
@@ -765,6 +777,7 @@ describe('notice of intent served', function () {
         $component->set('noi_served_on', $due->toDateString())
             ->assertDontSee('days between the notice and the lien')
             ->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             // On the deadline day a full-service lien pays the expedite fee (EREG-146).
             ->set('rushAcknowledged', true)
             ->call('proceedToCheckout')
@@ -802,6 +815,7 @@ describe('date checks', function () {
             ->call('nextStep')
             ->assertSee($warning)
             ->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->call('proceedToCheckout')
             ->assertHasNoErrors()
             ->assertRedirect(route('lien.filings.checkout', $this->filing));

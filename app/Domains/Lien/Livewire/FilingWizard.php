@@ -65,6 +65,15 @@ class FilingWizard extends Component
         'both' => 'Both',
     ];
 
+    /** The amount breakdown fields and their project columns, in the order the Work step asks for them. */
+    private const BREAKDOWN_FIELDS = [
+        'base_contract_amount' => 'base_contract_amount_cents',
+        'change_orders' => 'change_orders_cents',
+        'uncompleted_work' => 'uncompleted_work_cents',
+        'credits_deductions' => 'credits_deductions_cents',
+        'payments_received' => 'payments_received_cents',
+    ];
+
     public LienProject $project;
 
     public LienProjectDeadline $deadline;
@@ -126,7 +135,8 @@ class FilingWizard extends Component
 
     public ?string $description_of_work = null;
 
-    // Amount breakdown (stored in payload_json)
+    // Amount breakdown, in dollars (stored on the project in cents, and in
+    // the payload_json snapshot at checkout)
     public ?string $has_written_contract = null;
 
     public ?string $base_contract_amount = null;
@@ -139,11 +149,18 @@ class FilingWizard extends Component
 
     public ?string $uncompleted_work = null;
 
+    // Why the amount claimed differs from the balance due (stored on the project)
+    public ?string $claim_difference_reason = null;
+
     // Step 5: Service choice
     public string $service_level = 'full_service';
 
     // Step 6: Review
     public bool $disclaimerAccepted = false;
+
+    // The customer attested the claim holds no fees, interest or penalties
+    // (liens and notices of intent).
+    public bool $claimAttested = false;
 
     // The customer ticked the expedite terms (an expedite rush fee only).
     public bool $rushAcknowledged = false;
@@ -189,6 +206,9 @@ class FilingWizard extends Component
 
     // Track owner address source: copied_from_jobsite | manual | researched
     public ?string $ownerAddressSource = null;
+
+    // The balance due before a breakdown amount changed (this request only).
+    private ?int $balanceBeforeUpdate = null;
 
     public function mount(LienProject $project, LienProjectDeadline $deadline): void
     {
@@ -288,16 +308,28 @@ class FilingWizard extends Component
         $this->first_furnish_date = $this->project->first_furnish_date?->format('Y-m-d');
         $this->last_furnish_date = $this->project->last_furnish_date?->format('Y-m-d');
         $this->completion_date = $this->project->completion_date?->format('Y-m-d');
+
+        // Amounts: the project holds them, and staff may have corrected them.
+        foreach (self::BREAKDOWN_FIELDS as $field => $column) {
+            $cents = $this->project->{$column};
+            $this->{$field} = $cents === null ? null : number_format($cents / 100, 2, '.', '');
+        }
+
+        $this->claim_difference_reason = $this->project->claim_difference_reason;
     }
 
     private function populateFromFiling(): void
     {
-        // Populate from existing filing
+        // The amount saved on this filing, else the balance due (for a
+        // preliminary notice, the contract and its change orders).
         if ($this->filing->amount_claimed_cents) {
             $this->amount_claimed = $this->filing->amount_claimed_cents / 100;
-        } elseif ($this->project->hasFinancialData()) {
-            $balanceDueCents = $this->project->balanceDueCents();
-            $this->amount_claimed = $balanceDueCents !== null ? $balanceDueCents / 100 : null;
+        } else {
+            $prefill = $this->amountMode() === 'estimate'
+                ? $this->contractTotalCents()
+                : $this->project->balanceDueCents();
+
+            $this->amount_claimed = $prefill !== null && $prefill > 0 ? $prefill / 100 : null;
         }
 
         $this->description_of_work = $this->filing->description_of_work;
@@ -311,15 +343,6 @@ class FilingWizard extends Component
             $this->has_legal_description = $payload['property_details']['has_legal_description'] ?? null;
             $this->has_apn = $payload['property_details']['has_apn'] ?? null;
             $this->multiple_parcels = $payload['property_details']['multiple_parcels'] ?? null;
-        }
-        if (isset($payload['amount_breakdown'])) {
-            $breakdown = $payload['amount_breakdown'];
-            $this->has_written_contract = $breakdown['has_written_contract'] ?? null;
-            $this->base_contract_amount = $breakdown['base_contract_amount'] ?? null;
-            $this->change_orders = $breakdown['change_orders'] ?? null;
-            $this->credits_deductions = $breakdown['credits_deductions'] ?? null;
-            $this->payments_received = $breakdown['payments_received'] ?? null;
-            $this->uncompleted_work = $breakdown['uncompleted_work'] ?? null;
         }
 
         if ($this->isLienRelease()) {
@@ -390,6 +413,104 @@ class FilingWizard extends Component
     private function isLienRelease(): bool
     {
         return $this->deadline->documentType?->slug === 'lien_release';
+    }
+
+    /**
+     * How the Work step asks about money:
+     * - claim: liens and notices of intent. The full breakdown, the balance
+     *   due it gives, the amount claimed (a reason when the two differ), and
+     *   at review the no-fees attestation.
+     * - estimate: preliminary notices. The estimated total price only.
+     * - basic: demand letters and releases. The amount, with an optional
+     *   breakdown.
+     */
+    private function amountMode(): string
+    {
+        $slug = $this->deadline->documentType?->slug;
+
+        return match (true) {
+            in_array($slug, LienFiling::CLAIM_DOCUMENTS, true) => 'claim',
+            $slug === 'prelim_notice' => 'estimate',
+            default => 'basic',
+        };
+    }
+
+    /**
+     * Dollars as entered, in cents; null when blank or not a number.
+     */
+    private function toCents(mixed $dollars): ?int
+    {
+        if ($dollars === null || ! is_numeric($dollars)) {
+            return null;
+        }
+
+        return (int) round((float) $dollars * 100);
+    }
+
+    private function amountClaimedCents(): ?int
+    {
+        $cents = $this->toCents($this->amount_claimed);
+
+        return $cents !== null && $cents > 0 ? $cents : null;
+    }
+
+    /**
+     * The balance due from the breakdown as entered: contract amount plus
+     * change orders, minus work not done, credits and payments, with blanks
+     * as 0. Null until the contract amount is entered.
+     */
+    private function balanceDueCents(): ?int
+    {
+        $base = $this->toCents($this->base_contract_amount);
+
+        if ($base === null) {
+            return null;
+        }
+
+        return $base
+            + ($this->toCents($this->change_orders) ?? 0)
+            - ($this->toCents($this->uncompleted_work) ?? 0)
+            - ($this->toCents($this->credits_deductions) ?? 0)
+            - ($this->toCents($this->payments_received) ?? 0);
+    }
+
+    /**
+     * The project's contract amount with its change orders, or null.
+     */
+    private function contractTotalCents(): ?int
+    {
+        return $this->project->base_contract_amount_cents === null
+            ? null
+            : $this->project->base_contract_amount_cents + ($this->project->change_orders_cents ?? 0);
+    }
+
+    /**
+     * Before a breakdown amount changes, note the balance due, so updated()
+     * can tell whether the claim still follows it.
+     */
+    public function updating(string $property, mixed $value): void
+    {
+        if (array_key_exists($property, self::BREAKDOWN_FIELDS)) {
+            $this->balanceBeforeUpdate = $this->balanceDueCents();
+        }
+    }
+
+    /**
+     * The amount claimed starts as the balance due and follows it while the
+     * customer changes the breakdown, until they enter a different amount.
+     */
+    public function updated(string $property, mixed $value): void
+    {
+        if (! array_key_exists($property, self::BREAKDOWN_FIELDS) || $this->amountMode() !== 'claim') {
+            return;
+        }
+
+        $balance = $this->balanceDueCents();
+        $claim = $this->toCents($this->amount_claimed);
+
+        if ($balance !== null && ($claim === null || $claim === $this->balanceBeforeUpdate)) {
+            $this->amount_claimed = $balance / 100;
+        }
     }
 
     /**
@@ -552,6 +673,43 @@ class FilingWizard extends Component
         }
 
         $attributes = [];
+
+        if ($this->amountMode() === 'claim') {
+            $rules += [
+                'base_contract_amount' => ['required', 'numeric', 'min:0'],
+                'change_orders' => ['nullable', 'numeric'],
+                'uncompleted_work' => ['nullable', 'numeric', 'min:0'],
+                'credits_deductions' => ['required', 'numeric', 'min:0'],
+                'payments_received' => ['required', 'numeric', 'min:0'],
+                'claim_difference_reason' => [Rule::requiredIf($this->claimDiffersFromBalance), 'nullable', 'string', 'max:1000'],
+            ];
+
+            $messages += [
+                'base_contract_amount.required' => 'Enter the original contract amount.',
+                'credits_deductions.required' => 'Enter the credits and deductions. Enter 0 if there are none.',
+                'payments_received.required' => 'Enter the payments received. Enter 0 if there are none.',
+                'amount_claimed.required' => 'Enter the amount you are claiming.',
+                'amount_claimed.min' => 'The amount you are claiming must be more than $0.',
+                'claim_difference_reason.required' => 'Tell us why the amount claimed is different from the balance due.',
+            ];
+
+            $attributes += [
+                'base_contract_amount' => 'original contract amount',
+                'change_orders' => 'change orders',
+                'uncompleted_work' => 'value of work not done',
+                'credits_deductions' => 'credits and deductions',
+                'payments_received' => 'payments received',
+                'amount_claimed' => 'amount you are claiming',
+                'claim_difference_reason' => 'reason',
+            ];
+        } elseif ($this->amountMode() === 'estimate') {
+            $messages += [
+                'amount_claimed.required' => 'Enter the estimated total price.',
+                'amount_claimed.min' => 'The estimated total price must be more than $0.',
+            ];
+
+            $attributes['amount_claimed'] = 'estimated total price';
+        }
 
         if (($noi = $this->noiRequirement()) !== null) {
             $rules += [
@@ -1109,17 +1267,13 @@ class FilingWizard extends Component
             'owner_is_tenant' => $this->owner_is_tenant,
             'property_class' => $this->project_type_category,
             'has_written_contract' => $this->has_written_contract === '1',
-            'base_contract_amount_cents' => $this->base_contract_amount !== null && $this->base_contract_amount !== '' ? (int) (round((float) $this->base_contract_amount * 100)) : null,
-            'change_orders_cents' => $this->change_orders !== null && $this->change_orders !== '' ? (int) (round((float) $this->change_orders * 100)) : null,
-            'credits_deductions_cents' => $this->credits_deductions !== null && $this->credits_deductions !== '' ? (int) (round((float) $this->credits_deductions * 100)) : null,
-            'payments_received_cents' => $this->payments_received !== null && $this->payments_received !== '' ? (int) (round((float) $this->payments_received * 100)) : null,
-            'uncompleted_work_cents' => $this->uncompleted_work !== null && $this->uncompleted_work !== '' ? (int) (round((float) $this->uncompleted_work * 100)) : null,
         ];
 
         if ($this->step >= 3) {
             $projectData['first_furnish_date'] = $this->first_furnish_date ?: null;
             $projectData['last_furnish_date'] = $this->last_furnish_date ?: null;
             $projectData['completion_date'] = $this->completion_date ?: null;
+            $projectData += $this->projectAmounts();
 
             $this->logDatesChangedAfterDeadlineBlock($projectData);
         }
@@ -1131,7 +1285,7 @@ class FilingWizard extends Component
         }
 
         $filingData = [
-            'amount_claimed_cents' => $this->amount_claimed ? (int) ($this->amount_claimed * 100) : null,
+            'amount_claimed_cents' => $this->amountClaimedCents(),
             'description_of_work' => $this->description_of_work,
             'service_level' => $this->service_level,
         ];
@@ -1144,7 +1298,66 @@ class FilingWizard extends Component
             $filingData['document_details_json'] = $this->documentDetailsWithNoiAnswer();
         }
 
+        if ($this->step >= 3 && $this->amountMode() === 'estimate') {
+            $filingData['document_details_json'] = $this->documentDetailsWithEstimate();
+        }
+
         $this->filing->update($filingData);
+    }
+
+    /**
+     * The amounts the Work step saves on the project, in cents. Liens and
+     * notices of intent save the whole breakdown (blank change orders or
+     * work not done as 0) and the reason the claim differs from the balance
+     * due, cleared once they agree. A preliminary notice asks only for an
+     * estimate, so it leaves the project's amounts alone.
+     *
+     * @return array<string, int|string|null>
+     */
+    private function projectAmounts(): array
+    {
+        $mode = $this->amountMode();
+
+        if ($mode === 'estimate') {
+            return [];
+        }
+
+        $amounts = [];
+
+        foreach (self::BREAKDOWN_FIELDS as $field => $column) {
+            $amounts[$column] = $this->toCents($this->{$field});
+        }
+
+        if ($mode === 'claim') {
+            $amounts['change_orders_cents'] ??= 0;
+            $amounts['uncompleted_work_cents'] ??= 0;
+            $amounts['claim_difference_reason'] = $this->claimDiffersFromBalance
+                ? $this->nullIfBlank($this->claim_difference_reason)
+                : null;
+        }
+
+        return $amounts;
+    }
+
+    /**
+     * The filing's document details with the customer's estimated total
+     * price as the estimate a preliminary notice states (the Document
+     * details card edits the same value). Other details are kept.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function documentDetailsWithEstimate(): ?array
+    {
+        $details = $this->filing->document_details_json ?? [];
+        $estimate = $this->amountClaimedCents();
+
+        if ($estimate === null) {
+            unset($details['estimated_price_cents']);
+        } else {
+            $details['estimated_price_cents'] = $estimate;
+        }
+
+        return $details === [] ? null : $details;
     }
 
     /**
@@ -1260,11 +1473,15 @@ class FilingWizard extends Component
             return;
         }
 
-        $this->validate([
-            'disclaimerAccepted' => ['accepted'],
-        ], [
-            'disclaimerAccepted.accepted' => 'You must accept the disclaimer to continue.',
-        ]);
+        $rules = ['disclaimerAccepted' => ['accepted']];
+        $messages = ['disclaimerAccepted.accepted' => 'You must accept the disclaimer to continue.'];
+
+        if ($this->amountMode() === 'claim') {
+            $rules['claimAttested'] = ['accepted'];
+            $messages['claimAttested.accepted'] = 'Confirm the amount claimed has no fees, interest or penalties added.';
+        }
+
+        $this->validate($rules, $messages);
 
         // An expedite fee goes through only with its terms ticked.
         if (($this->rushFee($this->deadlineGate())['acknowledgement'] ?? null) !== null && ! $this->rushAcknowledged) {
@@ -1292,6 +1509,7 @@ class FilingWizard extends Component
             'rush_tier' => $rushFee['tier'] ?? ($rushElected ? RushTier::RUSH : null),
             'rush_elected' => $rushElected,
             'rush_acknowledged_at' => $acknowledgement !== null ? now() : null,
+            'claim_attested_at' => $this->amountMode() === 'claim' ? now() : null,
         ]);
 
         if ($acknowledgement !== null) {
@@ -1369,6 +1587,7 @@ class FilingWizard extends Component
                 'credits_deductions' => $this->credits_deductions,
                 'payments_received' => $this->payments_received,
                 'uncompleted_work' => $this->uncompleted_work,
+                'claim_difference_reason' => $this->project->claim_difference_reason,
             ],
             'dates' => [
                 'first_furnish' => $this->project->first_furnish_date?->toDateString(),
@@ -1549,23 +1768,34 @@ class FilingWizard extends Component
     }
 
     /**
-     * Calculate the balance due for display.
+     * The balance due for display ("$7,200.00", "-$300.00"), or null until
+     * the contract amount is entered.
      */
     public function getCalculatedBalanceDueProperty(): ?string
     {
-        if ($this->base_contract_amount === null || $this->base_contract_amount === '') {
+        $balance = $this->balanceDueCents();
+
+        if ($balance === null) {
             return null;
         }
 
-        $base = (float) ($this->base_contract_amount ?? 0);
-        $changes = (float) ($this->change_orders ?? 0);
-        $credits = (float) ($this->credits_deductions ?? 0);
-        $payments = (float) ($this->payments_received ?? 0);
-        $uncompleted = (float) ($this->uncompleted_work ?? 0);
+        return ($balance < 0 ? '-$' : '$').number_format(abs($balance) / 100, 2);
+    }
 
-        $balance = $base + $changes - $credits - $payments - $uncompleted;
+    /**
+     * Whether the amount claimed is more than a cent away from the balance
+     * due, so the customer must say why. Liens and notices of intent only.
+     */
+    public function getClaimDiffersFromBalanceProperty(): bool
+    {
+        if ($this->amountMode() !== 'claim') {
+            return false;
+        }
 
-        return number_format($balance, 2);
+        $balance = $this->balanceDueCents();
+        $claim = $this->toCents($this->amount_claimed);
+
+        return $balance !== null && $claim !== null && abs($claim - $balance) > 1;
     }
 
     /**
@@ -1655,6 +1885,7 @@ class FilingWizard extends Component
             'partyRoles' => collect(PartyRole::cases())->filter(fn ($role) => $role !== PartyRole::Claimant)->values(),
             'requiredDateFields' => $this->requiredDateFields,
             'isLienRelease' => $this->isLienRelease(),
+            'amountMode' => $this->amountMode(),
             'recordedLien' => $this->step === 3 && $this->isLienRelease() ? $this->recordedLien() : null,
             'stateName' => $this->stateName(),
             'noiRequirement' => $noiRequirement,

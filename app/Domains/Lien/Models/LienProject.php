@@ -55,6 +55,7 @@ class LienProject extends Model
         'credits_deductions_cents',
         'payments_received_cents',
         'uncompleted_work_cents',
+        'claim_difference_reason',
         'first_furnish_date',
         'last_furnish_date',
         'completion_date',

@@ -3,19 +3,24 @@
 namespace App\Domains\Lien\Admin\Livewire;
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Lien\Admin\Actions\AddFilingComment;
+use App\Domains\Lien\Admin\Actions\ChangeFilingStatus;
 use App\Domains\Lien\Admin\Enums\KanbanColumn;
 use App\Domains\Lien\Admin\Enums\SearchMode;
+use App\Domains\Lien\Admin\Support\BoardCard;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Models\LienFiling;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\View\View;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class LienBoard extends Component
 {
-    use WithPagination;
+    use AuthorizesRequests, WithPagination;
 
     public string $search = '';
 
@@ -48,6 +53,42 @@ class LienBoard extends Component
         $this->searchMode = null;
     }
 
+    /**
+     * The "Start" button on a New card: we have picked the order up. A Paid
+     * filing moves to In Fulfillment; a full-service order (In Fulfillment
+     * since payment) gets a note instead. Either way the card moves to In
+     * Progress. Does nothing if the card has left New in the meantime.
+     */
+    public function start(string $publicId): void
+    {
+        $filing = LienFiling::withoutGlobalScope('business')->where('public_id', $publicId)->firstOrFail();
+
+        $this->authorize('changeStatus', $filing);
+
+        if (BoardCard::forFiling($filing)?->column !== KanbanColumn::New) {
+            return;
+        }
+
+        if ($filing->status === FilingStatus::Paid) {
+            app(ChangeFilingStatus::class)->execute($filing, FilingStatus::InFulfillment, 'Started from the board');
+        } else {
+            app(AddFilingComment::class)->execute($filing, 'Started from the board');
+        }
+
+        unset($this->boardCards);
+    }
+
+    /**
+     * The cards on the board (no search), keyed by filing id, in board order.
+     *
+     * @return Collection<int, BoardCard>
+     */
+    #[Computed]
+    public function boardCards(): Collection
+    {
+        return BoardCard::all();
+    }
+
     public function render(): View
     {
         $data = ['searchMode' => $this->searchMode];
@@ -61,6 +102,7 @@ class LienBoard extends Component
         } else {
             $data['columns'] = $this->getColumns();
             $data['filings'] = $this->getFilings();
+            $data['cards'] = $this->search ? collect() : $this->boardCards;
             $data['resultCount'] = $data['filings']->flatten()->count();
         }
 
@@ -69,7 +111,7 @@ class LienBoard extends Component
     }
 
     /**
-     * Get columns -- all FilingStatus cases when searching, otherwise the 4 Kanban columns.
+     * Get columns -- all FilingStatus cases when searching, otherwise the Kanban columns.
      */
     public function getColumns(): array
     {
@@ -82,14 +124,22 @@ class LienBoard extends Component
 
     /**
      * Get filings grouped by column. When searching, returns all statuses
-     * grouped by FilingStatus value (like board-all). Without search, uses the
-     * standard paid/active filter grouped by KanbanColumn.
+     * grouped by FilingStatus value (like board-all). Without search, the
+     * paid, active filings grouped by KanbanColumn (see BoardCard), nearest
+     * deadline first within each column.
      */
     public function getFilings(): Collection
     {
-        $query = LienFiling::query()
+        if (! $this->search) {
+            return $this->boardCards
+                ->groupBy(fn (BoardCard $card) => $card->column->value)
+                ->map(fn (Collection $cards) => $cards->map(fn (BoardCard $card) => $card->filing)->values());
+        }
+
+        return LienFiling::query()
             ->withoutGlobalScope('business')
-            ->when($this->search, fn ($query) => $query->withTrashed()->adminSearch($this->search))
+            ->withTrashed()
+            ->adminSearch($this->search)
             ->with([
                 'project',
                 'project.business',
@@ -97,27 +147,9 @@ class LienBoard extends Component
                 'createdBy',
                 'events' => fn ($q) => $q->where('event_type', 'note_added')->latest()->limit(1),
             ])
-            ->orderBy('paid_at', 'asc');
-
-        if (! $this->search) {
-            $query->whereNotNull('paid_at')
-                ->whereNotIn('status', [
-                    FilingStatus::Draft,
-                    FilingStatus::AwaitingPayment,
-                    FilingStatus::AwaitingClient,
-                    FilingStatus::AwaitingEsign,
-                    FilingStatus::AwaitingNotary,
-                    FilingStatus::Complete,
-                    FilingStatus::Canceled,
-                    FilingStatus::Refunded,
-                ]);
-        }
-
-        return $query->get()->groupBy(
-            $this->search
-                ? fn (LienFiling $filing) => $filing->status->value
-                : fn (LienFiling $filing) => KanbanColumn::forFiling($filing)->value
-        );
+            ->orderBy('paid_at', 'asc')
+            ->get()
+            ->groupBy(fn (LienFiling $filing) => $filing->status->value);
     }
 
     /**

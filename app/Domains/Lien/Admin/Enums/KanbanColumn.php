@@ -4,10 +4,13 @@ namespace App\Domains\Lien\Admin\Enums;
 
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Models\LienFiling;
+use LogicException;
 
 enum KanbanColumn: string
 {
     case New = 'new';
+    case InProgress = 'in_progress';
+    case WaitingOnCustomer = 'waiting_on_customer';
     case NeedsReview = 'needs_review';
     case ReadyToFile = 'ready_to_file';
     case WaitingOnNextStep = 'waiting_on_next_step';
@@ -20,6 +23,8 @@ enum KanbanColumn: string
     {
         return match ($this) {
             self::New => 'New',
+            self::InProgress => 'In Progress',
+            self::WaitingOnCustomer => 'Waiting on customer',
             self::NeedsReview => 'Needs Review',
             self::ReadyToFile => 'Ready to File',
             self::WaitingOnNextStep => 'Waiting on Next Step',
@@ -33,7 +38,9 @@ enum KanbanColumn: string
     public function color(): string
     {
         return match ($this) {
-            self::New => 'blue',
+            self::New => 'sky',
+            self::InProgress => 'blue',
+            self::WaitingOnCustomer => 'orange',
             self::NeedsReview => 'amber',
             self::ReadyToFile => 'lime',
             self::WaitingOnNextStep => 'cyan',
@@ -48,6 +55,8 @@ enum KanbanColumn: string
     {
         return match ($this) {
             self::New => 'inbox',
+            self::InProgress => 'wrench',
+            self::WaitingOnCustomer => 'user',
             self::NeedsReview => 'eye',
             self::ReadyToFile => 'paper-airplane',
             self::WaitingOnNextStep => 'queue-list',
@@ -59,11 +68,17 @@ enum KanbanColumn: string
     }
 
     /**
-     * Determine which column a filing belongs to.
+     * The column a status puts a filing in, or null for the statuses the
+     * board leaves out (not paid yet, or finished). Every status has an arm
+     * and there is no default, so a new FilingStatus fails here until someone
+     * decides where it goes, instead of landing in New unnoticed.
      */
-    public static function forFiling(LienFiling $filing): self
+    public static function tryForStatus(FilingStatus $status): ?self
     {
-        return match ($filing->status) {
+        return match ($status) {
+            FilingStatus::Paid => self::New,
+            FilingStatus::InFulfillment => self::InProgress,
+            FilingStatus::AwaitingClient, FilingStatus::AwaitingEsign, FilingStatus::AwaitingNotary => self::WaitingOnCustomer,
             FilingStatus::NeedsReview => self::NeedsReview,
             FilingStatus::ReadyToFile => self::ReadyToFile,
             FilingStatus::WaitingOnNextStep => self::WaitingOnNextStep,
@@ -71,7 +86,41 @@ enum KanbanColumn: string
             FilingStatus::SubmittedForRecording => self::SubmittedForRecording,
             FilingStatus::Recorded => self::Recorded,
             FilingStatus::Mailed => self::Mailed,
-            default => self::New,
+            FilingStatus::Draft,
+            FilingStatus::AwaitingPayment,
+            FilingStatus::Complete,
+            FilingStatus::Canceled,
+            FilingStatus::Refunded => null,
         };
+    }
+
+    public static function tryForFiling(LienFiling $filing): ?self
+    {
+        return self::tryForStatus($filing->status);
+    }
+
+    /**
+     * Determine which column a filing's status puts it in.
+     *
+     * @throws LogicException for a status the board leaves out
+     */
+    public static function forFiling(LienFiling $filing): self
+    {
+        return self::tryForFiling($filing)
+            ?? throw new LogicException("Filing status {$filing->status->value} has no board column.");
+    }
+
+    /**
+     * The statuses the board leaves out: Draft, Awaiting Payment, Complete,
+     * Canceled and Refunded.
+     *
+     * @return list<FilingStatus>
+     */
+    public static function offBoardStatuses(): array
+    {
+        return array_values(array_filter(
+            FilingStatus::cases(),
+            fn (FilingStatus $status): bool => self::tryForStatus($status) === null,
+        ));
     }
 }

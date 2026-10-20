@@ -42,6 +42,15 @@
         </flux:callout>
     @endif
 
+    @if(session('upload_received'))
+        <flux:callout color="green" icon="check-circle">
+            <flux:callout.heading>We have your document</flux:callout.heading>
+            <flux:callout.text>
+                We received {{ session('upload_received') }}. We'll check it and keep going. If the scan is hard to read we'll ask for a clearer one.
+            </flux:callout.text>
+        </flux:callout>
+    @endif
+
     @if($signUrl)
         <flux:callout color="purple" icon="pencil-square">
             <flux:callout.heading>Your signature is needed</flux:callout.heading>
@@ -148,10 +157,13 @@
         @endif
     </div>
 
-    {{-- The request we emailed (Awaiting Client / E-Signature / Notary), answered right here. --}}
-    @if($clientRequest)
+    {{-- While the filing waits on the customer (Awaiting Client / E-Signature / Notary):
+         the request we emailed, if there is one, answered right here, and the upload
+         box for the signed document, so there is one place to respond. --}}
+    @if($showUploadBox)
         <div id="client-request" class="scroll-mt-6 rounded-xl border-2 border-orange-300 bg-white overflow-hidden">
             <div class="p-6 space-y-4">
+                @if($clientRequest)
                 <div class="flex items-center gap-2">
                     <flux:icon name="chat-bubble-left-ellipsis" class="w-5 h-5 text-orange-600" />
                     <h2 class="text-lg font-semibold text-zinc-900">What we need from you</h2>
@@ -171,7 +183,13 @@
                         {{ $clientRequestAttachment->file_name }}
                     </a>
                 @endif
+                @endif
 
+                @unless($uploadAfterAnswer)
+                    @include('livewire.lien._signed-document-upload', ['inRequestPanel' => $clientRequest !== null])
+                @endunless
+
+                @if($clientRequest)
                 <form wire:submit="submitAnswer" class="space-y-4 border-t border-border pt-4">
                     <flux:field>
                         <flux:label>Your answer</flux:label>
@@ -200,6 +218,11 @@
                         Send answer
                     </flux:button>
                 </form>
+                @endif
+
+                @if($uploadAfterAnswer)
+                    @include('livewire.lien._signed-document-upload', ['inRequestPanel' => true])
+                @endif
             </div>
         </div>
     @endif

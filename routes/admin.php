@@ -17,6 +17,7 @@ use App\Domains\Forms\Admin\Livewire\FormationsBoardAll;
 use App\Domains\Forms\Admin\Livewire\SalesTaxApplicationStateDetail;
 use App\Domains\Forms\Admin\Livewire\SalesTaxBoard;
 use App\Domains\Forms\Admin\Livewire\SalesTaxBoardAll;
+use App\Domains\Lien\Admin\Http\Controllers\CustomerUploadController;
 use App\Domains\Lien\Admin\Http\Controllers\DemandLetterController;
 use App\Domains\Lien\Admin\Http\Controllers\LienDocumentController;
 use App\Domains\Lien\Admin\Http\Controllers\SignedDocumentController;
@@ -78,6 +79,11 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
                 ->name('documents.download');
             // Signed e-sign document download (kept before the {publicId} catch-all).
             Route::get('/esign/documents/{publicId}/download', [SignedDocumentController::class, 'download'])->name('esign.documents.download');
+            // A file the customer sent from their filing page; {media} is a
+            // customer_uploads media id on that filing.
+            Route::get('/{publicId}/customer-uploads/{media}', [CustomerUploadController::class, 'download'])
+                ->whereNumber('media')
+                ->name('customer-uploads.download');
             Route::get('/{lienFiling:public_id}', LienFilingDetail::class)->name('show')->withTrashed();
         });
 

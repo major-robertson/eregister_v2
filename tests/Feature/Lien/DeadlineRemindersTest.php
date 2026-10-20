@@ -322,6 +322,42 @@ describe('skips jobs the customer backed out of', function () {
         Notification::assertSentTo($owner, DeadlineApproaching::class,
             fn (DeadlineApproaching $notification) => $notification->deadline->is($otherJob));
     });
+
+    // EREG-131: a finished preliminary notice is not backing out. The lien
+    // that follows it on the same job still gets its reminders; a refunded
+    // preliminary notice silences them.
+    it('reminds about the lien after the preliminary notice on the job is complete, not after it was refunded', function (FilingStatus $prelimStatus, bool $reminded) {
+        [$business, $owner] = reminderBusiness();
+
+        $prelim = reminderDeadline($business, '2026-09-01');
+        $lienType = LienDocumentType::where('slug', 'mechanics_lien')->firstOrFail();
+        $lien = LienProjectDeadline::factory()->forProject($prelim->project)->create([
+            'document_type_id' => $lienType->id,
+            // A project holds one deadline per rule.
+            'deadline_rule_id' => LienDeadlineRule::where('document_type_id', $lienType->id)->whereKeyNot($prelim->deadline_rule_id)->value('id'),
+            'due_date' => '2026-10-12',
+        ]);
+
+        LienFiling::factory()->forProject($prelim->project)->create([
+            'document_type_id' => $prelim->document_type_id,
+            'project_deadline_id' => $prelim->id,
+            'status' => $prelimStatus,
+            'paid_at' => now()->subWeeks(5),
+        ]);
+
+        $this->artisan('lien:send-deadline-reminders')->assertSuccessful();
+
+        if ($reminded) {
+            Notification::assertSentToTimes($owner, DeadlineApproaching::class, 1);
+            Notification::assertSentTo($owner, DeadlineApproaching::class,
+                fn (DeadlineApproaching $notification) => $notification->deadline->is($lien) && $notification->daysRemaining === 7);
+        } else {
+            Notification::assertNothingSent();
+        }
+    })->with([
+        'complete prelim' => [FilingStatus::Complete, true],
+        'refunded prelim' => [FilingStatus::Refunded, false],
+    ]);
 });
 
 describe('who gets it', function () {

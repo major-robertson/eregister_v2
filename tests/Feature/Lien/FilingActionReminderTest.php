@@ -352,7 +352,7 @@ it('puts a call-to-action button in the email', function (FilingStatus $status, 
     $mailable->assertSeeInHtml($label);
     $mailable->assertSeeInHtml($mailable->ctaUrl);
 })->with([
-    'awaiting_client' => [FilingStatus::AwaitingClient, 'Provide Information'],
+    'awaiting_client' => [FilingStatus::AwaitingClient, 'View Filing Details'],
     'awaiting_esign' => [FilingStatus::AwaitingEsign, 'Sign Now'],
     'awaiting_notary' => [FilingStatus::AwaitingNotary, 'View Filing Details'],
 ]);

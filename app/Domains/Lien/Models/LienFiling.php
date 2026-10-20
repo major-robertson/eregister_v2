@@ -98,14 +98,29 @@ class LienFiling extends Model implements HasMedia
             }
 
             EmailSequence::suppressReminderFor($filing);
+            EmailSequence::suppressAllFor($filing, 'filing_deleted');
+        });
 
-            EmailSequence::query()
-                ->where('sequenceable_type', $filing->getMorphClass())
-                ->where('sequenceable_id', $filing->getKey())
-                ->whereNull('suppressed_at')
-                ->whereNull('completed_at')
-                ->get()
-                ->each(fn (EmailSequence $seq) => $seq->suppress('filing_deleted'));
+        // A refunded, canceled or finished filing has nothing left to email
+        // the customer about: stop every sequence on it (reminders, "finish
+        // your order"). This watches the column rather than transitionTo()
+        // because refunds set the status directly (RefundPayment,
+        // StripeRefundRecorder).
+        static::updated(function (self $filing): void {
+            if (! $filing->wasChanged('status')) {
+                return;
+            }
+
+            $reason = match ($filing->status) {
+                FilingStatus::Refunded => 'filing_refunded',
+                FilingStatus::Canceled => 'filing_canceled',
+                FilingStatus::Complete => 'filing_complete',
+                default => null,
+            };
+
+            if ($reason !== null) {
+                EmailSequence::suppressAllFor($filing, $reason);
+            }
         });
     }
 

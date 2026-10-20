@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Domains\Esign\Models\SignatureRequest;
+use App\Mail\Concerns\RepliesToSupport;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -17,7 +18,7 @@ use Illuminate\Queue\SerializesModels;
  */
 class SignerReminder extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use Queueable, RepliesToSupport, SerializesModels;
 
     public string $signerName;
 
@@ -43,6 +44,7 @@ class SignerReminder extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
+            replyTo: $this->supportReplyTo(),
             subject: "Reminder: please sign your {$this->title} — eRegister",
         );
     }

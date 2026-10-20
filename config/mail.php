@@ -117,6 +117,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Support Inbox
+    |--------------------------------------------------------------------------
+    |
+    | The Reply-To on service mail a customer may answer: lien filing
+    | reminders, receipts, e-sign requests and deadline reminders (see
+    | App\Mail\Concerns\RepliesToSupport). Without it, a reply goes to the
+    | sending address instead of the support inbox.
+    |
+    */
+
+    'support_address' => env('MAIL_SUPPORT_ADDRESS', 'contact@eregister.com'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Blocked Recipient Domains
     |--------------------------------------------------------------------------
     |

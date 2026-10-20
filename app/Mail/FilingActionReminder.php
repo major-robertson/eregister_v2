@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Domains\Lien\Enums\FilingStatus;
+use App\Mail\Concerns\RepliesToSupport;
 use App\Models\EmailSequence;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -14,7 +15,7 @@ use Illuminate\Support\Facades\URL;
 
 class FilingActionReminder extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use Queueable, RepliesToSupport, SerializesModels;
 
     public string $userName;
 
@@ -99,6 +100,7 @@ class FilingActionReminder extends Mailable implements ShouldQueue
         };
 
         return new Envelope(
+            replyTo: $this->supportReplyTo(),
             subject: "{$prefix}: {$this->headline} — eRegister",
         );
     }

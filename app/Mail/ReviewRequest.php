@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Concerns\RepliesToSupport;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -18,7 +19,7 @@ use Illuminate\Support\Str;
  */
 class ReviewRequest extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use Queueable, RepliesToSupport, SerializesModels;
 
     public function __construct(public User $recipient)
     {
@@ -27,7 +28,7 @@ class ReviewRequest extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: "Hey {$this->firstName()}");
+        return new Envelope(replyTo: $this->supportReplyTo(), subject: "Hey {$this->firstName()}");
     }
 
     public function content(): Content

@@ -70,6 +70,8 @@ class LienFilingEvent extends Model
             'esign_sent' => 'Sent for e-signature',
             'esign_reminder_sent' => 'E-signature reminder sent',
             'esign_completed' => 'E-signature completed',
+            'client_request_sent' => 'Request sent to customer',
+            'client_response' => 'Customer answered',
             default => ucfirst(str_replace('_', ' ', $this->event_type)),
         };
     }

@@ -3,6 +3,10 @@ Hi {{ $userName }},
 
 {{ $body }}
 
+@if($requestText)
+<x-mail::quote :text="$requestText" />
+@endif
+
 @if($projectName)
 **Project:** {{ $projectName }}
 @endif

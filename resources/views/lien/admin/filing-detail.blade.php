@@ -734,15 +734,77 @@
                     </div>
                     @endif
 
+                    {{-- Awaiting Client / E-Signature / Notary: the customer is emailed this
+                         message on save (FilingActionRequested), so it comes first and is required. --}}
+                    @php
+                        $requestStatus = \App\Domains\Lien\Enums\FilingStatus::tryFrom($newStatus);
+                        $sendsCustomerRequest = $requestStatus?->isWaitingOnCustomer() ?? false;
+                    @endphp
+                    @if ($sendsCustomerRequest)
+                    <div class="space-y-3 rounded-lg border-2 border-amber-400 bg-amber-50 p-4">
+                        <div class="flex items-center gap-2">
+                            <flux:icon name="envelope" class="size-5 shrink-0 text-amber-600" />
+                            <flux:heading size="sm" class="text-amber-900">Message to the customer</flux:heading>
+                        </div>
+
+                        @if ($filing->createdBy)
+                        <flux:text class="text-sm text-amber-900">
+                            This will be emailed to {{ $filing->createdBy->name }} &lt;{{ $filing->createdBy->email }}&gt; when you save.
+                        </flux:text>
+                        @else
+                        <flux:text class="text-sm text-red-700">
+                            This filing has no customer user, so no email will go out. The message still shows on their filing page.
+                        </flux:text>
+                        @endif
+
+                        <flux:field>
+                            <flux:label>Message <span class="text-red-500">*</span></flux:label>
+                            <flux:textarea wire:model="customerMessage" rows="5"
+                                placeholder="Say exactly what you need, in plain words." />
+                            <flux:error name="customerMessage" />
+                        </flux:field>
+
+                        <flux:field>
+                            <flux:label>Attach a PDF (optional)</flux:label>
+                            <flux:file-upload wire:model="customerAttachment" accept=".pdf,application/pdf">
+                                <flux:file-upload.dropzone
+                                    inline
+                                    heading="Drop a PDF here or click to browse"
+                                    text="PDF, up to 10 MB"
+                                    with-progress
+                                />
+                            </flux:file-upload>
+                            @if ($customerAttachment)
+                            <flux:text class="mt-1 text-sm">{{ $customerAttachment->getClientOriginalName() }}</flux:text>
+                            @endif
+                            <flux:error name="customerAttachment" />
+                        </flux:field>
+
+                        <flux:text class="text-xs text-amber-800">
+                            <span class="font-medium">Subject:</span>
+                            {{ \App\Mail\FilingActionRequested::subjectFor($requestStatus, $filing->documentType?->name) }}
+                        </flux:text>
+                    </div>
+
+                    <div class="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-3">
+                        <flux:field>
+                            <flux:label class="text-gray-500!">Internal note (the customer never sees this)</flux:label>
+                            <flux:textarea wire:model="note" rows="2"
+                                placeholder="A note for the team..." />
+                            <flux:error name="note" />
+                        </flux:field>
+                    </div>
+                    @else
                     <flux:field>
                         <flux:label>Note (optional)</flux:label>
                         <flux:textarea wire:model="note" rows="3"
                             placeholder="Add a note about this status change..." />
                         <flux:error name="note" />
                     </flux:field>
+                    @endif
 
                     <flux:button type="submit" variant="primary" class="w-full">
-                        Update Status
+                        {{ $sendsCustomerRequest ? 'Send to customer and update status' : 'Update Status' }}
                     </flux:button>
                 </form>
                 @elseif (!$canChangeStatus)
@@ -756,6 +818,65 @@
                 @endif
 
             </div>
+
+            {{-- Requests and answers: the latest request we emailed the customer and
+                 everything they sent back from their filing page. --}}
+            @if ($clientRequest || $clientResponses->isNotEmpty())
+            <div class="rounded-lg border border-border bg-white p-6">
+                <flux:heading size="lg" class="mb-4">Requests and answers</flux:heading>
+
+                @if ($clientRequest)
+                @php
+                    $requestedAt = ! empty($clientRequest['requested_at']) ? \Illuminate\Support\Carbon::parse($clientRequest['requested_at']) : null;
+                    $resolvedAt = ! empty($clientRequest['resolved_at']) ? \Illuminate\Support\Carbon::parse($clientRequest['resolved_at']) : null;
+                    $requestFile = ! empty($clientRequest['attachment_media_id']) ? $requestFiles->get($clientRequest['attachment_media_id']) : null;
+                @endphp
+                <div @class([
+                    'rounded-lg border p-3',
+                    'border-amber-300 bg-amber-50' => $clientRequestOpen,
+                    'border-gray-200 bg-gray-50' => ! $clientRequestOpen,
+                ])>
+                    <div class="flex items-center justify-between gap-2">
+                        <flux:text class="text-xs font-medium {{ $clientRequestOpen ? 'text-amber-800' : 'text-gray-500' }}">
+                            {{ $clientRequestOpen ? 'Open request' : 'Latest request' }}
+                        </flux:text>
+                        @if ($requestedAt)
+                        <flux:text class="text-xs text-gray-400">{{ $requestedAt->eastern()->format('M j, g:i A') }}</flux:text>
+                        @endif
+                    </div>
+                    <p class="mt-2 whitespace-pre-line text-sm text-gray-800">{{ $clientRequest['text'] ?? '' }}</p>
+                    @if ($requestFile)
+                    <a href="{{ $requestFile->getTemporaryUrl(now()->addMinutes(30)) }}" target="_blank"
+                       class="mt-2 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                        <flux:icon name="paper-clip" class="size-4" /> {{ $requestFile->file_name }}
+                    </a>
+                    @endif
+                    @if ($resolvedAt)
+                    <flux:text class="mt-2 text-xs text-gray-500">Closed {{ $resolvedAt->eastern()->format('M j, g:i A') }}</flux:text>
+                    @endif
+                </div>
+                @endif
+
+                @foreach ($clientResponses as $response)
+                @php $answerFile = ! empty($response->payload_json['media_id']) ? $requestFiles->get($response->payload_json['media_id']) : null; @endphp
+                <div wire:key="client-response-{{ $response->id }}" class="mt-3 border-t border-gray-100 pt-3">
+                    <flux:text class="text-xs font-medium text-green-700">
+                        Customer answered &middot; {{ $response->created_at->eastern()->format('M j, g:i A') }}
+                        @if ($response->creator) &middot; {{ $response->creator->name }} @endif
+                    </flux:text>
+                    @if (! empty($response->payload_json['text']))
+                    <p class="mt-1 whitespace-pre-line text-sm text-gray-800">{{ $response->payload_json['text'] }}</p>
+                    @endif
+                    @if ($answerFile)
+                    <a href="{{ $answerFile->getTemporaryUrl(now()->addMinutes(30)) }}" target="_blank"
+                       class="mt-1 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                        <flux:icon name="paper-clip" class="size-4" /> {{ $answerFile->file_name }}
+                    </a>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+            @endif
 
             {{-- Send for E-Sign confirmation modal (always present; toggled by showSendEsignModal) --}}
             <flux:modal wire:model="showSendEsignModal" class="max-w-md">
@@ -1476,6 +1597,36 @@
                                 </flux:text>
                                 @elseif ($event->event_type === 'esign_reminder_sent' && ! empty($event->payload_json['signer_email']))
                                 <flux:text class="text-xs text-gray-600">to {{ $event->payload_json['signer_email'] }}</flux:text>
+                                @endif
+                                <flux:text class="text-xs text-gray-400">
+                                    {{ $event->created_at->eastern()->format('M j, g:i A') }}
+                                    @if ($event->creator) &middot; {{ $event->creator->name }} @endif
+                                </flux:text>
+                            </div>
+                        </div>
+                        @elseif (in_array($event->event_type, ['client_request_sent', 'client_response'], true))
+                        @php
+                            $isAnswer = $event->event_type === 'client_response';
+                            $eventFileId = $event->payload_json[$isAnswer ? 'media_id' : 'attachment_media_id'] ?? null;
+                            $eventFile = $eventFileId ? $requestFiles->get($eventFileId) : null;
+                        @endphp
+                        <div class="flex items-start gap-2">
+                            <flux:icon :name="$isAnswer ? 'chat-bubble-left-ellipsis' : 'envelope'" class="mt-0.5 size-4 shrink-0 {{ $isAnswer ? 'text-green-500' : 'text-amber-500' }}" />
+                            <div class="min-w-0">
+                                <flux:text class="text-sm font-medium {{ $isAnswer ? 'text-green-700' : 'text-amber-700' }}">{{ $event->description() }}</flux:text>
+                                @if (! $isAnswer && ! empty($event->payload_json['sent_to']))
+                                <flux:text class="text-xs text-gray-600">to {{ $event->payload_json['sent_to'] }}</flux:text>
+                                @endif
+                                @if (! empty($event->payload_json['text']))
+                                <p class="mt-1 whitespace-pre-line text-sm text-gray-600">{{ $event->payload_json['text'] }}</p>
+                                @endif
+                                @if ($eventFile)
+                                <a href="{{ $eventFile->getTemporaryUrl(now()->addMinutes(30)) }}" target="_blank"
+                                   class="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                                    <flux:icon name="paper-clip" class="size-3" /> {{ $eventFile->file_name }}
+                                </a>
+                                @elseif (! empty($event->payload_json['file_name']))
+                                <flux:text class="text-xs text-gray-500">{{ $event->payload_json['file_name'] }} (file removed)</flux:text>
                                 @endif
                                 <flux:text class="text-xs text-gray-400">
                                     {{ $event->created_at->eastern()->format('M j, g:i A') }}

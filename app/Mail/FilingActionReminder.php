@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Domains\Lien\Enums\FilingStatus;
+use App\Domains\Lien\Models\LienFiling;
 use App\Mail\Concerns\RepliesToSupport;
 use App\Models\EmailSequence;
 use Illuminate\Bus\Queueable;
@@ -29,6 +30,12 @@ class FilingActionReminder extends Mailable implements ShouldQueue
 
     public ?string $projectName;
 
+    /**
+     * The open request's text (FilingActionRequested), quoted in place of the
+     * generic status copy. Null for filings with no stored request.
+     */
+    public ?string $requestText = null;
+
     public function __construct(
         public EmailSequence $sequence,
         public int $step
@@ -45,6 +52,19 @@ class FilingActionReminder extends Mailable implements ShouldQueue
         $this->ctaLabel = $context['cta_label'];
         $this->ctaUrl = $this->resolveCtaUrl($filing, $triggerStatus);
         $this->projectName = $filing->project?->name;
+
+        // Quote what we actually asked for, with the request email's button.
+        // The day-13 "link expires" warning keeps its own copy.
+        $request = $filing->openClientRequest();
+
+        if ($request !== null && $context === $triggerStatus->reminderContext()) {
+            $cta = FilingActionRequested::callToAction($filing, $triggerStatus);
+
+            $this->body = 'Your filing is on hold until we hear back from you. Here is what we asked for:';
+            $this->requestText = $request['text'];
+            $this->ctaLabel = $cta['label'];
+            $this->ctaUrl = $cta['url'];
+        }
     }
 
     /**
@@ -78,17 +98,28 @@ class FilingActionReminder extends Mailable implements ShouldQueue
      */
     private function resolveCtaUrl($filing, FilingStatus $status): string
     {
-        if ($status === FilingStatus::AwaitingEsign) {
-            $active = $filing->activeSignatureRequest();
-
-            if ($active !== null) {
-                $ttlDays = (int) config('esign.signing.invitation_link_ttl_days', 14);
-
-                return URL::temporarySignedRoute('esign.sign', now()->addDays($ttlDays), ['request' => $active->public_id]);
-            }
+        if ($status === FilingStatus::AwaitingEsign && $signingUrl = self::signingUrlFor($filing)) {
+            return $signingUrl;
         }
 
         return route('lien.filings.show', $filing);
+    }
+
+    /**
+     * A temporary signed link to the filing's active e-signature session, or
+     * null when none is waiting. Shared with FilingActionRequested.
+     */
+    public static function signingUrlFor(LienFiling $filing): ?string
+    {
+        $active = $filing->activeSignatureRequest();
+
+        if ($active === null) {
+            return null;
+        }
+
+        $ttlDays = (int) config('esign.signing.invitation_link_ttl_days', 14);
+
+        return URL::temporarySignedRoute('esign.sign', now()->addDays($ttlDays), ['request' => $active->public_id]);
     }
 
     public function envelope(): Envelope
@@ -116,6 +147,7 @@ class FilingActionReminder extends Mailable implements ShouldQueue
                 'ctaLabel' => $this->ctaLabel,
                 'ctaUrl' => $this->ctaUrl,
                 'projectName' => $this->projectName,
+                'requestText' => $this->requestText,
                 'step' => $this->step,
             ],
         );

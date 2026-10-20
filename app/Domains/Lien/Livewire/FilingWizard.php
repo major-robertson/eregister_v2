@@ -21,6 +21,7 @@ use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienProjectDeadline;
 use App\Domains\Lien\Models\LienStateRule;
 use App\Domains\Lien\Seo\NoticeOfIntentStatePage;
+use App\Domains\Lien\Services\RushTier;
 use App\Mail\AttorneyReferral;
 use App\Models\EmailSequence;
 use App\Models\Price;
@@ -144,6 +145,12 @@ class FilingWizard extends Component
     // Step 6: Review
     public bool $disclaimerAccepted = false;
 
+    // The customer ticked the expedite terms (an expedite rush fee only).
+    public bool $rushAcknowledged = false;
+
+    // Checkout sent the customer back because the rush fee changed.
+    public bool $rushChanged = false;
+
     public array $warnings = [];
 
     // File uploads
@@ -216,6 +223,13 @@ class FilingWizard extends Component
 
         $this->populateFromProject();
         $this->populateFromFiling();
+
+        // Checkout found a new rush fee that needs the customer's OK: back to
+        // the review step of an order that already got past it once.
+        if (request()->query('rush') === 'changed' && $this->filing->status === FilingStatus::AwaitingPayment) {
+            $this->step = $this->totalSteps;
+            $this->rushChanged = true;
+        }
     }
 
     /**
@@ -853,6 +867,40 @@ class FilingWizard extends Component
     }
 
     /**
+     * The rush fee step 4 shows under the deadline panel, or null: a
+     * full-service order whose submit-by date is 6 or fewer business days
+     * away, or already gone, while its deadline is still ahead (RushTier),
+     * and whose tier has an active fee row. Worked out on every
+     * render from today's date, so a customer who comes back a day later
+     * sees that day's fee. An expedite fee carries the terms to tick.
+     *
+     * @param  array<string, mixed>|null  $gate  deadlineGate()
+     * @return array{tier: string, label: string, price: Price, businessDaysLeft: int, reason: string, acknowledgement: ?string}|null
+     */
+    private function rushFee(?array $gate): ?array
+    {
+        if ($gate === null || $gate['passed'] || ! isset($gate['mustSubmitBy'])) {
+            return null;
+        }
+
+        $tier = RushTier::for($gate['slug'], $this->service_level, $gate['mustSubmitBy'], $gate['deadline'] ?? null);
+        $price = RushTier::price($tier);
+
+        if ($tier === null || $price === null) {
+            return null;
+        }
+
+        return [
+            'tier' => $tier,
+            'label' => RushTier::label($tier),
+            'price' => $price,
+            'businessDaysLeft' => $gate['businessDaysLeft'],
+            'reason' => RushTier::reason($gate['businessDaysLeft'], $gate['slug']),
+            'acknowledgement' => RushTier::requiresAcknowledgement($tier) ? RushTier::acknowledgement($gate['slug']) : null,
+        ];
+    }
+
+    /**
      * The project's mechanics lien deadline row (the one with a rule, most
      * recently calculated), or null.
      */
@@ -1188,6 +1236,13 @@ class FilingWizard extends Component
             'disclaimerAccepted.accepted' => 'You must accept the disclaimer to continue.',
         ]);
 
+        // An expedite fee goes through only with its terms ticked.
+        if (($this->rushFee($this->deadlineGate())['acknowledgement'] ?? null) !== null && ! $this->rushAcknowledged) {
+            $this->addError('rushAcknowledged', 'Tick the box to accept the expedite terms.');
+
+            return;
+        }
+
         $this->updateFiling();
 
         // Create recipient records from parties
@@ -1195,13 +1250,32 @@ class FilingWizard extends Component
 
         // Snapshot data, and the submit-by date the board and rush fees read
         $gate = $this->deadlineGate();
+        $rushFee = $this->rushFee($gate);
+        $acknowledgement = $this->rushAcknowledged ? ($rushFee['acknowledgement'] ?? null) : null;
 
         $this->filing->update([
             'payload_json' => $this->buildPayloadSnapshot(),
             'parties_snapshot_json' => $this->buildPartiesSnapshot(),
             'must_submit_by' => isset($gate['mustSubmitBy']) ? $gate['mustSubmitBy']->toDateString() : null,
             'deadline_business_days_left' => $gate['businessDaysLeft'] ?? null,
+            'rush_tier' => $rushFee['tier'] ?? null,
+            'rush_acknowledged_at' => $acknowledgement !== null ? now() : null,
         ]);
+
+        if ($acknowledgement !== null) {
+            $this->filing->events()->create([
+                'business_id' => $this->filing->business_id,
+                'event_type' => LienFilingEvent::RUSH_ACKNOWLEDGED,
+                'payload_json' => [
+                    'tier' => $rushFee['tier'],
+                    'text' => $acknowledgement,
+                    'fee_cents' => $rushFee['price']->amount_cents,
+                    'business_days_left' => $rushFee['businessDaysLeft'],
+                    'must_submit_by' => $gate['mustSubmitBy']->toDateString(),
+                ],
+                'created_by' => auth()->id(),
+            ]);
+        }
 
         // Transition to awaiting payment
         if ($this->filing->status === FilingStatus::Draft) {
@@ -1557,6 +1631,7 @@ class FilingWizard extends Component
             'noiBlock' => $this->step === 4 ? $this->noiBlock() : null,
             'deadlineGate' => $deadlineGate,
             'deadlineBlocked' => $deadlineBlocked,
+            'rushFee' => $deadlineBlocked ? null : $this->rushFee($deadlineGate),
             'demandLetter' => $deadlineBlocked ? $this->demandLetterOffer() : null,
         ])->layout('components.layouts.portal', ['title' => 'Create '.$this->deadline->documentType->name]);
     }

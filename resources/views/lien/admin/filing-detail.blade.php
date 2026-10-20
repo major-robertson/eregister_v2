@@ -1656,6 +1656,24 @@
                         <flux:text class="font-medium">{{ $filing->service_level?->label() ?? 'Unknown' }}</flux:text>
                     </div>
 
+                    @if ($filing->rush_tier)
+                    @php $rushItem = collect($refundablePayment?->meta['items'] ?? [])->firstWhere('product_key', 'rush_fee'); @endphp
+                    <div class="flex items-center justify-between">
+                        <flux:text class="text-sm text-gray-500">Rush</flux:text>
+                        <flux:badge color="{{ $filing->rush_tier === 'expedite' ? 'red' : 'amber' }}" size="sm">{{ \App\Domains\Lien\Services\RushTier::label($filing->rush_tier) }}</flux:badge>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <flux:text class="text-sm text-gray-500">Rush fee</flux:text>
+                        <flux:text class="font-medium">{{ $rushItem ? '$'.number_format(((int) $rushItem['amount_cents']) / 100, 2) : 'Not charged' }}</flux:text>
+                    </div>
+                    @if ($filing->rush_acknowledged_at)
+                    <div class="flex items-center justify-between">
+                        <flux:text class="text-sm text-gray-500">Expedite terms accepted</flux:text>
+                        <flux:text class="font-medium">{{ $filing->rush_acknowledged_at->eastern()->format('M j, Y g:i A') }}</flux:text>
+                    </div>
+                    @endif
+                    @endif
+
                     <flux:separator />
 
                     <div class="flex items-center justify-between">

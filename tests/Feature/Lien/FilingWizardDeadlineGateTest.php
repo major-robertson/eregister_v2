@@ -733,6 +733,8 @@ describe('notice of intent served', function () {
         $component->set('noi_served_on', $servedOn->toDateString())
             ->assertDontSee('days between the notice and the lien')
             ->set('disclaimerAccepted', true)
+            // Days from the deadline a full-service lien pays the expedite fee (EREG-146).
+            ->set('rushAcknowledged', true)
             ->call('proceedToCheckout')
             ->assertHasNoErrors()
             ->assertRedirect(route('lien.filings.checkout', $filing));
@@ -763,6 +765,8 @@ describe('notice of intent served', function () {
         $component->set('noi_served_on', $due->toDateString())
             ->assertDontSee('days between the notice and the lien')
             ->set('disclaimerAccepted', true)
+            // On the deadline day a full-service lien pays the expedite fee (EREG-146).
+            ->set('rushAcknowledged', true)
             ->call('proceedToCheckout')
             ->assertHasNoErrors()
             ->assertRedirect(route('lien.filings.checkout', $filing));

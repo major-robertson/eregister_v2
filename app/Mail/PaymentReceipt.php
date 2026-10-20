@@ -44,15 +44,23 @@ class PaymentReceipt extends Mailable implements ShouldQueue
     }
 
     /**
-     * Receipt rows. A sales tax order records its breakdown on the payment
-     * (states x per-state fee, optional rush) so the receipt can itemize it;
-     * every other payment is a single line.
+     * Receipt rows. A lien order lists what it charged in meta['items'] (the
+     * service, then any rush fee); a sales tax order records its breakdown
+     * (states x per-state fee, optional rush). Every other payment, and lien
+     * payments from before the items, is a single line.
      *
      * @return list<array{label: string, amount: string}>
      */
     protected function lines(): array
     {
         $meta = $this->payment->meta ?? [];
+
+        if (! empty($meta['items']) && is_array($meta['items'])) {
+            return array_values(array_map(fn (array $item) => [
+                'label' => (string) ($item['label'] ?? ''),
+                'amount' => '$'.number_format(((int) ($item['amount_cents'] ?? 0)) / 100, 2),
+            ], $meta['items']));
+        }
 
         if (! isset($meta['per_state_cents'], $meta['state_count'])) {
             return [['label' => $this->itemDescription(), 'amount' => $this->payment->formattedAmount()]];

@@ -128,6 +128,27 @@ class PriceSeeder extends Seeder
             }
         }
 
+        // Lien rush fees (EREG-146): charged on top of a full-service order
+        // close to its deadline, tier rush or expedite, in the same
+        // inline-amount PaymentIntent (no Stripe Price needed). Amounts come
+        // from config/lien.php `rush_fees`; resolved with
+        // Price::resolve('lien', 'rush_fee', $tier).
+        foreach (config('lien.rush_fees', []) as $tier => $amountCents) {
+            Price::updateOrCreate(
+                [
+                    'product_family' => 'lien',
+                    'product_key' => 'rush_fee',
+                    'variant_key' => $tier,
+                    'billing_type' => 'one_time',
+                ],
+                [
+                    'amount_cents' => $amountCents,
+                    'currency' => 'usd',
+                    'active' => true,
+                ]
+            );
+        }
+
         // Sales & Use Tax permit registration: $199 per selected state,
         // one-time. Charged via an inline-amount PaymentIntent (amount =
         // amount_cents x state count), so the Stripe Price IDs below are

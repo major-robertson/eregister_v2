@@ -246,8 +246,8 @@ describe('past the deadline', function () {
             ->call('nextStep')
             ->assertHasNoErrors()
             ->assertSet('step', 4)
-            ->assertSee('The deadline for this mechanics lien has passed.')
-            ->assertSee("Based on the dates you entered, the deadline to record this lien was July 2, 2026. We can't file it.", false)
+            ->assertSee("We're unable to file this lien.", false)
+            ->assertSee('Based on the dates you provided, our system calculated the recording deadline as July 2, 2026. That date has passed.')
             ->assertSee('Dates we used')
             ->assertSee('Last Furnish Date')
             ->assertSee('March 2, 2026')
@@ -265,7 +265,7 @@ describe('past the deadline', function () {
 
         $component->set('disclaimerAccepted', true)
             ->call('proceedToCheckout')
-            ->assertHasErrors('deadline_passed')
+            ->assertHasErrors(['deadline_passed' => fn (array $rules, array $messages) => $messages === ["We're unable to file this lien: the deadline has passed."]])
             ->assertNoRedirect();
 
         expect($filing->fresh()->status)->toBe(FilingStatus::Draft);
@@ -300,15 +300,15 @@ describe('past the deadline', function () {
         $component = gateWorkStep($project, $deadline)
             ->call('nextStep')
             ->assertSet('step', 4)
-            ->assertSee('The usual deadline for this notice was January 25, 2026.')
-            ->assertSee('A late notice may protect only part of your claim, or none, depending on the state. If the dates above are right, you can still send it.')
+            ->assertSee('This notice may be late.')
+            ->assertSee('Based on the dates you provided, our system calculated the usual deadline for this notice as January 25, 2026, which has passed. A late notice may protect only part of your claim, or none, depending on the state. If the dates are right, you can still send it.')
             ->assertSee('Dates we used')
             ->assertSee('First Furnish Date')
             ->assertSee('January 5, 2026')
             ->assertDontSee('Last Furnish Date')
             ->assertSee('Check these dates')
             ->assertSee('Talk to us')
-            ->assertDontSee('has passed')
+            ->assertDontSee("We're unable to", false)
             ->assertDontSee('We must send it by')
             ->assertSee('Choose Your Service Level')
             ->assertSee('Proceed to Payment');
@@ -319,7 +319,7 @@ describe('past the deadline', function () {
         $component->call('goToStep', 3)
             ->set('first_furnish_date', '2026-01-06')
             ->call('nextStep')
-            ->assertSee('The usual deadline for this notice was January 26, 2026.')
+            ->assertSee('our system calculated the usual deadline for this notice as January 26, 2026, which has passed.')
             ->set('disclaimerAccepted', true)
             ->call('proceedToCheckout')
             ->assertHasNoErrors()
@@ -348,8 +348,8 @@ describe('past the deadline', function () {
         gateWorkStep($project, $deadline)
             ->call('nextStep')
             ->assertSet('step', 4)
-            ->assertSee('The lien deadline for this project has passed.')
-            ->assertSee("The deadline to record the lien this notice announces was June 30, 2026. We can't send a notice of intent for a lien that can no longer be filed.", false)
+            ->assertSee("We're unable to send this notice of intent.", false)
+            ->assertSee('Based on the dates you provided, our system calculated the lien deadline as June 30, 2026. That date has passed, so there is no lien left to announce.')
             ->assertSee('Dates we used')
             ->assertSee('Last Furnish Date')
             ->assertSee('March 2, 2026')
@@ -362,7 +362,7 @@ describe('past the deadline', function () {
             ->assertDontSee('Proceed to Payment')
             ->set('disclaimerAccepted', true)
             ->call('proceedToCheckout')
-            ->assertHasErrors('deadline_passed')
+            ->assertHasErrors(['deadline_passed' => fn (array $rules, array $messages) => $messages === ["We're unable to send this notice of intent: the lien deadline has passed."]])
             ->assertNoRedirect();
 
         expect($filing->fresh()->deadline_block_shown_at)->not->toBeNull()

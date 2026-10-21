@@ -616,14 +616,14 @@
                             <div class="space-y-3">
                                 @if($deadlineGate['slug'] === 'noi')
                                     {{-- A notice of intent is blocked on the lien deadline, not its own --}}
-                                    <flux:heading size="lg">The lien deadline for this project has passed.</flux:heading>
+                                    <flux:heading size="lg">We're unable to send this notice of intent.</flux:heading>
                                     <flux:text class="text-zinc-600 dark:text-zinc-400">
-                                        The deadline to record the lien this notice announces was {{ $deadlineGate['lienDeadline']->format('F j, Y') }}. We can't send a notice of intent for a lien that can no longer be filed.
+                                        Based on the dates you provided, our system calculated the lien deadline as {{ $deadlineGate['lienDeadline']->format('F j, Y') }}. That date has passed, so there is no lien left to announce.
                                     </flux:text>
                                 @else
-                                    <flux:heading size="lg">The deadline for this {{ Str::lower($deadlineGate['document']) }} has passed.</flux:heading>
+                                    <flux:heading size="lg">We're unable to file this lien.</flux:heading>
                                     <flux:text class="text-zinc-600 dark:text-zinc-400">
-                                        Based on the dates you entered, the deadline to record this lien was {{ $deadlineGate['deadline']->format('F j, Y') }}. We can't file it.
+                                        Based on the dates you provided, our system calculated the recording deadline as {{ $deadlineGate['deadline']->format('F j, Y') }}. That date has passed.
                                     </flux:text>
                                 @endif
                             </div>
@@ -681,7 +681,12 @@
                         <div class="p-6 rounded-xl border-2 border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 space-y-4">
                             <div class="flex items-start gap-4">
                                 <flux:icon name="exclamation-triangle" class="w-8 h-8 text-amber-500 shrink-0 mt-0.5" />
-                                <flux:heading size="lg">The usual deadline for this notice was {{ $deadlineGate['deadline']->format('F j, Y') }}.</flux:heading>
+                                <div class="space-y-3">
+                                    <flux:heading size="lg">This notice may be late.</flux:heading>
+                                    <flux:text class="text-zinc-600 dark:text-zinc-400">
+                                        Based on the dates you provided, our system calculated the usual deadline for this notice as {{ $deadlineGate['deadline']->format('F j, Y') }}, which has passed. A late notice may protect only part of your claim, or none, depending on the state. If the dates are right, you can still send it.
+                                    </flux:text>
+                                </div>
                             </div>
 
                             <div class="rounded-lg border border-amber-200 dark:border-amber-700 bg-white dark:bg-zinc-900 p-4">
@@ -698,10 +703,6 @@
                                     Check these dates
                                 </button>
                             </div>
-
-                            <flux:text class="text-zinc-600 dark:text-zinc-400">
-                                A late notice may protect only part of your claim, or none, depending on the state. If the dates above are right, you can still send it.
-                            </flux:text>
 
                             <flux:text class="text-sm">
                                 Not sure what to do next? <flux:link href="{{ route('contact') }}">Talk to us</flux:link>

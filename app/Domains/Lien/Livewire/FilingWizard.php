@@ -685,8 +685,8 @@ class FilingWizard extends Component
         // Past the deadline: no path reaches checkout.
         if ($this->deadlineGate()['passed'] ?? false) {
             $this->addError('deadline_passed', $docType === 'noi'
-                ? 'The lien deadline for this project has passed.'
-                : 'The deadline for this '.Str::lower($this->deadline->documentType->name).' has passed.');
+                ? "We're unable to send this notice of intent: the lien deadline has passed."
+                : "We're unable to file this lien: the deadline has passed.");
         }
 
         if ($this->noiRequirement() !== null) {

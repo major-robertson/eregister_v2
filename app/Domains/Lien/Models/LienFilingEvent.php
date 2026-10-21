@@ -62,7 +62,7 @@ class LienFilingEvent extends Model
         return match ($this->event_type) {
             'status_changed' => $this->statusChangeDescription(),
             'note_added' => 'Note added',
-            'document_uploaded' => 'Document uploaded',
+            'document_uploaded' => 'Customer uploaded a document',
             'recipient_added' => 'Recipient added',
             'application_project_updated' => 'Project details updated',
             'application_filing_updated' => 'Filing details updated',

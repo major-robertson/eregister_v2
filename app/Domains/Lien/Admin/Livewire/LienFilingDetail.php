@@ -145,7 +145,7 @@ class LienFilingDetail extends Component
         'application_project_updated', 'application_filing_updated', 'application_parties_updated',
         'document_details_updated', 'recipient_added', 'recipient_updated',
         'esign_sent', 'esign_reminder_sent', 'esign_completed',
-        'client_request_sent', 'client_response',
+        'client_request_sent', 'client_response', 'document_uploaded',
     ];
 
     public function mount(string|LienFiling $lienFiling): void
@@ -292,6 +292,13 @@ class LienFilingDetail extends Component
             ->get()
             ->keyBy('id');
 
+        // Every file the customer sent from the filing page (answers' files
+        // and signed documents), newest first.
+        $customerUploads = $requestFiles
+            ->where('collection_name', 'customer_uploads')
+            ->sortByDesc('id')
+            ->values();
+
         return view('lien.admin.filing-detail', [
             'filing' => $this->lienFiling,
             // The column the board shows (an untouched full-service order is
@@ -322,6 +329,7 @@ class LienFilingDetail extends Component
             'clientRequestOpen' => $this->lienFiling->openClientRequest() !== null,
             'clientResponses' => $clientResponses,
             'requestFiles' => $requestFiles,
+            'customerUploads' => $customerUploads,
             'canRemindSigner' => $esignAwaiting && $canChangeStatus && $esignRequest->invitation_bounced_at === null,
             'signingUrl' => $esignAwaiting && $canChangeStatus && ! $esignRequest->isExpired()
                 ? $esignRequest->signingUrl()

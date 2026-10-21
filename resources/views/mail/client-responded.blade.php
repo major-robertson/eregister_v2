@@ -1,7 +1,13 @@
 <x-mail::message>
+@if($uploadedDocument)
+# Customer uploaded a document
+
+{{ $customerName }} uploaded their signed document for their {{ $documentName }}. The filing is now in Needs Review.
+@else
 # Customer answered a request
 
 {{ $customerName }} answered our request on their {{ $documentName }}. The filing is now in Needs Review.
+@endif
 
 **Business:** {{ $businessName }}
 
@@ -19,6 +25,7 @@
 <x-mail::quote :text="$requestText" />
 @endif
 
+@unless($uploadedDocument)
 **They answered:**
 
 @if($answerText)
@@ -26,9 +33,10 @@
 @else
 No text, just a file.
 @endif
+@endunless
 
 @if($fileName)
-**File:** {{ $fileName }} (download it from the filing page)
+**File:** {{ $fileName }}{{ $fileSize ? " ({$fileSize})" : '' }} (download it from the filing page)
 @endif
 
 <x-mail::button :url="$adminUrl">

@@ -5,7 +5,10 @@ namespace App\Domains\Lien\Livewire;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Models\LienFiling;
 use App\Mail\ClientResponded;
+use App\Mail\UploadReceived;
+use Closure;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
@@ -15,6 +18,22 @@ use Livewire\WithFileUploads;
 class FilingShow extends Component
 {
     use WithFileUploads;
+
+    /**
+     * What the signed-document upload box takes, checked against the file's
+     * content rather than its name or the type the browser reported.
+     *
+     * @var list<string>
+     */
+    private const SIGNED_DOCUMENT_TYPES = [
+        'application/pdf',
+        'image/jpeg',
+        'image/png',
+        'image/heic',
+        'image/heif',
+        'image/heic-sequence',
+        'image/heif-sequence',
+    ];
 
     public LienFiling $filing;
 
@@ -29,6 +48,12 @@ class FilingShow extends Component
     public string $answer = '';
 
     public $answerFile = null;
+
+    /**
+     * The signed (or notarized) document the customer sends back while the
+     * filing waits on them (Awaiting Client / E-Signature / Notary).
+     */
+    public $signedDocument = null;
 
     public function mount(LienFiling $filing): void
     {
@@ -157,6 +182,113 @@ class FilingShow extends Component
         session()->flash('message', 'Thanks. We have your answer and will keep going.');
     }
 
+    /**
+     * Take the signed (or notarized) document back while the filing waits on
+     * the customer: store it in customer_uploads, log a document_uploaded
+     * event, move the filing to Needs Review (which closes any open request
+     * and stops the reminders), tell lien ops and confirm to the customer.
+     */
+    public function uploadSignedDocument(): void
+    {
+        Gate::authorize('answerRequest', $this->filing);
+
+        if (! $this->filing->status->isWaitingOnCustomer()) {
+            $this->reset('signedDocument');
+            session()->flash('message', 'We are not waiting on a document for this filing anymore.');
+
+            return;
+        }
+
+        $this->validate([
+            'signedDocument' => [
+                'bail',
+                'required',
+                'file',
+                'mimes:pdf,jpg,jpeg,png,heic,heif',
+                'max:20480',
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    if (! in_array(self::detectMimeType($value), self::SIGNED_DOCUMENT_TYPES, true)) {
+                        $fail('We could not open this file as a PDF, JPG, PNG or HEIC. Please upload the scan or photo itself.');
+                    }
+                },
+            ],
+        ], [
+            'signedDocument.required' => 'Choose the file to upload.',
+            'signedDocument.file' => 'The file did not upload. Please try again.',
+            'signedDocument.mimes' => 'Upload a PDF, JPG, PNG or HEIC file.',
+            'signedDocument.max' => 'The file must be 20 MB or smaller.',
+        ]);
+
+        $request = $this->filing->openClientRequest();
+        $originalName = $this->signedDocument->getClientOriginalName();
+
+        $upload = DB::transaction(function () use ($originalName) {
+            $media = $this->filing->addMedia($this->signedDocument->getRealPath())
+                ->usingFileName($originalName)
+                ->withCustomProperties(['kind' => 'signed_document'])
+                ->toMediaCollection('customer_uploads');
+
+            $upload = $this->filing->events()->create([
+                'business_id' => $this->filing->business_id,
+                'event_type' => 'document_uploaded',
+                'payload_json' => [
+                    'kind' => 'signed_document',
+                    'media_id' => $media->id,
+                    'original_name' => $originalName,
+                    'file_name' => $media->file_name,
+                    'size' => $media->size,
+                    'request_status' => $this->filing->status->value,
+                ],
+                'created_by' => auth()->id(),
+            ]);
+
+            // Allowed from all three waiting statuses.
+            $this->filing->transitionTo(FilingStatus::NeedsReview, ['document_uploaded_id' => $upload->id]);
+
+            return $upload;
+        });
+
+        // The document is saved; a queue hiccup must not show the customer an error.
+        $ops = config('lien.notifications.ops_email');
+
+        if (filled($ops)) {
+            try {
+                Mail::to($ops)->queue(new ClientResponded($this->filing, $upload, $request));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        try {
+            Mail::to(auth()->user())->queue(new UploadReceived($this->filing, $originalName, auth()->user()));
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        $this->reset('signedDocument');
+
+        session()->flash('upload_received', $originalName);
+    }
+
+    /**
+     * The file's type read from its content (magic bytes), or null when the
+     * file cannot be read.
+     */
+    private static function detectMimeType(mixed $file): ?string
+    {
+        if (! $file instanceof UploadedFile) {
+            return null;
+        }
+
+        $path = $file->getRealPath();
+
+        if (! is_string($path) || ! is_file($path)) {
+            return null;
+        }
+
+        return (new \finfo(FILEINFO_MIME_TYPE))->file($path) ?: null;
+    }
+
     public function render(): View
     {
         $this->filing->load(['project', 'documentType', 'recipients', 'events' => fn ($q) => $q->latest(), 'payment']);
@@ -186,6 +318,12 @@ class FilingShow extends Component
             ? 'Please check the request we emailed you and reply to it.'
             : $this->filing->status->whatsNext();
 
+        // The upload box shows while the filing waits on the customer. With an
+        // open request it sits in the request panel with the answer form:
+        // after the form for Awaiting Client (usually a question), before it
+        // for Awaiting Notary / E-Signature (usually a document to return).
+        $showUploadBox = $this->filing->status->isWaitingOnCustomer();
+
         return view('livewire.lien.filing-show', [
             'events' => $this->filing->events,
             'recipients' => $this->filing->recipients,
@@ -197,6 +335,8 @@ class FilingShow extends Component
             'clientRequestSentAt' => $clientRequest ? $this->filing->clientRequestSentAt() : null,
             'clientRequestSender' => $clientRequest ? $this->filing->clientRequestSender()?->first_name : null,
             'clientRequestAttachment' => $clientRequest ? $this->filing->clientRequestAttachment() : null,
+            'showUploadBox' => $showUploadBox,
+            'uploadAfterAnswer' => $clientRequest !== null && $this->filing->status === FilingStatus::AwaitingClient,
         ])->layout('components.layouts.portal', ['title' => $this->filing->documentType->name]);
     }
 }

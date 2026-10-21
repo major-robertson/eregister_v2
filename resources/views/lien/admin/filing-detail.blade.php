@@ -820,8 +820,9 @@
             </div>
 
             {{-- Requests and answers: the latest request we emailed the customer and
-                 everything they sent back from their filing page. --}}
-            @if ($clientRequest || $clientResponses->isNotEmpty())
+                 everything they sent back from their filing page, then every file
+                 they uploaded there (answers' files and signed documents). --}}
+            @if ($clientRequest || $clientResponses->isNotEmpty() || $customerUploads->isNotEmpty())
             <div class="rounded-lg border border-border bg-white p-6">
                 <flux:heading size="lg" class="mb-4">Requests and answers</flux:heading>
 
@@ -875,6 +876,29 @@
                     @endif
                 </div>
                 @endforeach
+
+                @if ($customerUploads->isNotEmpty())
+                <div @class(['mt-4 border-t border-gray-100 pt-3' => $clientRequest || $clientResponses->isNotEmpty()])>
+                    <flux:heading size="sm" class="mb-2">Customer uploads</flux:heading>
+                    <div class="space-y-2">
+                        @foreach ($customerUploads as $upload)
+                        <a wire:key="customer-upload-{{ $upload->id }}"
+                            href="{{ route('admin.liens.customer-uploads.download', [$filing->public_id, $upload->id]) }}"
+                            target="_blank"
+                            class="flex items-center gap-3 rounded-lg border border-gray-200 p-2 hover:bg-gray-50">
+                            <flux:icon name="document-text" class="size-5 shrink-0 text-gray-400" />
+                            <div class="min-w-0 flex-1">
+                                <flux:text class="truncate text-sm font-medium">{{ $upload->file_name }}</flux:text>
+                                <flux:text class="text-xs text-gray-500">
+                                    {{ $upload->human_readable_size }} &middot; {{ $upload->created_at->eastern()->format('M j, Y g:i A T') }}@if ($upload->getCustomProperty('kind') === 'signed_document') &middot; Signed document @endif
+                                </flux:text>
+                            </div>
+                            <flux:icon name="arrow-down-tray" class="size-4 shrink-0 text-gray-400" />
+                        </a>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
             </div>
             @endif
 
@@ -1627,6 +1651,29 @@
                                 </a>
                                 @elseif (! empty($event->payload_json['file_name']))
                                 <flux:text class="text-xs text-gray-500">{{ $event->payload_json['file_name'] }} (file removed)</flux:text>
+                                @endif
+                                <flux:text class="text-xs text-gray-400">
+                                    {{ $event->created_at->eastern()->format('M j, g:i A') }}
+                                    @if ($event->creator) &middot; {{ $event->creator->name }} @endif
+                                </flux:text>
+                            </div>
+                        </div>
+                        @elseif ($event->event_type === 'document_uploaded')
+                        @php
+                            $uploadedFile = ! empty($event->payload_json['media_id']) ? $requestFiles->get($event->payload_json['media_id']) : null;
+                            $uploadedName = $event->payload_json['original_name'] ?? $event->payload_json['file_name'] ?? null;
+                        @endphp
+                        <div class="flex items-start gap-2">
+                            <flux:icon name="arrow-up-tray" class="mt-0.5 size-4 shrink-0 text-green-500" />
+                            <div class="min-w-0">
+                                <flux:text class="text-sm font-medium text-green-700">{{ $event->description() }}</flux:text>
+                                @if ($uploadedFile)
+                                <a href="{{ route('admin.liens.customer-uploads.download', [$filing->public_id, $uploadedFile->id]) }}" target="_blank"
+                                   class="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                                    <flux:icon name="paper-clip" class="size-3" /> {{ $uploadedFile->file_name }}
+                                </a>
+                                @elseif ($uploadedName)
+                                <flux:text class="text-xs text-gray-500">{{ $uploadedName }} (file removed)</flux:text>
                                 @endif
                                 <flux:text class="text-xs text-gray-400">
                                     {{ $event->created_at->eastern()->format('M j, g:i A') }}

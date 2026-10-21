@@ -18,6 +18,7 @@ use App\Domains\Lien\Admin\Actions\UpdateLienParties;
 use App\Domains\Lien\Admin\Actions\UpdateLienProjectDetails;
 use App\Domains\Lien\Admin\Actions\UpdateRecordingDetails;
 use App\Domains\Lien\Admin\Enums\KanbanColumn;
+use App\Domains\Lien\Admin\Support\BoardCard;
 use App\Domains\Lien\Documents\LienCountyKey;
 use App\Domains\Lien\Documents\LienDocumentPackage;
 use App\Domains\Lien\Enums\DeadlineStatus;
@@ -293,7 +294,11 @@ class LienFilingDetail extends Component
 
         return view('lien.admin.filing-detail', [
             'filing' => $this->lienFiling,
-            'kanbanColumn' => KanbanColumn::forFiling($this->lienFiling),
+            // The column the board shows (an untouched full-service order is
+            // New there, see BoardCard). Null for statuses the board leaves
+            // out (Draft, Complete, ...): the header shows the status then.
+            'kanbanColumn' => BoardCard::forFiling($this->lienFiling)?->column
+                ?? KanbanColumn::tryForFiling($this->lienFiling),
             'allowedTransitions' => $this->lienFiling->allowedTransitions(),
             'activityLog' => $this->getActivityLog(),
             'canChangeStatus' => $canChangeStatus,

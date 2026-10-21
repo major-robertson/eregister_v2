@@ -13,6 +13,7 @@ use App\Mail\FilingActionRequested;
 use App\Models\EmailSequence;
 use App\Models\Payment;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Database\Factories\Lien\LienFilingFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -214,6 +215,31 @@ class LienFiling extends Model implements HasMedia
     public function events(): HasMany
     {
         return $this->hasMany(LienFilingEvent::class, 'filing_id');
+    }
+
+    /**
+     * The customer's newest answer to us: a client_response (answered on the
+     * filing page) or document_uploaded event. Eager-load it for lists.
+     */
+    public function latestCustomerReply(): HasOne
+    {
+        return $this->hasOne(LienFilingEvent::class, 'filing_id')->ofMany(
+            ['created_at' => 'max', 'id' => 'max'],
+            fn (Builder $query) => $query->whereIn('event_type', ['client_response', 'document_uploaded']),
+        );
+    }
+
+    /**
+     * When the customer last answered us, or null. The lien board shows it
+     * ("Answered", "Customer answered ...") and turns the card red when
+     * nothing from us follows within a business day.
+     *
+     * Hook for EREG-132: also count an emailed reply (customer_emailed_at)
+     * here, taking whichever is newest.
+     */
+    public function customerRepliedAt(): ?CarbonInterface
+    {
+        return $this->latestCustomerReply?->created_at;
     }
 
     /**

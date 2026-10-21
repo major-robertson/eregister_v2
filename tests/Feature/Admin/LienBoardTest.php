@@ -252,7 +252,7 @@ describe('board cards display', function () {
             ->assertSee('Hold Co');
     });
 
-    it('does not show awaiting_client, awaiting_esign, or awaiting_notary filings', function () {
+    it('shows awaiting_client, awaiting_esign and awaiting_notary filings in Waiting on customer', function () {
         $admin = User::factory()->create();
         $admin->givePermissionTo('lien.view');
 
@@ -279,10 +279,13 @@ describe('board cards display', function () {
 
         $this->actingAs($admin);
 
-        Livewire::test(LienBoard::class)
-            ->assertDontSee('Waiting Client Co')
-            ->assertDontSee('Signing Co')
-            ->assertDontSee('Notary Co');
+        $component = Livewire::test(LienBoard::class)
+            ->assertSee('Waiting on customer')
+            ->assertSee('Waiting Client Co')
+            ->assertSee('Signing Co')
+            ->assertSee('Notary Co');
+
+        expect($component->instance()->getFilings()->get('waiting_on_customer'))->toHaveCount(3);
     });
 
     it('filters by business name when searching', function () {

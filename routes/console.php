@@ -15,6 +15,14 @@ Schedule::command('lien:send-deadline-reminders')->hourly()->withoutOverlapping(
 // Lien waiver signature reminders - hourly; per-(waiver, interval) dedup log
 Schedule::command('lien:send-waiver-reminders')->hourly()->withoutOverlapping();
 
+// Lien board digest to lien ops: the red cards (waiting on us too long) -
+// weekdays at 8 AM Eastern. Sends nothing when no card is red.
+Schedule::command('lien:agent-digest')
+    ->weekdays()
+    ->dailyAt('08:00')
+    ->timezone('America/New_York')
+    ->withoutOverlapping();
+
 // Marketing campaign step processing - run hourly
 Schedule::job(new ProcessCampaignSteps)->hourly();
 

@@ -18,8 +18,8 @@
         @if ($isDeleted)
         <flux:badge color="zinc" size="lg">Deleted</flux:badge>
         @else
-        <flux:badge color="{{ $kanbanColumn->color() }}" size="lg">
-            {{ $kanbanColumn->label() }}@if ($filing->status === \App\Domains\Lien\Enums\FilingStatus::SubmittedForRecording && $filing->recording_method)
+        <flux:badge color="{{ $kanbanColumn?->color() ?? $filing->status->color() }}" size="lg">
+            {{ $kanbanColumn?->label() ?? $filing->status->label() }}@if ($filing->status === \App\Domains\Lien\Enums\FilingStatus::SubmittedForRecording && $filing->recording_method)
                 <span class="ml-1 opacity-80">— {{ $filing->recording_method->label() }}</span>
             @endif
         </flux:badge>

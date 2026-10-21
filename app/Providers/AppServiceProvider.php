@@ -45,6 +45,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Register domain console commands
         $this->commands([
+            \App\Domains\Lien\Console\SendAgentDigest::class,
             \App\Domains\Lien\Console\SendDeadlineReminders::class,
             \App\Domains\Lien\Console\SendWaiverReminders::class,
             \App\Domains\ResaleCert\Console\CheckExpiringCertificates::class,

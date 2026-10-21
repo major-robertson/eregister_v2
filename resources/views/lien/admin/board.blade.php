@@ -190,7 +190,7 @@
     @else
         {{-- Kanban Board (default) / All-status board (when searching) --}}
         @php $isSearching = strlen($search) > 0; @endphp
-        <x-admin.kanban.grid :compact="! $isSearching">
+        <x-admin.kanban.grid :compact="! $isSearching" :xl-columns="5">
             @foreach ($columns as $column)
                 @php
                     $columnFilings = $filings->get($column->value) ?? collect();
@@ -202,7 +202,11 @@
                     empty-text="No filings"
                 >
                     @foreach ($columnFilings as $filing)
-                        @php $latestComment = $filing->events->first(); @endphp
+                        @php
+                            $latestComment = $filing->events->firstWhere('event_type', 'note_added');
+                            // Board mode only (BoardCard): column, ages, red alert.
+                            $card = $cards->get($filing->id);
+                        @endphp
                         <x-admin.kanban.card-frame
                             :href="route('admin.liens.show', $filing->public_id)"
                             :trashed="$filing->trashed()"
@@ -263,6 +267,40 @@
                             </div>
                             @endif
 
+                            @if ($card?->column === \App\Domains\Lien\Admin\Enums\KanbanColumn::WaitingOnCustomer)
+                                @if ($card->requestPreview())
+                                <div class="mt-2 rounded-md bg-orange-50 px-2 py-1.5">
+                                    <flux:text class="text-xs text-gray-700 line-clamp-2">{{ $card->requestPreview() }}</flux:text>
+                                    @if ($filing->clientRequestSentAt())
+                                    <flux:text class="mt-0.5 text-xs text-gray-500">Sent {{ $filing->clientRequestSentAt()->diffForHumans() }}</flux:text>
+                                    @endif
+                                </div>
+                                @endif
+                                @if ($card->customerAnswered())
+                                <div class="mt-2">
+                                    <flux:badge size="sm" color="green" icon="check">Answered</flux:badge>
+                                </div>
+                                @endif
+                            @elseif ($card?->column === \App\Domains\Lien\Admin\Enums\KanbanColumn::NeedsReview && $card->customerAnswered())
+                            <div class="mt-2">
+                                <flux:badge size="sm" color="green" icon="check">Customer answered {{ $card->customerRepliedAt->diffForHumans() }}</flux:badge>
+                            </div>
+                            @endif
+
+                            @if ($card?->holdReason())
+                            <div class="mt-2 flex items-start gap-1.5">
+                                <flux:icon name="pause-circle" class="mt-0.5 size-3 shrink-0 text-red-400" />
+                                <flux:text class="text-xs text-gray-600 line-clamp-2">Hold: {{ $card->holdReason() }}</flux:text>
+                            </div>
+                            @endif
+
+                            @if ($card?->alert)
+                            <div class="mt-2 flex items-center gap-1.5">
+                                <flux:icon name="exclamation-triangle" class="size-3 shrink-0 text-red-600" />
+                                <flux:text class="text-xs font-medium text-red-600">{{ $card->alert }}</flux:text>
+                            </div>
+                            @endif
+
                             <flux:text class="mt-2 text-xs text-gray-400">
                                 @if ($filing->paid_at)
                                     Paid {{ $filing->paid_at->diffForHumans() }}
@@ -270,6 +308,17 @@
                                     {{ $filing->created_at->diffForHumans() }}
                                 @endif
                             </flux:text>
+
+                            @if ($card?->column === \App\Domains\Lien\Admin\Enums\KanbanColumn::New)
+                                @can('changeStatus', $filing)
+                                <x-slot:actions>
+                                    <flux:button size="xs" variant="primary" icon="play"
+                                        wire:click="start('{{ $filing->public_id }}')">
+                                        Start
+                                    </flux:button>
+                                </x-slot:actions>
+                                @endcan
+                            @endif
                         </x-admin.kanban.card-frame>
                     @endforeach
                 </x-admin.kanban.column>

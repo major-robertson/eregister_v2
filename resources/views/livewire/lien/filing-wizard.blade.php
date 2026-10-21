@@ -489,6 +489,7 @@
                     <flux:error name="has_written_contract" />
                 </flux:field>
 
+                @if($amountMode === 'basic')
                 <flux:field>
                     <flux:label>Amount Claimed *</flux:label>
                     <div class="relative">
@@ -504,6 +505,90 @@
                     </div>
                     <flux:error name="amount_claimed" />
                 </flux:field>
+                @else
+                {{-- Liens, notices of intent and preliminary notices: no fees, interest or penalties (EREG-134) --}}
+                <flux:callout color="blue" icon="information-circle">
+                    <flux:callout.text>Include only labor, materials and equipment you provided for this property. Do not add eRegister fees, interest, late fees or penalties{{ $has_written_contract === '1' ? ' unless your written contract allows them' : '' }}. Most states do not allow them in a lien.</flux:callout.text>
+                </flux:callout>
+
+                @if($amountMode === 'claim')
+                    @php
+                        $amountFields = [
+                            ['field' => 'base_contract_amount', 'label' => 'Original contract amount *', 'hint' => 'What you agreed to be paid before any changes.', 'min' => '0'],
+                            ['field' => 'change_orders', 'label' => 'Change orders, net', 'hint' => 'Extra work agreed, minus work removed. Can be negative.', 'min' => null],
+                            ['field' => 'uncompleted_work', 'label' => 'Value of work not done', 'hint' => 'Only if the contract was not finished.', 'min' => '0'],
+                            ['field' => 'credits_deductions', 'label' => 'Credits and deductions *', 'hint' => 'Returns, and back-charges you agreed to.', 'min' => '0'],
+                            ['field' => 'payments_received', 'label' => 'Payments received *', 'hint' => 'Everything you have been paid for this work.', 'min' => '0'],
+                        ];
+                    @endphp
+
+                    @foreach($amountFields as $amountField)
+                        <flux:field>
+                            <flux:label>{{ $amountField['label'] }}</flux:label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">$</span>
+                                <flux:input type="number" step="0.01" :min="$amountField['min']" wire:model.live.debounce.500ms="{{ $amountField['field'] }}" class="pl-7" placeholder="0.00" />
+                            </div>
+                            <flux:description>{{ $amountField['hint'] }}</flux:description>
+                            <flux:error name="{{ $amountField['field'] }}" />
+                        </flux:field>
+                    @endforeach
+
+                    <div class="rounded-lg bg-zinc-100 dark:bg-zinc-800 p-4">
+                        <div class="flex items-center justify-between gap-4">
+                            <span class="font-medium">Balance due</span>
+                            <span class="text-2xl font-bold">{{ $this->calculatedBalanceDue ?? '—' }}</span>
+                        </div>
+                        <flux:text class="mt-1 text-sm">The contract amount plus change orders, minus work not done, credits and payments.</flux:text>
+                    </div>
+
+                    <flux:field>
+                        <flux:label>Amount you are claiming *</flux:label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">$</span>
+                            <flux:input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                wire:model.live.blur="amount_claimed"
+                                class="pl-7"
+                                placeholder="0.00"
+                            />
+                        </div>
+                        <flux:description>This starts as the balance due.</flux:description>
+                        <flux:error name="amount_claimed" />
+                    </flux:field>
+
+                    @if($this->claimDiffersFromBalance)
+                        <flux:callout color="amber" icon="exclamation-triangle">
+                            <flux:callout.text>We can only file for what is actually owed for the work.</flux:callout.text>
+                        </flux:callout>
+
+                        <flux:field>
+                            <flux:label>Why is the amount claimed different from the balance due? *</flux:label>
+                            <flux:textarea wire:model="claim_difference_reason" rows="3" maxlength="1000" />
+                            <flux:error name="claim_difference_reason" />
+                        </flux:field>
+                    @endif
+                @else
+                    <flux:field>
+                        <flux:label>Estimated total price *</flux:label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">$</span>
+                            <flux:input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                wire:model="amount_claimed"
+                                class="pl-7"
+                                placeholder="0.00"
+                            />
+                        </div>
+                        <flux:description>What you expect to be paid in total for this job.</flux:description>
+                        <flux:error name="amount_claimed" />
+                    </flux:field>
+                @endif
+                @endif
 
                 <flux:field>
                     <flux:label>Description of Work/Materials *</flux:label>
@@ -515,6 +600,7 @@
                     <flux:error name="description_of_work" />
                 </flux:field>
 
+                @if($amountMode === 'basic')
                 {{-- Collapsible Amount Breakdown --}}
                 <flux:accordion>
                 <flux:accordion.item heading="Optional: Amount Breakdown (advanced)">
@@ -565,7 +651,7 @@
                             <div class="p-4 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
                                 <div class="flex justify-between items-center">
                                     <span class="font-medium">Balance Due (A + B - C - D - E)</span>
-                                    <span class="text-xl font-bold">${{ $this->calculatedBalanceDue }}</span>
+                                    <span class="text-xl font-bold">{{ $this->calculatedBalanceDue }}</span>
                                 </div>
                             </div>
                         @endif
@@ -573,6 +659,7 @@
                 </flux:accordion.content>
                 </flux:accordion.item>
                 </flux:accordion>
+                @endif
             </div>
 
         @elseif($step === 4)
@@ -893,7 +980,15 @@
                     @endif
 
                     {{-- Confirmation Checkbox --}}
-                    <div class="border-t border-zinc-200 dark:border-zinc-700 pt-6">
+                    <div class="border-t border-zinc-200 dark:border-zinc-700 pt-6 space-y-4">
+                        @if($amountMode === 'claim')
+                            {{-- No fees, interest or penalties in the claim (EREG-134) --}}
+                            <flux:checkbox
+                                wire:model="claimAttested"
+                                :label="'The amount claimed is for labor, materials or equipment only, with no fees, interest or penalties added'.($has_written_contract === '1' ? ' unless my written contract allows them' : '').'.'"
+                            />
+                        @endif
+
                         <flux:checkbox
                             wire:model="disclaimerAccepted"
                             label="I confirm this information is accurate and I'm authorized to file this document."

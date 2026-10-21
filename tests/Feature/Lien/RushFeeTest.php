@@ -150,6 +150,7 @@ if (! function_exists('rushProject')) {
             ->call('nextStep')
             ->call('nextStep')
             ->set('has_written_contract', '1')
+            ->fill(['base_contract_amount' => '5000', 'credits_deductions' => '0', 'payments_received' => '0'])
             ->set('amount_claimed', 5000.00)
             ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
             ->call('nextStep')
@@ -241,6 +242,7 @@ describe('review step', function () {
         expect(rushPayButtonDisabled($component))->toBeTrue();
 
         $component->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->call('proceedToCheckout')
             ->assertHasErrors('rushAcknowledged')
             ->assertNoRedirect();
@@ -292,6 +294,7 @@ describe('review step', function () {
         // A required tier is not a choice: the optional box changes nothing.
         $component->set('rushElected', true)
             ->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->call('proceedToCheckout')
             ->assertHasNoErrors()
             ->assertRedirect(route('lien.filings.checkout', $filing));
@@ -313,6 +316,7 @@ describe('review step', function () {
             ->assertSee(RUSH_ELECT_TEXT)
             ->assertSet('rushElected', false)
             ->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->call('proceedToCheckout')
             ->assertRedirect(route('lien.filings.checkout', $filing));
 
@@ -350,6 +354,7 @@ describe('review step', function () {
         expect(rushPayButtonDisabled($component))->toBeTrue();
 
         $component->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->set('rushAcknowledged', true)
             ->call('proceedToCheckout')
             ->assertHasNoErrors()
@@ -387,6 +392,7 @@ describe('review step', function () {
         expect(rushPayButtonDisabled($component))->toBeFalse();
 
         $component->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->call('proceedToCheckout')
             ->assertHasNoErrors()
             ->assertRedirect(route('lien.filings.checkout', $filing));
@@ -431,6 +437,7 @@ describe('review step', function () {
             ->assertSee('Fewer business days are left than when you last saw this order, so the fee has changed.')
             ->assertSee(RUSH_EXPEDITE_TEXT)
             ->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->set('rushAcknowledged', true)
             ->call('proceedToCheckout')
             ->assertHasNoErrors()
@@ -454,6 +461,7 @@ describe('optional rush', function () {
 
         $component->set('rushElected', true)
             ->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->call('proceedToCheckout')
             ->assertHasNoErrors()
             ->assertRedirect(route('lien.filings.checkout', $filing));
@@ -474,6 +482,7 @@ describe('optional rush', function () {
         rushReviewStep($project, $deadline)
             ->set('rushElected', true)
             ->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->call('proceedToCheckout')
             ->assertRedirect(route('lien.filings.checkout', $filing));
 
@@ -484,6 +493,7 @@ describe('optional rush', function () {
             ->assertSet('rushElected', true)
             ->set('rushElected', false)
             ->set('disclaimerAccepted', true)
+            ->set('claimAttested', true)
             ->call('proceedToCheckout')
             ->assertHasNoErrors()
             ->assertRedirect(route('lien.filings.checkout', $filing));

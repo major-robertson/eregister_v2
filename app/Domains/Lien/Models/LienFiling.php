@@ -44,6 +44,14 @@ class LienFiling extends Model implements HasMedia
      */
     public const NOI_ANSWER_KEYS = ['noi_served_on', 'noi_served_to', 'noi_confirmed_at', 'noi_not_applicable_reason'];
 
+    /**
+     * Documents that claim what is owed. The filing wizard asks for the full
+     * amount breakdown, works out the balance due, and has the customer
+     * attest that the claim holds no fees, interest or penalties
+     * (claim_attested_at).
+     */
+    public const CLAIM_DOCUMENTS = ['mechanics_lien', 'noi'];
+
     protected static function newFactory(): LienFilingFactory
     {
         return LienFilingFactory::new();
@@ -61,6 +69,7 @@ class LienFiling extends Model implements HasMedia
         'jurisdiction_state',
         'jurisdiction_county',
         'amount_claimed_cents',
+        'claim_attested_at',
         'description_of_work',
         'payload_json',
         'parties_snapshot_json',
@@ -95,6 +104,7 @@ class LienFiling extends Model implements HasMedia
             'status' => FilingStatus::class,
             'needs_review' => 'boolean',
             'amount_claimed_cents' => 'integer',
+            'claim_attested_at' => 'datetime',
             'payload_json' => 'array',
             'parties_snapshot_json' => 'array',
             'document_details_json' => 'array',

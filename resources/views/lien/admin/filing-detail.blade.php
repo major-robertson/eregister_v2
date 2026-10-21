@@ -173,6 +173,31 @@
 
                 @php
                     $breakdown = $filing->payload_json['amount_breakdown'] ?? [];
+
+                    // The project's amounts: what the documents print and what
+                    // staff edit under Project Information. An older filing whose
+                    // project has none shows its checkout snapshot.
+                    $snapshotCents = fn ($dollars) => is_numeric($dollars) ? (int) round((float) $dollars * 100) : null;
+                    $amounts = $filing->project?->hasFinancialData()
+                        ? [
+                            'base' => $filing->project->base_contract_amount_cents,
+                            'change_orders' => $filing->project->change_orders_cents,
+                            'uncompleted' => $filing->project->uncompleted_work_cents,
+                            'credits' => $filing->project->credits_deductions_cents,
+                            'payments' => $filing->project->payments_received_cents,
+                        ]
+                        : [
+                            'base' => $snapshotCents($breakdown['base_contract_amount'] ?? null),
+                            'change_orders' => $snapshotCents($breakdown['change_orders'] ?? null),
+                            'uncompleted' => $snapshotCents($breakdown['uncompleted_work'] ?? null),
+                            'credits' => $snapshotCents($breakdown['credits_deductions'] ?? null),
+                            'payments' => $snapshotCents($breakdown['payments_received'] ?? null),
+                        ];
+                    $balanceDueCents = $amounts['base'] === null ? null
+                        : $amounts['base'] + ($amounts['change_orders'] ?? 0) - ($amounts['uncompleted'] ?? 0) - ($amounts['credits'] ?? 0) - ($amounts['payments'] ?? 0);
+                    $usd = fn (?int $cents) => ($cents < 0 ? '-$' : '$').number_format(abs((int) $cents) / 100, 2);
+                    $claimDifferenceReason = $filing->project?->claim_difference_reason;
+                    $asksClaimAttestation = in_array($filing->documentType?->slug, \App\Domains\Lien\Models\LienFiling::CLAIM_DOCUMENTS, true);
                 @endphp
 
                 <div class="grid gap-4 sm:grid-cols-2">
@@ -189,42 +214,47 @@
 
                     <div>
                         <flux:text class="text-sm text-gray-500">Base Contract Amount</flux:text>
-                        <flux:text class="font-medium">
-                            @if (!empty($breakdown['base_contract_amount']))
-                            ${{ number_format((float) $breakdown['base_contract_amount'], 2) }}
-                            @else
-                            N/A
-                            @endif
-                        </flux:text>
+                        <flux:text class="font-medium">{{ $amounts['base'] ? $usd($amounts['base']) : 'N/A' }}</flux:text>
                     </div>
 
                     <div>
                         <flux:text class="text-sm text-gray-500">Change Orders</flux:text>
-                        <flux:text class="font-medium">
-                            ${{ number_format((float) ($breakdown['change_orders'] ?? 0), 2) }}
-                        </flux:text>
-                    </div>
-
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Payments Received</flux:text>
-                        <flux:text class="font-medium">
-                            ${{ number_format((float) ($breakdown['payments_received'] ?? 0), 2) }}
-                        </flux:text>
-                    </div>
-
-                    <div>
-                        <flux:text class="text-sm text-gray-500">Credit Deductions</flux:text>
-                        <flux:text class="font-medium">
-                            ${{ number_format((float) ($breakdown['credits_deductions'] ?? 0), 2) }}
-                        </flux:text>
+                        <flux:text class="font-medium">{{ $usd($amounts['change_orders']) }}</flux:text>
                     </div>
 
                     <div>
                         <flux:text class="text-sm text-gray-500">Uncompleted Work</flux:text>
-                        <flux:text class="font-medium">
-                            ${{ number_format((float) ($breakdown['uncompleted_work'] ?? 0), 2) }}
-                        </flux:text>
+                        <flux:text class="font-medium">{{ $usd($amounts['uncompleted']) }}</flux:text>
                     </div>
+
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Credit Deductions</flux:text>
+                        <flux:text class="font-medium">{{ $usd($amounts['credits']) }}</flux:text>
+                    </div>
+
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Payments Received</flux:text>
+                        <flux:text class="font-medium">{{ $usd($amounts['payments']) }}</flux:text>
+                    </div>
+
+                    <div>
+                        <flux:text class="text-sm text-gray-500">Balance Due</flux:text>
+                        <flux:text class="font-medium">{{ $balanceDueCents === null ? 'N/A' : $usd($balanceDueCents) }}</flux:text>
+                    </div>
+
+                    @if ($asksClaimAttestation || $filing->claim_attested_at)
+                    <div>
+                        <flux:text class="text-sm text-gray-500">No Fees in Claim (Attested)</flux:text>
+                        <flux:text class="font-medium">{{ $filing->claim_attested_at?->eastern()->format('M j, Y g:i A') ?? 'Not yet' }}</flux:text>
+                    </div>
+                    @endif
+
+                    @if ($claimDifferenceReason)
+                    <div class="sm:col-span-2">
+                        <flux:text class="text-sm text-gray-500">Why the Claim Differs From the Balance Due</flux:text>
+                        <flux:text class="font-medium whitespace-pre-line">{{ $claimDifferenceReason }}</flux:text>
+                    </div>
+                    @endif
 
                     <div>
                         <flux:text class="text-sm text-gray-500">Written Contract</flux:text>

@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Domains\Esign\DocumentSigningPolicy;
 use App\Domains\Esign\Models\SignatureRequest;
 use App\Mail\Concerns\RepliesToSupport;
 use Illuminate\Bus\Queueable;
@@ -29,6 +30,9 @@ class SignerInvitation extends Mailable implements ShouldQueue
 
     public int $documentCount;
 
+    /** What one document is called in the copy ("letter", or "document" for uploaded lien documents). */
+    public string $documentNoun;
+
     public function __construct(public SignatureRequest $request)
     {
         $this->afterCommit = true;
@@ -36,6 +40,7 @@ class SignerInvitation extends Mailable implements ShouldQueue
         $this->signerName = $request->signer?->first_name ?: ($request->signer_name_snapshot ?: 'there');
         $this->title = config("esign.document_types.{$request->document_signing_policy_key}.title", 'your documents');
         $this->documentCount = $request->documents()->count();
+        $this->documentNoun = DocumentSigningPolicy::for($request->document_signing_policy_key)->documentNoun();
 
         $ttlDays = (int) config('esign.signing.invitation_link_ttl_days', 14);
         $this->ctaUrl = URL::temporarySignedRoute(
@@ -62,6 +67,7 @@ class SignerInvitation extends Mailable implements ShouldQueue
                 'title' => $this->title,
                 'ctaUrl' => $this->ctaUrl,
                 'documentCount' => $this->documentCount,
+                'documentNoun' => $this->documentNoun,
             ],
         );
     }

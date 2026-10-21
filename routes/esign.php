@@ -34,6 +34,9 @@ Route::middleware(['esign.signer'])
         Route::get('/{request}/done', SignDone::class)->name('sign.done');
         Route::get('/{request}/document/{document}/download', [SignerDownloadController::class, 'download'])
             ->name('sign.download');
+        // The locked PDF inline on the review screen (uploaded lien documents).
+        Route::get('/{request}/document/{document}/preview', [SignerDownloadController::class, 'preview'])
+            ->name('sign.preview');
     });
 
 // A signer's own archive: everything they've signed, tied to their account

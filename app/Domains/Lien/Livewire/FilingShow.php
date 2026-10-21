@@ -450,14 +450,15 @@ class FilingShow extends Component
      * user-visible status change (FilingStatus::isUserMilestone) with its
      * description, plus for the recording and mailing milestones the method,
      * county, recording reference, tracking link and documents; and our
-     * requests, their answers, uploads and draft reviews.
+     * requests, their answers, uploads, draft reviews and e-signatures (with
+     * the signed copy of an uploaded document, EREG-141).
      *
      * @return list<array{at: \Carbon\CarbonInterface, icon: string, title: string, text: ?string, quote: ?string, details: list<string>, tracking: ?array{number: string, url: string}, links: list<array{label: string, url: string}>}>
      */
     private function timeline(): array
     {
         $files = $this->filing->media()
-            ->whereIn('collection_name', ['recorded', 'proof_of_service'])
+            ->whereIn('collection_name', ['recorded', 'proof_of_service', 'signed'])
             ->get()
             ->keyBy('id');
 
@@ -498,6 +499,13 @@ class FilingShow extends Component
                     'title' => "You asked for changes to the draft{$version}",
                     'quote' => Str::limit((string) ($payload['text'] ?? ''), 500) ?: null,
                 ],
+                // E-signed in the app: an uploaded document links its signed
+                // copy (EREG-141); demand letters keep theirs on the signing pages.
+                'esign_completed' => [
+                    'icon' => 'pencil-square',
+                    'title' => ((int) ($payload['documents'] ?? 1) > 1 ? 'You signed the documents' : 'You signed the document').$version,
+                    'links' => $this->signedCopyLinks($payload, $files),
+                ],
                 default => null,
             };
 
@@ -515,6 +523,25 @@ class FilingShow extends Component
         }
 
         return $items;
+    }
+
+    /**
+     * The signed copy an esign_completed event points at, if it is still on
+     * the filing.
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  \Illuminate\Support\Collection<int, \Spatie\MediaLibrary\MediaCollections\Models\Media>  $files
+     * @return list<array{label: string, url: string}>
+     */
+    private function signedCopyLinks(array $payload, $files): array
+    {
+        $file = isset($payload['media_id']) ? $files->get($payload['media_id']) : null;
+
+        if ($file === null || $file->collection_name !== 'signed') {
+            return [];
+        }
+
+        return [['label' => "Signed copy ({$file->file_name})", 'url' => $file->getTemporaryUrl(now()->addMinutes(30))]];
     }
 
     /**

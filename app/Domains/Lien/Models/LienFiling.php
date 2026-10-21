@@ -175,6 +175,14 @@ class LienFiling extends Model implements HasMedia
             ->acceptsMimeTypes(['application/pdf'])
             ->useDisk('s3');
 
+        // The e-signed copy of a draft (EREG-141, UploadedDocumentSignable):
+        // the draft with the signature and certificate page appended, one per
+        // completed signature request. Custom properties: signature_request_id,
+        // version (the draft version signed), draft_media_id, sha256.
+        $this->addMediaCollection('signed')
+            ->acceptsMimeTypes(['application/pdf'])
+            ->useDisk('s3');
+
         // The county's recorded copy and our proof of service, uploaded on
         // the admin status form at Recorded / Mailed / Complete (EREG-130),
         // emailed with the milestone email and linked on the filing page.

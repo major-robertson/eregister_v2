@@ -176,6 +176,9 @@ class SignReview extends Component
             'typedNameLabel' => config('esign.signing.typed_name_label'),
             'title' => config("esign.document_types.{$this->request->document_signing_policy_key}.title", 'Documents'),
             'isGuest' => $this->request->isGuest(),
+            // Uploaded lien documents show the locked PDF itself above the
+            // signature box (SignerDownloadController::preview).
+            'showPreview' => $this->request->policy()->showsInlinePreview(),
         ])->layout('layouts.minimal');
     }
 }

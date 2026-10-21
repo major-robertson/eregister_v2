@@ -31,6 +31,8 @@ use App\Domains\Lien\Enums\PartyRole;
 use App\Domains\Lien\Enums\RecordingMethod;
 use App\Domains\Lien\Esign\Actions\SendDemandLetterForSignature;
 use App\Domains\Lien\Esign\Actions\SendDemandLetterReminder;
+use App\Domains\Lien\Esign\Actions\SendUploadedDocumentForSignature;
+use App\Domains\Lien\Esign\UploadedDocumentSignable;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienStateRule;
 use App\Mail\FilingMilestone;
@@ -298,13 +300,6 @@ class LienFilingDetail extends Component
             ? LienDocumentPackage::forFiling($this->lienFiling)
             : null;
 
-        $canSendEsign = ! $isDeleted
-            && $this->lienFiling->isDemandLetter()
-            && $demandRecipients->isNotEmpty()
-            && $esignRequest?->isActive() !== true
-            && $this->lienFiling->canTransitionTo(FilingStatus::AwaitingEsign)
-            && auth()->user()->can('changeStatus', $this->lienFiling);
-
         $canChangeStatus = ! $isDeleted && auth()->user()->can('changeStatus', $this->lienFiling);
 
         // While the signer hasn't signed, admins can email a reminder or copy
@@ -336,6 +331,19 @@ class LienFilingDetail extends Component
             ->where('collection_name', 'drafts')
             ->sortByDesc('id')
             ->values();
+
+        // Send for E-Sign: a demand letter signs one letter per party; any
+        // other filing signs its newest draft (EREG-141), where e-sign is
+        // enabled for the document and state (else the reason shows).
+        $isDemandLetter = $this->lienFiling->isDemandLetter();
+        $esignDraft = $isDemandLetter ? null : $drafts->first();
+        $esignBlockedReason = UploadedDocumentSignable::notAllowedReason($this->lienFiling);
+
+        $canSendEsign = ! $isDeleted
+            && ($isDemandLetter ? $demandRecipients->isNotEmpty() : ($esignDraft !== null && $esignBlockedReason === null))
+            && $esignRequest?->isActive() !== true
+            && $this->lienFiling->canTransitionTo(FilingStatus::AwaitingEsign)
+            && auth()->user()->can('changeStatus', $this->lienFiling);
 
         $draftOutcomes = $drafts->isEmpty() ? collect() : $this->lienFiling->events()
             ->whereIn('event_type', ['draft_sent_for_review', 'draft_approved', 'draft_changes_requested'])
@@ -389,6 +397,9 @@ class LienFilingDetail extends Component
             'documentPackage' => $documentPackage,
             'signedLetters' => $signedEsignRequest?->documents->whereNotNull('signed_at')->values() ?? collect(),
             'canSendEsign' => $canSendEsign,
+            'esignDraft' => $esignDraft,
+            'esignDraftUploader' => $esignDraft ? $draftUploaders->get($esignDraft->getCustomProperty('uploaded_by_user_id')) : null,
+            'esignBlockedReason' => $esignBlockedReason,
             'esignAwaiting' => $esignAwaiting,
             'esignReminders' => $esignReminders,
             'clientRequest' => $this->lienFiling->client_request_json,
@@ -875,34 +886,43 @@ class LienFilingDetail extends Component
     {
         $this->authorize('changeStatus', $this->lienFiling);
 
-        // Start with every party checked; the admin unchecks any to skip.
-        $this->esignPartyIds = ($this->lienFiling->project?->nonClaimantParties() ?? collect())
-            ->map(fn ($party) => (string) $party->id)
-            ->all();
+        // Demand letters: start with every party checked; the admin unchecks
+        // any to skip. Other filings sign their newest draft, no party picker.
+        $this->esignPartyIds = $this->lienFiling->isDemandLetter()
+            ? ($this->lienFiling->project?->nonClaimantParties() ?? collect())
+                ->map(fn ($party) => (string) $party->id)
+                ->all()
+            : [];
 
         $this->showSendEsignModal = true;
     }
 
     /**
-     * Generate + lock the demand letters, email the signer, and move the filing
-     * to AwaitingEsign.
+     * Lock the demand letters (or, for any other filing, the newest draft,
+     * EREG-141), email the signer, and move the filing to AwaitingEsign.
      */
     public function sendForEsign(): void
     {
         $this->authorize('changeStatus', $this->lienFiling);
 
-        if ($this->esignPartyIds === []) {
+        $isDemandLetter = $this->lienFiling->isDemandLetter();
+
+        if ($isDemandLetter && $this->esignPartyIds === []) {
             $this->addError('esignPartyIds', 'Pick at least one party to send a demand letter to.');
 
             return;
         }
 
         try {
-            app(SendDemandLetterForSignature::class)->execute(
-                $this->lienFiling,
-                auth()->user(),
-                array_map('intval', $this->esignPartyIds),
-            );
+            if ($isDemandLetter) {
+                app(SendDemandLetterForSignature::class)->execute(
+                    $this->lienFiling,
+                    auth()->user(),
+                    array_map('intval', $this->esignPartyIds),
+                );
+            } else {
+                app(SendUploadedDocumentForSignature::class)->execute($this->lienFiling, auth()->user());
+            }
 
             $this->showSendEsignModal = false;
             $this->afterEdit();

@@ -15,7 +15,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
 /**
- * Admin "Send reminder" for a demand letter still awaiting e-signature.
+ * Admin "Send reminder" for a lien filing still awaiting e-signature: a
+ * demand letter, or an uploaded document (EREG-141). Nothing here depends on
+ * the document type; it works from the filing's active signature request.
  * Re-emails the signer their signing link and renews it for a fresh TTL
  * window, so a reminder sent after the original link lapsed still works. The
  * nudge is recorded in the hash-chained audit trail and on the filing's

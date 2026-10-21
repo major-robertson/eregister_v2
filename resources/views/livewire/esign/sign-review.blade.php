@@ -18,6 +18,26 @@
         @endforeach
     </div>
 
+    {{-- Uploaded lien documents: the locked PDF itself, so the signer reads
+         exactly what they sign. Ignored on re-render so it does not reload. --}}
+    @if ($showPreview ?? false)
+        @foreach ($documents as $document)
+            @if ($document->locked_at)
+                @php $previewUrl = route('esign.sign.preview', ['request' => $request->public_id, 'document' => $document->public_id]); @endphp
+                <div wire:ignore wire:key="preview-{{ $document->id }}" class="mt-4 space-y-2">
+                    <iframe src="{{ $previewUrl }}"
+                            title="{{ $document->label }}"
+                            class="h-[70vh] w-full rounded-lg border border-border bg-zinc-50"></iframe>
+                    <a href="{{ $previewUrl }}" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-2 text-sm text-blue-600 hover:underline">
+                        <flux:icon name="arrow-top-right-on-square" class="size-4" />
+                        Open the document in a new tab
+                    </a>
+                </div>
+            @endif
+        @endforeach
+    @endif
+
     <div
         x-data="{
             // x-ref on an x-data element registers in the CHILD scope, so the

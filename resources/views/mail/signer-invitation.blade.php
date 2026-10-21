@@ -8,7 +8,7 @@ Review & Sign
 </x-mail::button>
 
 You'll be asked to confirm your consent to sign electronically (the first time only), review
-{{ $documentCount > 1 ? "all {$documentCount} letters" : 'the letter' }}, and adopt your signature.
+{{ $documentCount > 1 ? "all {$documentCount} {$documentNoun}s" : "the {$documentNoun}" }}, and adopt your signature.
 
 If the button above doesn't work, copy and paste this link into your browser:
 

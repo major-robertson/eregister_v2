@@ -2,10 +2,13 @@
 
 namespace App\Providers;
 
+use App\Domains\Esign\Contracts\Signable;
 use App\Domains\Esign\SignableResolver;
 use App\Domains\Lien\Documents\DemandLetterGenerator;
 use App\Domains\Lien\Documents\DemandLetterSignedGenerator;
+use App\Domains\Lien\Documents\PdfSignatureStamper;
 use App\Domains\Lien\Esign\DemandLetterSignable;
+use App\Domains\Lien\Esign\UploadedDocumentSignable;
 use App\Domains\Lien\Models\LienFiling;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Event;
@@ -22,11 +25,18 @@ class EsignServiceProvider extends ServiceProvider
         $this->app->singleton(SignableResolver::class, function () {
             $resolver = new SignableResolver;
 
-            $resolver->register('lien_filing', fn (LienFiling $filing): DemandLetterSignable => new DemandLetterSignable(
-                $filing,
-                $this->app->make(DemandLetterGenerator::class),
-                $this->app->make(DemandLetterSignedGenerator::class),
-            ));
+            // A demand letter filing signs its generated letters; every other
+            // filing signs its newest uploaded draft (EREG-141).
+            $resolver->register('lien_filing', fn (LienFiling $filing): Signable => $filing->isDemandLetter()
+                ? new DemandLetterSignable(
+                    $filing,
+                    $this->app->make(DemandLetterGenerator::class),
+                    $this->app->make(DemandLetterSignedGenerator::class),
+                )
+                : new UploadedDocumentSignable(
+                    $filing,
+                    $this->app->make(PdfSignatureStamper::class),
+                ));
 
             $resolver->register('lien_waiver', fn (\App\Domains\Lien\Models\LienWaiver $waiver): \App\Domains\Lien\Esign\LienWaiverSignable => new \App\Domains\Lien\Esign\LienWaiverSignable(
                 $waiver,

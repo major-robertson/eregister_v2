@@ -1007,6 +1007,11 @@
                     @elseif ($drafts->isNotEmpty())
                     <flux:text class="text-sm text-gray-500">A draft can't be sent for review from the “{{ $filing->status->label() }}” status.</flux:text>
                     @endif
+
+                    {{-- EREG-141: why Send for E-Sign is not offered for this document. --}}
+                    @if ($esignBlockedReason)
+                    <flux:text class="mt-2 text-sm text-gray-500">{{ $esignBlockedReason }}</flux:text>
+                    @endif
                 </div>
                 @endif
             </div>
@@ -1171,13 +1176,21 @@
                     <div>
                         <flux:heading size="lg">{{ $hasPriorEsign ? 'Re-send for e-signature?' : 'Send for e-signature?' }}</flux:heading>
                         <flux:subheading class="mt-2">
+                            @if ($filing->isDemandLetter())
                             We'll generate and lock one demand letter for each party checked below,
                             then email {{ $filing->createdBy?->name ?? 'the filing creator' }}
                             (<span class="font-medium">{{ $filing->createdBy?->email }}</span>) a link to review and sign.
+                            @else
+                            We'll lock the newest draft below exactly as uploaded,
+                            then email {{ $filing->createdBy?->name ?? 'the filing creator' }}
+                            (<span class="font-medium">{{ $filing->createdBy?->email }}</span>) a link to review and sign it.
+                            The signed copy gets a page with the signature and the certificate.
+                            @endif
                             The filing status will change to <strong>Awaiting E-Signature</strong>.
                         </flux:subheading>
                     </div>
 
+                    @if ($filing->isDemandLetter())
                     <div>
                         <flux:checkbox.group wire:model="esignPartyIds" label="Send a letter to">
                             @foreach ($demandRecipients as $party)
@@ -1191,13 +1204,25 @@
                         </flux:checkbox.group>
                         <flux:error name="esignPartyIds" />
                     </div>
+                    @elseif ($esignDraft)
+                    {{-- EREG-141: the draft version that will be signed. --}}
+                    <div class="flex items-center gap-3 rounded-lg border border-gray-200 p-3">
+                        <flux:badge size="sm" color="zinc">v{{ $esignDraft->getCustomProperty('version') }}</flux:badge>
+                        <div class="min-w-0 flex-1">
+                            <flux:text class="truncate text-sm font-medium">{{ $esignDraft->file_name }}</flux:text>
+                            <flux:text class="text-xs text-gray-500">
+                                Uploaded {{ $esignDraft->created_at->eastern()->format('M j, Y g:i A T') }}{{ $esignDraftUploader ? ' by '.$esignDraftUploader->name : '' }}
+                            </flux:text>
+                        </div>
+                    </div>
+                    @endif
 
                     @if ($hasPriorEsign)
                     <flux:callout variant="warning" icon="exclamation-triangle">
                         <flux:callout.text>
                             This filing has <strong>already been e-signed</strong>. Sending again starts a brand-new
                             signature request with a new signing link. The previously signed copies stay available
-                            to download under Demand Letters.
+                            to download{{ $filing->isDemandLetter() ? ' under Demand Letters' : '' }}.
                         </flux:callout.text>
                     </flux:callout>
                     @endif
@@ -1330,6 +1355,26 @@
                     </div>
                     @endforeach
                 </div>
+
+                {{-- Uploaded documents (EREG-141): the signed PDF from the latest
+                     completed request, so it stays here after a re-send. Demand
+                     letters list theirs in the Demand Letters card below. --}}
+                @if (! $filing->isDemandLetter() && $signedLetters->isNotEmpty())
+                <div class="mt-4 space-y-2">
+                    @foreach ($signedLetters as $signedDoc)
+                    <a wire:key="signed-doc-{{ $signedDoc->id }}" title="{{ $signedDoc->label }}"
+                        href="{{ route('admin.liens.esign.documents.download', $signedDoc->public_id) }}"
+                        class="flex items-center gap-3 rounded-lg border border-gray-200 p-2 hover:bg-gray-50">
+                        <flux:icon name="document-check" class="size-5 shrink-0 text-green-600" />
+                        <div class="min-w-0 flex-1">
+                            <flux:text class="truncate text-sm font-medium">Signed PDF: {{ $signedDoc->label }}</flux:text>
+                            <flux:text class="text-xs text-gray-500">{{ $signedDoc->document_identifier }} · Signed {{ $signedDoc->signed_at->eastern()->format('M j, Y g:i A T') }}</flux:text>
+                        </div>
+                        <flux:icon name="arrow-down-tray" class="size-4 shrink-0 text-gray-400" />
+                    </a>
+                    @endforeach
+                </div>
+                @endif
 
                 <div class="mt-4 flex flex-wrap gap-2 border-t border-gray-100 pt-4">
                     @if ($canRemindSigner)
@@ -1933,10 +1978,16 @@
                                 @if ($event->event_type === 'esign_sent' && ! empty($event->payload_json['signer_email']))
                                 <flux:text class="text-xs text-gray-600">
                                     to {{ $event->payload_json['signer_email'] }} &middot;
+                                    @if (isset($event->payload_json['version']))
+                                    draft v{{ $event->payload_json['version'] }} ({{ $event->payload_json['file_name'] ?? 'PDF' }})
+                                    @else
                                     {{ $event->payload_json['documents'] ?? 1 }} letter(s)
+                                    @endif
                                 </flux:text>
                                 @elseif ($event->event_type === 'esign_reminder_sent' && ! empty($event->payload_json['signer_email']))
                                 <flux:text class="text-xs text-gray-600">to {{ $event->payload_json['signer_email'] }}</flux:text>
+                                @elseif ($event->event_type === 'esign_completed' && isset($event->payload_json['version']))
+                                <flux:text class="text-xs text-gray-600">draft v{{ $event->payload_json['version'] }} &middot; signed copy saved with the filing</flux:text>
                                 @endif
                                 <flux:text class="text-xs text-gray-400">
                                     {{ $event->created_at->eastern()->format('M j, g:i A') }}

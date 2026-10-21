@@ -126,6 +126,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Recording Lead Times
+    |--------------------------------------------------------------------------
+    |
+    | Business days we need before a deadline to get the document to the
+    | county: `erecord` for e-recording counties (and counties that take
+    | either), `mail` for mail-in counties. The wizard tells the customer we
+    | must submit by the deadline minus this lead, and stores that date on the
+    | filing at checkout. Major sets these.
+    |
+    */
+    'recording_lead_business_days' => [
+        'erecord' => 1,
+        'mail' => 5,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Generated Lien Documents
     |--------------------------------------------------------------------------
     |

@@ -137,6 +137,71 @@
             </div>
         </x-ui.card>
         @endif
+
+        @if($noiRequirement)
+        {{-- Mechanics liens in states that require a notice of intent first --}}
+        <x-ui.card>
+            <x-slot:header>Notice of Intent</x-slot:header>
+
+            <div class="space-y-4">
+                <flux:field>
+                    <flux:label>Has the notice of intent been served? *</flux:label>
+                    <div class="flex flex-col gap-2 mt-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" wire:model.live="noi_served" value="yes" class="h-4 w-4 border-zinc-300 text-blue-600 focus:ring-blue-500" />
+                            <span class="text-sm text-zinc-700 dark:text-zinc-300">Yes</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" wire:model.live="noi_served" value="no" class="h-4 w-4 border-zinc-300 text-blue-600 focus:ring-blue-500" />
+                            <span class="text-sm text-zinc-700 dark:text-zinc-300">No</span>
+                        </label>
+                        @if($noiRequirement['status'] === 'required_some')
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" wire:model.live="noi_served" value="not_applicable" class="h-4 w-4 border-zinc-300 text-blue-600 focus:ring-blue-500" />
+                                <span class="text-sm text-zinc-700 dark:text-zinc-300">This doesn't apply to me</span>
+                            </label>
+                        @endif
+                    </div>
+                    @if($noiRequirement['status'] === 'required_some' && ! empty($noiRequirement['who']))
+                        <flux:description>Who has to send one in {{ $stateName }}: {{ $noiRequirement['who'] }}</flux:description>
+                    @endif
+                    <flux:error name="noi_served" />
+                </flux:field>
+
+                @if($noi_served === 'yes')
+                    <flux:field>
+                        <flux:label>Date served *</flux:label>
+                        <flux:date-picker wire:model="noi_served_on" />
+                        <flux:error name="noi_served_on" />
+                    </flux:field>
+
+                    <flux:field>
+                        <flux:label>Who received it? *</flux:label>
+                        <flux:select wire:model="noi_served_to" placeholder="Choose...">
+                            @foreach($noiServedTo as $value => $label)
+                                <flux:select.option value="{{ $value }}">{{ $label }}</flux:select.option>
+                            @endforeach
+                        </flux:select>
+                        <flux:error name="noi_served_to" />
+                    </flux:field>
+
+                    <flux:field>
+                        <flux:checkbox wire:model="noi_confirmed" label="I confirm a notice of intent was served as {{ $stateName }} law requires, on this date." />
+                        <flux:error name="noi_confirmed" />
+                    </flux:field>
+                @elseif($noi_served === 'no')
+                    <flux:callout color="amber" icon="exclamation-triangle">
+                        <flux:callout.text>
+                            {{ $stateName }} requires a notice of intent before the lien. Order the notice of intent first.
+                            @if($noiOrderUrl)
+                                <flux:link href="{{ $noiOrderUrl }}">Order the notice of intent</flux:link>
+                            @endif
+                        </flux:callout.text>
+                    </flux:callout>
+                @endif
+            </div>
+        </x-ui.card>
+        @endif
     @endif
 
     <x-ui.card>
@@ -542,21 +607,160 @@
                         </flux:button>
                     @endif
                 </div>
+            @elseif($deadlineBlocked)
+                {{-- Past the deadline: no service choice, no checkout --}}
+                <div class="space-y-6">
+                    <div class="p-6 rounded-xl border-2 border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20">
+                        <div class="flex items-start gap-4">
+                            <flux:icon name="exclamation-circle" class="w-8 h-8 text-red-500 shrink-0 mt-0.5" />
+                            <div class="space-y-3">
+                                @if($deadlineGate['slug'] === 'noi')
+                                    {{-- A notice of intent is blocked on the lien deadline, not its own --}}
+                                    <flux:heading size="lg">We're unable to send this notice of intent.</flux:heading>
+                                    <flux:text class="text-zinc-600 dark:text-zinc-400">
+                                        Based on the dates you provided, our system calculated the lien deadline as {{ $deadlineGate['lienDeadline']->format('F j, Y') }}. That date has passed, so there is no lien left to announce.
+                                    </flux:text>
+                                @else
+                                    <flux:heading size="lg">We're unable to file this lien.</flux:heading>
+                                    <flux:text class="text-zinc-600 dark:text-zinc-400">
+                                        Based on the dates you provided, our system calculated the recording deadline as {{ $deadlineGate['deadline']->format('F j, Y') }}. That date has passed.
+                                    </flux:text>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
+                            <div class="font-medium mb-2">Dates we used</div>
+                            <dl class="space-y-1 text-sm">
+                                @foreach($deadlineGate['datesUsed'] as $label => $date)
+                                    <div class="flex gap-2">
+                                        <dt class="w-48 shrink-0 text-zinc-500">{{ $label }}</dt>
+                                        <dd class="font-medium">{{ $date }}</dd>
+                                    </div>
+                                @endforeach
+                            </dl>
+                            <button type="button" wire:click="goToStep(3)" class="mt-3 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
+                                Check these dates
+                            </button>
+                        </div>
+                        <flux:text class="mt-2 text-sm">These dates go on a sworn document. A wrong date can make the lien unenforceable.</flux:text>
+                    </div>
+
+                    @if($demandLetter)
+                        <div class="rounded-xl border-2 border-zinc-200 dark:border-zinc-700 p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-semibold text-lg">Demand letter</span>
+                                @if($demandLetter['price'])
+                                    <span class="text-xl font-bold">{{ $demandLetter['price'] }}</span>
+                                @endif
+                            </div>
+                            <p class="text-sm text-zinc-600 dark:text-zinc-400">A formal letter asking for payment. You can send one at any time.</p>
+                            <flux:button href="{{ $demandLetter['url'] }}" variant="primary" class="mt-4">
+                                Start a demand letter
+                            </flux:button>
+                        </div>
+                    @endif
+
+                    @if($documentType->slug === 'mechanics_lien')
+                        <flux:text class="text-sm">We don't offer a notice of intent here: it says a lien is coming, and the lien window has closed.</flux:text>
+                    @endif
+
+                    <flux:text class="text-sm">
+                        Not sure what to do next? <flux:link href="{{ route('contact') }}">Talk to us</flux:link>
+                    </flux:text>
+                </div>
             @else
 
             <div class="lg:flex lg:gap-8">
                 {{-- Left Column: Service Selection (60-65%) --}}
                 <div class="lg:w-3/5 space-y-6">
+                    @if($deadlineGate && $deadlineGate['late'])
+                        {{-- A preliminary notice past its usual deadline: a warning, checkout stays open --}}
+                        <div class="p-6 rounded-xl border-2 border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 space-y-4">
+                            <div class="flex items-start gap-4">
+                                <flux:icon name="exclamation-triangle" class="w-8 h-8 text-amber-500 shrink-0 mt-0.5" />
+                                <div class="space-y-3">
+                                    <flux:heading size="lg">This notice may be late.</flux:heading>
+                                    <flux:text class="text-zinc-600 dark:text-zinc-400">
+                                        Based on the dates you provided, our system calculated the usual deadline for this notice as {{ $deadlineGate['deadline']->format('F j, Y') }}, which has passed. A late notice may protect only part of your claim, or none, depending on the state. If the dates are right, you can still send it.
+                                    </flux:text>
+                                </div>
+                            </div>
+
+                            <div class="rounded-lg border border-amber-200 dark:border-amber-700 bg-white dark:bg-zinc-900 p-4">
+                                <div class="font-medium mb-2">Dates we used</div>
+                                <dl class="space-y-1 text-sm">
+                                    @foreach($deadlineGate['datesUsed'] as $label => $date)
+                                        <div class="flex gap-2">
+                                            <dt class="w-48 shrink-0 text-zinc-500">{{ $label }}</dt>
+                                            <dd class="font-medium">{{ $date }}</dd>
+                                        </div>
+                                    @endforeach
+                                </dl>
+                                <button type="button" wire:click="goToStep(3)" class="mt-3 text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
+                                    Check these dates
+                                </button>
+                            </div>
+
+                            <flux:text class="text-sm">
+                                Not sure what to do next? <flux:link href="{{ route('contact') }}">Talk to us</flux:link>
+                            </flux:text>
+                        </div>
+                    @elseif($deadlineGate && $deadlineGate['panel'])
+                        {{-- Deadline panel --}}
+                        <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 space-y-1">
+                            <div class="flex items-center gap-2 font-medium">
+                                <flux:icon name="calendar" class="w-4 h-4 text-zinc-500" />
+                                {{ $deadlineGate['document'] }} deadline
+                            </div>
+                            @if($deadlineGate['known'])
+                                <div class="text-sm text-zinc-600 dark:text-zinc-400">
+                                    Deadline: <span class="font-medium text-zinc-900 dark:text-white">{{ $deadlineGate['deadline']->format('F j, Y') }}</span>
+                                </div>
+                                <div class="text-sm text-zinc-600 dark:text-zinc-400">
+                                    @if($deadlineGate['isNotice'])
+                                        We must send it by {{ $deadlineGate['mustSubmitBy']->format('F j, Y') }}.
+                                    @else
+                                        We must submit it to the county by {{ $deadlineGate['mustSubmitBy']->format('F j, Y') }}.
+                                    @endif
+                                    @if($deadlineGate['businessDaysLeft'] > 0)
+                                        {{ $deadlineGate['businessDaysLeft'] }} {{ Str::plural('business day', $deadlineGate['businessDaysLeft']) }} left.
+                                    @else
+                                        No business days left before that date.
+                                    @endif
+                                </div>
+                            @else
+                                <div class="text-sm text-zinc-600 dark:text-zinc-400">We'll confirm the deadline once we have your dates.</div>
+                            @endif
+                        </div>
+                    @endif
+
+                    @if($noiBlock)
+                        <flux:callout color="red" icon="exclamation-circle">
+                            <flux:callout.text>
+                                {{ $noiBlock }}
+                                @if($noi_served === 'no' && $noiOrderUrl)
+                                    <flux:link href="{{ $noiOrderUrl }}">Order the notice of intent</flux:link>
+                                @endif
+                            </flux:callout.text>
+                        </flux:callout>
+                    @endif
+
                     <flux:heading size="lg">Choose Your Service Level</flux:heading>
 
                     {{-- Validation Errors (exclude disclaimerAccepted — shown inline under checkbox) --}}
-                    @if($errors->has('property_identification') || $errors->has('owner_party'))
+                    @if($errors->has('property_identification') || $errors->has('owner_party') || $errors->has('noi_answer'))
                         <flux:callout color="red" icon="exclamation-circle">
                             <div class="space-y-1">
                                 @foreach($errors->get('property_identification') as $error)
                                     <div>{{ $error }}</div>
                                 @endforeach
                                 @foreach($errors->get('owner_party') as $error)
+                                    <div>{{ $error }}</div>
+                                @endforeach
+                                @foreach($errors->get('noi_answer') as $error)
                                     <div>{{ $error }}</div>
                                 @endforeach
                             </div>
@@ -755,7 +959,7 @@
                 <flux:button wire:click="nextStep" variant="primary" :disabled="$step === 2 && !$ownerParty">
                     Continue
                 </flux:button>
-            @elseif(!$this->requiresAttorneyReferral)
+            @elseif(!$this->requiresAttorneyReferral && ! $deadlineBlocked)
                 <x-ui.action-button wire:click="proceedToCheckout">
                     Proceed to Payment
                 </x-ui.action-button>

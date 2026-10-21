@@ -38,6 +38,12 @@ class LienFiling extends Model implements HasMedia
 {
     use BelongsToBusiness, HasFactory, InteractsWithMedia, SoftDeletes;
 
+    /**
+     * The customer's notice-of-intent answer from the filing wizard, kept in
+     * document_details_json beside the admin-edited details.
+     */
+    public const NOI_ANSWER_KEYS = ['noi_served_on', 'noi_served_to', 'noi_confirmed_at', 'noi_not_applicable_reason'];
+
     protected static function newFactory(): LienFilingFactory
     {
         return LienFilingFactory::new();
@@ -62,6 +68,9 @@ class LienFiling extends Model implements HasMedia
         'client_request_json',
         'customer_emailed_at',
         'customer_emailed_front_url',
+        'must_submit_by',
+        'deadline_business_days_left',
+        'deadline_block_shown_at',
         'stripe_checkout_session_id',
         'stripe_payment_intent_id',
         'paid_at',
@@ -88,6 +97,9 @@ class LienFiling extends Model implements HasMedia
             'document_details_json' => 'array',
             'client_request_json' => 'array',
             'customer_emailed_at' => 'datetime',
+            'must_submit_by' => 'date',
+            'deadline_business_days_left' => 'integer',
+            'deadline_block_shown_at' => 'datetime',
             'paid_at' => 'datetime',
             'mailed_at' => 'datetime',
             'recording_method' => RecordingMethod::class,
@@ -413,6 +425,20 @@ class LienFiling extends Model implements HasMedia
     public function hasGeneratedDocuments(): bool
     {
         return $this->documentKind() !== null;
+    }
+
+    /**
+     * Whether the customer changed the project dates after the wizard told
+     * them the deadline had passed. The board loads it with withExists() as
+     * dates_changed_after_deadline_block_exists; otherwise this queries.
+     */
+    public function datesChangedAfterDeadlineBlock(): bool
+    {
+        if (array_key_exists('dates_changed_after_deadline_block_exists', $this->attributes)) {
+            return (bool) $this->attributes['dates_changed_after_deadline_block_exists'];
+        }
+
+        return $this->events()->where('event_type', LienFilingEvent::DATES_CHANGED_AFTER_DEADLINE_BLOCK)->exists();
     }
 
     /**

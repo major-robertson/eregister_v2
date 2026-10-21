@@ -36,7 +36,13 @@ class UpdateLienDocumentDetails
     {
         return DB::transaction(function () use ($filing, $input): array {
             $before = self::flatten($filing->document_details_json ?? []);
-            $details = $this->normalize($input);
+
+            // The customer's notice-of-intent answer from the wizard is not on
+            // this form; keep it.
+            $details = $this->normalize($input) + array_intersect_key(
+                $filing->document_details_json ?? [],
+                array_flip(LienFiling::NOI_ANSWER_KEYS),
+            );
 
             $filing->update(['document_details_json' => $details === [] ? null : $details]);
 

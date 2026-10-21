@@ -13,6 +13,9 @@ class LienFilingEvent extends Model
 {
     use BelongsToBusiness, HasFactory;
 
+    /** The wizard logged a date change after telling the customer the deadline had passed. */
+    public const DATES_CHANGED_AFTER_DEADLINE_BLOCK = 'dates_changed_after_deadline_block';
+
     protected $fillable = [
         'business_id',
         'filing_id',
@@ -77,6 +80,7 @@ class LienFilingEvent extends Model
             'draft_changes_requested' => 'Changes requested',
             'customer_emailed' => 'Customer emailed us',
             'reply_dismissed' => 'Marked still waiting',
+            self::DATES_CHANGED_AFTER_DEADLINE_BLOCK => 'Dates changed after a deadline notice',
             default => ucfirst(str_replace('_', ' ', $this->event_type)),
         };
     }

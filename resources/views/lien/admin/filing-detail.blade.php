@@ -15,6 +15,9 @@
             {{ $hasPriorEsign ? 'Re-send for E-Sign' : 'Send for E-Sign' }}
         </flux:button>
         @endif
+        @if ($filing->datesChangedAfterDeadlineBlock())
+        <flux:badge color="amber" size="lg" icon="exclamation-triangle">Dates changed after deadline notice</flux:badge>
+        @endif
         @if ($isDeleted)
         <flux:badge color="zinc" size="lg">Deleted</flux:badge>
         @else
@@ -1524,6 +1527,7 @@
                     $originalLien = $documentDetails['original_lien'] ?? [];
                     $money = fn ($cents) => $cents === null ? null : '$'.number_format(((int) $cents) / 100, 2);
                     $day = fn ($date) => $date ? \Illuminate\Support\Carbon::parse($date)->format('M j, Y') : null;
+                    $noiServedTo = ['owner' => 'the owner', 'gc' => 'the general contractor', 'both' => 'the owner and the general contractor'];
                     $documentRows = array_filter([
                         'Signer' => trim(implode(', ', array_filter([$documentDetails['signer_name'] ?? null, $documentDetails['signer_title'] ?? null]))) ?: null,
                         'License number' => $documentDetails['license_number'] ?? null,
@@ -1548,6 +1552,13 @@
                         'Other lien info' => $originalLien['other_info'] ?? null,
                         'Amount received' => $money($originalLien['amount_received_cents'] ?? null),
                         'Attachments' => $documentDetails['attachments_note'] ?? null,
+                        // The customer's notice-of-intent answer from the filing wizard (read-only here)
+                        'NOI served' => isset($documentDetails['noi_served_on'])
+                            ? $day($documentDetails['noi_served_on'])
+                                .(isset($documentDetails['noi_served_to']) ? ' to '.($noiServedTo[$documentDetails['noi_served_to']] ?? $documentDetails['noi_served_to']) : '')
+                                .(isset($documentDetails['noi_confirmed_at']) ? ' (customer confirmed '.\Illuminate\Support\Carbon::parse($documentDetails['noi_confirmed_at'])->eastern()->format('M j, Y').')' : '')
+                            : null,
+                        'NOI' => ($documentDetails['noi_not_applicable_reason'] ?? null) === 'customer_says_not_applicable' ? 'Customer says it does not apply to them' : null,
                     ]);
                 @endphp
 

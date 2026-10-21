@@ -226,6 +226,9 @@
                                     @if ($filing->needs_review)
                                     <flux:badge color="amber" size="sm">Review</flux:badge>
                                     @endif
+                                    @if ($filing->rush_tier)
+                                    <flux:badge color="{{ $filing->rush_tier === 'expedite' ? 'red' : 'amber' }}" size="sm">{{ \App\Domains\Lien\Services\RushTier::label($filing->rush_tier) }}</flux:badge>
+                                    @endif
                                 </div>
                             </div>
 

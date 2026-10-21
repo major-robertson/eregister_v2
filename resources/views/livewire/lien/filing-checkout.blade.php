@@ -4,11 +4,19 @@
     </div>
 
     <x-ui.card>
-        {{-- Compact order summary --}}
-        <div class="flex justify-between items-center text-sm text-zinc-600 dark:text-zinc-400 mb-6">
-            <span>{{ $filing->documentType->name }}</span>
-            <span>{{ $filing->service_level?->label() ?? 'Unknown' }}</span>
-        </div>
+        {{-- Compact order summary: one row per charge, then the total --}}
+        <dl class="space-y-1 text-sm text-zinc-600 dark:text-zinc-400 mb-6">
+            @foreach ($items as $item)
+                <div class="flex justify-between gap-4">
+                    <dt>{{ $item['label'] }}</dt>
+                    <dd>${{ number_format($item['amount_cents'] / 100, 2) }}</dd>
+                </div>
+            @endforeach
+            <div class="flex justify-between gap-4 border-t border-zinc-200 dark:border-zinc-700 pt-1 font-medium text-zinc-900 dark:text-white">
+                <dt>Total</dt>
+                <dd>{{ $formattedPrice }}</dd>
+            </div>
+        </dl>
 
         <div>
             <x-billing.stripe-payment-element

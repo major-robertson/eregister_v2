@@ -16,6 +16,9 @@ class LienFilingEvent extends Model
     /** The wizard logged a date change after telling the customer the deadline had passed. */
     public const DATES_CHANGED_AFTER_DEADLINE_BLOCK = 'dates_changed_after_deadline_block';
 
+    /** The customer ticked the expedite terms on the review step; the payload holds the exact text. */
+    public const RUSH_ACKNOWLEDGED = 'rush_acknowledged';
+
     protected $fillable = [
         'business_id',
         'filing_id',
@@ -81,6 +84,7 @@ class LienFilingEvent extends Model
             'customer_emailed' => 'Customer emailed us',
             'reply_dismissed' => 'Marked still waiting',
             self::DATES_CHANGED_AFTER_DEADLINE_BLOCK => 'Dates changed after a deadline notice',
+            self::RUSH_ACKNOWLEDGED => 'Expedite terms accepted',
             default => ucfirst(str_replace('_', ' ', $this->event_type)),
         };
     }

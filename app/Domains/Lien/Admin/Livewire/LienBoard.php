@@ -166,6 +166,12 @@ class LienBoard extends Component
                 'events' => fn ($q) => $q->where('event_type', 'note_added')->latest()->limit(1),
             ])
             ->withExists(['events as dates_changed_after_deadline_block_exists' => fn ($q) => $q->where('event_type', LienFilingEvent::DATES_CHANGED_AFTER_DEADLINE_BLOCK)])
+            // Rush orders first in each column: expedite, then rush, soonest
+            // submit-by date first (an added Rush with no deadline known last);
+            // then everything else by when it was paid.
+            // (The board itself orders its cards in BoardCard::sorted().)
+            ->orderByRaw("CASE rush_tier WHEN 'expedite' THEN 0 WHEN 'rush' THEN 1 ELSE 2 END")
+            ->orderByRaw("CASE WHEN rush_tier IS NULL THEN NULL ELSE COALESCE(must_submit_by, '9999-12-31') END")
             ->orderBy('paid_at', 'asc')
             ->get()
             ->groupBy(fn (LienFiling $filing) => $filing->status->value);

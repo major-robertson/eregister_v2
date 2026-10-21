@@ -737,6 +737,30 @@
                         </div>
                     @endif
 
+                    @if($rushFee)
+                        {{-- Rush fee: full service close to the deadline (EREG-146) --}}
+                        <div @class([
+                            'rounded-lg border p-4 space-y-2',
+                            'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20' => $rushFee['tier'] === 'expedite',
+                            'border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20' => $rushFee['tier'] !== 'expedite',
+                        ])>
+                            @if($rushChanged)
+                                <div class="text-sm font-medium">Fewer business days are left than when you last saw this order, so the fee has changed.</div>
+                            @endif
+                            <div class="flex items-center justify-between font-medium">
+                                <span>{{ $rushFee['label'] }}</span>
+                                <span>{{ $rushFee['price']->formattedAmount() }}</span>
+                            </div>
+                            <div class="text-sm text-zinc-600 dark:text-zinc-400">{{ $rushFee['reason'] }}</div>
+                            @if($rushFee['acknowledgement'])
+                                <div class="pt-2">
+                                    <flux:checkbox wire:model.live="rushAcknowledged" :label="$rushFee['acknowledgement']" />
+                                    <flux:error name="rushAcknowledged" />
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+
                     @if($noiBlock)
                         <flux:callout color="red" icon="exclamation-circle">
                             <flux:callout.text>
@@ -861,6 +885,13 @@
                         @endforeach
                     </div>
 
+                    @if($rushUpsell)
+                        {{-- Optional Rush: full service outside the required tiers (EREG-146) --}}
+                        <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
+                            <flux:checkbox wire:model.live="rushElected" :label="$rushUpsell['label']" />
+                        </div>
+                    @endif
+
                     {{-- Confirmation Checkbox --}}
                     <div class="border-t border-zinc-200 dark:border-zinc-700 pt-6">
                         <flux:checkbox
@@ -960,7 +991,7 @@
                     Continue
                 </flux:button>
             @elseif(!$this->requiresAttorneyReferral && ! $deadlineBlocked)
-                <x-ui.action-button wire:click="proceedToCheckout">
+                <x-ui.action-button wire:click="proceedToCheckout" :disabled="($rushFee['acknowledgement'] ?? null) !== null && ! $rushAcknowledged">
                     Proceed to Payment
                 </x-ui.action-button>
             @endif

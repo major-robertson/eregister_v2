@@ -209,8 +209,10 @@ final class BoardCard
     }
 
     /**
-     * Within a column: filings the customer emailed us about first, then the
-     * nearest deadline (none last), then the oldest payment.
+     * Within a column: filings the customer emailed us about first, then rush
+     * orders (expedite, then rush, soonest submit-by date first, an added
+     * Rush with no deadline known last), then the nearest deadline (none
+     * last), then the oldest payment.
      *
      * TODO EREG-138 merge: sort by lien_filings.must_submit_by (nulls last)
      * instead of the project's lien deadline.
@@ -220,9 +222,27 @@ final class BoardCard
      */
     private static function sorted(Collection $filings): Collection
     {
-        return $filings->sort(function (LienFiling $a, LienFiling $b): int {
+        $rushRank = fn (LienFiling $filing): int => match ($filing->rush_tier) {
+            'expedite' => 0,
+            'rush' => 1,
+            default => 2,
+        };
+
+        return $filings->sort(function (LienFiling $a, LienFiling $b) use ($rushRank): int {
             if ($a->hasCustomerEmail() !== $b->hasCustomerEmail()) {
                 return $a->hasCustomerEmail() ? -1 : 1;
+            }
+
+            if ($rushRank($a) !== $rushRank($b)) {
+                return $rushRank($a) <=> $rushRank($b);
+            }
+
+            if ($rushRank($a) < 2 && $a->must_submit_by?->getTimestamp() !== $b->must_submit_by?->getTimestamp()) {
+                if ($a->must_submit_by === null || $b->must_submit_by === null) {
+                    return $a->must_submit_by === null ? 1 : -1;
+                }
+
+                return $a->must_submit_by->getTimestamp() <=> $b->must_submit_by->getTimestamp();
             }
 
             $dueA = $a->projectDeadline?->due_date;

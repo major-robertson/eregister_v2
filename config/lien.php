@@ -143,6 +143,39 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Rush Fees
+    |--------------------------------------------------------------------------
+    |
+    | A full-service order placed close to its deadline pays a rush fee on
+    | top of the service price. The tier comes from the business days left
+    | before the submit-by date (App\Domains\Lien\Services\RushTier):
+    | `rush` inside its min_days to max_days; `expedite` at or below its
+    | max_days, including 0 and negative while the deadline itself is still
+    | ahead (its min_days is not read). No fee once the deadline has passed.
+    | The fees (cents) seed the `prices` rows lien/rush_fee/{tier}, which
+    | checkout charges: change an amount with a new price row, not here
+    | alone. `rush_fee_documents` lists the documents that pay one; Major
+    | can add 'prelim_notice' and 'noi' (their wording is already in place).
+    | Outside the required tiers (7 or more business days left, or no
+    | deadline known) a full-service customer may add Rush on the review
+    | step for the same `rush` fee.
+    |
+    */
+    // Proposed; Major sets the final amounts.
+    'rush_fees' => [
+        'rush' => 7500,
+        'expedite' => 15000,
+    ],
+
+    'rush_tiers' => [
+        'rush' => ['min_days' => 4, 'max_days' => 6],
+        'expedite' => ['min_days' => 1, 'max_days' => 3],
+    ],
+
+    'rush_fee_documents' => ['mechanics_lien'],
+
+    /*
+    |--------------------------------------------------------------------------
     | Generated Lien Documents
     |--------------------------------------------------------------------------
     |

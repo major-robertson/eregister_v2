@@ -151,6 +151,9 @@ class FilingWizard extends Component
     // Checkout sent the customer back because the rush fee changed.
     public bool $rushChanged = false;
 
+    // The customer added the optional Rush (outside the required tiers).
+    public bool $rushElected = false;
+
     public array $warnings = [];
 
     // File uploads
@@ -299,6 +302,7 @@ class FilingWizard extends Component
 
         $this->description_of_work = $this->filing->description_of_work;
         $this->service_level = $this->filing->service_level?->value ?? 'full_service';
+        $this->rushElected = (bool) $this->filing->rush_elected;
 
         // Load any existing payload data
         $payload = $this->filing->payload_json ?? [];
@@ -895,9 +899,35 @@ class FilingWizard extends Component
             'label' => RushTier::label($tier),
             'price' => $price,
             'businessDaysLeft' => $gate['businessDaysLeft'],
-            'reason' => RushTier::reason($gate['businessDaysLeft'], $gate['slug']),
+            'reason' => RushTier::reason($gate['businessDaysLeft'], $gate['slug'], $tier),
             'acknowledgement' => RushTier::requiresAcknowledgement($tier) ? RushTier::acknowledgement($gate['slug']) : null,
         ];
+    }
+
+    /**
+     * The optional Rush step 4 offers, or null: a full-service order on a
+     * document that pays rush fees, outside the required tiers (7 or more
+     * business days left, or no deadline known), with an active
+     * lien/rush_fee/rush row (RushTier::electable()).
+     *
+     * @param  array<string, mixed>|null  $gate  deadlineGate()
+     * @return array{price: Price, label: string}|null
+     */
+    private function rushUpsell(?array $gate): ?array
+    {
+        if ($gate['passed'] ?? false) {
+            return null;
+        }
+
+        $electable = RushTier::electable(
+            $this->deadline->documentType?->slug,
+            $this->service_level,
+            $gate['mustSubmitBy'] ?? null,
+            $gate['deadline'] ?? null,
+        );
+        $price = $electable ? RushTier::price(RushTier::RUSH) : null;
+
+        return $price ? ['price' => $price, 'label' => RushTier::electLabel($price)] : null;
     }
 
     /**
@@ -1252,13 +1282,15 @@ class FilingWizard extends Component
         $gate = $this->deadlineGate();
         $rushFee = $this->rushFee($gate);
         $acknowledgement = $this->rushAcknowledged ? ($rushFee['acknowledgement'] ?? null) : null;
+        $rushElected = $rushFee === null && $this->rushElected && $this->rushUpsell($gate) !== null;
 
         $this->filing->update([
             'payload_json' => $this->buildPayloadSnapshot(),
             'parties_snapshot_json' => $this->buildPartiesSnapshot(),
             'must_submit_by' => isset($gate['mustSubmitBy']) ? $gate['mustSubmitBy']->toDateString() : null,
             'deadline_business_days_left' => $gate['businessDaysLeft'] ?? null,
-            'rush_tier' => $rushFee['tier'] ?? null,
+            'rush_tier' => $rushFee['tier'] ?? ($rushElected ? RushTier::RUSH : null),
+            'rush_elected' => $rushElected,
             'rush_acknowledged_at' => $acknowledgement !== null ? now() : null,
         ]);
 
@@ -1632,6 +1664,7 @@ class FilingWizard extends Component
             'deadlineGate' => $deadlineGate,
             'deadlineBlocked' => $deadlineBlocked,
             'rushFee' => $deadlineBlocked ? null : $this->rushFee($deadlineGate),
+            'rushUpsell' => $this->step === 4 && ! $this->requiresAttorneyReferral && ! $deadlineBlocked ? $this->rushUpsell($deadlineGate) : null,
             'demandLetter' => $deadlineBlocked ? $this->demandLetterOffer() : null,
         ])->layout('components.layouts.portal', ['title' => 'Create '.$this->deadline->documentType->name]);
     }

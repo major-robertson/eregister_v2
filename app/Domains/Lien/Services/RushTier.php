@@ -28,6 +28,11 @@ use InvalidArgumentException;
  * The fee is the active prices row lien/rush_fee/{tier}, charged on top of
  * the service price (FilingCheckout). A tier without an active row charges
  * nothing.
+ *
+ * Outside those tiers (7 or more business days left, or no deadline known)
+ * the customer may add Rush on the review step (electable()); the filing
+ * then keeps rush_tier = rush with rush_elected set, and pays the same rush
+ * row. The required tiers are never optional.
  */
 final class RushTier
 {
@@ -81,6 +86,44 @@ final class RushTier
         }
 
         return self::forBusinessDaysLeft(BusinessDays::between($today, $mustSubmitBy));
+    }
+
+    /**
+     * Whether the customer may add Rush by choice: a full-service order on a
+     * document that pays rush fees, whose deadline has not passed, and that
+     * is in no required tier (7 or more business days left, or no submit-by
+     * date known).
+     */
+    public static function electable(
+        ?string $documentSlug,
+        ?string $serviceLevel,
+        ?CarbonInterface $mustSubmitBy,
+        ?CarbonInterface $deadline = null,
+        ?CarbonInterface $today = null,
+    ): bool {
+        if ($serviceLevel !== ServiceLevel::FullService->value || ! self::charges($documentSlug)) {
+            return false;
+        }
+
+        $today ??= now()->eastern();
+
+        if ($deadline !== null && $deadline->format('Y-m-d') < $today->format('Y-m-d')) {
+            return false;
+        }
+
+        return self::for($documentSlug, $serviceLevel, $mustSubmitBy, $deadline, $today) === null;
+    }
+
+    /** electable() for a filing as it stands today. */
+    public static function electableForFiling(LienFiling $filing, ?CarbonInterface $today = null): bool
+    {
+        return self::electable(
+            $filing->documentType?->slug,
+            $filing->service_level?->value,
+            $filing->must_submit_by,
+            $filing->projectDeadline?->due_date,
+            $today,
+        );
     }
 
     /** Whether this document can pay a rush fee: a deadline document listed in config lien.rush_fee_documents. */
@@ -149,16 +192,28 @@ final class RushTier
         return $tier === self::EXPEDITE;
     }
 
-    /** The one sentence on the review step that says why the fee applies. */
-    public static function reason(int $businessDaysLeft, ?string $documentSlug): string
+    /**
+     * The line on the review step that says why the fee applies. A tier
+     * without terms adds that we start as soon as possible; the expedite
+     * terms already say so.
+     */
+    public static function reason(int $businessDaysLeft, ?string $documentSlug, string $tier): string
     {
         $left = $businessDaysLeft > 0
             ? $businessDaysLeft.' '.Str::plural('business day', $businessDaysLeft).' left'
             : 'No business days left';
 
-        return in_array($documentSlug, self::NOTICES, true)
+        $why = in_array($documentSlug, self::NOTICES, true)
             ? "{$left} before we must send it."
             : "{$left} before we must submit to the county.";
+
+        return self::requiresAcknowledgement($tier) ? $why : $why.' We start as soon as possible.';
+    }
+
+    /** The optional Rush checkbox on the review step. */
+    public static function electLabel(Price $price): string
+    {
+        return "Add Rush for {$price->formattedAmount()}: we start on your filing as soon as possible instead of in normal order.";
     }
 
     /**
@@ -173,6 +228,6 @@ final class RushTier
             ? "we can't promise it is served in time"
             : "we can't promise the county records it in time";
 
-        return "We start today. With fewer than {$fewerThan} business days left {$promise}, and the order is not refunded on that basis.";
+        return "We start as soon as possible. With fewer than {$fewerThan} business days left {$promise}, and the order is not refunded on that basis.";
     }
 }

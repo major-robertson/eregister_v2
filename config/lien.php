@@ -156,6 +156,9 @@ return [
     | checkout charges: change an amount with a new price row, not here
     | alone. `rush_fee_documents` lists the documents that pay one; Major
     | can add 'prelim_notice' and 'noi' (their wording is already in place).
+    | Outside the required tiers (7 or more business days left, or no
+    | deadline known) a full-service customer may add Rush on the review
+    | step for the same `rush` fee.
     |
     */
     // Proposed; Major sets the final amounts.

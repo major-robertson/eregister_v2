@@ -78,19 +78,25 @@ class FilingCheckout extends Component
 
     /**
      * Work the rush tier out again for today: the customer may pay a day or
-     * more after the review step. A changed tier is stored on the filing.
+     * more after the review step. A required tier wins; otherwise the Rush
+     * the customer added on the review step, while it can still be added. A
+     * changed tier is stored on the filing.
      * An expedite tier the customer has not accepted sends them back to the
      * review step to tick its terms (false). Otherwise the fee row to
      * charge, or null for none.
      */
     protected function syncRushTier(): Price|false|null
     {
-        $tier = RushTier::forFiling($this->filing);
+        $required = RushTier::forFiling($this->filing);
+        $tier = $required ?? ($this->filing->rush_elected && RushTier::electableForFiling($this->filing) ? RushTier::RUSH : null);
         $price = RushTier::price($tier);
         $tier = $price ? $tier : null;
+        $elected = $required === null && $tier !== null;
 
         if ($tier !== $this->filing->rush_tier) {
-            $this->filing->update(['rush_tier' => $tier, 'rush_acknowledged_at' => null]);
+            $this->filing->update(['rush_tier' => $tier, 'rush_elected' => $elected, 'rush_acknowledged_at' => null]);
+        } elseif ($elected !== (bool) $this->filing->rush_elected) {
+            $this->filing->update(['rush_elected' => $elected]);
         }
 
         if (RushTier::requiresAcknowledgement($tier) && $this->filing->rush_acknowledged_at === null) {

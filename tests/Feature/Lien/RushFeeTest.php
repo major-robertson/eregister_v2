@@ -38,7 +38,7 @@ use Stripe\StripeClient;
  * e-records, so we must submit one business day before the deadline.
  */
 
-const RUSH_EXPEDITE_TEXT = "We start today. With fewer than 4 business days left we can't promise the county records it in time, and the order is not refunded on that basis.";
+const RUSH_EXPEDITE_TEXT = "We start as soon as possible. With fewer than 4 business days left we can't promise the county records it in time, and the order is not refunded on that basis.";
 
 /** Deadline Friday October 23, submit by Thursday October 22: 2 business days left. */
 const RUSH_EXPEDITE_DATES = [
@@ -53,6 +53,16 @@ const RUSH_RUSH_DATES = [
     'last_furnish_date' => '2026-06-28',
     'completion_date' => '2026-06-28',
 ];
+
+/** Deadline Monday December 14, submit by Friday December 11: 36 business days left, outside the required tiers. */
+const RUSH_LATER_DATES = [
+    'first_furnish_date' => '2026-07-01',
+    'last_furnish_date' => '2026-08-14',
+    'completion_date' => '2026-08-14',
+];
+
+/** The optional Rush checkbox on the review step. */
+const RUSH_ELECT_TEXT = 'Add Rush for $75.00: we start on your filing as soon as possible instead of in normal order.';
 
 /** Maricopa County, Arizona, first furnished October 3: the preliminary notice is due October 23. */
 const ARIZONA_PRELIM_PROJECT = [
@@ -222,7 +232,10 @@ describe('review step', function () {
             ->assertSee('Expedite')
             ->assertSee('$150.00')
             ->assertSee('2 business days left before we must submit to the county.')
+            ->assertDontSee('before we must submit to the county. We start as soon as possible.')
             ->assertSee(RUSH_EXPEDITE_TEXT)
+            ->assertDontSee('Add Rush for')
+            ->assertDontSee('We start today')
             ->assertDontSee('Fewer business days are left');
 
         expect(rushPayButtonDisabled($component))->toBeTrue();
@@ -269,40 +282,42 @@ describe('review step', function () {
             ->assertSee('We must submit it to the county by October 27, 2026.')
             ->assertSee('Rush')
             ->assertSee('$75.00')
-            ->assertSee('5 business days left before we must submit to the county.')
+            ->assertSee('5 business days left before we must submit to the county. We start as soon as possible.')
             ->assertDontSee('Expedite')
-            ->assertDontSee('not refunded on that basis');
+            ->assertDontSee('not refunded on that basis')
+            ->assertDontSee('Add Rush for');
 
         expect(rushPayButtonDisabled($component))->toBeFalse();
 
-        $component->set('disclaimerAccepted', true)
+        // A required tier is not a choice: the optional box changes nothing.
+        $component->set('rushElected', true)
+            ->set('disclaimerAccepted', true)
             ->call('proceedToCheckout')
             ->assertHasNoErrors()
             ->assertRedirect(route('lien.filings.checkout', $filing));
 
         expect($filing->fresh()->rush_tier)->toBe('rush')
+            ->and($filing->fresh()->rush_elected)->toBeFalse()
             ->and($filing->fresh()->rush_acknowledged_at)->toBeNull()
             ->and($filing->events()->where('event_type', LienFilingEvent::RUSH_ACKNOWLEDGED)->count())->toBe(0);
     });
 
     it('shows no fee with more than 6 business days left', function () {
-        $project = rushProject($this->business, [
-            'first_furnish_date' => '2026-07-01',
-            'last_furnish_date' => '2026-08-14',
-            'completion_date' => '2026-08-14',
-        ]);
+        $project = rushProject($this->business, RUSH_LATER_DATES);
         [$deadline, $filing] = rushFiling($project);
 
         rushReviewStep($project, $deadline)
             ->assertSee('36 business days left.')
             ->assertDontSee('before we must submit to the county')
-            ->assertDontSee('$75.00')
             ->assertDontSee('$150.00')
+            ->assertSee(RUSH_ELECT_TEXT)
+            ->assertSet('rushElected', false)
             ->set('disclaimerAccepted', true)
             ->call('proceedToCheckout')
             ->assertRedirect(route('lien.filings.checkout', $filing));
 
-        expect($filing->fresh()->rush_tier)->toBeNull();
+        expect($filing->fresh()->rush_tier)->toBeNull()
+            ->and($filing->fresh()->rush_elected)->toBeFalse();
     });
 
     it('charges no fee on self-serve', function () {
@@ -313,7 +328,8 @@ describe('review step', function () {
             ->assertSee('$150.00')
             ->set('service_level', 'self_serve')
             ->assertDontSee('$150.00')
-            ->assertDontSee('not refunded on that basis');
+            ->assertDontSee('not refunded on that basis')
+            ->assertDontSee('Add Rush for');
 
         expect(rushPayButtonDisabled($component))->toBeFalse();
     });
@@ -365,7 +381,8 @@ describe('review step', function () {
             ->assertSee('2 business days left.')
             ->assertDontSee('before we must send it.')
             ->assertDontSee('$150.00')
-            ->assertDontSee('not refunded on that basis');
+            ->assertDontSee('not refunded on that basis')
+            ->assertDontSee('Add Rush for');
 
         expect(rushPayButtonDisabled($component))->toBeFalse();
 
@@ -379,7 +396,7 @@ describe('review step', function () {
 
     it('charges notices with their own wording once config lists them', function () {
         config(['lien.rush_fee_documents' => ['mechanics_lien', 'prelim_notice', 'noi']]);
-        $noticeText = "We start today. With fewer than 4 business days left we can't promise it is served in time, and the order is not refunded on that basis.";
+        $noticeText = "We start as soon as possible. With fewer than 4 business days left we can't promise it is served in time, and the order is not refunded on that basis.";
 
         $project = rushProject($this->business, ARIZONA_PRELIM_PROJECT);
         [$deadline, $filing] = rushFiling($project, [], 'prelim_notice');
@@ -420,6 +437,150 @@ describe('review step', function () {
             ->assertRedirect(route('lien.filings.checkout', $filing));
 
         expect($filing->fresh()->rush_acknowledged_at)->not->toBeNull();
+    });
+});
+
+describe('optional rush', function () {
+    it('lets a full-service customer add Rush outside the required tiers', function () {
+        $project = rushProject($this->business, RUSH_LATER_DATES);
+        [$deadline, $filing] = rushFiling($project);
+
+        $component = rushReviewStep($project, $deadline)
+            ->assertSee('36 business days left.')
+            ->assertSee(RUSH_ELECT_TEXT)
+            ->assertDontSee('before we must submit to the county');
+
+        expect(rushPayButtonDisabled($component))->toBeFalse();
+
+        $component->set('rushElected', true)
+            ->set('disclaimerAccepted', true)
+            ->call('proceedToCheckout')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('lien.filings.checkout', $filing));
+
+        $filing->refresh();
+
+        expect($filing->rush_tier)->toBe('rush')
+            ->and($filing->rush_elected)->toBeTrue()
+            ->and($filing->rush_acknowledged_at)->toBeNull()
+            ->and($filing->must_submit_by->toDateString())->toBe('2026-12-11')
+            ->and($filing->events()->where('event_type', LienFilingEvent::RUSH_ACKNOWLEDGED)->count())->toBe(0);
+    });
+
+    it('drops the added Rush when the customer unticks it before paying', function () {
+        $project = rushProject($this->business, RUSH_LATER_DATES);
+        [$deadline, $filing] = rushFiling($project);
+
+        rushReviewStep($project, $deadline)
+            ->set('rushElected', true)
+            ->set('disclaimerAccepted', true)
+            ->call('proceedToCheckout')
+            ->assertRedirect(route('lien.filings.checkout', $filing));
+
+        expect($filing->fresh()->rush_tier)->toBe('rush');
+
+        // Back from checkout: the box is still ticked, and unticking it removes the fee.
+        rushReviewStep($project, $deadline)
+            ->assertSet('rushElected', true)
+            ->set('rushElected', false)
+            ->set('disclaimerAccepted', true)
+            ->call('proceedToCheckout')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('lien.filings.checkout', $filing));
+
+        expect($filing->fresh()->rush_tier)->toBeNull()
+            ->and($filing->fresh()->rush_elected)->toBeFalse();
+
+        rushStripe()->shouldReceive('create')
+            ->once()
+            ->withArgs(fn (array $params) => $params['amount'] === 29900 && $params['metadata']['lien_rush_tier'] === 'none')
+            ->andReturn(rushIntent('pi_unticked', 29900));
+
+        Livewire::test(FilingCheckout::class, ['filing' => $filing->fresh()])
+            ->assertSet('amountCents', 29900)
+            ->assertDontSee('Rush fee');
+    });
+
+    it('offers Rush when no deadline is known', function () {
+        $project = rushProject($this->business, [
+            'first_furnish_date' => null,
+            'last_furnish_date' => null,
+            'completion_date' => null,
+        ]);
+        [$deadline] = rushFiling($project);
+
+        Livewire::test(FilingWizard::class, ['project' => $project, 'deadline' => $deadline])
+            ->set('step', 4)
+            ->assertSee("We'll confirm the deadline once we have your dates.", false)
+            ->assertSee(RUSH_ELECT_TEXT)
+            ->set('service_level', 'self_serve')
+            ->assertDontSee('Add Rush for');
+    });
+
+    it('does not offer Rush on documents without rush fees', function (string $slug, array $attributes) {
+        $project = rushProject($this->business, $attributes);
+        [$deadline] = rushFiling($project, [], $slug);
+
+        Livewire::test(FilingWizard::class, ['project' => $project, 'deadline' => $deadline])
+            ->set('step', 4)
+            ->assertSee('Proceed to Payment')
+            ->assertDontSee('Add Rush for');
+    })->with([
+        'demand letter' => ['demand_letter', RUSH_LATER_DATES],
+        'preliminary notice' => ['prelim_notice', ARIZONA_PRELIM_PROJECT],
+    ]);
+
+    it('charges an added Rush at checkout, with or without a known deadline', function (?string $mustSubmitBy) {
+        $project = rushProject($this->business, RUSH_LATER_DATES);
+        [, $filing] = rushFiling($project, [
+            'status' => FilingStatus::AwaitingPayment,
+            'must_submit_by' => $mustSubmitBy,
+            'rush_tier' => 'rush',
+            'rush_elected' => true,
+        ]);
+        $base = rushPrice('mechanics_lien', 'full_service');
+        $fee = rushPrice('rush_fee', 'rush');
+
+        rushStripe()->shouldReceive('create')
+            ->once()
+            ->withArgs(fn (array $params) => $params['amount'] === 37400 && $params['metadata']['lien_rush_tier'] === 'rush')
+            ->andReturn(rushIntent('pi_added_rush', 37400));
+
+        Livewire::test(FilingCheckout::class, ['filing' => $filing])
+            ->assertNoRedirect()
+            ->assertSet('amountCents', 37400)
+            ->assertSee('Rush fee')
+            ->assertSee('$75.00')
+            ->assertSee('$374.00');
+
+        expect(Payment::whereMorphedTo('purchasable', $filing)->sole()->meta['items'])->toEqual([
+            ['price_id' => $base->id, 'product_key' => 'mechanics_lien', 'variant_key' => 'full_service', 'label' => 'Mechanics Lien (Full Service)', 'amount_cents' => 29900],
+            ['price_id' => $fee->id, 'product_key' => 'rush_fee', 'variant_key' => 'rush', 'label' => 'Rush fee', 'amount_cents' => 7500],
+        ])
+            ->and($filing->fresh()->rush_tier)->toBe('rush')
+            ->and($filing->fresh()->rush_elected)->toBeTrue();
+    })->with([
+        'known deadline' => ['2026-12-11'],
+        'no deadline known' => [null],
+    ]);
+
+    it('hands an added Rush over to the required tier once the order gets that close', function () {
+        $project = rushProject($this->business, RUSH_EXPEDITE_DATES);
+        [$deadline, $filing] = rushFiling($project, [
+            'status' => FilingStatus::AwaitingPayment,
+            'must_submit_by' => '2026-10-22',
+            'rush_tier' => 'rush',
+            'rush_elected' => true,
+        ]);
+
+        rushStripe()->shouldNotReceive('create');
+
+        // Expedite is required now: back to the review step to accept its terms.
+        Livewire::test(FilingCheckout::class, ['filing' => $filing])
+            ->assertRedirect(route('lien.filings.start', ['project' => $project, 'deadline' => $deadline, 'rush' => 'changed']));
+
+        expect($filing->fresh()->rush_tier)->toBe('expedite')
+            ->and($filing->fresh()->rush_elected)->toBeFalse();
     });
 });
 
@@ -756,6 +917,35 @@ describe('admin', function () {
             ->assertSee('$150.00')
             ->assertSee('Expedite terms accepted')
             ->assertSee('Oct 20, 2026 12:00 PM');
+    });
+
+    it('shows an added Rush like any other', function () {
+        $project = rushProject($this->business, RUSH_LATER_DATES);
+        [, $filing] = rushFiling($project, [
+            'status' => FilingStatus::Paid,
+            'paid_at' => now(),
+            'must_submit_by' => '2026-12-11',
+            'rush_tier' => 'rush',
+            'rush_elected' => true,
+        ]);
+        Payment::factory()->forPurchasable($filing)->succeeded()->create([
+            'price_id' => rushPrice('mechanics_lien', 'full_service')->id,
+            'amount_cents' => 37400,
+            'meta' => ['items' => [
+                ['price_id' => 1, 'product_key' => 'mechanics_lien', 'variant_key' => 'full_service', 'label' => 'Mechanics Lien (Full Service)', 'amount_cents' => 29900],
+                ['price_id' => 2, 'product_key' => 'rush_fee', 'variant_key' => 'rush', 'label' => 'Rush fee', 'amount_cents' => 7500],
+            ]],
+        ]);
+
+        $this->actingAs($this->admin);
+        session()->forget('current_business_id');
+
+        Livewire::test(LienBoard::class)->assertSee('Rush');
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->assertSee('Rush fee')
+            ->assertSee('$75.00')
+            ->assertDontSee('Expedite terms accepted');
     });
 
     it('shows nothing about rush on an ordinary order', function () {

@@ -210,8 +210,9 @@ final class BoardCard
 
     /**
      * Within a column: filings the customer emailed us about first, then rush
-     * orders (expedite, then rush, soonest submit-by date first), then the
-     * nearest deadline (none last), then the oldest payment.
+     * orders (expedite, then rush, soonest submit-by date first, an added
+     * Rush with no deadline known last), then the nearest deadline (none
+     * last), then the oldest payment.
      *
      * TODO EREG-138 merge: sort by lien_filings.must_submit_by (nulls last)
      * instead of the project's lien deadline.

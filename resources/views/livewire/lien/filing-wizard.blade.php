@@ -885,6 +885,13 @@
                         @endforeach
                     </div>
 
+                    @if($rushUpsell)
+                        {{-- Optional Rush: full service outside the required tiers (EREG-146) --}}
+                        <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
+                            <flux:checkbox wire:model.live="rushElected" :label="$rushUpsell['label']" />
+                        </div>
+                    @endif
+
                     {{-- Confirmation Checkbox --}}
                     <div class="border-t border-zinc-200 dark:border-zinc-700 pt-6">
                         <flux:checkbox

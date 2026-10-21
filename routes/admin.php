@@ -17,6 +17,7 @@ use App\Domains\Forms\Admin\Livewire\FormationsBoardAll;
 use App\Domains\Forms\Admin\Livewire\SalesTaxApplicationStateDetail;
 use App\Domains\Forms\Admin\Livewire\SalesTaxBoard;
 use App\Domains\Forms\Admin\Livewire\SalesTaxBoardAll;
+use App\Domains\Lien\Admin\Http\Controllers\CustomerDocumentController;
 use App\Domains\Lien\Admin\Http\Controllers\CustomerUploadController;
 use App\Domains\Lien\Admin\Http\Controllers\DemandLetterController;
 use App\Domains\Lien\Admin\Http\Controllers\LienDocumentController;
@@ -77,6 +78,11 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
                 ->whereIn('document', LienPackageDocument::values())
                 ->whereNumber('recipient')
                 ->name('documents.download');
+            // The contract, change orders and invoices the customer attached
+            // in the filing wizard; {media} is a customer_documents media id.
+            Route::get('/{publicId}/customer-documents/{media}', [CustomerDocumentController::class, 'download'])
+                ->whereNumber('media')
+                ->name('customer-documents.download');
             // Signed e-sign document download (kept before the {publicId} catch-all).
             Route::get('/esign/documents/{publicId}/download', [SignedDocumentController::class, 'download'])->name('esign.documents.download');
             // A file the customer sent from their filing page; {media} is a

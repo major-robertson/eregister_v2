@@ -70,6 +70,22 @@ class LienFiling extends Model implements HasMedia
     /** The status note when payment moves a filing to Awaiting Client for its property identification. */
     public const PROPERTY_DESCRIPTION_NOTE = 'Legal description needed';
 
+    /**
+     * The media collection for the contract, change orders and invoices the
+     * customer attaches in the filing wizard (EREG-139). Each file carries
+     * custom properties `kind` (a CUSTOMER_DOCUMENT_KINDS key) and
+     * `uploaded_by` (a user id). Staff read them; nothing parses them.
+     */
+    public const CUSTOMER_DOCUMENTS = 'customer_documents';
+
+    /** What each customer document is, as the customer chose it. */
+    public const CUSTOMER_DOCUMENT_KINDS = [
+        'contract' => 'Contract',
+        'change_order' => 'Change order',
+        'invoice' => 'Invoice',
+        'other' => 'Other',
+    ];
+
     protected static function newFactory(): LienFilingFactory
     {
         return LienFilingFactory::new();
@@ -240,6 +256,12 @@ class LienFiling extends Model implements HasMedia
 
         $this->addMediaCollection('proof_of_service')
             ->acceptsMimeTypes(['application/pdf'])
+            ->useDisk('s3');
+
+        // The contract, change orders and invoices from the filing wizard.
+        // FilingWizard validates the type, size and count; no list here, for
+        // the same HEIC reason.
+        $this->addMediaCollection(self::CUSTOMER_DOCUMENTS)
             ->useDisk('s3');
     }
 

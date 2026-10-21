@@ -33,15 +33,19 @@ use App\Models\Price;
 use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class FilingWizard extends Component
 {
@@ -79,6 +83,22 @@ class FilingWizard extends Component
         'credits_deductions' => 'credits_deductions_cents',
         'payments_received' => 'payments_received_cents',
     ];
+
+    /** The most contract, change order and invoice files one filing takes (EREG-139). */
+    private const CUSTOMER_DOCUMENTS_MAX = 10;
+
+    /**
+     * Each file's size limit in kilobytes (20 MB). The ceilings in config
+     * livewire.temporary_file_upload and media-library.max_file_size match.
+     */
+    private const CUSTOMER_DOCUMENT_MAX_KB = 20480;
+
+    /**
+     * The types a customer document may be, as detected from the file's
+     * content (the mimetypes rule), not its name: PDF, JPG, PNG and the
+     * HEIC/HEIF photos iPhones take.
+     */
+    private const CUSTOMER_DOCUMENT_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/heic', 'image/heif'];
 
     public LienProject $project;
 
@@ -197,8 +217,10 @@ class FilingWizard extends Component
 
     public array $warnings = [];
 
-    // File uploads
-    public array $attachments = [];
+    // Step 3: the contract, change orders and invoices just picked (EREG-139).
+    // Each batch is stored on the draft filing as soon as it uploads
+    // (updatedCustomerDocumentUploads), then this is emptied.
+    public array $customerDocumentUploads = [];
 
     // Attorney referral (HI, MD, DE mechanics liens)
     public bool $referralSent = false;
@@ -2225,6 +2247,117 @@ class FilingWizard extends Component
         $this->referralSent = true;
     }
 
+    /**
+     * Store the contract, change order and invoice files the customer just
+     * picked on the draft filing (EREG-139), so nothing is lost if they
+     * leave and come back. The batch is checked first: up to 10 files on
+     * the filing in all, each a PDF, JPG, PNG or HEIC by its content, of
+     * 20 MB or less. A bad batch stores nothing and names the files at
+     * fault, under "customerDocuments" (Livewire's own upload errors land
+     * under "customerDocumentUploads" and last until this upload works).
+     */
+    public function updatedCustomerDocumentUploads(): void
+    {
+        $this->resetErrorBag(['customerDocumentUploads', 'customerDocumentUploads.*']);
+
+        $uploads = array_values($this->customerDocumentUploads);
+        $this->customerDocumentUploads = [];
+
+        if ($uploads === []) {
+            return;
+        }
+
+        $this->ensureCustomerDocumentsEditable();
+
+        $attributes = [];
+
+        foreach ($uploads as $index => $upload) {
+            $attributes["files.{$index}"] = $upload instanceof UploadedFile ? $upload->getClientOriginalName() : 'A file';
+        }
+
+        $validator = Validator::make(['files' => $uploads], [
+            'files' => ['array', 'max:'.max(0, self::CUSTOMER_DOCUMENTS_MAX - $this->customerDocuments()->count())],
+            'files.*' => ['file', 'mimetypes:'.implode(',', self::CUSTOMER_DOCUMENT_MIME_TYPES), 'max:'.self::CUSTOMER_DOCUMENT_MAX_KB],
+        ], [
+            'files.max' => 'You can attach up to '.self::CUSTOMER_DOCUMENTS_MAX.' files. Remove one to add another.',
+            'files.*.file' => ':attribute did not upload. Try again.',
+            'files.*.mimetypes' => ':attribute is not a PDF, JPG, PNG or HEIC file.',
+            'files.*.max' => ':attribute is larger than 20 MB.',
+        ], $attributes);
+
+        if ($validator->fails()) {
+            throw ValidationException::withMessages(['customerDocuments' => $validator->errors()->all()]);
+        }
+
+        foreach ($uploads as $upload) {
+            $fileName = $upload->getClientOriginalName();
+
+            $this->filing->addMedia($upload->getRealPath())
+                ->usingName(pathinfo($fileName, PATHINFO_FILENAME))
+                ->usingFileName($fileName)
+                ->withCustomProperties(['kind' => 'other', 'uploaded_by' => auth()->id()])
+                ->toMediaCollection(LienFiling::CUSTOMER_DOCUMENTS);
+        }
+    }
+
+    /**
+     * Say what a customer document is: contract, change order, invoice or
+     * other (LienFiling::CUSTOMER_DOCUMENT_KINDS).
+     */
+    public function setCustomerDocumentKind(int $mediaId, string $kind): void
+    {
+        abort_unless(array_key_exists($kind, LienFiling::CUSTOMER_DOCUMENT_KINDS), 422);
+
+        $document = $this->customerDocument($mediaId);
+        $document->setCustomProperty('kind', $kind);
+        $document->save();
+    }
+
+    public function removeCustomerDocument(int $mediaId): void
+    {
+        $this->customerDocument($mediaId)->delete();
+    }
+
+    /**
+     * One of this filing's customer documents; 404 for any other file.
+     */
+    private function customerDocument(int $mediaId): Media
+    {
+        $this->ensureCustomerDocumentsEditable();
+
+        $document = $this->filing->media()
+            ->where('collection_name', LienFiling::CUSTOMER_DOCUMENTS)
+            ->whereKey($mediaId)
+            ->first();
+
+        abort_if($document === null, 404);
+
+        return $document;
+    }
+
+    /**
+     * The customer documents on this filing, in the order they were added.
+     *
+     * @return Collection<int, Media>
+     */
+    private function customerDocuments(): Collection
+    {
+        return $this->filing->media()
+            ->where('collection_name', LienFiling::CUSTOMER_DOCUMENTS)
+            ->orderBy('order_column')
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
+     * Customer documents change only before payment: an order paid for in
+     * another tab keeps the files staff work from.
+     */
+    private function ensureCustomerDocumentsEditable(): void
+    {
+        abort_unless(in_array($this->filing->fresh()?->status, [FilingStatus::Draft, FilingStatus::AwaitingPayment], true), 403);
+    }
+
     public function render(): View
     {
         $slug = $this->deadline->documentType->slug;
@@ -2274,6 +2407,9 @@ class FilingWizard extends Component
             'demandLetter' => $deadlineBlocked ? $this->demandLetterOffer() : null,
             'propertyRequired' => $this->requiresPropertyIdentification(),
             'propertyLookup' => $this->step === 1 ? PropertyLookup::forFiling($this->filing) : null,
+            'customerDocuments' => in_array($this->step, [3, 4], true) ? $this->customerDocuments() : collect(),
+            'customerDocumentKinds' => LienFiling::CUSTOMER_DOCUMENT_KINDS,
+            'customerDocumentsMax' => self::CUSTOMER_DOCUMENTS_MAX,
         ])->layout('components.layouts.portal', ['title' => 'Create '.$this->deadline->documentType->name]);
     }
 }

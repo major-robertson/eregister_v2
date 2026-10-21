@@ -42,6 +42,7 @@ class DeadlineApproaching extends Notification implements ShouldQueue
         };
 
         $message = (new MailMessage)
+            ->replyTo(config('mail.support_address'))
             ->subject("{$document} due {$when}: {$project}")
             ->greeting('Hi '.($notifiable->first_name ?: 'there').',')
             ->line("Your {$document} for **{$project}** is due {$when}, on {$dueDate}.");

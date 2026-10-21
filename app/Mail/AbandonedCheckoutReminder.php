@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Mail\Concerns\RepliesToSupport;
 use App\Models\EmailSequence;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\URL;
 
 class AbandonedCheckoutReminder extends Mailable implements ShouldQueue
 {
-    use Queueable, SerializesModels;
+    use Queueable, RepliesToSupport, SerializesModels;
 
     public function __construct(
         public EmailSequence $sequence,
@@ -31,7 +32,7 @@ class AbandonedCheckoutReminder extends Mailable implements ShouldQueue
             default => 'Complete your order — eRegister',
         };
 
-        return new Envelope(subject: $subject);
+        return new Envelope(replyTo: $this->supportReplyTo(), subject: $subject);
     }
 
     public function content(): Content

@@ -7,6 +7,7 @@ use App\Domains\Forms\Models\FormApplication;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Enums\WaiverStatus;
 use App\Domains\Lien\Models\LienFiling;
+use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienWaiver;
 use App\Domains\Lien\Waivers\WaiverEntitlements;
 use App\Domains\SalesTax\SalesTaxFollowUp;
@@ -114,6 +115,28 @@ class EmailSequence extends Model
      */
     private const ESIGN_REMINDER_DELAYS = [2880, 4320, 4320, 4320, 2880];
 
+    /**
+     * Paid lien filing states in which the order is still being worked on. A
+     * business with one of these, paid in the last LIEN_ORDER_IN_PROGRESS_DAYS
+     * days, gets no lien "finish your order" emails (see lienCheckoutStopReason).
+     */
+    private const LIEN_ORDER_IN_PROGRESS_STATUSES = [
+        FilingStatus::Paid,
+        FilingStatus::AwaitingClient,
+        FilingStatus::AwaitingEsign,
+        FilingStatus::AwaitingNotary,
+        FilingStatus::NeedsReview,
+        FilingStatus::ReadyToFile,
+        FilingStatus::WaitingOnNextStep,
+        FilingStatus::Hold,
+        FilingStatus::InFulfillment,
+        FilingStatus::SubmittedForRecording,
+        FilingStatus::Recorded,
+        FilingStatus::Mailed,
+    ];
+
+    private const LIEN_ORDER_IN_PROGRESS_DAYS = 90;
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -207,6 +230,10 @@ class EmailSequence extends Model
 
         if ($this->isPaymentCompleted()) {
             return 'payment_completed';
+        }
+
+        if ($this->sequence_type === 'abandon_checkout' && $reason = static::lienCheckoutStopReason($this->sequenceable)) {
+            return $reason;
         }
 
         $config = $this->config();
@@ -455,6 +482,48 @@ class EmailSequence extends Model
     }
 
     /**
+     * Why a lien "finish your order" email must not go out, or null. Covers
+     * filing drafts (wizard, checkout) and the first project (onboarding).
+     * The emails stop when the business already has a paid order being worked
+     * on, paid in the last LIEN_ORDER_IN_PROGRESS_DAYS days, or when the draft
+     * repeats a filing they paid for on the same job (same document, any age,
+     * not since refunded or canceled). Also runs from the scheduler, with no
+     * business in scope.
+     */
+    protected static function lienCheckoutStopReason(?Model $sequenceable): ?string
+    {
+        if (! $sequenceable instanceof LienFiling && ! $sequenceable instanceof LienProject) {
+            return null;
+        }
+
+        $otherPaidFilings = fn () => LienFiling::withoutGlobalScope('business')
+            ->where('business_id', $sequenceable->business_id)
+            ->whereNotNull('paid_at')
+            ->when($sequenceable instanceof LienFiling, fn ($query) => $query->whereKeyNot($sequenceable->getKey()));
+
+        if ($sequenceable instanceof LienFiling) {
+            // Refunded and canceled orders don't count: the wizard lets
+            // those customers start over (FilingWizard::mount).
+            $duplicate = $otherPaidFilings()
+                ->where('project_id', $sequenceable->project_id)
+                ->where('document_type_id', $sequenceable->document_type_id)
+                ->whereNotIn('status', [FilingStatus::Refunded, FilingStatus::Canceled])
+                ->exists();
+
+            if ($duplicate) {
+                return 'duplicate_of_paid_filing';
+            }
+        }
+
+        $orderInProgress = $otherPaidFilings()
+            ->whereIn('status', self::LIEN_ORDER_IN_PROGRESS_STATUSES)
+            ->where('paid_at', '>=', now()->subDays(self::LIEN_ORDER_IN_PROGRESS_DAYS))
+            ->exists();
+
+        return $orderInProgress ? 'paid_filing_in_progress' : null;
+    }
+
+    /**
      * Determine customer type for a business.
      */
     public static function detectCustomerType(Business $business): string
@@ -468,7 +537,9 @@ class EmailSequence extends Model
 
     /**
      * Create or retrieve an email sequence for a given sequenceable entity.
-     * Returns null if the sequenceable is already paid.
+     * Returns null if the sequenceable is already paid, or if it is a lien
+     * order whose "finish your order" emails must not start (see
+     * lienCheckoutStopReason).
      */
     public static function startFor(
         string $sequenceType,
@@ -478,6 +549,10 @@ class EmailSequence extends Model
         ?string $resumeUrl = null
     ): ?self {
         if (method_exists($sequenceable, 'isPaid') && $sequenceable->isPaid()) {
+            return null;
+        }
+
+        if ($sequenceType === 'abandon_checkout' && static::lienCheckoutStopReason($sequenceable) !== null) {
             return null;
         }
 
@@ -540,6 +615,20 @@ class EmailSequence extends Model
             ->whereNull('completed_at')
             ->get()
             ->each(fn (self $seq) => $seq->suppress('status_changed'));
+    }
+
+    /**
+     * Suppress every running sequence about this record, of any type.
+     */
+    public static function suppressAllFor(Model $sequenceable, string $reason): void
+    {
+        static::query()
+            ->where('sequenceable_type', $sequenceable->getMorphClass())
+            ->where('sequenceable_id', $sequenceable->getKey())
+            ->whereNull('suppressed_at')
+            ->whereNull('completed_at')
+            ->get()
+            ->each(fn (self $seq) => $seq->suppress($reason));
     }
 
     /**

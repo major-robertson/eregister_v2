@@ -72,6 +72,9 @@ class LienFilingEvent extends Model
             'esign_completed' => 'E-signature completed',
             'client_request_sent' => 'Request sent to customer',
             'client_response' => 'Customer answered',
+            'draft_sent_for_review' => 'Draft sent for review',
+            'draft_approved' => 'Draft approved',
+            'draft_changes_requested' => 'Changes requested',
             default => ucfirst(str_replace('_', ' ', $this->event_type)),
         };
     }

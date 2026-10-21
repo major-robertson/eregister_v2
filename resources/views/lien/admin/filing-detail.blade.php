@@ -819,6 +819,133 @@
 
             </div>
 
+            {{-- Draft for review (EREG-140): every draft version, newest first, and
+                 Send for review, which emails the newest one to the customer to
+                 approve or send back with changes (FilingShow). --}}
+            @if ($canChangeStatus || $drafts->isNotEmpty())
+            <div class="rounded-lg border border-border bg-white p-6">
+                <flux:heading size="lg" class="mb-4">Draft for review</flux:heading>
+
+                @if ($drafts->isNotEmpty())
+                <div class="space-y-2">
+                    @foreach ($drafts as $draft)
+                    @php
+                        $draftUploader = $draftUploaders->get($draft->getCustomProperty('uploaded_by_user_id'));
+                        $draftOutcome = match ($draftOutcomes->get($draft->id)) {
+                            'draft_sent_for_review' => ['Sent for review', 'text-amber-700'],
+                            'draft_approved' => ['Approved', 'text-green-700'],
+                            'draft_changes_requested' => ['Changes requested', 'text-red-700'],
+                            default => null,
+                        };
+                    @endphp
+                    <a wire:key="draft-{{ $draft->id }}"
+                        href="{{ $draft->getTemporaryUrl(now()->addMinutes(30)) }}"
+                        target="_blank"
+                        class="flex items-center gap-3 rounded-lg border border-gray-200 p-2 hover:bg-gray-50">
+                        <flux:badge size="sm" color="zinc">v{{ $draft->getCustomProperty('version') }}</flux:badge>
+                        <div class="min-w-0 flex-1">
+                            <flux:text class="truncate text-sm font-medium">{{ $draft->file_name }}</flux:text>
+                            <flux:text class="text-xs text-gray-500">
+                                {{ $draftUploader?->name ?? 'Unknown' }} &middot; {{ $draft->created_at->eastern()->format('M j, Y g:i A T') }}@if ($draft->getCustomProperty('source') === 'generated') &middot; From the generated document @endif
+                            </flux:text>
+                            @if ($draftOutcome)
+                            <flux:text class="text-xs font-medium {{ $draftOutcome[1] }}">{{ $draftOutcome[0] }}</flux:text>
+                            @endif
+                        </div>
+                        <flux:icon name="arrow-down-tray" class="size-4 shrink-0 text-gray-400" />
+                    </a>
+                    @endforeach
+                </div>
+                @else
+                <flux:text class="text-sm text-gray-500">No draft yet. Upload a PDF to send it to the customer for review.</flux:text>
+                @endif
+
+                @if ($canChangeStatus)
+                <form wire:submit="uploadDraft" class="mt-4 space-y-3">
+                    <flux:field>
+                        <flux:file-upload wire:model="draftFile" accept=".pdf,application/pdf">
+                            <flux:file-upload.dropzone
+                                inline
+                                heading="Drop a PDF here or click to browse"
+                                text="PDF, up to 20 MB"
+                                with-progress
+                            />
+                        </flux:file-upload>
+                        @if ($draftFile)
+                        <flux:text class="mt-1 text-sm">{{ $draftFile->getClientOriginalName() }}</flux:text>
+                        @endif
+                        <flux:error name="draftFile" />
+                    </flux:field>
+
+                    <flux:button type="submit" size="sm" icon="arrow-up-tray" class="w-full">Upload draft</flux:button>
+                </form>
+
+                @if ($canUseGeneratedDraft)
+                <flux:button size="sm" icon="document-duplicate" class="mt-2 w-full" wire:click="useGeneratedDraft">
+                    Use the generated document
+                </flux:button>
+                @endif
+
+                <div class="mt-4 border-t border-gray-100 pt-4">
+                    @if ($canSendDraft)
+                    <flux:button variant="primary" icon="paper-airplane" class="w-full" wire:click="confirmSendDraftForReview">
+                        Send for review
+                    </flux:button>
+                    @elseif ($reviewOpen)
+                    <flux:text class="text-sm text-gray-500">Waiting on the customer's review. Their answer shows under Requests and answers.</flux:text>
+                    @elseif ($drafts->isNotEmpty())
+                    <flux:text class="text-sm text-gray-500">A draft can't be sent for review from the “{{ $filing->status->label() }}” status.</flux:text>
+                    @endif
+                </div>
+                @endif
+            </div>
+            @endif
+
+            {{-- Send for review dialog (always present; toggled by showSendDraftModal) --}}
+            @if ($canChangeStatus)
+            <flux:modal wire:model="showSendDraftModal" class="max-w-lg">
+                <form wire:submit="sendDraftForReview" class="space-y-5">
+                    @php $latestDraft = $drafts->first(); @endphp
+                    <div>
+                        <flux:heading size="lg">Send the draft for review?</flux:heading>
+                        <flux:subheading class="mt-2">
+                            @if ($filing->createdBy)
+                            We'll email {{ $latestDraft ? 'version '.$latestDraft->getCustomProperty('version').' ('.$latestDraft->file_name.')' : 'the newest draft' }}
+                            to {{ $filing->createdBy->name }} &lt;{{ $filing->createdBy->email }}&gt; with a Review the draft button.
+                            @else
+                            This filing has no customer user, so no email will go out. The draft still shows on their filing page.
+                            @endif
+                            The filing moves to <strong>Awaiting Client</strong> and the usual reminders start.
+                        </flux:subheading>
+                    </div>
+
+                    <flux:field>
+                        <flux:label>Message for the customer <span class="text-red-500">*</span></flux:label>
+                        <flux:textarea wire:model="draftMessage" rows="5" />
+                        <flux:error name="draftMessage" />
+                    </flux:field>
+
+                    <flux:checkbox wire:model="draftNeedsSignature"
+                        label="This document will need the customer's signature afterwards"
+                        description="When they approve, the filing goes to Needs Review instead of Ready to File, so you can send the signature request." />
+
+                    <flux:text class="text-xs text-gray-500">
+                        <span class="font-medium">Subject:</span>
+                        {{ \App\Mail\FilingActionRequested::subjectFor(\App\Domains\Lien\Enums\FilingStatus::AwaitingClient, $filing->documentType?->name, true) }}
+                    </flux:text>
+
+                    <div class="flex justify-end gap-2">
+                        <flux:modal.close>
+                            <flux:button variant="filled">Cancel</flux:button>
+                        </flux:modal.close>
+                        <flux:button type="submit" variant="primary" icon="paper-airplane">
+                            Send for review
+                        </flux:button>
+                    </div>
+                </form>
+            </flux:modal>
+            @endif
+
             {{-- Requests and answers: the latest request we emailed the customer and
                  everything they sent back from their filing page, then every file
                  they uploaded there (answers' files and signed documents). --}}
@@ -852,6 +979,18 @@
                         <flux:icon name="paper-clip" class="size-4" /> {{ $requestFile->file_name }}
                     </a>
                     @endif
+                    @if (($clientRequest['type'] ?? null) === 'review')
+                    @php $reviewFile = ! empty($clientRequest['draft_media_id']) ? $requestFiles->get($clientRequest['draft_media_id']) : null; @endphp
+                    <flux:text class="mt-2 text-xs font-medium text-gray-600">
+                        Draft for review{{ $reviewFile ? ': v'.$reviewFile->getCustomProperty('version') : '' }}@if (! empty($clientRequest['needs_signature'])) &middot; Needs their signature afterwards @endif
+                    </flux:text>
+                    @if ($reviewFile)
+                    <a href="{{ $reviewFile->getTemporaryUrl(now()->addMinutes(30)) }}" target="_blank"
+                       class="mt-1 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                        <flux:icon name="paper-clip" class="size-4" /> {{ $reviewFile->file_name }}
+                    </a>
+                    @endif
+                    @endif
                     @if ($resolvedAt)
                     <flux:text class="mt-2 text-xs text-gray-500">Closed {{ $resolvedAt->eastern()->format('M j, g:i A') }}</flux:text>
                     @endif
@@ -859,12 +998,25 @@
                 @endif
 
                 @foreach ($clientResponses as $response)
-                @php $answerFile = ! empty($response->payload_json['media_id']) ? $requestFiles->get($response->payload_json['media_id']) : null; @endphp
+                @php
+                    // For an approval, media_id is the approved draft; otherwise the customer's own file.
+                    $answerFile = ! empty($response->payload_json['media_id']) ? $requestFiles->get($response->payload_json['media_id']) : null;
+                    [$responseLabel, $responseColor] = match ($response->event_type) {
+                        'draft_approved' => ['Customer approved the draft', 'text-green-700'],
+                        'draft_changes_requested' => ['Customer asked for changes', 'text-red-700'],
+                        default => ['Customer answered', 'text-green-700'],
+                    };
+                @endphp
                 <div wire:key="client-response-{{ $response->id }}" class="mt-3 border-t border-gray-100 pt-3">
-                    <flux:text class="text-xs font-medium text-green-700">
-                        Customer answered &middot; {{ $response->created_at->eastern()->format('M j, g:i A') }}
+                    <flux:text class="text-xs font-medium {{ $responseColor }}">
+                        {{ $responseLabel }} &middot; {{ $response->created_at->eastern()->format('M j, g:i A') }}
                         @if ($response->creator) &middot; {{ $response->creator->name }} @endif
                     </flux:text>
+                    @if ($response->event_type !== 'client_response' && ! empty($response->payload_json['version']))
+                    <flux:text class="mt-1 text-xs text-gray-600">
+                        {{ $response->event_type === 'draft_approved' ? 'Approved' : 'On' }} version {{ $response->payload_json['version'] }}@if ($response->event_type === 'draft_approved' && ! empty($response->payload_json['needs_signature'])) &middot; Needs their signature next @endif
+                    </flux:text>
+                    @endif
                     @if (! empty($response->payload_json['text']))
                     <p class="mt-1 whitespace-pre-line text-sm text-gray-800">{{ $response->payload_json['text'] }}</p>
                     @endif
@@ -890,7 +1042,7 @@
                             <div class="min-w-0 flex-1">
                                 <flux:text class="truncate text-sm font-medium">{{ $upload->file_name }}</flux:text>
                                 <flux:text class="text-xs text-gray-500">
-                                    {{ $upload->human_readable_size }} &middot; {{ $upload->created_at->eastern()->format('M j, Y g:i A T') }}@if ($upload->getCustomProperty('kind') === 'signed_document') &middot; Signed document @endif
+                                    {{ $upload->human_readable_size }} &middot; {{ $upload->created_at->eastern()->format('M j, Y g:i A T') }}@if ($upload->getCustomProperty('kind') === 'signed_document') &middot; Signed document @elseif ($upload->getCustomProperty('kind') === 'draft_changes') &middot; Changes to the draft @endif
                                 </flux:text>
                             </div>
                             <flux:icon name="arrow-down-tray" class="size-4 shrink-0 text-gray-400" />
@@ -1651,6 +1803,41 @@
                                 </a>
                                 @elseif (! empty($event->payload_json['file_name']))
                                 <flux:text class="text-xs text-gray-500">{{ $event->payload_json['file_name'] }} (file removed)</flux:text>
+                                @endif
+                                <flux:text class="text-xs text-gray-400">
+                                    {{ $event->created_at->eastern()->format('M j, g:i A') }}
+                                    @if ($event->creator) &middot; {{ $event->creator->name }} @endif
+                                </flux:text>
+                            </div>
+                        </div>
+                        @elseif (in_array($event->event_type, ['draft_sent_for_review', 'draft_approved', 'draft_changes_requested'], true))
+                        @php
+                            // media_id: the draft (sent, approved) or the customer's own file (changes).
+                            $draftEventFile = ! empty($event->payload_json['media_id']) ? $requestFiles->get($event->payload_json['media_id']) : null;
+                            [$draftEventIcon, $draftEventIconColor, $draftEventTextColor] = match ($event->event_type) {
+                                'draft_approved' => ['check-circle', 'text-green-500', 'text-green-700'],
+                                'draft_changes_requested' => ['pencil-square', 'text-red-500', 'text-red-700'],
+                                default => ['document-magnifying-glass', 'text-amber-500', 'text-amber-700'],
+                            };
+                        @endphp
+                        <div class="flex items-start gap-2">
+                            <flux:icon :name="$draftEventIcon" class="mt-0.5 size-4 shrink-0 {{ $draftEventIconColor }}" />
+                            <div class="min-w-0">
+                                <flux:text class="text-sm font-medium {{ $draftEventTextColor }}">{{ $event->description() }}</flux:text>
+                                @if (! empty($event->payload_json['version']))
+                                <flux:text class="text-xs text-gray-600">
+                                    Version {{ $event->payload_json['version'] }}@if ($event->event_type !== 'draft_changes_requested' && ! empty($event->payload_json['file_name'])) &middot; {{ $event->payload_json['file_name'] }}@endif
+                                    @if (! empty($event->payload_json['needs_signature'])) &middot; needs their signature afterwards @endif
+                                </flux:text>
+                                @endif
+                                @if (! empty($event->payload_json['text']))
+                                <p class="mt-1 whitespace-pre-line text-sm text-gray-600">{{ $event->payload_json['text'] }}</p>
+                                @endif
+                                @if ($draftEventFile)
+                                <a href="{{ $draftEventFile->getTemporaryUrl(now()->addMinutes(30)) }}" target="_blank"
+                                   class="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                                    <flux:icon name="paper-clip" class="size-3" /> {{ $draftEventFile->file_name }}
+                                </a>
                                 @endif
                                 <flux:text class="text-xs text-gray-400">
                                     {{ $event->created_at->eastern()->format('M j, g:i A') }}

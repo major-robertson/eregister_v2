@@ -51,6 +51,106 @@
         </flux:callout>
     @endif
 
+    @if(session('draft_approved'))
+        <flux:callout color="green" icon="check-circle">
+            <flux:callout.heading>Thanks. You approved the draft.</flux:callout.heading>
+            <flux:callout.text>
+                @if(session('draft_approved') === 'needs_signature')
+                    Next we will send it to you to sign. We will email you when it is ready.
+                @else
+                    We will take it from here and email you when there is an update.
+                @endif
+            </flux:callout.text>
+        </flux:callout>
+    @endif
+
+    @if(session('draft_changes'))
+        <flux:callout color="green" icon="check-circle">
+            <flux:callout.heading>Thanks. We have your changes.</flux:callout.heading>
+            <flux:callout.text>
+                We will update the draft and send it back to you to review.
+            </flux:callout.text>
+        </flux:callout>
+    @endif
+
+    {{-- A draft we sent for review (EREG-140): the PDF itself, then Approve or
+         Request changes. Takes the place of the request panel below. --}}
+    @if($reviewRequest)
+        <div id="draft-review" class="scroll-mt-6 rounded-xl border-2 border-orange-300 bg-white overflow-hidden">
+            <div class="p-6 space-y-4">
+                <div class="flex items-center gap-2">
+                    <flux:icon name="document-magnifying-glass" class="w-5 h-5 text-orange-600" />
+                    <h2 class="text-lg font-semibold text-zinc-900">Review your draft</h2>
+                </div>
+
+                <div class="rounded-lg bg-orange-50 p-4 text-zinc-800 whitespace-pre-line">{{ $reviewRequest['text'] }}</div>
+
+                <p class="text-sm text-zinc-500">
+                    Sent by {{ $clientRequestSender ? $clientRequestSender.' at eRegister' : 'eRegister' }}{{ $clientRequestSentAt ? ' on '.$clientRequestSentAt->eastern()->format('M j, Y \a\t g:i A T') : '' }}.
+                </p>
+
+                @if($reviewDraftUrl)
+                    {{-- Ignored on re-render, so the PDF does not reload while they answer. --}}
+                    <div wire:ignore wire:key="draft-review-{{ $reviewDraft->id }}">
+                        <iframe src="{{ $reviewDraftUrl }}"
+                                title="Draft of your {{ $filing->documentType->name }}"
+                                class="w-full h-[70vh] rounded-lg border border-border bg-zinc-50"></iframe>
+                    </div>
+
+                    <a href="{{ $reviewDraftUrl }}"
+                       download="{{ $reviewDraft->file_name }}"
+                       class="inline-flex items-center gap-2 text-sm text-blue-600 hover:underline">
+                        <flux:icon name="arrow-down-tray" class="w-4 h-4" />
+                        Download the draft ({{ $reviewDraft->file_name }})
+                    </a>
+                @else
+                    <p class="text-sm text-zinc-600">We could not load the draft. Please reply to our email and we will send it again.</p>
+                @endif
+
+                <form wire:submit="approveDraft" class="space-y-4 border-t border-border pt-4">
+                    <h3 class="text-base font-semibold text-zinc-900">Is everything correct?</h3>
+
+                    <flux:checkbox wire:model="approveConfirmed" label="I have read the whole document and the information in it is correct." />
+
+                    <flux:button type="submit" variant="primary" icon="check">
+                        Approve the draft
+                    </flux:button>
+                </form>
+
+                <form wire:submit="requestDraftChanges" class="space-y-4 border-t border-border pt-4">
+                    <h3 class="text-base font-semibold text-zinc-900">Something needs to change?</h3>
+
+                    <flux:field>
+                        <flux:label>What should we change?</flux:label>
+                        <flux:textarea wire:model="changes" rows="5" placeholder="Tell us what is wrong and what it should say." />
+                        <flux:error name="changes" />
+                    </flux:field>
+
+                    <flux:field>
+                        <flux:label>Attach a file (optional)</flux:label>
+                        <flux:file-upload wire:model="changesFile" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif">
+                            <flux:file-upload.dropzone
+                                inline
+                                heading="Drop a file here or click to browse"
+                                text="PDF, JPG, PNG or HEIC, up to 20 MB"
+                                with-progress
+                            />
+                        </flux:file-upload>
+                        <flux:error name="changesFile" />
+                    </flux:field>
+
+                    @if($changesFile)
+                        <flux:text class="text-sm">{{ $changesFile->getClientOriginalName() }}</flux:text>
+                    @endif
+
+                    <flux:button type="submit" icon="pencil-square">
+                        Request changes
+                    </flux:button>
+                </form>
+            </div>
+        </div>
+    @endif
+
     @if($signUrl)
         <flux:callout color="purple" icon="pencil-square">
             <flux:callout.heading>Your signature is needed</flux:callout.heading>
@@ -92,7 +192,7 @@
 
             {{-- Status Description --}}
             <p class="text-zinc-600 mb-4">
-                {{ $filing->status->userDescription() }}
+                {{ $statusDescription }}
             </p>
 
             {{-- What's Next --}}
@@ -124,7 +224,7 @@
                 </div>
             @endif
 
-            @if($clientRequest && $filing->status->value === 'awaiting_client')
+            @if($clientRequest && ! $reviewRequest && $filing->status->value === 'awaiting_client')
                 <div class="mt-6">
                     <flux:button href="#client-request" variant="primary" icon="arrow-down">
                         Answer the request

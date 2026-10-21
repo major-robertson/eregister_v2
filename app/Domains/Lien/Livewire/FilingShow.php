@@ -4,6 +4,7 @@ namespace App\Domains\Lien\Livewire;
 
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Models\LienFiling;
+use App\Domains\Lien\Models\LienFilingEvent;
 use App\Mail\ClientResponded;
 use App\Mail\UploadReceived;
 use Closure;
@@ -12,6 +13,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -54,6 +56,16 @@ class FilingShow extends Component
      * filing waits on them (Awaiting Client / E-Signature / Notary).
      */
     public $signedDocument = null;
+
+    /**
+     * A draft sent for review (EREG-140): the customer ticks the box and
+     * approves it, or says what to change (text, optional file).
+     */
+    public bool $approveConfirmed = false;
+
+    public string $changes = '';
+
+    public $changesFile = null;
 
     public function mount(LienFiling $filing): void
     {
@@ -271,6 +283,166 @@ class FilingShow extends Component
     }
 
     /**
+     * Approve the draft we sent for review: log a draft_approved event, move
+     * the filing on (which closes the request and stops the reminders) and
+     * tell lien ops.
+     */
+    public function approveDraft(): void
+    {
+        Gate::authorize('answerRequest', $this->filing);
+
+        $request = $this->filing->openReviewRequest();
+
+        if ($request === null) {
+            $this->reset(['approveConfirmed', 'changes', 'changesFile']);
+            session()->flash('message', 'This review is already closed.');
+
+            return;
+        }
+
+        $this->validate([
+            'approveConfirmed' => ['accepted'],
+        ], [
+            'approveConfirmed.accepted' => 'Tick the box to confirm you have read the whole document.',
+        ]);
+
+        $draft = $this->filing->reviewDraft();
+
+        if ($draft === null) {
+            $this->addError('approveConfirmed', 'We could not find the draft. Please reply to our email and we will send it again.');
+
+            return;
+        }
+
+        $needsSignature = (bool) ($request['needs_signature'] ?? false);
+
+        $approval = DB::transaction(function () use ($draft, $needsSignature) {
+            $approval = $this->filing->events()->create([
+                'business_id' => $this->filing->business_id,
+                'event_type' => 'draft_approved',
+                'payload_json' => [
+                    'media_id' => $draft->id,
+                    'version' => $draft->getCustomProperty('version'),
+                    'file_name' => $draft->file_name,
+                    'approved_by_user_id' => auth()->id(),
+                    'approved_at' => now()->toIso8601String(),
+                    'needs_signature' => $needsSignature,
+                ],
+                'created_by' => auth()->id(),
+            ]);
+
+            $this->filing->transitionTo(self::approvedDraftStatus($needsSignature), ['draft_approved_id' => $approval->id]);
+
+            return $approval;
+        });
+
+        $this->notifyOps($approval, $request);
+
+        $this->reset(['approveConfirmed', 'changes', 'changesFile']);
+
+        session()->flash('draft_approved', $needsSignature ? 'needs_signature' : 'ready');
+    }
+
+    /**
+     * Where an approved draft goes: Ready to File, or Needs Review when the
+     * admin said it needs the customer's signature afterwards, so staff send
+     * the signature request next (status form, or Send for E-Sign for a
+     * demand letter). Not Awaiting E-Signature: that would start the "Please
+     * sign" reminders with nothing to sign yet, and Send for E-Sign can only
+     * move a filing into that status, not start from it.
+     */
+    public static function approvedDraftStatus(bool $needsSignature): FilingStatus
+    {
+        return $needsSignature ? FilingStatus::NeedsReview : FilingStatus::ReadyToFile;
+    }
+
+    /**
+     * Ask for changes to the draft we sent for review: log a
+     * draft_changes_requested event with the text (and file), move the filing
+     * to Needs Review (which closes the request and stops the reminders) and
+     * tell lien ops.
+     */
+    public function requestDraftChanges(): void
+    {
+        Gate::authorize('answerRequest', $this->filing);
+
+        $request = $this->filing->openReviewRequest();
+
+        if ($request === null) {
+            $this->reset(['approveConfirmed', 'changes', 'changesFile']);
+            session()->flash('message', 'This review is already closed.');
+
+            return;
+        }
+
+        $this->validate([
+            'changes' => ['required', 'string', 'max:5000'],
+            'changesFile' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,heic,heif', 'max:20480'],
+        ], [
+            'changes.required' => 'Tell us what needs to change.',
+            'changes.max' => 'Keep it under 5,000 characters.',
+            'changesFile.file' => 'The file did not upload. Please try again.',
+            'changesFile.mimes' => 'Attach a PDF, JPG, PNG or HEIC file.',
+            'changesFile.max' => 'The file must be 20 MB or smaller.',
+        ]);
+
+        $draft = $this->filing->reviewDraft();
+        $text = trim($this->changes);
+
+        $changeRequest = DB::transaction(function () use ($request, $draft, $text) {
+            $media = $this->changesFile
+                ? $this->filing->addMedia($this->changesFile->getRealPath())
+                    ->usingFileName($this->changesFile->getClientOriginalName())
+                    ->withCustomProperties(['kind' => 'draft_changes'])
+                    ->toMediaCollection('customer_uploads')
+                : null;
+
+            $changeRequest = $this->filing->events()->create([
+                'business_id' => $this->filing->business_id,
+                'event_type' => 'draft_changes_requested',
+                'payload_json' => [
+                    'text' => $text,
+                    'media_id' => $media?->id,
+                    'file_name' => $media?->file_name,
+                    'draft_media_id' => $request['draft_media_id'] ?? null,
+                    'version' => $draft?->getCustomProperty('version'),
+                    'draft_file_name' => $draft?->file_name,
+                ],
+                'created_by' => auth()->id(),
+            ]);
+
+            $this->filing->transitionTo(FilingStatus::NeedsReview, ['draft_changes_requested_id' => $changeRequest->id]);
+
+            return $changeRequest;
+        });
+
+        $this->notifyOps($changeRequest, $request);
+
+        $this->reset(['approveConfirmed', 'changes', 'changesFile']);
+
+        session()->flash('draft_changes', true);
+    }
+
+    /**
+     * Queue the ops email about the customer's answer. The answer is saved;
+     * a queue hiccup must not show the customer an error.
+     */
+    private function notifyOps(LienFilingEvent $event, ?array $request): void
+    {
+        $ops = config('lien.notifications.ops_email');
+
+        if (! filled($ops)) {
+            return;
+        }
+
+        try {
+            Mail::to($ops)->queue(new ClientResponded($this->filing, $event, $request));
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    /**
      * The file's type read from its content (magic bytes), or null when the
      * file cannot be read.
      */
@@ -318,11 +490,22 @@ class FilingShow extends Component
             ? 'Please check the request we emailed you and reply to it.'
             : $this->filing->status->whatsNext();
 
+        // A draft sent for review gets its own panel at the top (the PDF,
+        // Approve, Request changes) in place of the request panel below.
+        $reviewRequest = $this->filing->openReviewRequest();
+        $reviewDraft = $reviewRequest ? $this->filing->reviewDraft() : null;
+        $statusDescription = $this->filing->status->userDescription();
+
+        if ($reviewRequest !== null) {
+            $statusDescription = 'Your draft is ready for review.';
+            $whatsNext = 'Read the draft above. Approve it, or tell us what to change.';
+        }
+
         // The upload box shows while the filing waits on the customer. With an
         // open request it sits in the request panel with the answer form:
         // after the form for Awaiting Client (usually a question), before it
         // for Awaiting Notary / E-Signature (usually a document to return).
-        $showUploadBox = $this->filing->status->isWaitingOnCustomer();
+        $showUploadBox = $this->filing->status->isWaitingOnCustomer() && $reviewRequest === null;
 
         return view('livewire.lien.filing-show', [
             'events' => $this->filing->events,
@@ -337,6 +520,14 @@ class FilingShow extends Component
             'clientRequestAttachment' => $clientRequest ? $this->filing->clientRequestAttachment() : null,
             'showUploadBox' => $showUploadBox,
             'uploadAfterAnswer' => $clientRequest !== null && $this->filing->status === FilingStatus::AwaitingClient,
+            'statusDescription' => $statusDescription,
+            'reviewRequest' => $reviewRequest,
+            'reviewDraft' => $reviewDraft,
+            // Signed for this draft only (FilingDraftController), so the
+            // versions not sent yet can't be opened by changing the id.
+            'reviewDraftUrl' => $reviewDraft
+                ? URL::temporarySignedRoute('lien.filings.drafts.show', now()->addHours(2), ['filing' => $this->filing, 'media' => $reviewDraft->id])
+                : null,
         ])->layout('components.layouts.portal', ['title' => $this->filing->documentType->name]);
     }
 }

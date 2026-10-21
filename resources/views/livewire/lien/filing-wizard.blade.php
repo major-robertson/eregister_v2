@@ -807,6 +807,58 @@
                 </flux:accordion.item>
                 </flux:accordion>
                 @endif
+
+                {{-- The contract, change orders and invoices (EREG-139): optional. Stored on the
+                     draft filing as they upload, for staff to check the amounts and dates. --}}
+                <div class="space-y-3 border-t border-zinc-200 pt-6 dark:border-zinc-700">
+                    <div>
+                        <flux:heading>Attach your contract and invoices (optional)</flux:heading>
+                        <flux:text class="mt-1 text-sm">Your contract, change orders and invoices help us check the amounts and dates. You can skip this.</flux:text>
+                    </div>
+
+                    @if($customerDocuments->count() < $customerDocumentsMax)
+                        <flux:file-upload wire:model="customerDocumentUploads" multiple accept=".pdf,.jpg,.jpeg,.png,.heic,.heif">
+                            <flux:file-upload.dropzone
+                                inline
+                                heading="Drop files here or click to browse"
+                                :text="'PDF, JPG, PNG or HEIC. Up to 20 MB each, '.$customerDocumentsMax.' files in all.'"
+                                with-progress
+                            />
+                        </flux:file-upload>
+                    @else
+                        <flux:text class="text-sm">You have attached {{ $customerDocumentsMax }} files, the most we take. Remove one to add another.</flux:text>
+                    @endif
+
+                    @foreach($errors->get('customerDocuments') as $message)
+                        <flux:error :message="$message" />
+                    @endforeach
+                    @if($errors->has('customerDocumentUploads') || $errors->has('customerDocumentUploads.*'))
+                        <flux:error message="A file did not upload. Each file can be up to 20 MB. Try again." />
+                    @endif
+
+                    @if($customerDocuments->isNotEmpty())
+                        <flux:text class="text-sm">Choose what each file is.</flux:text>
+                        <div class="space-y-2">
+                            @foreach($customerDocuments as $document)
+                                <flux:file-item wire:key="customer-document-{{ $document->id }}" :heading="$document->file_name" :size="$document->size">
+                                    <x-slot:actions>
+                                        <flux:select
+                                            size="sm"
+                                            class="w-36"
+                                            :aria-label="'What is '.$document->file_name.'?'"
+                                            wire:change="setCustomerDocumentKind({{ $document->id }}, $event.target.value)"
+                                        >
+                                            @foreach($customerDocumentKinds as $kindValue => $kindLabel)
+                                                <flux:select.option :value="$kindValue" :selected="$document->getCustomProperty('kind', 'other') === $kindValue">{{ $kindLabel }}</flux:select.option>
+                                            @endforeach
+                                        </flux:select>
+                                        <flux:file-item.remove wire:click="removeCustomerDocument({{ $document->id }})" :aria-label="'Remove '.$document->file_name" />
+                                    </x-slot:actions>
+                                </flux:file-item>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
             </div>
 
         @elseif($step === 4)
@@ -1173,6 +1225,13 @@
                                 <x-ui.info-list.item label="Claimant">
                                     {{ $claimantInfo['company_name'] ?? '—' }}
                                 </x-ui.info-list.item>
+                                @if($customerDocuments->isNotEmpty())
+                                    <x-ui.info-list.item label="Attached files">
+                                        @foreach($customerDocuments as $document)
+                                            <div class="break-all">{{ $document->file_name }}</div>
+                                        @endforeach
+                                    </x-ui.info-list.item>
+                                @endif
                             </x-ui.info-list>
                         </div>
                     </flux:accordion.content>
@@ -1210,6 +1269,17 @@
                                     <span class="text-zinc-500">Claimant</span>
                                     <div class="font-medium">{{ $claimantInfo['company_name'] ?? '—' }}</div>
                                 </div>
+
+                                @if($customerDocuments->isNotEmpty())
+                                    <div class="border-t border-zinc-200 dark:border-zinc-700 pt-3 text-sm">
+                                        <span class="text-zinc-500">Attached files</span>
+                                        <ul class="font-medium">
+                                            @foreach($customerDocuments as $document)
+                                                <li class="break-all">{{ $document->file_name }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>

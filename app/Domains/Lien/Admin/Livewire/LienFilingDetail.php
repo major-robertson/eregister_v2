@@ -379,6 +379,13 @@ class LienFilingDetail extends Component
         // their filing page (EREG-136); its file is in $requestFiles.
         $propertyEntry = $this->lienFiling->latestPropertyEntry();
 
+        // The contract, change orders and invoices the customer attached in
+        // the filing wizard (EREG-139). Dates changed after a deadline notice
+        // are checked against an attached contract.
+        $customerDocuments = $this->lienFiling->getMedia(LienFiling::CUSTOMER_DOCUMENTS);
+        $checkDatesAgainstContract = $customerDocuments->contains(fn ($media) => $media->getCustomProperty('kind') === 'contract')
+            && $this->lienFiling->datesChangedAfterDeadlineBlock();
+
         return view('lien.admin.filing-detail', [
             'filing' => $this->lienFiling,
             // The column the board shows (an untouched full-service order is
@@ -426,6 +433,9 @@ class LienFilingDetail extends Component
             'reviewOpen' => $this->lienFiling->openReviewRequest() !== null,
             'propertyEntry' => $propertyEntry,
             'propertyUpload' => $requestFiles->get($propertyEntry?->payload_json['media_id'] ?? null),
+            'customerDocuments' => $customerDocuments,
+            'customerDocumentKinds' => LienFiling::CUSTOMER_DOCUMENT_KINDS,
+            'checkDatesAgainstContract' => $checkDatesAgainstContract,
             'canRemindSigner' => $esignAwaiting && $canChangeStatus && $esignRequest->invitation_bounced_at === null,
             'signingUrl' => $esignAwaiting && $canChangeStatus && ! $esignRequest->isExpired()
                 ? $esignRequest->signingUrl()

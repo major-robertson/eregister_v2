@@ -1518,11 +1518,13 @@
             {{-- Generated documents for the other kinds (prelim notice, NOI, lien,
                  release): the rule strip from the state and county data files,
                  pre-flight warnings, and the download links. Drafts render from
-                 the filing's live data; nothing is stored. --}}
-            @if ($documentPackage !== null)
+                 the filing's live data; nothing is stored. Below them, the files
+                 the customer attached at order time (EREG-139). --}}
+            @if ($documentPackage !== null || $customerDocuments->isNotEmpty())
             <div class="rounded-lg border border-border bg-white p-6">
                 <flux:heading size="lg" class="mb-4">Documents</flux:heading>
 
+                @if ($documentPackage !== null)
                 @if ($documentPackage->form === null)
                 <flux:text class="text-sm text-gray-500">{{ $documentPackage->unavailableReason }}</flux:text>
                 @else
@@ -1584,8 +1586,41 @@
                 <flux:text class="mt-3 text-xs text-gray-500">Drafts are built from the filing's current details each time. Fix the data and regenerate; never mark up a signed copy.</flux:text>
                 @endif
                 @endif
-            </div>
+                @endif
 
+                {{-- The contract, change orders and invoices the customer attached in the
+                     filing wizard (EREG-139). TODO: merge into EREG-129's "Customer uploads"
+                     card once both are on main. --}}
+                @if ($customerDocuments->isNotEmpty())
+                <div @class(['space-y-2', 'mt-6 border-t border-gray-200 pt-4' => $documentPackage !== null])>
+                    <flux:heading size="sm">From the customer at order time</flux:heading>
+
+                    @if ($checkDatesAgainstContract)
+                    <div class="flex items-center gap-1.5 text-sm font-medium text-amber-700">
+                        <flux:icon name="exclamation-triangle" class="size-4 shrink-0" />
+                        Check the dates against the attached contract.
+                    </div>
+                    @endif
+
+                    @foreach ($customerDocuments as $document)
+                    <a wire:key="customer-document-{{ $document->id }}"
+                        href="{{ route('admin.liens.customer-documents.download', [$filing->public_id, $document->id]) }}"
+                        target="_blank" rel="noopener"
+                        class="flex items-center gap-3 rounded-lg border border-gray-200 p-2 hover:bg-gray-50">
+                        <flux:icon name="paper-clip" class="size-5 shrink-0 text-gray-400" />
+                        <div class="min-w-0 flex-1">
+                            <flux:text class="truncate text-sm font-medium">{{ $document->file_name }}</flux:text>
+                            <flux:text class="text-xs text-gray-500">{{ $customerDocumentKinds[$document->getCustomProperty('kind')] ?? 'Other' }} · Uploaded {{ $document->created_at->eastern()->format('M j, Y g:i A') }}</flux:text>
+                        </div>
+                        <flux:icon name="arrow-down-tray" class="size-4 shrink-0 text-gray-400" />
+                    </a>
+                    @endforeach
+                </div>
+                @endif
+            </div>
+            @endif
+
+            @if ($documentPackage !== null)
             {{-- Document details: the facts the generated documents need that the
                  application never asked for (signer, license, contract, prior notice,
                  the lien a release refers to). Stored on the filing and audited; not

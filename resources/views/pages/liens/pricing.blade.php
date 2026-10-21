@@ -1,5 +1,8 @@
 @extends('layouts.landing')
 
+{{-- Renders <livewire:lien.product-chooser />: load Livewire and Flux instead of marketing.js. --}}
+@section('livewire', true)
+
 @section('title', 'Lien Filing Pricing | Flat Rates, State Fees Included')
 @section('description', 'Flat-rate pricing for every lien service: preliminary notices from '.\App\Support\Seo\Prices::lien('prelim_notice').', intent to lien from '.\App\Support\Seo\Prices::lien('noi').', mechanics liens from '.\App\Support\Seo\Prices::lien('mechanics_lien').', and releases from '.\App\Support\Seo\Prices::lien('lien_release').'.')
 
@@ -95,6 +98,13 @@
                 </svg>
             </a>
         </div>
+    </div>
+</section>
+
+{{-- What do you need to happen? Products by need, per state, with self-serve and full service compared (EREG-143) --}}
+<section id="choose" class="border-b border-zinc-200 bg-zinc-50 py-20">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <livewire:lien.product-chooser :compare="true" />
     </div>
 </section>
 

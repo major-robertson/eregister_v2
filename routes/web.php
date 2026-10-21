@@ -147,6 +147,8 @@ Route::view('liens/notice-of-intent-to-lien', 'pages.liens.notice-of-intent-to-l
 Route::view('liens/lien-release', 'pages.liens.lien-release')->name('liens.lien-release');
 Route::view('liens/payment-demand-letter', 'pages.liens.payment-demand-letter')->name('liens.payment-demand-letter');
 Route::view('liens/pricing', 'pages.liens.pricing')->name('liens.pricing');
+// Every "Start" button in the lien product chooser: stores the choice, then sign-up or the project flow.
+Route::get('liens/start', \App\Http\Controllers\LienStartController::class)->name('liens.start');
 
 // Notice of intent and lien release by state ("/liens/notice-of-intent-to-lien/texas")
 // for twenty states, each with an ungated blank PDF, plus the blank demand letter.

@@ -10,6 +10,8 @@ use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienProjectDeadline;
 use App\Domains\Lien\Models\LienWaiver;
+use App\Domains\Lien\Support\LienProductIntent;
+use App\Domains\Lien\Support\LienProducts;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -35,6 +37,12 @@ class ProjectShow extends Component
     {
         $deadline = LienProjectDeadline::findOrFail($deadlineId);
 
+        // The product picked in the chooser (EREG-143) is used up once its
+        // filing starts.
+        if ($deadline->documentType?->slug === LienProductIntent::product()) {
+            LienProductIntent::forget();
+        }
+
         // The wizard decides: resume the draft or unpaid order, open a filing
         // that's already paid for, or start a new draft. Deciding here as
         // well made a second draft beside an unpaid order ("Complete
@@ -43,6 +51,12 @@ class ProjectShow extends Component
             'project' => $this->project,
             'deadline' => $deadline,
         ]));
+    }
+
+    /** "Not now" on the callout for the product picked in the chooser. */
+    public function dismissChosenProduct(): void
+    {
+        LienProductIntent::forget();
     }
 
     public function deleteProject(): void
@@ -103,7 +117,20 @@ class ProjectShow extends Component
             ->sortBy(fn ($step) => $step->deadlineDate)
             ->values();
 
+        // The product picked in the chooser (EREG-143), offered first while
+        // its step can be started.
+        $chosen = LienProductIntent::product();
+        $chosenStep = $chosen !== null ? ($steps[$chosen] ?? null) : null;
+        $chosenAction = $chosenStep?->getActionButtonText();
+
         return view('livewire.lien.project-show', [
+            'chosenProduct' => $chosenStep?->shouldShowActionButton()
+                ? [
+                    'name' => LienProducts::name($chosen),
+                    'deadlineId' => $chosenStep->deadline->id,
+                    'action' => $chosenAction === 'Start' ? 'Start your '.mb_strtolower(LienProducts::name($chosen)) : $chosenAction,
+                ]
+                : null,
             'steps' => $steps,
             'hasAnyMissedDeadline' => $hasAnyMissedDeadline,
             'upcomingDeadlines' => $upcomingDeadlines,

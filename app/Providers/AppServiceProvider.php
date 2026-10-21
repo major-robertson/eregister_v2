@@ -260,6 +260,7 @@ class AppServiceProvider extends ServiceProvider
         Livewire::component('lien.filing-wizard', \App\Domains\Lien\Livewire\FilingWizard::class);
         Livewire::component('lien.filing-show', \App\Domains\Lien\Livewire\FilingShow::class);
         Livewire::component('lien.filing-checkout', \App\Domains\Lien\Livewire\FilingCheckout::class);
+        Livewire::component('lien.product-chooser', \App\Domains\Lien\Livewire\LienProductChooser::class);
         Livewire::component('lien.waivers.dashboard', \App\Domains\Lien\Livewire\Waivers\WaiverDashboard::class);
         Livewire::component('lien.waivers.list', \App\Domains\Lien\Livewire\Waivers\WaiverList::class);
         Livewire::component('lien.waivers.wizard', \App\Domains\Lien\Livewire\Waivers\WaiverWizard::class);

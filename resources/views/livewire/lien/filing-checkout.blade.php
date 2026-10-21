@@ -18,6 +18,13 @@
             </div>
         </dl>
 
+        @if ($turnaround)
+            {{-- How long county recording typically takes (EREG-143) --}}
+            <div class="-mt-3 mb-6 text-xs text-zinc-500">
+                <p>{{ $turnaround }}</p>
+            </div>
+        @endif
+
         <div>
             <x-billing.stripe-payment-element
                 :client-secret="$clientSecret"

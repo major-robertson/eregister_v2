@@ -9,6 +9,7 @@ use App\Domains\Lien\Enums\DeadlineTrigger;
 use App\Domains\Lien\Enums\NocStatus;
 use App\Domains\Lien\Models\LienDeadlineRule;
 use App\Domains\Lien\Models\LienProject;
+use App\Domains\Lien\Support\LienProductIntent;
 use App\Services\GooglePlacesService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -110,6 +111,9 @@ class ProjectForm extends Component
                     }
                 }
             }
+
+            // The state picked in the lien product chooser (EREG-143).
+            $this->jobsite_state = $this->jobsite_state ?: (LienProductIntent::state() ?? '');
         }
     }
 

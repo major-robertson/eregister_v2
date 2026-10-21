@@ -21,11 +21,13 @@ use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienProjectDeadline;
 use App\Domains\Lien\Models\LienStateRule;
-use App\Domains\Lien\Seo\NoticeOfIntentStatePage;
 use App\Domains\Lien\Services\RushTier;
+use App\Domains\Lien\Support\LienPrerequisites;
 use App\Domains\Lien\Support\NotarizationInstructions;
 use App\Domains\Lien\Support\PartyAddress;
 use App\Domains\Lien\Support\PropertyLookup;
+use App\Domains\Lien\Support\RecordingTurnaround;
+use App\Domains\Lien\Support\ServiceComparison;
 use App\Domains\Lien\Support\WizardFields;
 use App\Domains\Lien\Support\ZipStateRanges;
 use App\Mail\AttorneyReferral;
@@ -672,7 +674,8 @@ class FilingWizard extends Component
      * The state's entry in database/data/lien_variants/notice_of_intent.php
      * when this is a mechanics lien in a state that requires a notice of
      * intent from every claimant ('required') or from some ('required_some').
-     * Null otherwise, and for liens only an attorney can file.
+     * Null otherwise, and for liens only an attorney can file
+     * (LienPrerequisites::noiRequirement()).
      *
      * @return array<string, mixed>|null
      */
@@ -682,9 +685,24 @@ class FilingWizard extends Component
             return null;
         }
 
-        $entry = NoticeOfIntentStatePage::entries()[strtoupper((string) $this->project->jobsite_state)] ?? null;
+        return LienPrerequisites::noiRequirement((string) $this->project->jobsite_state);
+    }
 
-        return in_array($entry['status'] ?? null, ['required', 'required_some'], true) ? $entry : null;
+    /**
+     * The open prerequisites the first step names for a mechanics lien
+     * (EREG-143): the notice of intent and the preliminary notice the state
+     * requires of this claimant, each with the link that starts it. None for
+     * other documents, and for liens only an attorney can file.
+     *
+     * @return list<array{kind: string, sentence: string, url: ?string, label: string}>
+     */
+    private function prerequisites(): array
+    {
+        if ($this->deadline->documentType?->slug !== 'mechanics_lien' || $this->requiresAttorneyReferral) {
+            return [];
+        }
+
+        return LienPrerequisites::forProject($this->project);
     }
 
     public function nextStep(): void
@@ -1322,6 +1340,21 @@ class FilingWizard extends Component
     }
 
     /**
+     * How long county recording typically takes, on step 4 (EREG-143), for a
+     * full-service lien or release: "Typically ... after we submit." for the
+     * county's recording method. Null on self-serve, for documents the
+     * county does not record, and when nothing is known.
+     */
+    private function recordingTurnaround(): ?string
+    {
+        if (! RecordingTurnaround::weRecord($this->service_level, $this->deadline->documentType?->slug)) {
+            return null;
+        }
+
+        return RecordingTurnaround::sentence($this->filingState(), LienCountyKey::forFiling($this->filing));
+    }
+
+    /**
      * How the chosen document is signed, shown on step 4 (EREG-142), or
      * null when nothing is known: "Requires a notarized signature." where
      * the state or county data says so; on a full-service order in a county
@@ -1386,21 +1419,17 @@ class FilingWizard extends Component
      * How the county takes the document: 'mail' when the county or state
      * data file (database/data/lien_counties, lien_documents) says its office
      * takes mail, else 'erecord' (e-recording, an office that takes either,
-     * or nothing known).
+     * or nothing known). LienDocumentRegistry::recordingMethod().
      */
     private function recordingMethod(): string
     {
-        $state = strtoupper((string) ($this->filing->jurisdiction_state ?: $this->project->jobsite_state));
+        return LienDocumentRegistry::recordingMethod($this->filingState(), LienCountyKey::forFiling($this->filing));
+    }
 
-        if ($state === '') {
-            return 'erecord';
-        }
-
-        $method = LienDocumentRegistry::for($state)['recording']['filing_office']['method'] ?? null;
-        $county = LienDocumentRegistry::county($state, LienCountyKey::forFiling($this->filing));
-        $method = $county['recording']['filing_office']['method'] ?? $method;
-
-        return $method === 'mail' ? 'mail' : 'erecord';
+    /** The filing's state code ("KS"), or '' when neither the filing nor the project has one. */
+    private function filingState(): string
+    {
+        return strtoupper((string) ($this->filing->jurisdiction_state ?: $this->project->jobsite_state));
     }
 
     /**
@@ -2416,7 +2445,15 @@ class FilingWizard extends Component
             $this->filing->update(['deadline_block_shown_at' => now()]);
         }
 
+        $serviceStep = $this->step === 4 && ! $deadlineBlocked && ! $this->requiresAttorneyReferral;
+
         return view('livewire.lien.filing-wizard', [
+            'prerequisites' => $this->step === 1 ? $this->prerequisites() : [],
+            'recordingTurnaround' => $serviceStep ? $this->recordingTurnaround() : null,
+            'comparison' => $serviceStep ? [
+                'rows' => ServiceComparison::rows($slug, $this->filingState(), LienCountyKey::forFiling($this->filing)),
+                'prices' => ['self_serve' => (int) $pricing['self_serve'], 'full_service' => (int) $pricing['full_service']],
+            ] : null,
             'parties' => $this->project->parties,
             'documentType' => $this->deadline->documentType,
             'pricing' => $pricing,

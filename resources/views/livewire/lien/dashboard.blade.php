@@ -228,6 +228,11 @@
         </div>
     </div>
 
+    {{-- What do you need to happen? (EREG-143) --}}
+    <x-ui.card>
+        <livewire:lien.product-chooser />
+    </x-ui.card>
+
     {{-- Recent Activity Feed --}}
     <x-ui.card>
         <x-slot:header>

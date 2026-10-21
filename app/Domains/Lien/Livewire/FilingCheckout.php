@@ -3,9 +3,11 @@
 namespace App\Domains\Lien\Livewire;
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Lien\Documents\LienCountyKey;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Services\LienPaymentService;
 use App\Domains\Lien\Services\RushTier;
+use App\Domains\Lien\Support\RecordingTurnaround;
 use App\Enums\PaymentStatus;
 use App\Models\EmailSequence;
 use App\Models\Payment;
@@ -294,9 +296,14 @@ class FilingCheckout extends Component
 
     public function render(): View
     {
+        // The turnaround promise on a full-service lien or release (EREG-143).
+        $recorded = RecordingTurnaround::weRecord($this->filing->service_level?->value, $this->filing->documentType?->slug);
+        $state = (string) ($this->filing->jurisdiction_state ?: $this->filing->project?->jobsite_state);
+
         return view('livewire.lien.filing-checkout', [
             'formattedPrice' => '$'.number_format($this->amountCents / 100, 2),
             'returnUrl' => route('lien.filings.payment-confirmation', $this->filing),
+            'turnaround' => $recorded ? RecordingTurnaround::sentence($state, LienCountyKey::forFiling($this->filing)) : null,
         ])->layout('layouts.minimal', ['title' => 'Checkout']);
     }
 }

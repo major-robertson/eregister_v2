@@ -185,6 +185,25 @@ class LienDocumentRegistry
     }
 
     /**
+     * How the office takes the document: 'mail' when the county or state
+     * data file says its office takes mail, else 'erecord' (e-recording, an
+     * office that takes either, or nothing known). The recording lead time
+     * (config lien.recording_lead_business_days) and the turnaround words
+     * (config lien.recording_turnaround) are keyed by it.
+     */
+    public static function recordingMethod(string $state, ?string $countyKey): string
+    {
+        if ($state === '') {
+            return 'erecord';
+        }
+
+        $method = self::for($state)['recording']['filing_office']['method'] ?? null;
+        $method = self::county($state, $countyKey)['recording']['filing_office']['method'] ?? $method;
+
+        return $method === 'mail' ? 'mail' : 'erecord';
+    }
+
+    /**
      * How a document must be signed in this state and county (EREG-142):
      * the state's `signature_requirements`, then the kind's own block, then
      * the county file's known (non-null) values. Null means unknown. The

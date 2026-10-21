@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\Mail;
 /**
  * Emails the lien ops inbox the red cards on the lien board (BoardCard):
  * filings with no action from us for more than 2 business days, or with a
- * customer answer and nothing from us for a business day. Weekday mornings;
- * sends nothing when no card is red or no ops inbox is set.
+ * customer answer or email and nothing from us for a business day. Weekday
+ * mornings; sends nothing when no card is red or no ops inbox is set.
  */
 class SendAgentDigest extends Command
 {

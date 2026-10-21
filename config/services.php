@@ -23,6 +23,16 @@ return [
         'broadcast_stream' => env('POSTMARK_BROADCAST_STREAM_ID', 'broadcast'),
     ],
 
+    // Front (the contact@ inbox): a rule posts every inbound message to
+    // /webhooks/front (EREG-132). webhook_key is the rule's signing secret;
+    // api_key (conversations:read) reads the message back when the payload
+    // does not carry the sender.
+    'front' => [
+        'webhook_key' => env('FRONT_WEBHOOK_KEY'),
+        'api_key' => env('FRONT_API_KEY'),
+        'api_base' => env('FRONT_API_BASE', 'https://major-holdings.api.frontapp.com'),
+    ],
+
     'resend' => [
         'key' => env('RESEND_API_KEY'),
     ],

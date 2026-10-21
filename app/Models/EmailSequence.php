@@ -34,6 +34,8 @@ class EmailSequence extends Model
         'completed_at',
         'suppressed_at',
         'suppression_reason',
+        'paused_at',
+        'pause_reason',
     ];
 
     protected function casts(): array
@@ -42,6 +44,7 @@ class EmailSequence extends Model
             'next_send_at' => 'datetime',
             'completed_at' => 'datetime',
             'suppressed_at' => 'datetime',
+            'paused_at' => 'datetime',
         ];
     }
 
@@ -482,6 +485,30 @@ class EmailSequence extends Model
     }
 
     /**
+     * Pause this sequence: email:process-sequences sends nothing while it is
+     * paused. Unlike suppress(), it is not over and keeps its schedule.
+     */
+    public function pause(string $reason): void
+    {
+        $this->update([
+            'paused_at' => now(),
+            'pause_reason' => $reason,
+        ]);
+    }
+
+    /**
+     * Undo pause(). A step that fell due while paused goes out on the next
+     * run.
+     */
+    public function resume(): void
+    {
+        $this->update([
+            'paused_at' => null,
+            'pause_reason' => null,
+        ]);
+    }
+
+    /**
      * Why a lien "finish your order" email must not go out, or null. Covers
      * filing drafts (wizard, checkout) and the first project (onboarding).
      * The emails stop when the business already has a paid order being worked
@@ -615,6 +642,24 @@ class EmailSequence extends Model
             ->whereNull('completed_at')
             ->get()
             ->each(fn (self $seq) => $seq->suppress('status_changed'));
+    }
+
+    /**
+     * Pause the running filing action reminder sequence for a filing (the
+     * customer emailed us, EREG-132). A status change still suppresses it,
+     * and startReminderFor() replaces it with a fresh one.
+     */
+    public static function pauseReminderFor(LienFiling $filing, string $reason): void
+    {
+        static::query()
+            ->where('sequence_type', 'filing_action_reminder')
+            ->where('sequenceable_type', $filing->getMorphClass())
+            ->where('sequenceable_id', $filing->getKey())
+            ->whereNull('suppressed_at')
+            ->whereNull('completed_at')
+            ->whereNull('paused_at')
+            ->get()
+            ->each(fn (self $seq) => $seq->pause($reason));
     }
 
     /**

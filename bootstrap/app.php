@@ -49,6 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'webhooks/postgrid',
             'webhooks/postmark',
             'webhooks/postmark/inbound',
+            'webhooks/front',
         ]);
 
         $middleware->alias([

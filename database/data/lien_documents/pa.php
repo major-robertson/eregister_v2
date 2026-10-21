@@ -86,6 +86,11 @@ return [
         // The affidavit is filed with the prothonotary and made by whoever serves the owner in Pennsylvania.
         'perjury_state' => 'PA',
     ],
+    // Filing wizard questions (EREG-137; config lien.wizard_fields).
+    // The claim prints the contract date (49 P.S. § 1503(5)).
+    'wizard_fields' => [
+        'mechanics_lien' => ['contract_date'],
+    ],
     'kinds' => [
         'mechanics_lien' => [
             'title' => 'Mechanics\' Lien Claim',

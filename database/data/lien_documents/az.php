@@ -41,6 +41,13 @@ return [
         'days_after' => null,
         'method' => 'certified_mail',
     ],
+    // Filing wizard questions (EREG-137; config lien.wizard_fields).
+    // The claim prints the license number, the contract date and when and how the
+    // preliminary twenty day notice was given (sections, notes), and a recorded notice of
+    // completion shortens the deadline to 60 days (A.R.S. § 33-993(A)).
+    'wizard_fields' => [
+        'mechanics_lien' => ['license_number', 'contract_date', 'notice_served_at', 'notice_served_method', 'noc_status'],
+    ],
     'kinds' => [
         'mechanics_lien' => [
             'title' => 'Notice and Claim of Mechanic\'s and Materialman\'s Lien',

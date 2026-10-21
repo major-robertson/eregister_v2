@@ -81,6 +81,12 @@ return [
         'method' => 'certified_mail',
         'proof' => 'declaration',
     ],
+    // Filing wizard questions (EREG-137; config lien.wizard_fields).
+    // A notice of completion, recorded and served, shortens the deadline to 40 days
+    // (NRS 108.226(1)).
+    'wizard_fields' => [
+        'mechanics_lien' => ['noc_status'],
+    ],
     'kinds' => [
         'mechanics_lien' => [
             'title' => 'Notice of Lien',

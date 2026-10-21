@@ -61,6 +61,11 @@ return [
         'days_after' => null,
         'method' => 'certified_mail',
     ],
+    // Filing wizard questions (EREG-137; config lien.wizard_fields).
+    // The statement prints the contract date (sections).
+    'wizard_fields' => [
+        'mechanics_lien' => ['contract_date'],
+    ],
     'kinds' => [
         'mechanics_lien' => [
             'title' => 'Statement of Mechanic\'s Lien',

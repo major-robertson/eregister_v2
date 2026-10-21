@@ -74,6 +74,13 @@ return [
         'method' => 'certified_mail',
         'proof' => 'declaration',
     ],
+    // Filing wizard questions (EREG-137; config lien.wizard_fields).
+    // The lien claim form and the Notice of Unpaid Balance print the contract date
+    // (their bodies).
+    'wizard_fields' => [
+        'mechanics_lien' => ['contract_date'],
+        'prelim_notice' => ['contract_date'],
+    ],
     'kinds' => [
         'mechanics_lien' => [
             'title' => 'Construction Lien Claim',

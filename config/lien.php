@@ -220,6 +220,86 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Wizard Fields
+    |--------------------------------------------------------------------------
+    |
+    | The state's extra questions on the filing wizard's Work step, after the
+    | dates (EREG-137; App\Domains\Lien\Support\WizardFields). A state's
+    | document data (database/data/lien_documents/{xx}.php, `wizard_fields`)
+    | lists these keys per document type, only where its document prints the
+    | fact or its deadline turns on it. Answers are saved on the filing's
+    | document_details_json under the keys the admin Document details card
+    | edits, except noc_status, which is the project's.
+    |
+    | type: text, date, select or radio. required: the wizard won't pass the
+    | Work step without it. required_with: needed once that other field has
+    | an answer. when: prelim_required asks only a claimant the state needs a
+    | preliminary notice from (lien_state_rules). ":notice" in a label or
+    | hint is the state's preliminary notice title.
+    |
+    | No state lists contract_type: the Work step's written-contract question
+    | answers it, and the documents read that answer from the project.
+    |
+    */
+    'wizard_fields' => [
+        'license_number' => [
+            'type' => 'text',
+            'label' => 'Contractor license number',
+            'hint' => 'The number on your state contractor license or registration. Leave it blank if your work does not need a license.',
+            'required' => false,
+            'max' => 100,
+        ],
+        'contract_date' => [
+            'type' => 'date',
+            'label' => 'Contract date',
+            'hint' => 'The date of your contract. If it was not written, the day you agreed to do the work.',
+            'required' => true,
+        ],
+        'contract_type' => [
+            'type' => 'radio',
+            'label' => 'Was your contract written or oral?',
+            'hint' => 'Oral means you agreed in person or by phone.',
+            'required' => true,
+        ],
+        'notice_served_at' => [
+            'type' => 'date',
+            'label' => 'Date your :notice was served',
+            'hint' => 'The day it was mailed or delivered. Leave it blank if you did not serve one.',
+            'required' => false,
+            'when' => 'prelim_required',
+        ],
+        'notice_served_method' => [
+            'type' => 'select',
+            'label' => 'How your :notice was served',
+            'hint' => 'Needed when you enter the date.',
+            'required' => false,
+            'required_with' => 'notice_served_at',
+            'when' => 'prelim_required',
+        ],
+        'noc_status' => [
+            'type' => 'radio',
+            'label' => 'Has a notice of completion been recorded for this project?',
+            'hint' => 'The owner records one when the work is done. It can shorten the time you have to file. Choose Not sure if you don\'t know.',
+            'required' => true,
+        ],
+        'months_of_work' => [
+            'type' => 'text',
+            'label' => 'Months you did the work',
+            'hint' => 'Each month you did work or delivered materials you are claiming payment for. For example: May 2026, June 2026.',
+            'required' => true,
+            'max' => 255,
+        ],
+        'owner_interest' => [
+            'type' => 'text',
+            'label' => 'The owner\'s interest in the property',
+            'hint' => 'For example, "fee simple" if they own it or "lessee" if they lease it. Leave it blank if you don\'t know.',
+            'required' => false,
+            'max' => 255,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Upload Constraints
     |--------------------------------------------------------------------------
     |

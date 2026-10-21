@@ -116,6 +116,7 @@ describe('Filing Wizard required dates', function () {
             ->fill(['base_contract_amount' => '5000', 'credits_deductions' => '0', 'payments_received' => '0'])
             ->set('amount_claimed', 5000.00)
             ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->set('stateAnswers', wizardStateAnswers())
             ->call('nextStep')
             ->assertHasErrors(['completion_date' => 'required'])
             ->assertHasNoErrors(['first_furnish_date', 'last_furnish_date'])
@@ -171,6 +172,7 @@ describe('Filing Wizard required dates', function () {
             ->fill(['base_contract_amount' => '5000', 'credits_deductions' => '0', 'payments_received' => '0'])
             ->set('amount_claimed', 5000.00)
             ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->set('stateAnswers', wizardStateAnswers())
             ->call('nextStep')
             ->assertHasNoErrors(['completion_date']);
     });
@@ -227,6 +229,7 @@ describe('Filing Wizard required dates', function () {
             ->fill(['base_contract_amount' => '5000', 'credits_deductions' => '0', 'payments_received' => '0'])
             ->set('amount_claimed', 5000.00)
             ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->set('stateAnswers', wizardStateAnswers())
             ->call('nextStep')
             ->assertHasNoErrors()
             ->assertSet('step', 4);
@@ -261,6 +264,7 @@ describe('Filing Wizard required dates', function () {
             ->fill(['base_contract_amount' => '5000', 'credits_deductions' => '0', 'payments_received' => '0'])
             ->set('amount_claimed', 5000.00)
             ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->set('stateAnswers', wizardStateAnswers())
             ->call('nextStep')
             ->assertHasErrors([
                 'first_furnish_date' => 'required',
@@ -317,6 +321,7 @@ describe('Filing Wizard required dates', function () {
             ->fill(['base_contract_amount' => '5000', 'credits_deductions' => '0', 'payments_received' => '0'])
             ->set('amount_claimed', 5000.00)
             ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->set('stateAnswers', wizardStateAnswers())
             ->call('nextStep')
             ->assertHasErrors([
                 'first_furnish_date' => 'required',
@@ -347,6 +352,7 @@ describe('Filing Wizard required dates', function () {
             ->fill(['base_contract_amount' => '5000', 'credits_deductions' => '0', 'payments_received' => '0'])
             ->set('amount_claimed', 5000.00)
             ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->set('stateAnswers', wizardStateAnswers())
             ->call('nextStep')
             ->assertHasErrors(['last_furnish_date' => 'after_or_equal'])
             ->assertHasNoErrors('first_furnish_date')
@@ -373,6 +379,7 @@ describe('Filing Wizard has_written_contract', function () {
             ->fill(['base_contract_amount' => '17415.28', 'credits_deductions' => '0', 'payments_received' => '0'])
             ->set('amount_claimed', 17415.28)
             ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->set('stateAnswers', wizardStateAnswers())
             ->call('nextStep');
 
         // Verify the project model was updated
@@ -398,6 +405,7 @@ describe('Filing Wizard has_written_contract', function () {
             ->fill(['base_contract_amount' => '5000', 'credits_deductions' => '0', 'payments_received' => '0'])
             ->set('amount_claimed', 5000.00)
             ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->set('stateAnswers', wizardStateAnswers())
             ->call('nextStep');
 
         $this->project->refresh();
@@ -448,6 +456,7 @@ describe('Filing Wizard has_written_contract', function () {
             ->fill(['base_contract_amount' => '10000', 'credits_deductions' => '0', 'payments_received' => '0'])
             ->set('amount_claimed', 10000.00)
             ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->set('stateAnswers', wizardStateAnswers())
             ->call('nextStep');
 
         // Now the filing should have has_written_contract in its payload if proceedToCheckout is called
@@ -714,7 +723,8 @@ describe('Lien release original lien', function () {
             ->assertSet('step', 3)
             ->set('has_written_contract', '1')
             ->set('amount_claimed', 5000.00)
-            ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.');
+            ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->set('stateAnswers', wizardStateAnswers());
     });
 
     it('asks for the recorded date and the document number when no lien is recorded with us', function () {
@@ -839,10 +849,12 @@ describe('Lien release original lien', function () {
             ->fill(['base_contract_amount' => '5000', 'credits_deductions' => '0', 'payments_received' => '0'])
             ->set('amount_claimed', 5000.00)
             ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->set('stateAnswers', wizardStateAnswers())
             ->call('nextStep')
             ->assertHasNoErrors()
             ->assertSet('step', 4);
 
-        expect($this->filing->fresh()->document_details_json)->toBeNull();
+        // Arizona's own questions (EREG-137) are stored; no lien being released is.
+        expect($this->filing->fresh()->document_details_json)->not->toHaveKey('original_lien');
     });
 });

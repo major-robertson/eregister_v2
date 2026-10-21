@@ -278,6 +278,24 @@ class LienProject extends Model
     }
 
     /**
+     * Whether the claimant contracted directly with the owner (privity), the
+     * way the lien documents decide it (LienDocumentPayload's in_privity):
+     * the "who hired you" answer, else the claimant type. Null when neither
+     * is known.
+     */
+    public function contractedWithOwner(): ?bool
+    {
+        $hiredBy = trim((string) $this->hired_by);
+
+        return match (true) {
+            $hiredBy === 'owner' => true,
+            $hiredBy !== '' => false,
+            $this->claimant_type instanceof ClaimantType => in_array($this->claimant_type, [ClaimantType::Gc, ClaimantType::SupplierToOwner], true),
+            default => null,
+        };
+    }
+
+    /**
      * Whether a party of this role must have a mailing address other than
      * the jobsite, unless the customer confirms it: the general contractor,
      * the subcontractor and the customer (so the hiring party too, when it

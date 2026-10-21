@@ -70,3 +70,19 @@ function subscribeToResaleCerts(App\Domains\Business\Models\Business $business):
         'quantity' => 1,
     ]);
 }
+
+/**
+ * Answers to every required state question on the lien filing wizard's Work
+ * step (EREG-137, config lien.wizard_fields), for tests that walk past it in
+ * any state. The wizard ignores answers to questions the state does not ask.
+ *
+ * @return array<string, string>
+ */
+function wizardStateAnswers(): array
+{
+    return [
+        'contract_date' => now()->subMonths(4)->toDateString(),
+        'noc_status' => 'unknown',
+        'months_of_work' => 'June 2026',
+    ];
+}

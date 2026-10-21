@@ -78,6 +78,12 @@ return [
         'days_after' => null,
         'method' => 'certified_mail',
     ],
+    // Filing wizard questions (EREG-137; config lien.wizard_fields).
+    // A notice of completion filed in the State Construction Registry shortens the
+    // deadline to 90 days (Utah Code § 38-1a-502(1)).
+    'wizard_fields' => [
+        'mechanics_lien' => ['noc_status'],
+    ],
     'kinds' => [
         'mechanics_lien' => [
             'title' => 'Notice of Construction Lien',

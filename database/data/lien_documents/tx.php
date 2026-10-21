@@ -46,6 +46,14 @@ return [
         'days_after' => 5,
         'method' => 'certified_mail',
     ],
+    // Filing wizard questions (EREG-137; config lien.wizard_fields).
+    // The affidavit prints the months of work and, for a claimant other than the
+    // original contractor, when and how the notice of claim was sent (Tex. Prop. Code § 53.054(a)(3),
+    // (a)(8)); the notice of claim prints the months of work.
+    'wizard_fields' => [
+        'mechanics_lien' => ['months_of_work', 'notice_served_at', 'notice_served_method'],
+        'prelim_notice' => ['months_of_work'],
+    ],
     'kinds' => [
         'mechanics_lien' => [
             'title' => 'Affidavit Claiming a Mechanic\'s Lien',

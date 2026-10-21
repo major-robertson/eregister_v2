@@ -39,6 +39,12 @@ return [
         'days_after' => 15,
         'method' => 'certified_mail',
     ],
+    // Filing wizard questions (EREG-137; config lien.wizard_fields).
+    // The claim's privity sentence prints when and how the notice to owner was
+    // served (Fla. Stat. § 713.08(1)(h)).
+    'wizard_fields' => [
+        'mechanics_lien' => ['notice_served_at', 'notice_served_method'],
+    ],
     'kinds' => [
         'mechanics_lien' => [
             'title' => 'Claim of Lien',

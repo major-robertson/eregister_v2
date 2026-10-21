@@ -266,6 +266,7 @@ describe('Parties step: the owner of record', function () {
             ->fill(['base_contract_amount' => '5000', 'credits_deductions' => '0', 'payments_received' => '0'])
             ->set('amount_claimed', 5000.00)
             ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->set('stateAnswers', wizardStateAnswers())
             ->call('nextStep')
             ->assertSet('step', 4)
             ->set('disclaimerAccepted', true)

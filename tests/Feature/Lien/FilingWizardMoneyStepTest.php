@@ -109,7 +109,8 @@ if (! function_exists('moneyProject')) {
             ->call('nextStep')
             ->assertSet('step', 3)
             ->set('has_written_contract', '0')
-            ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.');
+            ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->set('stateAnswers', wizardStateAnswers());
     }
 }
 

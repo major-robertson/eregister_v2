@@ -72,6 +72,12 @@ return [
         'days_after' => 0,
         'method' => 'certified_mail',
     ],
+    // Filing wizard questions (EREG-137; config lien.wizard_fields).
+    // The lien prints the contractor's license or registration number (S.C. Code
+    // Ann. § 29-5-15(A)).
+    'wizard_fields' => [
+        'mechanics_lien' => ['license_number'],
+    ],
     'kinds' => [
         'mechanics_lien' => [
             'title' => 'Notice and Certificate of Mechanic\'s Lien',

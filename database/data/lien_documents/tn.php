@@ -63,6 +63,12 @@ return [
         'days_after' => 0,
         'method' => 'certified_mail',
     ],
+    // Filing wizard questions (EREG-137; config lien.wizard_fields).
+    // A recorded notice of completion cuts the time to serve notice of the lien to
+    // 10 or 30 days (Tenn. Code Ann. § 66-11-143(e)).
+    'wizard_fields' => [
+        'mechanics_lien' => ['noc_status'],
+    ],
     'kinds' => [
         'mechanics_lien' => [
             'title' => 'Notice of Lien',

@@ -84,6 +84,11 @@ return [
         'method' => 'certified_mail',
         'proof' => 'affidavit',
     ],
+    // Filing wizard questions (EREG-137; config lien.wizard_fields).
+    // The notice prints the owner's interest in the property (N.Y. Lien Law § 9(2)).
+    'wizard_fields' => [
+        'mechanics_lien' => ['owner_interest'],
+    ],
     'kinds' => [
         'mechanics_lien' => [
             'title' => 'Notice of Mechanic\'s Lien',

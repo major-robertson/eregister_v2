@@ -45,6 +45,13 @@ class LienFiling extends Model implements HasMedia
     public const NOI_ANSWER_KEYS = ['noi_served_on', 'noi_served_to', 'noi_confirmed_at', 'noi_not_applicable_reason'];
 
     /**
+     * The key in document_details_json that maps each document detail the
+     * customer entered in the filing wizard (EREG-137) to when they entered
+     * it: ['license_number' => '2026-10-20T16:00:00+00:00', ...].
+     */
+    public const WIZARD_FIELDS_ENTERED_AT = 'wizard_fields_entered_at';
+
+    /**
      * Documents that claim what is owed. The filing wizard asks for the full
      * amount breakdown, works out the balance due, and has the customer
      * attest that the claim holds no fees, interest or penalties
@@ -500,6 +507,47 @@ class LienFiling extends Model implements HasMedia
             ->where('event_type', LienFilingEvent::PROPERTY_ENTERED)
             ->latest('id')
             ->first();
+    }
+
+    /**
+     * The document details that still hold what the customer entered in the
+     * filing wizard: keys in WIZARD_FIELDS_ENTERED_AT that no admin edit (a
+     * document_details_updated event in the activity log) has changed since.
+     *
+     * @return list<string>
+     */
+    public function customerEnteredDetailKeys(): array
+    {
+        $entered = ($this->document_details_json ?? [])[self::WIZARD_FIELDS_ENTERED_AT] ?? null;
+
+        if (! is_array($entered) || $entered === []) {
+            return [];
+        }
+
+        $edits = $this->events()
+            ->withoutGlobalScope('business')
+            ->where('event_type', 'document_details_updated')
+            ->get(['payload_json', 'created_at']);
+
+        $keys = [];
+
+        foreach ($entered as $key => $at) {
+            try {
+                $enteredAt = Carbon::parse((string) $at);
+            } catch (\Throwable) {
+                continue;
+            }
+
+            $changedSince = $edits->contains(fn (LienFilingEvent $event): bool => array_key_exists($key, $event->payload_json['changes'] ?? [])
+                && $event->created_at !== null
+                && $event->created_at->greaterThanOrEqualTo($enteredAt));
+
+            if (! $changedSince) {
+                $keys[] = (string) $key;
+            }
+        }
+
+        return $keys;
     }
 
     /**

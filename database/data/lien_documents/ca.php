@@ -44,6 +44,12 @@ return [
         // A declaration executed outside California must still recite California law (CCP § 2015.5).
         'perjury_state' => 'CA',
     ],
+    // Filing wizard questions (EREG-137; config lien.wizard_fields).
+    // The claim prints when and how the preliminary notice was served (prior_notice),
+    // and a recorded notice of completion shortens the deadline to 60 days (Cal. Civ. Code §§ 8412, 8414).
+    'wizard_fields' => [
+        'mechanics_lien' => ['notice_served_at', 'notice_served_method', 'noc_status'],
+    ],
     'kinds' => [
         'mechanics_lien' => [
             'title' => 'Claim of Mechanics Lien',

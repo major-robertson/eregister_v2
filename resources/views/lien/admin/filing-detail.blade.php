@@ -1636,6 +1636,23 @@
                             : null,
                         'NOI' => ($documentDetails['noi_not_applicable_reason'] ?? null) === 'customer_says_not_applicable' ? 'Customer says it does not apply to them' : null,
                     ]);
+
+                    // Values the customer entered in the filing wizard that no admin
+                    // edit has changed since (EREG-137; LienFiling::customerEnteredDetailKeys).
+                    $customerKeys = $filing->customerEnteredDetailKeys();
+                    $wizardRows = [
+                        'License number' => ['license_number'],
+                        'Contract' => ['contract_type', 'contract_date'],
+                        'Notice served' => ['notice_served_at', 'notice_served_method'],
+                        'Months of work' => ['months_of_work'],
+                        'Owner interest' => ['owner_interest'],
+                    ];
+                    foreach ($wizardRows as $rowLabel => $rowKeys) {
+                        $setKeys = array_filter($rowKeys, fn ($key) => filled($documentDetails[$key] ?? null));
+                        if (isset($documentRows[$rowLabel]) && $setKeys !== [] && array_diff($setKeys, $customerKeys) === []) {
+                            $documentRows[$rowLabel] .= ' (from the customer)';
+                        }
+                    }
                 @endphp
 
                 @if ($documentRows === [])

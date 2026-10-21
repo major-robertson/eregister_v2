@@ -108,7 +108,8 @@ if (! function_exists('gateProject')) {
             ->set('has_written_contract', '1')
             ->fill(['base_contract_amount' => '5000', 'credits_deductions' => '0', 'payments_received' => '0'])
             ->set('amount_claimed', 5000.00)
-            ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.');
+            ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->set('stateAnswers', wizardStateAnswers());
     }
 
     /** The first state in notice_of_intent.php with this status, where we file liens online. */
@@ -221,6 +222,7 @@ describe('deadline panel', function () {
             ->fill(['base_contract_amount' => '5000', 'credits_deductions' => '0', 'payments_received' => '0'])
             ->set('amount_claimed', 5000.00)
             ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->set('stateAnswers', wizardStateAnswers())
             ->set('disclaimerAccepted', true)
             ->set('claimAttested', true)
             ->call('proceedToCheckout')

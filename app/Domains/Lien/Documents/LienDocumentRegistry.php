@@ -77,6 +77,9 @@ use App\Domains\Lien\Waivers\WaiverStateRegistry;
  *       ],
  *       'lien_release' => [...], 'prelim_notice' => [...], 'noi' => [...],
  *   ],
+ *   'wizard_fields' => [                  // the filing wizard's extra questions per kind (EREG-137), keys of
+ *       'mechanics_lien' => ['license_number', 'contract_date'], // config('lien.wizard_fields'); list one only
+ *   ],                                    // where the document prints it or the deadline turns on it
  *
  * Statutory clause text in these files and in resources/views/documents/lien/
  * is legally load-bearing: never edit it without re-checking the statute.
@@ -291,6 +294,7 @@ class LienDocumentRegistry
             'execution' => $execution,
             'service' => $instrumentService,
             'kinds' => $kinds,
+            'wizard_fields' => [],
         ];
     }
 

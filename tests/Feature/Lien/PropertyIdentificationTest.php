@@ -138,7 +138,8 @@ if (! function_exists('propertyIdProject')) {
             ->set('has_written_contract', '1')
             ->fill(['base_contract_amount' => '5000', 'credits_deductions' => '0', 'payments_received' => '0'])
             ->set('amount_claimed', 5000.00)
-            ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for drywall.');
+            ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for drywall.')
+            ->set('stateAnswers', wizardStateAnswers());
 
         if ($deadline->documentType->slug === 'lien_release') {
             $component->set('original_lien_recorded_at', '2026-09-15')

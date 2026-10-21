@@ -138,6 +138,65 @@
         </x-ui.card>
         @endif
 
+        @if($stateQuestions !== [])
+        {{-- The state's extra questions (EREG-137): facts its documents print or its deadline turns on --}}
+        <x-ui.card>
+            <x-slot:header>Details for {{ $stateName }}</x-slot:header>
+
+            <div class="space-y-4">
+                <flux:text class="text-sm">We need these for your {{ \Illuminate\Support\Str::lower($documentType->name) }} in {{ $stateName }}.</flux:text>
+
+                {{-- Bound (:attr) rather than echoed attributes on the Flux components: with an
+                     echoed wire:model in this loop, each render of the date picker kept
+                     megabytes of memory, enough to exhaust a test run. --}}
+                @foreach($stateQuestions as $questionKey => $question)
+                    @php
+                        $answerModel = 'stateAnswers.'.$questionKey;
+                    @endphp
+                    <div wire:key="state-question-{{ $questionKey }}">
+                        <flux:field>
+                            <flux:label>{{ $question['label'] }}{{ $question['required'] ? ' *' : '' }}</flux:label>
+                            @if($question['type'] === 'date')
+                                <flux:date-picker :wire:model="$answerModel" />
+                            @elseif($question['type'] === 'select')
+                                <flux:select :wire:model="$answerModel" placeholder="Choose...">
+                                    @foreach($question['options'] as $optionValue => $optionLabel)
+                                        <flux:select.option :value="$optionValue">{{ $optionLabel }}</flux:select.option>
+                                    @endforeach
+                                </flux:select>
+                            @elseif($question['type'] === 'radio')
+                                <div class="flex flex-wrap gap-4 mt-2">
+                                    @foreach($question['options'] as $optionValue => $optionLabel)
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="radio" wire:model.live="{{ $answerModel }}" value="{{ $optionValue }}" class="h-4 w-4 border-zinc-300 text-blue-600 focus:ring-blue-500" />
+                                            <span class="text-sm text-zinc-700 dark:text-zinc-300">{{ $optionLabel }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @else
+                                <flux:input :wire:model="$answerModel" :maxlength="$question['max'] ?? 255" />
+                            @endif
+                            @if($question['hint'] !== '')
+                                <flux:description>{{ $question['hint'] }}</flux:description>
+                            @endif
+                            <flux:error :name="$answerModel" />
+                        </flux:field>
+                    </div>
+
+                    @if($questionKey === 'noc_status' && ($stateAnswers['noc_status'] ?? null) === 'yes')
+                        <div wire:key="state-question-noc-recorded-at">
+                            <flux:field>
+                                <flux:label>Date the notice of completion was recorded *</flux:label>
+                                <flux:date-picker wire:model="noc_recorded_at" />
+                                <flux:error name="noc_recorded_at" />
+                            </flux:field>
+                        </div>
+                    @endif
+                @endforeach
+            </div>
+        </x-ui.card>
+        @endif
+
         @if($noiRequirement)
         {{-- Mechanics liens in states that require a notice of intent first --}}
         <x-ui.card>

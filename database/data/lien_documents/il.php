@@ -102,6 +102,12 @@ return [
         'days_after' => 10,
         'method' => 'certified_mail',
     ],
+    // Filing wizard questions (EREG-137; config lien.wizard_fields).
+    // The claim prints the contract date and, for a subcontractor, when and how
+    // the 90-day notice was served (sections, notes).
+    'wizard_fields' => [
+        'mechanics_lien' => ['contract_date', 'notice_served_at', 'notice_served_method'],
+    ],
     'kinds' => [
         'mechanics_lien' => [
             'title' => 'Claim for Lien',

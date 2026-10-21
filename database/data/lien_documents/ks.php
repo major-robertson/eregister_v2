@@ -75,6 +75,12 @@ return [
         'recipients' => ['owner'],
         'method' => 'certified_mail',
     ],
+    // Filing wizard questions (EREG-137; config lien.wizard_fields).
+    // The statement prints the contractor's license number and the contract date
+    // (sections).
+    'wizard_fields' => [
+        'mechanics_lien' => ['license_number', 'contract_date'],
+    ],
     'kinds' => [
         'mechanics_lien' => [
             'title' => 'Mechanic\'s Lien Statement',

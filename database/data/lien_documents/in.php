@@ -80,6 +80,11 @@ return [
         'days_after' => null,
         'method' => 'certified_mail',
     ],
+    // Filing wizard questions (EREG-137; config lien.wizard_fields).
+    // The statement prints the contractor's license number (sections).
+    'wizard_fields' => [
+        'mechanics_lien' => ['license_number'],
+    ],
     'kinds' => [
         'mechanics_lien' => [
             'title' => 'Sworn Statement and Notice of Intention to Hold Mechanic\'s Lien',

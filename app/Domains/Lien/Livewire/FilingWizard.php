@@ -10,6 +10,7 @@ use App\Domains\Lien\Engine\DeadlineCalculator;
 use App\Domains\Lien\Engine\RuleDateMath;
 use App\Domains\Lien\Engine\StepStatusCalculator;
 use App\Domains\Lien\Enums\FilingStatus;
+use App\Domains\Lien\Enums\NocStatus;
 use App\Domains\Lien\Enums\PartyRole;
 use App\Domains\Lien\Enums\ServiceLevel;
 use App\Domains\Lien\Models\LienDeadlineRule;
@@ -24,6 +25,7 @@ use App\Domains\Lien\Seo\NoticeOfIntentStatePage;
 use App\Domains\Lien\Services\RushTier;
 use App\Domains\Lien\Support\PartyAddress;
 use App\Domains\Lien\Support\PropertyLookup;
+use App\Domains\Lien\Support\WizardFields;
 use App\Domains\Lien\Support\ZipStateRanges;
 use App\Mail\AttorneyReferral;
 use App\Models\EmailSequence;
@@ -142,6 +144,15 @@ class FilingWizard extends Component
     public ?string $noi_served_to = null;
 
     public bool $noi_confirmed = false;
+
+    // Step 3: the state's extra questions (EREG-137), keyed like
+    // config('lien.wizard_fields'). Document details are stored in
+    // document_details_json; noc_status on the project.
+    public array $stateAnswers = [];
+
+    // When the notice of completion was recorded, once the customer says one
+    // was (the project's noc_recorded_at)
+    public ?string $noc_recorded_at = null;
 
     // Step 3: Amount & Contract
     public ?float $amount_claimed = null;
@@ -379,6 +390,45 @@ class FilingWizard extends Component
         if ($this->noiRequirement() !== null) {
             $this->populateNoiAnswer();
         }
+
+        $this->populateStateAnswers();
+    }
+
+    /**
+     * The state's extra questions as already answered: the filing's document
+     * details (the customer's or an admin's), else the business's license
+     * number and the date the project's preliminary notice went out. The
+     * notice-of-completion status comes from the project when it is Yes or
+     * No; "Not sure" is what the project form saves without asking in most
+     * states, so it is asked again.
+     */
+    private function populateStateAnswers(): void
+    {
+        $details = $this->filing->document_details_json ?? [];
+
+        foreach (array_keys($this->stateQuestions()) as $key) {
+            $this->stateAnswers[$key] = match ($key) {
+                'noc_status' => in_array($this->project->noc_status, [NocStatus::Yes, NocStatus::No], true)
+                    ? $this->project->noc_status->value
+                    : null,
+                'license_number' => $details[$key] ?? $this->project->business?->contractor_license_number,
+                'notice_served_at' => $details[$key] ?? $this->project->prelim_notice_sent_at?->eastern()->format('Y-m-d'),
+                default => $details[$key] ?? null,
+            };
+        }
+
+        $this->noc_recorded_at = $this->project->noc_recorded_at?->format('Y-m-d');
+    }
+
+    /**
+     * The state's extra questions for this document (WizardFields), keyed
+     * like config('lien.wizard_fields').
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function stateQuestions(): array
+    {
+        return WizardFields::forProject($this->project, (string) $this->deadline->documentType?->slug);
     }
 
     /**
@@ -842,7 +892,42 @@ class FilingWizard extends Component
             ];
         }
 
+        $this->addStateQuestionRules($rules, $messages, $attributes);
+
         $this->validate($rules, $messages, $attributes);
+    }
+
+    /**
+     * The rules for the state's extra questions (EREG-137): required ones
+     * must be answered, dates can't be in the future, choices must be on
+     * the list. A Yes to the notice of completion needs its recorded date,
+     * as on the project form.
+     *
+     * @param  array<string, mixed>  $rules
+     * @param  array<string, string>  $messages
+     * @param  array<string, string>  $attributes
+     */
+    private function addStateQuestionRules(array &$rules, array &$messages, array &$attributes): void
+    {
+        $questions = $this->stateQuestions();
+
+        foreach ($questions as $key => $question) {
+            $field = "stateAnswers.{$key}";
+            $choice = in_array($question['type'], ['select', 'radio'], true);
+
+            $rules[$field] = WizardFields::rules($question, 'stateAnswers.');
+            $attributes[$field] = Str::lcfirst($question['label']);
+            $messages["{$field}.required"] = $choice ? 'Choose an answer.' : 'Enter the '.Str::lcfirst($question['label']).'.';
+            $messages["{$field}.required_with"] = 'Choose an answer.';
+            $messages["{$field}.before_or_equal"] = "This date can't be in the future.";
+        }
+
+        if (isset($questions['noc_status'])) {
+            $rules['noc_recorded_at'] = ['exclude_unless:stateAnswers.noc_status,yes', 'required', 'date', 'before_or_equal:today'];
+            $messages['noc_recorded_at.required'] = 'Enter the date the notice of completion was recorded.';
+            $messages['noc_recorded_at.before_or_equal'] = "The recorded date can't be in the future.";
+            $attributes['noc_recorded_at'] = 'recorded date';
+        }
     }
 
     /**
@@ -1410,6 +1495,7 @@ class FilingWizard extends Component
             $projectData['last_furnish_date'] = $this->last_furnish_date ?: null;
             $projectData['completion_date'] = $this->completion_date ?: null;
             $projectData += $this->projectAmounts();
+            $projectData += $this->projectStateAnswers();
 
             $this->logDatesChangedAfterDeadlineBlock($projectData);
         }
@@ -1439,7 +1525,103 @@ class FilingWizard extends Component
             $filingData['document_details_json'] = $this->documentDetailsWithEstimate();
         }
 
+        // Last, on top of whatever the steps above wrote.
+        if ($this->step >= 3 && ($questions = $this->stateQuestions()) !== []) {
+            $filingData['document_details_json'] = $this->documentDetailsWithStateAnswers(
+                array_key_exists('document_details_json', $filingData) ? $filingData['document_details_json'] : $this->filing->document_details_json,
+                $questions,
+            );
+        }
+
         $this->filing->update($filingData);
+    }
+
+    /**
+     * The state's questions the project holds (WizardFields::PROJECT_FIELDS):
+     * the notice-of-completion status and, for a Yes, its recorded date, as
+     * the project form saves them. Nothing until it is answered.
+     *
+     * @return array<string, string|null>
+     */
+    private function projectStateAnswers(): array
+    {
+        $status = NocStatus::tryFrom((string) ($this->stateAnswers['noc_status'] ?? ''));
+
+        if ($status === null || ! array_key_exists('noc_status', $this->stateQuestions())) {
+            return [];
+        }
+
+        return [
+            'noc_status' => $status->value,
+            'noc_recorded_at' => $status === NocStatus::Yes ? $this->nullableDate($this->noc_recorded_at) : null,
+        ];
+    }
+
+    /**
+     * The filing's document details with the customer's answers to the
+     * state's questions merged in, under the keys the admin Document details
+     * card edits. A blank answer keeps an admin's value and drops one the
+     * customer entered before. WIZARD_FIELDS_ENTERED_AT records when the
+     * customer entered each value, unchanged while the value is; every other
+     * key (the notice-of-intent answer, the estimate, admin details) is kept.
+     *
+     * @param  array<string, mixed>|null  $details
+     * @param  array<string, array<string, mixed>>  $questions
+     * @return array<string, mixed>|null
+     */
+    private function documentDetailsWithStateAnswers(?array $details, array $questions): ?array
+    {
+        $details ??= [];
+        $entered = $details[LienFiling::WIZARD_FIELDS_ENTERED_AT] ?? [];
+        $entered = is_array($entered) ? $entered : [];
+
+        foreach ($questions as $key => $question) {
+            if (in_array($key, WizardFields::PROJECT_FIELDS, true)) {
+                continue;
+            }
+
+            $value = $this->stateAnswer($key, $question['type']);
+
+            if ($value === null) {
+                if (isset($entered[$key])) {
+                    unset($details[$key], $entered[$key]);
+                }
+
+                continue;
+            }
+
+            if ($value !== ($details[$key] ?? null)) {
+                $details[$key] = $value;
+                $entered[$key] = now()->toIso8601String();
+            }
+        }
+
+        if ($entered === []) {
+            unset($details[LienFiling::WIZARD_FIELDS_ENTERED_AT]);
+        } else {
+            $details[LienFiling::WIZARD_FIELDS_ENTERED_AT] = $entered;
+        }
+
+        return $details === [] ? null : $details;
+    }
+
+    /**
+     * One answer as stored: trimmed, dates as Y-m-d, blank as null.
+     */
+    private function stateAnswer(string $key, string $type): ?string
+    {
+        $value = $this->stateAnswers[$key] ?? null;
+        $value = is_scalar($value) ? $this->nullIfBlank($value) : null;
+
+        if ($value === null || $type !== 'date') {
+            return $value;
+        }
+
+        try {
+            return CarbonImmutable::parse($value)->toDateString();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**
@@ -2084,6 +2266,7 @@ class FilingWizard extends Component
             'noiServedTo' => self::NOI_SERVED_TO,
             'noiOrderUrl' => $noiRequirement !== null && in_array($this->step, [3, 4], true) ? $this->noiOrderUrl() : null,
             'noiBlock' => $this->step === 4 ? $this->noiBlock() : null,
+            'stateQuestions' => $this->step === 3 ? $this->stateQuestions() : [],
             'deadlineGate' => $deadlineGate,
             'deadlineBlocked' => $deadlineBlocked,
             'rushFee' => $deadlineBlocked ? null : $this->rushFee($deadlineGate),

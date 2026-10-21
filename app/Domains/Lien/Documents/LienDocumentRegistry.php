@@ -36,6 +36,9 @@ use App\Domains\Lien\Waivers\WaiverStateRegistry;
  *       'legend' => null,                  // submitter legend printed under the rule (e-recording MOUs, e.g. Johnson County KS)
  *       'cover_sheet' => false,            // mail-in office wants eRegister's filing cover sheet
  *       'parcel_label' => 'Parcel ID',     // APN / PIN / Prop ID / Tax ID / PCN / Folio
+ *       'assessor_url' => null,            // https link to the assessor's property search (county file) or the
+ *                                          // state's assessor directory (state file); shown to customers looking
+ *                                          // for the parcel number (PropertyLookup), never printed. Cite a source.
  *       'fee_note' => null, 'adds_cover_page' => false,
  *       'notes' => [],                     // admin hints on the Documents card; never printed
  *   ],

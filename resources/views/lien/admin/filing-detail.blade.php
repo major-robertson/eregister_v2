@@ -492,6 +492,29 @@
                     </div>
                     @endif
 
+                    {{-- Property identification the customer entered on their filing page (EREG-136) --}}
+                    @if ($propertyEntry)
+                    <div class="sm:col-span-2">
+                        <flux:text class="text-sm text-gray-500">
+                            Legal description / parcel number entered by customer on {{ $propertyEntry->created_at->eastern()->format('M j, Y') }}{{ $propertyEntry->creator ? ' ('.$propertyEntry->creator->name.')' : '' }}
+                        </flux:text>
+                        @if ($propertyUpload)
+                        <a href="{{ $propertyUpload->getTemporaryUrl(now()->addMinutes(30)) }}" target="_blank"
+                            class="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                            <flux:icon name="paper-clip" class="size-4" />
+                            {{ $propertyUpload->file_name }}
+                        </a>
+                        @endif
+                    </div>
+                    @elseif ($filing->needsPropertyDescription())
+                    <div class="sm:col-span-2">
+                        <flux:badge size="sm" color="orange">Legal description needed</flux:badge>
+                        <flux:text class="mt-1 text-sm text-gray-600">
+                            The customer chose "I need help finding it" on {{ $filing->property_help_requested_at->eastern()->format('M j, Y') }}. They enter it on their filing page; we don't look it up.
+                        </flux:text>
+                    </div>
+                    @endif
+
                     @if ($filing->project->first_furnish_date)
                     <div>
                         <flux:text class="text-sm text-gray-500">First Furnish Date</flux:text>
@@ -2194,6 +2217,31 @@
                                 </a>
                                 @elseif ($uploadedName)
                                 <flux:text class="text-xs text-gray-500">{{ $uploadedName }} (file removed)</flux:text>
+                                @endif
+                                <flux:text class="text-xs text-gray-400">
+                                    {{ $event->created_at->eastern()->format('M j, g:i A') }}
+                                    @if ($event->creator) &middot; {{ $event->creator->name }} @endif
+                                </flux:text>
+                            </div>
+                        </div>
+                        @elseif ($event->event_type === \App\Domains\Lien\Models\LienFilingEvent::PROPERTY_ENTERED)
+                        @php $eventUpload = $requestFiles->get($event->payload_json['media_id'] ?? null); @endphp
+                        <div class="flex items-start gap-2">
+                            <flux:icon name="map" class="mt-0.5 size-4 shrink-0 text-orange-500" />
+                            <div class="min-w-0">
+                                <flux:text class="text-sm font-medium text-orange-700">{{ $event->description() }}</flux:text>
+                                @if (! empty($event->payload_json['legal_description']))
+                                <flux:text class="whitespace-pre-line text-xs text-gray-600">Legal description: {{ $event->payload_json['legal_description'] }}</flux:text>
+                                @endif
+                                @if (! empty($event->payload_json['apn']))
+                                <flux:text class="text-xs text-gray-600">Parcel number: {{ $event->payload_json['apn'] }}</flux:text>
+                                @endif
+                                @if ($eventUpload)
+                                <a href="{{ $eventUpload->getTemporaryUrl(now()->addMinutes(30)) }}" target="_blank"
+                                    class="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                                    <flux:icon name="paper-clip" class="size-3" />
+                                    {{ $eventUpload->file_name }}
+                                </a>
                                 @endif
                                 <flux:text class="text-xs text-gray-400">
                                     {{ $event->created_at->eastern()->format('M j, g:i A') }}

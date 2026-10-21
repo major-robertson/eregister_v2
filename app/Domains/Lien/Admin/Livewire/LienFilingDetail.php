@@ -34,6 +34,7 @@ use App\Domains\Lien\Esign\Actions\SendDemandLetterReminder;
 use App\Domains\Lien\Esign\Actions\SendUploadedDocumentForSignature;
 use App\Domains\Lien\Esign\UploadedDocumentSignable;
 use App\Domains\Lien\Models\LienFiling;
+use App\Domains\Lien\Models\LienFilingEvent;
 use App\Domains\Lien\Models\LienStateRule;
 use App\Mail\FilingMilestone;
 use App\Models\User;
@@ -184,6 +185,7 @@ class LienFilingDetail extends Component
         'client_request_sent', 'client_response', 'document_uploaded',
         'draft_sent_for_review', 'draft_approved', 'draft_changes_requested',
         'customer_emailed', 'reply_dismissed',
+        LienFilingEvent::PROPERTY_ENTERED,
     ];
 
     public function mount(string|LienFiling $lienFiling): void
@@ -373,6 +375,10 @@ class LienFilingDetail extends Component
             ->get()
             ->keyBy('id');
 
+        // The legal description or parcel number the customer entered on
+        // their filing page (EREG-136); its file is in $requestFiles.
+        $propertyEntry = $this->lienFiling->latestPropertyEntry();
+
         return view('lien.admin.filing-detail', [
             'filing' => $this->lienFiling,
             // The column the board shows (an untouched full-service order is
@@ -418,6 +424,8 @@ class LienFilingDetail extends Component
                 && $this->lienFiling->canTransitionTo(FilingStatus::AwaitingClient),
             'canUseGeneratedDraft' => $canChangeStatus && ($documentPackage?->isAvailable() ?? false),
             'reviewOpen' => $this->lienFiling->openReviewRequest() !== null,
+            'propertyEntry' => $propertyEntry,
+            'propertyUpload' => $requestFiles->get($propertyEntry?->payload_json['media_id'] ?? null),
             'canRemindSigner' => $esignAwaiting && $canChangeStatus && $esignRequest->invitation_bounced_at === null,
             'signingUrl' => $esignAwaiting && $canChangeStatus && ! $esignRequest->isExpired()
                 ? $esignRequest->signingUrl()

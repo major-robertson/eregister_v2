@@ -19,6 +19,13 @@ class LienFilingEvent extends Model
     /** The customer ticked the expedite terms on the review step; the payload holds the exact text. */
     public const RUSH_ACKNOWLEDGED = 'rush_acknowledged';
 
+    /**
+     * The customer entered the property's legal description or parcel number
+     * on the filing page (EREG-136); the payload holds what they entered,
+     * who, when and the media id of any deed or tax bill upload.
+     */
+    public const PROPERTY_ENTERED = 'property_entered';
+
     protected $fillable = [
         'business_id',
         'filing_id',
@@ -85,6 +92,7 @@ class LienFilingEvent extends Model
             'reply_dismissed' => 'Marked still waiting',
             self::DATES_CHANGED_AFTER_DEADLINE_BLOCK => 'Dates changed after a deadline notice',
             self::RUSH_ACKNOWLEDGED => 'Expedite terms accepted',
+            self::PROPERTY_ENTERED => 'Property entered by customer',
             default => ucfirst(str_replace('_', ' ', $this->event_type)),
         };
     }

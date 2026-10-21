@@ -55,6 +55,8 @@ if (! function_exists('gateProject')) {
             'first_furnish_date' => '2026-07-01',
             'last_furnish_date' => '2026-08-14',
             'completion_date' => '2026-08-14',
+            // Liens and releases need a legal description or parcel number (EREG-136).
+            'apn' => '087-123-04-0-11-02-005.00',
         ], $overrides));
 
         app(DeadlineCalculator::class)->calculateForProject($project);

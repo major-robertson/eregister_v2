@@ -23,6 +23,7 @@ use App\Domains\Lien\Models\LienStateRule;
 use App\Domains\Lien\Seo\NoticeOfIntentStatePage;
 use App\Domains\Lien\Services\RushTier;
 use App\Domains\Lien\Support\PartyAddress;
+use App\Domains\Lien\Support\PropertyLookup;
 use App\Domains\Lien\Support\ZipStateRanges;
 use App\Mail\AttorneyReferral;
 use App\Models\EmailSequence;
@@ -99,6 +100,11 @@ class FilingWizard extends Component
     public ?string $has_apn = null;
 
     public ?string $apn = null;
+
+    // "I need help finding it": a lien or release customer without the legal
+    // description or parcel number pays now and enters it on the filing page
+    // (stored as lien_filings.property_help_requested_at).
+    public bool $property_help = false;
 
     public ?string $multiple_parcels = null;
 
@@ -355,6 +361,7 @@ class FilingWizard extends Component
         $this->description_of_work = $this->filing->description_of_work;
         $this->service_level = $this->filing->service_level?->value ?? 'full_service';
         $this->rushElected = (bool) $this->filing->rush_elected;
+        $this->property_help = $this->filing->property_help_requested_at !== null;
 
         // Load any existing payload data
         $payload = $this->filing->payload_json ?? [];
@@ -436,6 +443,40 @@ class FilingWizard extends Component
     }
 
     /**
+     * Whether this document must name the property by its legal description
+     * or parcel number: mechanics liens and lien releases, at every service
+     * level (LienFiling::PROPERTY_ID_DOCUMENTS). Notices leave it optional.
+     */
+    private function requiresPropertyIdentification(): bool
+    {
+        return in_array($this->deadline->documentType?->slug, LienFiling::PROPERTY_ID_DOCUMENTS, true);
+    }
+
+    /**
+     * Whether the Property step holds a legal description or parcel number
+     * that updateFiling() saves on the project.
+     */
+    private function hasPropertyIdentification(): bool
+    {
+        return ($this->has_legal_description === 'yes' && filled($this->legal_description))
+            || ($this->has_apn === 'yes' && filled($this->apn));
+    }
+
+    /**
+     * When the customer chose "I need help finding it": kept from the first
+     * time they chose it, cleared once they enter either one, and never set
+     * for a document that doesn't require it.
+     */
+    private function propertyHelpRequestedAt(): ?\DateTimeInterface
+    {
+        if (! $this->property_help || ! $this->requiresPropertyIdentification() || $this->hasPropertyIdentification()) {
+            return null;
+        }
+
+        return $this->filing->property_help_requested_at ?? now();
+    }
+
+    /**
      * How the Work step asks about money:
      * - claim: liens and notices of intent. The full breakdown, the balance
      *   due it gives, the amount claimed (a reason when the two differ), and
@@ -512,6 +553,27 @@ class FilingWizard extends Component
     {
         if (array_key_exists($property, self::BREAKDOWN_FIELDS)) {
             $this->balanceBeforeUpdate = $this->balanceDueCents();
+        }
+    }
+
+    /**
+     * A customer who says they have the legal description no longer needs
+     * the "I need help finding it" choice, which is then hidden.
+     */
+    public function updatedHasLegalDescription(mixed $value): void
+    {
+        if ($value === 'yes') {
+            $this->property_help = false;
+        }
+    }
+
+    /**
+     * The same for the parcel number.
+     */
+    public function updatedHasApn(mixed $value): void
+    {
+        if ($value === 'yes') {
+            $this->property_help = false;
         }
     }
 
@@ -885,15 +947,17 @@ class FilingWizard extends Component
         $docType = $this->deadline->documentType->slug;
         $owner = $this->project->ownerParty();
 
-        // Mechanics Lien + Self-Serve: require property identification and owner
-        if ($docType === 'mechanics_lien' && $this->service_level === 'self_serve') {
-            // Property identification check - require legal_description OR apn
-            if (empty($this->legal_description) && empty($this->apn)) {
-                $this->addError('property_identification',
-                    'Legal description or APN required for Self-Serve mechanics lien. Go back and add one, or switch to Full Service.');
-            }
+        // Liens and releases name the property by its legal description or
+        // parcel number at every service level (EREG-136). "I need help
+        // finding it" lets the customer pay now and enter it on the filing
+        // page; staff never look it up.
+        if ($this->requiresPropertyIdentification() && ! $this->hasPropertyIdentification() && ! $this->property_help) {
+            $this->addError('property_identification',
+                'Add the legal description or the parcel number on the Property step. If you can\'t find either, choose "I need help finding it" there.');
+        }
 
-            // Owner party check
+        // Mechanics Lien + Self-Serve: require the owner
+        if ($docType === 'mechanics_lien' && $this->service_level === 'self_serve') {
             if (! $owner || ! $owner->hasMailingAddress()) {
                 $this->addError('owner_party',
                     'Owner name and mailing address required for Self-Serve mechanics lien.');
@@ -1360,6 +1424,7 @@ class FilingWizard extends Component
             'amount_claimed_cents' => $this->amountClaimedCents(),
             'description_of_work' => $this->description_of_work,
             'service_level' => $this->service_level,
+            'property_help_requested_at' => $this->propertyHelpRequestedAt(),
         ];
 
         if ($this->step >= 3 && $this->isLienRelease()) {
@@ -2024,6 +2089,8 @@ class FilingWizard extends Component
             'rushFee' => $deadlineBlocked ? null : $this->rushFee($deadlineGate),
             'rushUpsell' => $this->step === 4 && ! $this->requiresAttorneyReferral && ! $deadlineBlocked ? $this->rushUpsell($deadlineGate) : null,
             'demandLetter' => $deadlineBlocked ? $this->demandLetterOffer() : null,
+            'propertyRequired' => $this->requiresPropertyIdentification(),
+            'propertyLookup' => $this->step === 1 ? PropertyLookup::forFiling($this->filing) : null,
         ])->layout('components.layouts.portal', ['title' => 'Create '.$this->deadline->documentType->name]);
     }
 }

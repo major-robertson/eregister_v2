@@ -6,8 +6,10 @@ use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Enums\RecordingMethod;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienFilingEvent;
+use App\Domains\Lien\Support\PropertyLookup;
 use App\Mail\ClientResponded;
 use App\Mail\FilingMilestone;
+use App\Mail\PropertyDescriptionEntered;
 use App\Mail\UploadReceived;
 use Closure;
 use Illuminate\Contracts\View\View;
@@ -40,6 +42,9 @@ class FilingShow extends Component
         'image/heif-sequence',
     ];
 
+    /** What the customer confirms when they enter the property (stored on the property_entered event). */
+    public const PROPERTY_CONFIRMATION = 'This is the property where I furnished labor or materials.';
+
     public LienFiling $filing;
 
     public ?string $tracking_number = null;
@@ -69,6 +74,16 @@ class FilingShow extends Component
     public string $changes = '';
 
     public $changesFile = null;
+
+    // "Enter legal description" panel (EREG-136): the customer who chose
+    // "I need help finding it" enters it here after paying.
+    public string $propertyLegalDescription = '';
+
+    public string $propertyApn = '';
+
+    public $propertyFile = null;
+
+    public bool $propertyConfirmed = false;
 
     public function mount(LienFiling $filing): void
     {
@@ -123,6 +138,118 @@ class FilingShow extends Component
         $this->proofFile = null;
 
         session()->flash('message', 'Proof document uploaded.');
+    }
+
+    /**
+     * Save the legal description or parcel number the customer looked up:
+     * onto the project, as a property_entered event (with any deed or tax
+     * bill upload), then Awaiting Client moves to Needs Review (which stops
+     * the reminders) and lien ops gets an email. Members of the filing's
+     * business only: staff never enter it for the customer.
+     *
+     * TODO: EREG-128 request mechanism replaces this panel after merge.
+     */
+    public function saveProperty(): void
+    {
+        abort_unless($this->isFilingCustomer(), 403);
+
+        $this->filing->refresh();
+
+        if (! $this->propertyEntryOpen()) {
+            $this->reset(['propertyLegalDescription', 'propertyApn', 'propertyFile', 'propertyConfirmed']);
+            session()->flash('message', 'We already have the legal description or parcel number for this filing.');
+
+            return;
+        }
+
+        $this->validate([
+            'propertyLegalDescription' => ['required_without:propertyApn', 'nullable', 'string', 'max:2000'],
+            'propertyApn' => ['nullable', 'string', 'max:255'],
+            'propertyFile' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,heic,heif', 'max:10240'],
+            'propertyConfirmed' => ['accepted'],
+        ], [
+            'propertyLegalDescription.required_without' => 'Enter the legal description or the parcel number.',
+            'propertyLegalDescription.max' => 'Keep the legal description under 2,000 characters.',
+            'propertyApn.max' => 'Keep the parcel number under 255 characters.',
+            'propertyFile.file' => 'The file did not upload. Please try again.',
+            'propertyFile.mimes' => 'Attach a PDF, JPG, PNG or HEIC file.',
+            'propertyFile.max' => 'The file must be 10 MB or smaller.',
+            'propertyConfirmed.accepted' => 'Tick the box to confirm this is the property where you furnished labor or materials.',
+        ]);
+
+        $legalDescription = trim($this->propertyLegalDescription) ?: null;
+        $apn = trim($this->propertyApn) ?: null;
+
+        $entry = DB::transaction(function () use ($legalDescription, $apn): LienFilingEvent {
+            $media = $this->propertyFile
+                ? $this->filing->addMedia($this->propertyFile->getRealPath())
+                    ->usingFileName($this->propertyFile->getClientOriginalName())
+                    ->toMediaCollection('customer_uploads')
+                : null;
+
+            $this->filing->project->update(array_filter([
+                'legal_description' => $legalDescription,
+                'apn' => $apn,
+            ], fn (?string $value): bool => $value !== null));
+
+            $entry = $this->filing->events()->create([
+                'business_id' => $this->filing->business_id,
+                'event_type' => LienFilingEvent::PROPERTY_ENTERED,
+                'payload_json' => [
+                    'legal_description' => $legalDescription,
+                    'apn' => $apn,
+                    'media_id' => $media?->id,
+                    'file_name' => $media?->file_name,
+                    'entered_by' => auth()->id(),
+                    'entered_at' => now()->toIso8601String(),
+                    'confirmation' => self::PROPERTY_CONFIRMATION,
+                ],
+                'created_by' => auth()->id(),
+            ]);
+
+            if ($this->filing->status === FilingStatus::AwaitingClient) {
+                $this->filing->transitionTo(FilingStatus::NeedsReview, ['property_entered_event_id' => $entry->id]);
+            }
+
+            return $entry;
+        });
+
+        // The entry is saved; a queue hiccup must not show the customer an error.
+        $ops = config('lien.notifications.ops_email');
+
+        if (filled($ops)) {
+            try {
+                Mail::to($ops)->queue(new PropertyDescriptionEntered($this->filing->fresh(), $entry));
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        $this->reset(['propertyLegalDescription', 'propertyApn', 'propertyFile', 'propertyConfirmed']);
+
+        session()->flash('message', 'Thanks. We have the property details and will keep going.');
+    }
+
+    /**
+     * Whether the filing page asks for the legal description or parcel
+     * number: a paid lien or release whose customer chose "I need help
+     * finding it", with neither on the project yet.
+     */
+    private function propertyEntryOpen(): bool
+    {
+        return $this->filing->isPaid() && $this->filing->needsPropertyDescription();
+    }
+
+    /**
+     * Whether the signed-in user works for the filing's business. Admins can
+     * view any filing (and pass every Gate check), so this is checked
+     * directly.
+     */
+    private function isFilingCustomer(): bool
+    {
+        $business = auth()->user()?->currentBusiness();
+
+        return $business !== null && $business->id === $this->filing->business_id;
     }
 
     /**
@@ -666,6 +793,13 @@ class FilingShow extends Component
             ? 'Please check the request we emailed you and reply to it.'
             : $this->filing->status->whatsNext();
 
+        // "Enter legal description" panel (EREG-136).
+        $propertyEntry = $this->propertyEntryOpen() && $this->isFilingCustomer();
+
+        if ($propertyEntry) {
+            $whatsNext = 'Enter the legal description or parcel number below.';
+        }
+
         // A draft sent for review gets its own panel at the top (the PDF,
         // Approve, Request changes) in place of the request panel below.
         $reviewRequest = $this->filing->openReviewRequest();
@@ -681,7 +815,10 @@ class FilingShow extends Component
         // open request it sits in the request panel with the answer form:
         // after the form for Awaiting Client (usually a question), before it
         // for Awaiting Notary / E-Signature (usually a document to return).
-        $showUploadBox = $this->filing->status->isWaitingOnCustomer() && $reviewRequest === null;
+        // Not while the filing only waits for the legal description (EREG-136
+        // panel above it): there is no signed document to send back then.
+        $showUploadBox = $this->filing->status->isWaitingOnCustomer() && $reviewRequest === null
+            && ! ($propertyEntry && $clientRequest === null);
 
         return view('livewire.lien.filing-show', [
             'events' => $this->filing->events,
@@ -705,6 +842,9 @@ class FilingShow extends Component
                 ? URL::temporarySignedRoute('lien.filings.drafts.show', now()->addHours(2), ['filing' => $this->filing, 'media' => $reviewDraft->id])
                 : null,
             'timeline' => $this->timeline(),
+            'propertyEntry' => $propertyEntry,
+            'propertyLookup' => $propertyEntry ? PropertyLookup::forFiling($this->filing) : null,
+            'propertyConfirmation' => self::PROPERTY_CONFIRMATION,
         ])->layout('components.layouts.portal', ['title' => $this->filing->documentType->name]);
     }
 }

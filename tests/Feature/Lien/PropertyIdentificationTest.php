@@ -441,7 +441,7 @@ describe('the filing page', function () {
 
         Livewire::test(FilingShow::class, ['filing' => $filing])
             ->assertSee('Enter the legal description or parcel number below.')
-            ->assertDontSee('Please respond to our email so we can continue processing your filing.')
+            ->assertDontSee('Please check the request we emailed you and reply to it.')
             ->assertSee('Enter the legal description or parcel number')
             ->assertSee('To record your mechanics lien we need the legal description or parcel number of the property.')
             ->assertSee('100 Maple St')
@@ -464,7 +464,7 @@ describe('the filing page', function () {
 
         Livewire::test(FilingShow::class, ['filing' => $filing->fresh()])
             ->assertDontSee('Enter the legal description or parcel number')
-            ->assertSee('Please respond to our email so we can continue processing your filing.');
+            ->assertSee('Please check the request we emailed you and reply to it.');
     });
 
     it('requires the confirmation and one of the two', function () {

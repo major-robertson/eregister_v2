@@ -1082,24 +1082,14 @@
                         </div>
                     @endif
 
-                    @if($countyRecording)
-                        {{-- The county's recording fee, passed through at cost, and its turnaround (EREG-143) --}}
+                    @if($recordingTurnaround)
+                        {{-- How long county recording typically takes (EREG-143) --}}
                         <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 space-y-2">
                             <div class="flex items-center gap-2 font-medium">
                                 <flux:icon name="building-library" class="w-4 h-4 text-zinc-500" />
                                 Recording with the county
                             </div>
-                            @if($countyRecording['fee'] !== null)
-                                <div class="flex items-center justify-between font-medium">
-                                    <span>{{ \App\Domains\Lien\Services\CountyRecordingFee::LABEL }}</span>
-                                    <span>${{ number_format($countyRecording['fee'] / 100, 2) }}</span>
-                                </div>
-                            @else
-                                <div class="text-sm text-zinc-600 dark:text-zinc-400">{{ \App\Domains\Lien\Services\CountyRecordingFee::UNKNOWN_LINE }}</div>
-                            @endif
-                            @if($countyRecording['turnaround'])
-                                <div class="text-sm text-zinc-600 dark:text-zinc-400">{{ $countyRecording['turnaround'] }}</div>
-                            @endif
+                            <div class="text-sm text-zinc-600 dark:text-zinc-400">{{ $recordingTurnaround }}</div>
                         </div>
                     @endif
 

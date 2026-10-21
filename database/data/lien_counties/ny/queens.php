@@ -46,8 +46,4 @@ return [
         'ron_accepted' => null,
         'source' => 'Liens are notarized when filed, and the clerk took A4 phone scans uploaded through EDDS in 2026 (header, notes).',
     ],
-    // The fee to record the lien or release here (EREG-143), in cents: one
-    // value for both, or keyed by kind. Only a flat fee this file states; null
-    // is unknown. $30 for the notice of lien plus $5 for the affidavit of service (fee_note); a release is not stated.
-    'recording_fee_cents' => ['mechanics_lien' => 3500],
 ];

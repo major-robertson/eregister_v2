@@ -45,11 +45,9 @@ class PaymentReceipt extends Mailable implements ShouldQueue
 
     /**
      * Receipt rows. A lien order lists what it charged in meta['items'] (the
-     * service, then any rush fee, then any county recording fee, which has
-     * no price row: rows read only the label and the amount, never
-     * price_id); a sales tax order records its breakdown (states x per-state
-     * fee, optional rush). Every other payment, and lien payments from
-     * before the items, is a single line.
+     * service, then any rush fee); a sales tax order records its breakdown
+     * (states x per-state fee, optional rush). Every other payment, and lien
+     * payments from before the items, is a single line.
      *
      * @return list<array{label: string, amount: string}>
      */

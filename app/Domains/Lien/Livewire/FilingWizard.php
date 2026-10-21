@@ -21,7 +21,6 @@ use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienProjectDeadline;
 use App\Domains\Lien\Models\LienStateRule;
-use App\Domains\Lien\Services\CountyRecordingFee;
 use App\Domains\Lien\Services\RushTier;
 use App\Domains\Lien\Support\LienPrerequisites;
 use App\Domains\Lien\Support\NotarizationInstructions;
@@ -1341,29 +1340,18 @@ class FilingWizard extends Component
     }
 
     /**
-     * The county's recording fee and turnaround on step 4 (EREG-143), for a
-     * full-service lien or release: the fee checkout adds where the state or
-     * county data states it (null: "County recording fee billed at cost
-     * after recording."), and "Typically ... after we submit." for the
-     * county's recording method. Null on self-serve and for documents the
-     * county does not record.
-     *
-     * @return array{fee: ?int, turnaround: ?string}|null
+     * How long county recording typically takes, on step 4 (EREG-143), for a
+     * full-service lien or release: "Typically ... after we submit." for the
+     * county's recording method. Null on self-serve, for documents the
+     * county does not record, and when nothing is known.
      */
-    private function countyRecording(): ?array
+    private function recordingTurnaround(): ?string
     {
-        $slug = $this->deadline->documentType?->slug;
-
-        if (! CountyRecordingFee::applies($this->service_level, $slug)) {
+        if (! RecordingTurnaround::weRecord($this->service_level, $this->deadline->documentType?->slug)) {
             return null;
         }
 
-        $county = LienCountyKey::forFiling($this->filing);
-
-        return [
-            'fee' => CountyRecordingFee::cents($this->filingState(), $county, $slug),
-            'turnaround' => RecordingTurnaround::sentence($this->filingState(), $county),
-        ];
+        return RecordingTurnaround::sentence($this->filingState(), LienCountyKey::forFiling($this->filing));
     }
 
     /**
@@ -2461,7 +2449,7 @@ class FilingWizard extends Component
 
         return view('livewire.lien.filing-wizard', [
             'prerequisites' => $this->step === 1 ? $this->prerequisites() : [],
-            'countyRecording' => $serviceStep ? $this->countyRecording() : null,
+            'recordingTurnaround' => $serviceStep ? $this->recordingTurnaround() : null,
             'comparison' => $serviceStep ? [
                 'rows' => ServiceComparison::rows($slug, $this->filingState(), LienCountyKey::forFiling($this->filing)),
                 'prices' => ['self_serve' => (int) $pricing['self_serve'], 'full_service' => (int) $pricing['full_service']],

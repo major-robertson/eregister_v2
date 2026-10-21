@@ -3,6 +3,7 @@
 namespace App\Domains\Lien\Support;
 
 use App\Domains\Lien\Documents\LienDocumentRegistry;
+use App\Domains\Lien\Enums\ServiceLevel;
 
 /**
  * How long recording typically takes once we submit (EREG-143), for the
@@ -14,6 +15,16 @@ use App\Domains\Lien\Documents\LienDocumentRegistry;
  */
 final class RecordingTurnaround
 {
+    /** The documents the county records. */
+    public const KINDS = ['mechanics_lien', 'lien_release'];
+
+    /** Whether we record this order with the county: a full-service lien or release. */
+    public static function weRecord(?string $serviceLevel, ?string $kind): bool
+    {
+        return $serviceLevel === ServiceLevel::FullService->value
+            && in_array($kind, self::KINDS, true);
+    }
+
     /** "1 to 5 business days", or null when nothing is known for the method. */
     public static function words(string $state, ?string $countyKey = null): ?string
     {

@@ -43,8 +43,4 @@ return [
         'ron_accepted' => true,
         'source' => 'Documents need a complete notary acknowledgement; in June 2026 the register recorded an online-notarized notice of lien with the certificate of authenticity, and it e-records scans that carry the certificate (header, notes).',
     ],
-    // The fee to record the lien or release here (EREG-143), in cents: one
-    // value for both, or keyed by kind. Only a flat fee this file states; null
-    // is unknown. Unknown: $12 for up to two pages plus $5 per additional page (fee_note).
-    'recording_fee_cents' => null,
 ];

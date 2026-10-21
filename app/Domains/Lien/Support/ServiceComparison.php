@@ -3,14 +3,13 @@
 namespace App\Domains\Lien\Support;
 
 use App\Domains\Lien\Documents\LienDocumentRegistry;
-use App\Domains\Lien\Services\CountyRecordingFee;
 
 /**
  * Self-serve next to full service for one document in one state (and county,
  * when known), for the pricing page and the wizard's service step (EREG-143):
  * who prepares it, who signs it and how (EREG-142's signature requirements
- * and instruction sets), who records or sends it, the county recording fee,
- * the typical turnaround and what comes back.
+ * and instruction sets), who records or sends it, the typical turnaround
+ * and what comes back. No fee rows: the price is one flat price.
  * Unknown facts say so; nothing here is guessed.
  */
 final class ServiceComparison
@@ -40,7 +39,7 @@ final class ServiceComparison
     public static function rows(string $kind, string $state, ?string $countyKey = null): array
     {
         $state = strtoupper($state);
-        $recorded = in_array($kind, CountyRecordingFee::KINDS, true);
+        $recorded = in_array($kind, RecordingTurnaround::KINDS, true);
         $requirements = LienDocumentRegistry::isSupported($state)
             ? LienDocumentRegistry::signatureRequirements($state, $countyKey, $kind)
             : LienDocumentRegistry::SIGNATURE_REQUIREMENTS;
@@ -67,7 +66,6 @@ final class ServiceComparison
             ];
         }
 
-        $fee = CountyRecordingFee::cents($state, $countyKey, $kind);
         $turnaround = RecordingTurnaround::words($state, $countyKey);
 
         return [
@@ -77,10 +75,6 @@ final class ServiceComparison
                 $kind === 'mechanics_lien'
                     ? 'We record it with the county and send copies to every party the law requires.'
                     : 'We record it with the county.',
-            ),
-            self::row('County recording fee',
-                'You pay the county when you record it.',
-                $fee !== null ? '$'.number_format($fee / 100, 2).', added at checkout.' : 'Billed at cost after recording.',
             ),
             self::row('Typical turnaround',
                 $turnaround !== null ? "Typically {$turnaround} after you submit." : 'Not known for this county.',

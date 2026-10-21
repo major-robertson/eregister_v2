@@ -184,8 +184,4 @@ return [
             ],
         ],
     ],
-    // The fee to record the lien or release here (EREG-143), in cents: one
-    // value for both, or keyed by kind. Only a flat fee this file states; null
-    // is unknown. $43 per document, any number of pages, in every county (fee_note, C.R.S. § 30-1-103(1)).
-    'recording_fee_cents' => 4300,
 ];

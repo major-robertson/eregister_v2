@@ -16,8 +16,8 @@ use App\Domains\Lien\Waivers\WaiverStateRegistry;
  * 10pt minimum, page numbers) and the execution/service facts seeded in
  * lien_state_rules (notarization, verification type, who gets served and
  * how many days after recording). A state data file overrides only what the
- * statute makes different; a county file overrides only `recording`,
- * `signature_requirements` and `recording_fee_cents` and appends `notes`.
+ * statute makes different; a county file overrides only `recording` and
+ * `signature_requirements` and appends `notes`.
  *
  * Data file contract (every key optional; missing keys inherit the defaults):
  *
@@ -87,17 +87,9 @@ use App\Domains\Lien\Waivers\WaiverStateRegistry;
  *       'ron_accepted' => null,            // here. ron = remote online notarization.
  *       'source' => null,                  // a short note: where in this file each value comes from
  *   ],                                    // a kind may carry its own block (CA's release is notarized)
- *   'recording_fee_cents' => null,        // the office's fee to record the lien or the release (EREG-143), in
- *                                         // cents: one int for both, or ints keyed by kind
- *                                         // (['mechanics_lien' => 2500, 'lien_release' => 1000]). null is
- *                                         // unknown. Fill one only where this file already states a flat fee
- *                                         // (fee_note, notes, the header), never from a per-page schedule.
- *                                         // Full-service checkout passes it through (CountyRecordingFee).
  *
  * A county file may carry the same `signature_requirements` block; its
  * known (non-null) values win over the state's (signatureRequirements()).
- * Its `recording_fee_cents`, where known for the kind, wins over the
- * state's (recordingFeeCents()).
  *
  * Statutory clause text in these files and in resources/views/documents/lien/
  * is legally load-bearing: never edit it without re-checking the statute.
@@ -188,31 +180,8 @@ class LienDocumentRegistry
         $county['recording'] = $county['recording'] ?? [];
         $county['notes'] = $county['notes'] ?? [];
         $county['signature_requirements'] = $county['signature_requirements'] ?? [];
-        $county['recording_fee_cents'] = $county['recording_fee_cents'] ?? null;
 
         return $county;
-    }
-
-    /**
-     * The office's fee to record a lien or a release here (EREG-143), in
-     * cents: the county file's value for the kind when it states one, else
-     * the state file's. Null when unknown, and for the kinds that are not
-     * recorded (the notices, a demand letter).
-     */
-    public static function recordingFeeCents(string $state, ?string $countyKey, string $kind): ?int
-    {
-        if ((self::FAMILIES[$kind] ?? 'letter') !== 'instrument') {
-            return null;
-        }
-
-        $fee = fn (mixed $value): ?int => match (true) {
-            is_int($value) => $value,
-            is_array($value) && is_int($value[$kind] ?? null) => $value[$kind],
-            default => null,
-        };
-
-        return $fee(self::county($state, $countyKey)['recording_fee_cents'] ?? null)
-            ?? $fee(self::for($state)['recording_fee_cents'] ?? null);
     }
 
     /**
@@ -438,7 +407,6 @@ class LienDocumentRegistry
             'kinds' => $kinds,
             'wizard_fields' => [],
             'signature_requirements' => self::SIGNATURE_REQUIREMENTS,
-            'recording_fee_cents' => null,
         ];
     }
 

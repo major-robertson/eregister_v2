@@ -18,15 +18,10 @@
             </div>
         </dl>
 
-        @if ($recordingFeeLater || $turnaround)
-            {{-- County recording (EREG-143) --}}
-            <div class="-mt-3 mb-6 space-y-1 text-xs text-zinc-500">
-                @if ($recordingFeeLater)
-                    <p>{{ \App\Domains\Lien\Services\CountyRecordingFee::UNKNOWN_LINE }}</p>
-                @endif
-                @if ($turnaround)
-                    <p>{{ $turnaround }}</p>
-                @endif
+        @if ($turnaround)
+            {{-- How long county recording typically takes (EREG-143) --}}
+            <div class="-mt-3 mb-6 text-xs text-zinc-500">
+                <p>{{ $turnaround }}</p>
             </div>
         @endif
 

@@ -45,8 +45,4 @@ return [
         'ron_accepted' => null,
         'source' => 'The county\'s recording sheet asks for a notarized signature, and CSC lists Clinton County in its e-recording network (header).',
     ],
-    // The fee to record the lien or release here (EREG-143), in cents: one
-    // value for both, or keyed by kind. Only a flat fee this file states; null
-    // is unknown. $70 per lien or release as a standard land document (fee_note).
-    'recording_fee_cents' => 7000,
 ];

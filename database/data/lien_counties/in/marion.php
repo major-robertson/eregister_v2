@@ -32,8 +32,4 @@ return [
         'ron_accepted' => null,
         'source' => null,
     ],
-    // The fee to record the lien or release here (EREG-143), in cents: one
-    // value for both, or keyed by kind. Only a flat fee this file states; null
-    // is unknown. $35 flat per instrument (fee_note).
-    'recording_fee_cents' => 3500,
 ];

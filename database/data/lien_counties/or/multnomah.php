@@ -40,8 +40,4 @@ return [
         'ron_accepted' => null,
         'source' => 'A 2026 claim was rejected for an incomplete notary acknowledgement, then e-recorded from a resized phone scan of the signed copy (header).',
     ],
-    // The fee to record the lien or release here (EREG-143), in cents: one
-    // value for both, or keyed by kind. Only a flat fee this file states; null
-    // is unknown. Unknown: $76 for the first page plus $5 per additional page (fee_note).
-    'recording_fee_cents' => null,
 ];

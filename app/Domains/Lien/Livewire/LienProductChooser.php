@@ -5,7 +5,6 @@ namespace App\Domains\Lien\Livewire;
 use App\Domains\Lien\Models\LienStateRule;
 use App\Domains\Lien\Seo\LienStatePage;
 use App\Domains\Lien\Seo\NoticeOfIntentStatePage;
-use App\Domains\Lien\Services\CountyRecordingFee;
 use App\Domains\Lien\Support\LienPrerequisites;
 use App\Domains\Lien\Support\LienProducts;
 use App\Domains\Lien\Support\RecordingTurnaround;
@@ -147,7 +146,7 @@ class LienProductChooser extends Component
 
         return array_replace($card, [
             'deadline' => $this->deadline($key, $state, $page),
-            'turnaround' => in_array($key, CountyRecordingFee::KINDS, true) ? RecordingTurnaround::sentence($state) : null,
+            'turnaround' => in_array($key, RecordingTurnaround::KINDS, true) ? RecordingTurnaround::sentence($state) : null,
             'prerequisites' => $key === 'mechanics_lien' ? $this->prerequisites($state) : [],
         ]);
     }

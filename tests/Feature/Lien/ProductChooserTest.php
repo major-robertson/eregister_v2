@@ -5,21 +5,36 @@ use App\Domains\Lien\Documents\LienDocumentRegistry;
 use App\Domains\Lien\Engine\DeadlineCalculator;
 use App\Domains\Lien\Enums\ClaimantType;
 use App\Domains\Lien\Enums\FilingStatus;
+use App\Domains\Lien\Livewire\FilingCheckout;
 use App\Domains\Lien\Livewire\FilingWizard;
 use App\Domains\Lien\Livewire\LienProductChooser;
 use App\Domains\Lien\Livewire\ProjectForm;
 use App\Domains\Lien\Livewire\ProjectList;
 use App\Domains\Lien\Livewire\ProjectShow;
+use App\Domains\Lien\Models\LienDocumentType;
 use App\Domains\Lien\Models\LienFiling;
+use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
+use App\Domains\Lien\Models\LienProjectDeadline;
 use App\Domains\Lien\Models\LienStateRule;
 use App\Domains\Lien\Seo\LienStatePage;
 use App\Domains\Lien\Support\LienProductIntent;
+use App\Domains\Lien\Support\RecordingTurnaround;
+use App\Domains\Lien\Support\ServiceComparison;
+use App\Models\Payment;
 use App\Models\User;
 use App\Support\SignupIntent;
 use Carbon\CarbonImmutable;
+use Database\Seeders\PriceSeeder;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
+use Stripe\Customer;
+use Stripe\PaymentIntent;
+use Stripe\Service\CustomerService;
+use Stripe\Service\PaymentIntentService;
+use Stripe\StripeClient;
 
 /*
  * "What do you need to happen?" (EREG-143): the product chooser on the
@@ -72,6 +87,115 @@ if (! function_exists('chooserStart')) {
         app(DeadlineCalculator::class)->calculateForProject($project);
 
         return $project;
+    }
+
+    /**
+     * A general contractor's project in Johnson County, Kansas (e-records)
+     * unless $attributes say otherwise, last furnished August 14, with an
+     * owner and its deadlines.
+     */
+    function turnaroundProject(Business $business, array $attributes = []): LienProject
+    {
+        $project = LienProject::factory()->forBusiness($business)->create(array_merge([
+            'jobsite_state' => 'KS',
+            'jobsite_county' => 'Johnson County',
+            'claimant_type' => ClaimantType::Gc,
+            'property_class' => 'residential',
+            'apn' => '087-123-04-0-11-02-005.00',
+            'first_furnish_date' => '2026-07-01',
+            'last_furnish_date' => '2026-08-14',
+            'completion_date' => '2026-08-14',
+        ], $attributes));
+
+        app(DeadlineCalculator::class)->calculateForProject($project);
+
+        LienParty::create([
+            'business_id' => $business->id,
+            'project_id' => $project->id,
+            'role' => 'owner',
+            'name' => 'Test Owner',
+            'address1' => '123 Main St',
+            'city' => 'Anytown',
+            'state' => $project->jobsite_state,
+            'zip' => '12345',
+        ]);
+
+        return $project;
+    }
+
+    /**
+     * The project's deadline for a document (a mechanics lien unless given)
+     * and a full-service filing on it.
+     *
+     * @return array{0: ?LienProjectDeadline, 1: LienFiling}
+     */
+    function turnaroundFiling(LienProject $project, array $overrides = [], string $slug = 'mechanics_lien'): array
+    {
+        $deadline = $project->deadlines()
+            ->whereHas('documentType', fn ($q) => $q->where('slug', $slug))
+            ->latest('id')
+            ->first();
+
+        $filing = LienFiling::factory()->forProject($project)->create(array_merge([
+            'document_type_id' => $deadline?->document_type_id ?? LienDocumentType::where('slug', $slug)->value('id'),
+            'project_deadline_id' => $deadline?->id,
+            'status' => FilingStatus::Draft,
+            'service_level' => 'full_service',
+            'created_by_user_id' => auth()->id(),
+        ], $overrides));
+
+        return [$deadline, $filing];
+    }
+
+    /** Steps 1 to 3 from the project, on to the review step. */
+    function turnaroundReviewStep(LienProject $project, LienProjectDeadline $deadline): Testable
+    {
+        return Livewire::test(FilingWizard::class, ['project' => $project, 'deadline' => $deadline])
+            ->call('nextStep')
+            ->call('nextStep')
+            ->set('has_written_contract', '1')
+            ->fill(['base_contract_amount' => '5000', 'credits_deductions' => '0', 'payments_received' => '0'])
+            ->set('amount_claimed', 5000.00)
+            ->set('description_of_work', 'Furnishing all labor, materials, equipment, and services for roofing.')
+            ->set('stateAnswers', wizardStateAnswers())
+            ->call('nextStep')
+            ->assertHasNoErrors()
+            ->assertSet('step', 4);
+    }
+
+    /** A fake Stripe client whose payment intents service the test sets expectations on. */
+    function turnaroundStripe(): Mockery\MockInterface
+    {
+        $intents = Mockery::mock(PaymentIntentService::class);
+        $customers = Mockery::mock(CustomerService::class);
+        $customers->shouldReceive('create')->andReturn(Customer::constructFrom(['id' => 'cus_turnaround']));
+        $customers->shouldReceive('retrieve')->andReturn(Customer::constructFrom(['id' => 'cus_turnaround']));
+
+        $client = new class('sk_test_fake_for_tests') extends StripeClient
+        {
+            public array $fakes = [];
+
+            public function __get($name)
+            {
+                return $this->fakes[$name] ?? parent::__get($name);
+            }
+        };
+        $client->fakes = ['paymentIntents' => $intents, 'customers' => $customers];
+
+        app()->bind(StripeClient::class, fn () => $client);
+
+        return $intents;
+    }
+
+    function turnaroundIntent(string $id, int $amount): PaymentIntent
+    {
+        return PaymentIntent::constructFrom([
+            'id' => $id,
+            'client_secret' => $id.'_secret',
+            'amount' => $amount,
+            'status' => 'requires_payment_method',
+            'metadata' => [],
+        ]);
     }
 }
 
@@ -272,8 +396,11 @@ describe('pages', function () {
             ->assertSee('What do you need to happen?')
             ->assertSee(chooserStart('mechanics_lien'))
             ->assertSee('Choose a state above to compare self-serve and full service there.')
-            ->assertSee('Do your prices include county recording fees?')
-            ->assertDontSee('State fees included')
+            ->assertSee('Lien Filing Pricing | Flat Rates, State Fees Included')
+            ->assertSee('State fees included')
+            ->assertSee('Do your prices include state filing fees?')
+            ->assertDontSee('recording fee at cost')
+            ->assertDontSee('billed at cost', false)
             ->getContent();
 
         expect($html)->toMatch('/livewire(\.min)?\.js/');
@@ -288,12 +415,14 @@ describe('pages', function () {
             ->assertSeeInOrder([
                 'Self-serve and full service, side by side in Colorado',
                 'Who signs it', 'You print it and sign it in front of a notary.', 'You sign it in front of a notary and upload a scan.',
-                'County recording fee', 'You pay the county when you record it.', '$43.00, added at checkout.',
+                'Who records it', 'You record it with the county.',
                 'Typical turnaround', 'Typically 1 to 5 business days after you submit.', 'Typically 1 to 5 business days after we submit.',
             ])
+            ->assertDontSee('County recording fee')
+            ->assertDontSee('Overnight original')
             ->set('document', 'noi')
             ->assertSee('We mail it by certified mail.')
-            ->assertDontSee('$43.00, added at checkout.')
+            ->assertDontSee('Who records it')
             ->set('document', 'unknown')
             ->assertSet('document', 'mechanics_lien')
             ->set('state', 'HI')
@@ -315,6 +444,131 @@ describe('pages', function () {
             ->assertOk()
             ->assertSee('What do you need to happen?');
     });
+});
+
+describe('turnaround and comparison', function () {
+    beforeEach(function () {
+        Mail::fake();
+        config(['cashier.secret' => null]);
+        (new PriceSeeder)->run();
+
+        $this->business = chooserCustomer($this);
+    });
+
+    it('uses the county method, else the state method', function () {
+        // Johnson County e-records; Kansas offices take mail.
+        expect(RecordingTurnaround::sentence('KS', 'johnson'))->toBe('Typically 1 to 5 business days after we submit.')
+            ->and(RecordingTurnaround::sentence('KS', 'sedgwick'))->toBe('Typically 2 to 6 weeks after we submit.')
+            ->and(RecordingTurnaround::sentence('KS'))->toBe('Typically 2 to 6 weeks after we submit.')
+            ->and(RecordingTurnaround::words('ZZ'))->toBeNull()
+            ->and(RecordingTurnaround::weRecord('full_service', 'lien_release'))->toBeTrue()
+            ->and(RecordingTurnaround::weRecord('self_serve', 'mechanics_lien'))->toBeFalse()
+            ->and(RecordingTurnaround::weRecord('full_service', 'noi'))->toBeFalse();
+    });
+
+    it('takes a county file\'s own words, as the milestone email does', function () {
+        LienDocumentRegistry::fake('KS', ['county' => 'Test', 'recording' => ['filing_office' => ['method' => 'mail'], 'turnaround' => ['mail' => '3 to 4 weeks']]], 'test');
+
+        expect(RecordingTurnaround::sentence('KS', 'test'))->toBe('Typically 3 to 4 weeks after we submit.');
+
+        LienDocumentRegistry::fake('KS', ['county' => 'Test', 'recording' => ['turnaround' => 'about a week']], 'test');
+
+        expect(RecordingTurnaround::sentence('KS', 'test'))->toBe('Typically about a week after we submit.');
+    });
+
+    it('shows the turnaround and no county fee on a full-service lien\'s review step', function () {
+        $project = turnaroundProject($this->business);
+        [$deadline] = turnaroundFiling($project);
+
+        $component = turnaroundReviewStep($project, $deadline)
+            ->assertSeeInOrder(['Recording with the county', 'Typically 1 to 5 business days after we submit.'])
+            ->assertViewHas('recordingTurnaround', 'Typically 1 to 5 business days after we submit.')
+            ->assertDontSee('County recording fee')
+            ->assertDontSee('billed at cost');
+
+        $component->set('service_level', 'self_serve')
+            ->assertViewHas('recordingTurnaround', null)
+            ->assertDontSee('Recording with the county');
+
+        [$noticeDeadline] = turnaroundFiling($project, [], 'noi');
+
+        Livewire::test(FilingWizard::class, ['project' => $project, 'deadline' => $noticeDeadline])
+            ->set('step', 4)
+            ->assertViewHas('recordingTurnaround', null)
+            ->assertDontSee('Recording with the county');
+    });
+
+    it('compares self-serve and full service for the county, with no fee rows', function () {
+        $project = turnaroundProject($this->business);
+        [$deadline] = turnaroundFiling($project);
+
+        turnaroundReviewStep($project, $deadline)
+            ->assertSee('Self-serve and full service, side by side')
+            ->assertSeeInOrder([
+                'Who prepares it', 'We do, from your answers.', 'We do, and our team checks it before it goes out.',
+                'Who signs it', 'You print it and sign it in front of a notary.', 'You sign it in front of a notary and upload a scan.',
+                'Who records it', 'You record it with the county.', 'We record it with the county and send copies to every party the law requires.',
+                'Typical turnaround', 'Typically 1 to 5 business days after you submit.', 'Typically 1 to 5 business days after we submit.',
+                'What you get back', 'The document as a PDF, with filing instructions.', 'The recorded copy and proof of mailing.',
+            ])
+            ->assertDontSee('County recording fee')
+            ->assertDontSee('Overnight original');
+
+        expect(array_column(ServiceComparison::rows('mechanics_lien', 'KS', 'johnson'), 'label'))->toBe([
+            'Who prepares it', 'Who signs it', 'Who records it', 'Typical turnaround', 'What you get back',
+        ]);
+    });
+
+    it('builds the same rows for a notice, without the county rows', function () {
+        expect(ServiceComparison::rows('noi', 'KS', 'johnson'))->toBe([
+            ['label' => 'Who prepares it', 'self_serve' => 'We do, from your answers.', 'full_service' => 'We do, and our team checks it before it goes out.'],
+            ['label' => 'Who signs it', 'self_serve' => 'You print it and sign it.', 'full_service' => 'You sign it online. No printing or notary.'],
+            ['label' => 'Who sends it', 'self_serve' => 'You mail or deliver it.', 'full_service' => 'We mail it by certified mail.'],
+            ['label' => 'What you get back', 'self_serve' => 'The document as a PDF, with sending instructions.', 'full_service' => 'Proof of mailing.'],
+        ])
+            ->and(ServiceComparison::prices('mechanics_lien', 'NJ'))->toBe(['self_serve' => 9900, 'full_service' => 89900]);
+    });
+
+    it('says who overnights the original where the county needs it, with no charge for it', function () {
+        LienDocumentRegistry::fake('KS', [
+            'county' => 'Johnson',
+            'recording' => ['filing_office' => ['method' => 'mail']],
+            'signature_requirements' => ['wet_ink_original_required' => true, 'source' => 'Test county.'],
+        ], 'johnson');
+
+        $rows = collect(ServiceComparison::rows('mechanics_lien', 'KS', 'johnson'))->keyBy('label');
+
+        expect($rows)->not->toHaveKey('Overnight original')
+            ->and($rows)->not->toHaveKey('County recording fee')
+            ->and($rows['Who signs it']['full_service'])->toBe('You sign it in front of a notary and overnight the original to us.')
+            ->and($rows['Typical turnaround']['full_service'])->toBe('Typically 2 to 6 weeks after we submit.');
+    });
+
+    it('charges the flat price alone at checkout and shows the turnaround', function (array $attributes, array $filing, string $slug, int $amount, ?string $turnaround) {
+        $project = turnaroundProject($this->business, $attributes);
+        [, $order] = turnaroundFiling($project, ['status' => FilingStatus::AwaitingPayment, ...$filing], $slug);
+
+        turnaroundStripe()->shouldReceive('create')
+            ->once()
+            ->withArgs(fn (array $params) => $params['amount'] === $amount)
+            ->andReturn(turnaroundIntent('pi_flat', $amount));
+
+        $component = Livewire::test(FilingCheckout::class, ['filing' => $order])
+            ->assertSet('amountCents', $amount)
+            ->assertDontSee('County recording fee')
+            ->assertDontSee('billed at cost');
+
+        $turnaround === null
+            ? $component->assertDontSee('after we submit')
+            : $component->assertSee($turnaround);
+
+        expect(Payment::whereMorphedTo('purchasable', $order)->sole()->meta['items'])->toHaveCount(1);
+    })->with([
+        'full-service lien in Johnson County' => [[], ['must_submit_by' => '2026-12-11'], 'mechanics_lien', 29900, 'Typically 1 to 5 business days after we submit.'],
+        'full-service lien in a mail-in county' => [['jobsite_county' => 'Sedgwick'], ['must_submit_by' => '2026-12-07'], 'mechanics_lien', 29900, 'Typically 2 to 6 weeks after we submit.'],
+        'full-service release' => [[], [], 'lien_release', 9900, 'Typically 1 to 5 business days after we submit.'],
+        'self-serve lien' => [[], ['service_level' => 'self_serve'], 'mechanics_lien', 9900, null],
+    ]);
 });
 
 describe('wizard first step', function () {

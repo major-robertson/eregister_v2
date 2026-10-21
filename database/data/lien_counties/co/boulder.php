@@ -37,8 +37,4 @@ return [
         'ron_accepted' => null,
         'source' => 'Boulder takes e-recording through Simplifile, eRecording Partners, CSC and Indecomm (notes).',
     ],
-    // The fee to record the lien or release here (EREG-143), in cents: one
-    // value for both, or keyed by kind. Only a flat fee this file states; null
-    // is unknown. $43 per document from July 1, 2025 (header).
-    'recording_fee_cents' => 4300,
 ];

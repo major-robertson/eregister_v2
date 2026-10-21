@@ -172,8 +172,4 @@ return [
             ],
         ],
     ],
-    // The fee to record the lien or release here (EREG-143), in cents: one
-    // value for both, or keyed by kind. Only a flat fee this file states; null
-    // is unknown. $25 for the lien and $10 for a release, the same in every county (fee_note, S.C. Code Ann. § 8-21-310).
-    'recording_fee_cents' => ['mechanics_lien' => 2500, 'lien_release' => 1000],
 ];

@@ -557,6 +557,12 @@
                     </div>
 
                     <div>
+                        <flux:text class="text-sm text-gray-500">Property Leased</flux:text>
+                        <flux:text class="font-medium">{{ match ($filing->project->property_leased) { true => 'Yes', false => 'No', default => 'Not answered' } }}
+                        </flux:text>
+                    </div>
+
+                    <div>
                         <flux:text class="text-sm text-gray-500">Written Contract</flux:text>
                         <flux:text class="font-medium">{{ $filing->project->has_written_contract ? 'Yes' : 'No' }}
                         </flux:text>
@@ -611,6 +617,12 @@
                             @if (!empty($addressParts))
                             <flux:text class="mt-1 text-sm text-gray-500">{{ implode(', ', $addressParts) }}</flux:text>
                             @endif
+                            @if (!empty($party['address_same_as_jobsite_confirmed']))
+                            <flux:badge size="sm" color="amber" class="mt-1">Jobsite address confirmed as mailing address</flux:badge>
+                            @endif
+                            @if (!empty($party['address_confirmed_by_customer']))
+                            <flux:badge size="sm" color="amber" class="mt-1">Customer confirmed the address as typed</flux:badge>
+                            @endif
                             @if (!empty($party['email']) || !empty($party['phone']))
                             <div class="mt-1 flex gap-4 text-sm text-gray-500">
                                 @if (!empty($party['email']))
@@ -651,6 +663,17 @@
                             @endif
                             @if ($party->addressLine())
                             <flux:text class="mt-1 text-sm text-gray-500">{{ $party->addressLine() }}</flux:text>
+                            @endif
+                            {{-- The customer ticked "This is really their mailing address"; shown while the address is still the jobsite's --}}
+                            @if ($party->address_same_as_jobsite_confirmed && $party->matchesJobsite($filing->project))
+                            <flux:badge size="sm" color="amber" class="mt-1">Jobsite address confirmed as mailing address</flux:badge>
+                            @endif
+                            {{-- The ZIP code seems to be in another state (a warning only) --}}
+                            @if ($zipWarning = $party->zipStateWarning())
+                            <flux:text class="mt-1 text-sm text-amber-600">{{ $zipWarning }}</flux:text>
+                            @if ($party->address_confirmed_by_customer)
+                            <flux:badge size="sm" color="amber" class="mt-1">Customer confirmed the address as typed</flux:badge>
+                            @endif
                             @endif
                             @if ($party->email || $party->phone)
                             <div class="mt-1 flex gap-4 text-sm text-gray-500">
@@ -2905,13 +2928,17 @@
                 </flux:field>
                 <flux:field>
                     <flux:label>State</flux:label>
-                    <flux:input wire:model="partyForm.state" maxlength="2" />
+                    <flux:input wire:model.blur="partyForm.state" maxlength="2" />
                     <flux:error name="partyForm.state" />
                 </flux:field>
                 <flux:field>
                     <flux:label>ZIP</flux:label>
-                    <flux:input wire:model="partyForm.zip" />
+                    <flux:input wire:model.blur="partyForm.zip" />
                     <flux:error name="partyForm.zip" />
+                    {{-- A warning only: staff can save a ZIP code the table doesn't place in the state --}}
+                    @if ($zipWarning = \App\Domains\Lien\Support\ZipStateRanges::mismatchMessage($partyForm['zip'] ?? null, $partyForm['state'] ?? null))
+                    <flux:text class="mt-1 text-sm text-amber-600">{{ $zipWarning }}</flux:text>
+                    @endif
                 </flux:field>
                 <flux:field>
                     <flux:label>Email</flux:label>

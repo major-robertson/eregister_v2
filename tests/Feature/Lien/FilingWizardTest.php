@@ -520,12 +520,17 @@ describe('Filing Wizard contractor requirement', function () {
             ->assertHasErrors('subcontractor_required')
             ->assertSet('step', 2);
 
-        // Add the subcontractor -> advances
+        // Add the subcontractor (who hired the claimant, so with a full
+        // mailing address) -> advances
         LienParty::create([
             'business_id' => $this->business->id,
             'project_id' => $this->project->id,
             'role' => 'subcontractor',
             'name' => 'Bravo Subcontractor',
+            'address1' => '700 Trade St',
+            'city' => 'Mesa',
+            'state' => 'AZ',
+            'zip' => '85210',
         ]);
 
         $component->call('nextStep')

@@ -8,7 +8,7 @@ Review & Sign
 </x-mail::button>
 
 It only takes a few minutes: sign in to your eRegister account, review
-{{ $documentCount > 1 ? "all {$documentCount} letters" : 'the letter' }}, and adopt your signature.
+{{ $documentCount > 1 ? "all {$documentCount} {$documentNoun}s" : "the {$documentNoun}" }}, and adopt your signature.
 @if ($expiresOn)
 This signing link is valid through {{ $expiresOn }}.
 @endif

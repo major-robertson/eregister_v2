@@ -99,6 +99,28 @@ return [
             'intent' => 'I have reviewed the lien waiver listed below. By clicking Sign Lien Waiver, I intend to electronically sign it and be bound by its terms.',
         ],
 
+        // A lien document an admin uploaded as a draft (prelim notice, NOI,
+        // mechanics lien, release), e-signed in the app (EREG-141). The stored
+        // PDF is locked as it is; the signed copy appends a page with the
+        // signature and the Certificate of Completion. Where it can be used
+        // is set under uploaded_documents below.
+        'uploaded_document' => [
+            'title' => 'Lien document',
+            'document_id_prefix' => 'LD',
+            'supports_esign' => true,
+            'requires_notary' => false,
+            'signature_method' => 'typed_name',
+            'requires_recipient_acknowledgment' => false,
+            'allowed_signer_role' => 'filing_creator',
+            'consent_scope' => 'lien_documents',
+            'sign_button' => 'Sign document',
+            'intent' => 'I have reviewed the document shown below. By clicking Sign document, I intend to electronically sign it.',
+            // The signing emails say "review the document" (default: "letter").
+            'document_noun' => 'document',
+            // The review screen shows the locked PDF itself, not only its name.
+            'inline_preview' => true,
+        ],
+
         // Resale certificates use a reusable drawn signature (adopted once,
         // stamped on every generated certificate) rather than the one-shot
         // SignatureRequest ceremony, but consent is captured through the same
@@ -114,6 +136,24 @@ return [
             'consent_scope' => 'sales_tax_resale_certs',
         ],
 
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Where uploaded lien documents can be e-signed (EREG-141)
+    |--------------------------------------------------------------------------
+    |
+    | Notices (the lien document types listed in document_types) can be
+    | e-signed in every state. Mechanics liens and releases only in the states
+    | listed in lien_states (two-letter codes); everywhere else they take the
+    | notarization path. Major fills the list. County exceptions come with
+    | EREG-142. Demand letters are not affected by this.
+    | Read via App\Domains\Lien\Esign\UploadedDocumentSignable::isAllowedFor().
+    |
+    */
+    'uploaded_documents' => [
+        'document_types' => ['prelim_notice', 'noi'],
+        'lien_states' => [],
     ],
 
 ];

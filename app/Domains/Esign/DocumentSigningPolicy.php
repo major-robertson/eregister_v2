@@ -88,4 +88,21 @@ final class DocumentSigningPolicy
     {
         return $this->config['document_id_prefix'] ?? 'DOC';
     }
+
+    /**
+     * What the signing emails call one document ("review the letter").
+     */
+    public function documentNoun(): string
+    {
+        return $this->config['document_noun'] ?? 'letter';
+    }
+
+    /**
+     * Whether the review screen shows the locked PDF inline above the
+     * signature box (uploaded lien documents), not only its name.
+     */
+    public function showsInlinePreview(): bool
+    {
+        return (bool) ($this->config['inline_preview'] ?? false);
+    }
 }

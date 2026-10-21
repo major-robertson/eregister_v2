@@ -58,6 +58,15 @@ return [
         'notary' => true,
         'notary_form' => 'jurat',
     ],
+    // How the lien and its release are signed (EREG-142): only what this file
+    // already states; null is unknown. See LienDocumentRegistry.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => true,
+        'wet_ink_original_required' => false,
+        'ron_accepted' => true,
+        'source' => 'The notice is sworn before a notary (execution: jurat). A printed copy of an online-notarized notice or an e-recorded scan records with the Tenn. Code Ann. § 66-24-101(d)(3) certificate of authenticity (lien notes).',
+    ],
     'service' => [
         'recipients' => ['owner'],
         'days_after' => 0,

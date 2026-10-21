@@ -29,4 +29,13 @@ return [
         'Paper originals can be recorded in person (Monday to Friday, 8:30 a.m. to noon and 1:00 to 4:30 p.m.; an appointment is highly recommended) or by mail with a check payable to Pierce County Auditor.',
         'Nothing may be attached to the pages, not even a stapled notary certificate or legal description: use the certificate printed on the claim.',
     ],
+    // How documents are signed here (EREG-142): only what this file already
+    // states; null is unknown, and a known value wins over the state's.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => null,
+        'wet_ink_original_required' => false,
+        'ron_accepted' => null,
+        'source' => 'E-recording goes through the vendors under contract with the Auditor (notes).',
+    ],
 ];

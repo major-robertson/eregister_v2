@@ -17,7 +17,7 @@ use App\Domains\Lien\Waivers\WaiverStateRegistry;
  * lien_state_rules (notarization, verification type, who gets served and
  * how many days after recording). A state data file overrides only what the
  * statute makes different; a county file overrides only `recording` and
- * appends `notes`.
+ * `signature_requirements` and appends `notes`.
  *
  * Data file contract (every key optional; missing keys inherit the defaults):
  *
@@ -80,6 +80,16 @@ use App\Domains\Lien\Waivers\WaiverStateRegistry;
  *   'wizard_fields' => [                  // the filing wizard's extra questions per kind (EREG-137), keys of
  *       'mechanics_lien' => ['license_number', 'contract_date'], // config('lien.wizard_fields'); list one only
  *   ],                                    // where the document prints it or the deadline turns on it
+ *   'signature_requirements' => [         // how the lien and its release must be signed (EREG-142):
+ *       'esign_accepted' => null,          // true | false | null; null means unknown. Fill a value only
+ *       'notary_required' => null,         // where this file already states the fact (the execution
+ *       'wet_ink_original_required' => null, // block, a note, the header); never guess or research one
+ *       'ron_accepted' => null,            // here. ron = remote online notarization.
+ *       'source' => null,                  // a short note: where in this file each value comes from
+ *   ],                                    // a kind may carry its own block (CA's release is notarized)
+ *
+ * A county file may carry the same `signature_requirements` block; its
+ * known (non-null) values win over the state's (signatureRequirements()).
  *
  * Statutory clause text in these files and in resources/views/documents/lien/
  * is legally load-bearing: never edit it without re-checking the statute.
@@ -95,6 +105,20 @@ class LienDocumentRegistry
         'noi' => 'letter',
         'mechanics_lien' => 'instrument',
         'lien_release' => 'instrument',
+    ];
+
+    /**
+     * Every signature flag unknown: the shape of a data file's
+     * `signature_requirements` block and of signatureRequirements().
+     *
+     * @var array{esign_accepted: null, notary_required: null, wet_ink_original_required: null, ron_accepted: null, source: null}
+     */
+    public const SIGNATURE_REQUIREMENTS = [
+        'esign_accepted' => null,
+        'notary_required' => null,
+        'wet_ink_original_required' => null,
+        'ron_accepted' => null,
+        'source' => null,
     ];
 
     /** @var array<string, array<string, mixed>> */
@@ -142,16 +166,64 @@ class LienDocumentRegistry
         $path = database_path('data/lien_counties/'.strtolower($state).'/'.$key.'.php');
         $county = is_file($path) ? require $path : null;
 
-        if (is_array($county)) {
-            $county['state'] = $state;
-            $county['key'] = $key;
-            $county['recording'] = $county['recording'] ?? [];
-            $county['notes'] = $county['notes'] ?? [];
-        } else {
-            $county = null;
+        return self::$countyCache[$cacheKey] = is_array($county) ? self::countyEntry($state, $key, $county) : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $county
+     * @return array<string, mixed>
+     */
+    private static function countyEntry(string $state, string $key, array $county): array
+    {
+        $county['state'] = $state;
+        $county['key'] = $key;
+        $county['recording'] = $county['recording'] ?? [];
+        $county['notes'] = $county['notes'] ?? [];
+        $county['signature_requirements'] = $county['signature_requirements'] ?? [];
+
+        return $county;
+    }
+
+    /**
+     * How a document must be signed in this state and county (EREG-142):
+     * the state's `signature_requirements`, then the kind's own block, then
+     * the county file's known (non-null) values. Null means unknown. The
+     * state and county blocks describe the recorded instruments (the lien
+     * and its release); a letter kind (the notices, a demand letter) starts
+     * from unknown and takes only its own block. No kind: the lien.
+     *
+     * @return array{esign_accepted: ?bool, notary_required: ?bool, wet_ink_original_required: ?bool, ron_accepted: ?bool, source: ?string}
+     */
+    public static function signatureRequirements(string $state, ?string $countyKey, ?string $kind = null): array
+    {
+        $rules = self::for($state);
+        $instrument = $kind === null || (self::FAMILIES[$kind] ?? 'letter') === 'instrument';
+
+        $requirements = $instrument
+            ? array_replace(self::SIGNATURE_REQUIREMENTS, $rules['signature_requirements'])
+            : self::SIGNATURE_REQUIREMENTS;
+
+        $layers = [$kind === null ? [] : ($rules['kinds'][$kind]['signature_requirements'] ?? [])];
+
+        if ($instrument) {
+            $layers[] = self::county($state, $countyKey)['signature_requirements'] ?? [];
         }
 
-        return self::$countyCache[$cacheKey] = $county;
+        $sources = [$requirements['source']];
+
+        foreach ($layers as $layer) {
+            foreach (array_keys(self::SIGNATURE_REQUIREMENTS) as $flag) {
+                if ($flag !== 'source' && isset($layer[$flag])) {
+                    $requirements[$flag] = (bool) $layer[$flag];
+                }
+            }
+
+            $sources[] = $layer['source'] ?? null;
+        }
+
+        $requirements['source'] = implode(' ', array_unique(array_filter($sources, 'filled'))) ?: null;
+
+        return $requirements;
     }
 
     public static function isSupported(string $state): bool
@@ -176,6 +248,26 @@ class LienDocumentRegistry
     {
         self::$cache = [];
         self::$countyCache = [];
+    }
+
+    /**
+     * Used by tests: serve $data as the state's data file, or as the county
+     * file when $countyKey is given, instead of reading database/data, until
+     * flush().
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public static function fake(string $state, array $data, ?string $countyKey = null): void
+    {
+        $state = strtoupper($state);
+
+        if ($countyKey === null) {
+            self::$cache[$state] = self::merge(self::defaults($state), $data);
+
+            return;
+        }
+
+        self::$countyCache[$state.'/'.$countyKey] = self::countyEntry($state, $countyKey, $data);
     }
 
     /**
@@ -295,6 +387,7 @@ class LienDocumentRegistry
             'service' => $instrumentService,
             'kinds' => $kinds,
             'wizard_fields' => [],
+            'signature_requirements' => self::SIGNATURE_REQUIREMENTS,
         ];
     }
 
@@ -369,6 +462,11 @@ class LienDocumentRegistry
         $merged['recording']['filing_office'] = array_replace(
             $defaults['recording']['filing_office'],
             $overrides['recording']['filing_office'] ?? [],
+        );
+
+        $merged['signature_requirements'] = array_replace(
+            $defaults['signature_requirements'],
+            $overrides['signature_requirements'] ?? [],
         );
 
         $kinds = $defaults['kinds'];

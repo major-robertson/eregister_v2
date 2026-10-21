@@ -76,6 +76,15 @@ return [
         // shared execution block prints only the signature lines.
         'statement' => false,
     ],
+    // How the lien and its release are signed (EREG-142): only what this file
+    // already states; null is unknown. See LienDocumentRegistry.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => false,
+        'wet_ink_original_required' => null,
+        'ron_accepted' => null,
+        'source' => 'The claim and the satisfaction are verified under 18 Pa.C.S. § 4904, not notarized (execution; recording notes).',
+    ],
     'service' => [
         'recipients' => ['owner'],
         // "Within one (1) month after filing" (§ 1502(a)(2)).

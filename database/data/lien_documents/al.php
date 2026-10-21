@@ -67,6 +67,15 @@ return [
         'notary_form' => null,
         'statement' => false,
     ],
+    // How the lien and its release are signed (EREG-142): only what this file
+    // already states; null is unknown. See LienDocumentRegistry.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => true,
+        'wet_ink_original_required' => null,
+        'ron_accepted' => null,
+        'source' => 'The verified statement carries the Ala. Code § 35-11-213 affidavit and jurat; the affiant signs it before a notary (execution: notary_in_body; lien notes).',
+    ],
     'service' => [
         'recipients' => ['owner'],
         'days_after' => null,

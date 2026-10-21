@@ -23,4 +23,13 @@ return [
     'notes' => [
         'The Register of Deeds adds its own cover page, which becomes page 1 of the recorded instrument.',
     ],
+    // How documents are signed here (EREG-142): only what this file already
+    // states; null is unknown, and a known value wins over the state's.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => null,
+        'wet_ink_original_required' => null,
+        'ron_accepted' => null,
+        'source' => null,
+    ],
 ];

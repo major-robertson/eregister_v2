@@ -6,6 +6,7 @@ use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Enums\RecordingMethod;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienFilingEvent;
+use App\Domains\Lien\Support\NotarizationInstructions;
 use App\Domains\Lien\Support\PropertyLookup;
 use App\Mail\ClientResponded;
 use App\Mail\FilingMilestone;
@@ -845,6 +846,10 @@ class FilingShow extends Component
             'propertyEntry' => $propertyEntry,
             'propertyLookup' => $propertyEntry ? PropertyLookup::forFiling($this->filing) : null,
             'propertyConfirmation' => self::PROPERTY_CONFIRMATION,
+            // How to sign, while we wait on the customer's signature (EREG-142).
+            'signingInstructions' => in_array($this->filing->status, [FilingStatus::AwaitingEsign, FilingStatus::AwaitingNotary], true)
+                ? NotarizationInstructions::for($this->filing)
+                : null,
         ])->layout('components.layouts.portal', ['title' => $this->filing->documentType->name]);
     }
 }

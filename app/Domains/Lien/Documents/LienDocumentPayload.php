@@ -405,7 +405,7 @@ final class LienDocumentPayload
      *
      * @return array<string, mixed>
      */
-    private static function preparer(): array
+    public static function preparer(): array
     {
         $config = (array) config('lien.documents.preparer', []);
         $lines = array_values(array_filter(array_map('trim', (array) ($config['address_lines'] ?? []))));

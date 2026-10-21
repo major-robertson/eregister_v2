@@ -36,4 +36,13 @@ return [
         'Clinton County rejects documents with blank lines: before recording, fill in every line or line through any that does not apply, including the notary\'s identification line.',
         'Clinton County wants the legal description, the PIN and the property address on every land document, and a release must show the document number of the claim for lien it releases.',
     ],
+    // How documents are signed here (EREG-142): only what this file already
+    // states; null is unknown, and a known value wins over the state's.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => true,
+        'wet_ink_original_required' => false,
+        'ron_accepted' => null,
+        'source' => 'The county\'s recording sheet asks for a notarized signature, and CSC lists Clinton County in its e-recording network (header).',
+    ],
 ];

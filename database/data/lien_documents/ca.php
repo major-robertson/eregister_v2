@@ -35,6 +35,15 @@ return [
         'notary' => false,
         'notary_form' => null,
     ],
+    // How the lien and its release are signed (EREG-142): only what this file
+    // already states; null is unknown. See LienDocumentRegistry.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => false,
+        'wet_ink_original_required' => null,
+        'ron_accepted' => null,
+        'source' => 'The claim is signed and verified by the claimant and recorded without acknowledgment (Cal. Civ. Code § 8416(a), (b); execution: verified, no notary).',
+    ],
     'service' => [
         'recipients' => ['owner'],
         'days_after' => 0,
@@ -78,6 +87,11 @@ return [
                 'notary' => true,
                 'notary_form' => 'acknowledgment',
                 'notary_variant' => 'ca',
+            ],
+            // The claim is not notarized; the release is (EREG-142).
+            'signature_requirements' => [
+                'notary_required' => true,
+                'source' => 'The release is acknowledged before a notary (lien_release execution).',
             ],
             'service' => ['certificate_on_instrument' => false],
             'clauses' => [

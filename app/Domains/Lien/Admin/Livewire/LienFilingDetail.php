@@ -36,6 +36,7 @@ use App\Domains\Lien\Esign\UploadedDocumentSignable;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienFilingEvent;
 use App\Domains\Lien\Models\LienStateRule;
+use App\Domains\Lien\Support\NotarizationInstructions;
 use App\Mail\FilingMilestone;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
@@ -408,6 +409,8 @@ class LienFilingDetail extends Component
             'hasPriorEsign' => $signedEsignRequest !== null,
             'demandRecipients' => $demandRecipients,
             'documentPackage' => $documentPackage,
+            // The county's and state's signature requirements for this document (EREG-142).
+            'signatureRequirements' => NotarizationInstructions::requirements($this->lienFiling),
             'signedLetters' => $signedEsignRequest?->documents->whereNotNull('signed_at')->values() ?? collect(),
             'canSendEsign' => $canSendEsign,
             'esignDraft' => $esignDraft,

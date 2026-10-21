@@ -39,4 +39,13 @@ return [
         'The June 2026 liens gave the 19-digit Kansas Uniform Parcel Number; enter it as the project\'s parcel ID.',
         'The county fee schedule (2026) lists $21 for the first page and $17 for each added page of a recorded instrument, and $17 flat for liens for materials and services under K.S.A. 58-201.',
     ],
+    // How documents are signed here (EREG-142): only what this file already
+    // states; null is unknown, and a known value wins over the state's.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => true,
+        'wet_ink_original_required' => false,
+        'ron_accepted' => null,
+        'source' => 'The June 2026 lien was e-recorded with the Register of Deeds; the county asks for a complete notary certificate (header).',
+    ],
 ];

@@ -29,4 +29,13 @@ return [
         'Paper filings go to Clerk & Recorder Recording Dept., 200 W. 14th Ave., Denver, CO 80204, with a check payable to "Manager of Finance".',
         'Denver cannot reject or refund a document sent to the wrong county; confirm the county before submitting.',
     ],
+    // How documents are signed here (EREG-142): only what this file already
+    // states; null is unknown, and a known value wins over the state's.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => null,
+        'wet_ink_original_required' => false,
+        'ron_accepted' => null,
+        'source' => 'Denver takes e-recording through four submitters (notes).',
+    ],
 ];

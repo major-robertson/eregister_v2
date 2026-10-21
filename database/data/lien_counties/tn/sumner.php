@@ -34,4 +34,13 @@ return [
         'An instrument notarized online goes in with the certificate of authenticity page; the register recorded the June 2026 notice of lien that way.',
         'Sumner County also e-records through Simplifile, CSC and ePN; an e-recorded scan needs the certificate of authenticity page too.',
     ],
+    // How documents are signed here (EREG-142): only what this file already
+    // states; null is unknown, and a known value wins over the state's.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => true,
+        'wet_ink_original_required' => false,
+        'ron_accepted' => true,
+        'source' => 'Documents need a complete notary acknowledgement; in June 2026 the register recorded an online-notarized notice of lien with the certificate of authenticity, and it e-records scans that carry the certificate (header, notes).',
+    ],
 ];

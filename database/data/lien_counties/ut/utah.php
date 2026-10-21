@@ -29,4 +29,13 @@ return [
         'The county calls the parcel number a serial number and finds recorded documents by entry number.',
         'E-recording goes through an independent third-party vendor; the recorder also takes documents in person or by mail.',
     ],
+    // How documents are signed here (EREG-142): only what this file already
+    // states; null is unknown, and a known value wins over the state's.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => null,
+        'wet_ink_original_required' => false,
+        'ron_accepted' => null,
+        'source' => 'The recorder takes documents through an independent third-party e-recording vendor (header, notes).',
+    ],
 ];

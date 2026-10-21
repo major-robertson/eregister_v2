@@ -327,6 +327,60 @@
         </div>
     @endif
 
+    {{-- Timeline (EREG-130): what happened so far, oldest first. Status
+         milestones with their documents and tracking, our requests and the
+         customer's answers, uploads and draft reviews. --}}
+    @if($timeline !== [])
+        <x-ui.card>
+            <x-slot:header>Timeline</x-slot:header>
+
+            <ol class="space-y-5">
+                @foreach($timeline as $item)
+                    <li wire:key="timeline-{{ $loop->index }}" class="flex gap-3">
+                        <div class="flex items-center justify-center w-8 h-8 shrink-0 rounded-full bg-zinc-100 text-zinc-600">
+                            <flux:icon name="{{ $item['icon'] }}" class="w-4 h-4" />
+                        </div>
+
+                        <div class="min-w-0 flex-1 space-y-1">
+                            <div class="flex flex-wrap items-baseline justify-between gap-x-3">
+                                <p class="font-medium text-zinc-900">{{ $item['title'] }}</p>
+                                <p class="text-xs text-zinc-500">{{ $item['at']->eastern()->format('M j, Y \a\t g:i A T') }}</p>
+                            </div>
+
+                            @if($item['text'])
+                                <p class="text-sm text-zinc-600">{{ $item['text'] }}</p>
+                            @endif
+
+                            @if($item['quote'])
+                                <p class="rounded-lg bg-zinc-50 p-3 text-sm text-zinc-700 whitespace-pre-line">{{ $item['quote'] }}</p>
+                            @endif
+
+                            @foreach($item['details'] as $detail)
+                                <p class="text-sm text-zinc-600">{{ $detail }}</p>
+                            @endforeach
+
+                            @if($item['tracking'])
+                                <p class="text-sm text-zinc-600">
+                                    Tracking:
+                                    <a href="{{ $item['tracking']['url'] }}" target="_blank" rel="noopener" class="font-mono text-blue-600 hover:underline">{{ $item['tracking']['number'] }}</a>
+                                </p>
+                            @endif
+
+                            @foreach($item['links'] as $link)
+                                <a href="{{ $link['url'] }}"
+                                   target="_blank"
+                                   class="flex items-center gap-2 text-sm text-blue-600 hover:underline">
+                                    <flux:icon name="arrow-down-tray" class="w-4 h-4" />
+                                    {{ $link['label'] }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </li>
+                @endforeach
+            </ol>
+        </x-ui.card>
+    @endif
+
     {{-- Self-Serve Status Update (for non-full-service filings) --}}
     @if(!$filing->isFullService() && $filing->isPaid() && in_array($filing->status->value, ['paid', 'mailed', 'recorded']))
         <x-ui.card>

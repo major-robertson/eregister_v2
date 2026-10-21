@@ -10,6 +10,7 @@ use App\Domains\Lien\Enums\RecordingMethod;
 use App\Domains\Lien\Enums\ServiceLevel;
 use App\Domains\Lien\Exceptions\InvalidStatusTransitionException;
 use App\Mail\FilingActionRequested;
+use App\Mail\FilingMilestone;
 use App\Models\EmailSequence;
 use App\Models\Payment;
 use App\Models\User;
@@ -171,6 +172,18 @@ class LienFiling extends Model implements HasMedia
         // uploaded_by_user_id and source ('upload', or 'generated' when
         // copied from the generated document).
         $this->addMediaCollection('drafts')
+            ->acceptsMimeTypes(['application/pdf'])
+            ->useDisk('s3');
+
+        // The county's recorded copy and our proof of service, uploaded on
+        // the admin status form at Recorded / Mailed / Complete (EREG-130),
+        // emailed with the milestone email and linked on the filing page.
+        // Every upload is kept; the newest is the one emailed.
+        $this->addMediaCollection('recorded')
+            ->acceptsMimeTypes(['application/pdf'])
+            ->useDisk('s3');
+
+        $this->addMediaCollection('proof_of_service')
             ->acceptsMimeTypes(['application/pdf'])
             ->useDisk('s3');
     }
@@ -469,7 +482,10 @@ class LienFiling extends Model implements HasMedia
      * it is stored in client_request_json and emailed to the filing's creator
      * at once (see ChangeFilingStatus). Leaving a waiting status closes the
      * open request. Any status change clears the "customer emailed" flag
-     * (recordCustomerEmail).
+     * (recordCustomerEmail). Moving a full-service filing to Submitted for
+     * Recording, Recorded, Mailed to Parties or Complete emails the customer
+     * (FilingMilestone), with the recorded copy / proof of service that
+     * ChangeFilingStatus stored just before.
      *
      * @throws InvalidStatusTransitionException
      */
@@ -485,9 +501,12 @@ class LienFiling extends Model implements HasMedia
         $updates = ['status' => $newStatus];
         if ($newStatus === FilingStatus::Paid && ! $this->paid_at) {
             $updates['paid_at'] = now();
-        } elseif ($newStatus === FilingStatus::Mailed && ! $this->mailed_at) {
-            $updates['mailed_at'] = now();
-            if (isset($meta['tracking_number'])) {
+        } elseif ($newStatus === FilingStatus::Mailed) {
+            if (! $this->mailed_at) {
+                $updates['mailed_at'] = now();
+            }
+            // A tracking number given now wins, also when mailing again.
+            if (filled($meta['tracking_number'] ?? null)) {
                 $updates['mailing_tracking_number'] = $meta['tracking_number'];
             }
         } elseif ($newStatus === FilingStatus::Recorded && ! $this->recorded_at) {
@@ -547,6 +566,27 @@ class LienFiling extends Model implements HasMedia
 
         if ($opensRequest) {
             $this->sendClientRequest();
+        }
+
+        $this->sendMilestoneEmail($newStatus);
+    }
+
+    /**
+     * Email the filing's creator that it reached Submitted for Recording,
+     * Recorded, Mailed to Parties or Complete (FilingMilestone::sendsFor:
+     * full-service filings only). Queued after commit, so a rolled-back
+     * change sends nothing.
+     */
+    protected function sendMilestoneEmail(FilingStatus $status): void
+    {
+        if (! FilingMilestone::sendsFor($this, $status)) {
+            return;
+        }
+
+        $user = $this->createdBy ?? User::find($this->created_by_user_id);
+
+        if ($user) {
+            Mail::to($user)->queue(new FilingMilestone($this, $status));
         }
     }
 
@@ -624,6 +664,19 @@ class LienFiling extends Model implements HasMedia
         return $mediaId
             ? $this->media()->where('collection_name', 'requests')->whereKey($mediaId)->first()
             : null;
+    }
+
+    /**
+     * The newest recorded copy ('recorded') or proof of service
+     * ('proof_of_service'). Queried, like clientRequestAttachment(), so the
+     * milestone email built right after the upload finds it.
+     */
+    public function latestMilestoneFile(string $collection): ?Media
+    {
+        return $this->media()
+            ->where('collection_name', $collection)
+            ->orderByDesc('id')
+            ->first();
     }
 
     /**

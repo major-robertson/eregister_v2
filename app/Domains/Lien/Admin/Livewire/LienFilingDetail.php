@@ -33,6 +33,7 @@ use App\Domains\Lien\Esign\Actions\SendDemandLetterForSignature;
 use App\Domains\Lien\Esign\Actions\SendDemandLetterReminder;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienStateRule;
+use App\Mail\FilingMilestone;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -60,6 +61,18 @@ class LienFilingDetail extends Component
     public string $customerMessage = '';
 
     public $customerAttachment = null;
+
+    /**
+     * Milestone documents on the status form (EREG-130), emailed to the
+     * customer with the milestone email: the county's recorded copy
+     * (Recorded, Complete), our proof of service (Mailed, Complete), and the
+     * certified mail tracking number (Mailed). All optional.
+     */
+    public $recordedCopy = null;
+
+    public $proofOfService = null;
+
+    public string $trackingNumber = '';
 
     public string $comment = '';
 
@@ -344,6 +357,14 @@ class LienFilingDetail extends Component
             ->sortByDesc('id')
             ->values();
 
+        // Recorded copies and proofs of service uploaded on the status form
+        // (EREG-130), newest first; also keyed by id for the activity log.
+        $milestoneFiles = $this->lienFiling->media()
+            ->whereIn('collection_name', ['recorded', 'proof_of_service'])
+            ->orderByDesc('id')
+            ->get()
+            ->keyBy('id');
+
         return view('lien.admin.filing-detail', [
             'filing' => $this->lienFiling,
             // The column the board shows (an untouched full-service order is
@@ -375,6 +396,7 @@ class LienFilingDetail extends Component
             'clientResponses' => $clientResponses,
             'requestFiles' => $requestFiles,
             'customerUploads' => $customerUploads,
+            'milestoneFiles' => $milestoneFiles,
             'drafts' => $drafts,
             'draftOutcomes' => $draftOutcomes,
             'draftUploaders' => $draftUploaders,
@@ -564,6 +586,12 @@ class LienFilingDetail extends Component
         // message by email at once, so it is required.
         $isCustomerRequest = FilingStatus::tryFrom($this->newStatus)?->isWaitingOnCustomer() ?? false;
 
+        // Milestone documents, emailed with the milestone email.
+        $takesRecordedCopy = in_array($this->newStatus, [FilingStatus::Recorded->value, FilingStatus::Complete->value], true);
+        $takesProofOfService = in_array($this->newStatus, [FilingStatus::Mailed->value, FilingStatus::Complete->value], true);
+        $isRecorded = $this->newStatus === FilingStatus::Recorded->value;
+        $isMailed = $this->newStatus === FilingStatus::Mailed->value;
+
         $rules = [
             'newStatus' => ['required', Rule::enum(FilingStatus::class)],
             'note' => ['nullable', 'string', 'max:1000'],
@@ -581,40 +609,71 @@ class LienFilingDetail extends Component
             $rules['customerAttachment'] = ['nullable', 'file', 'mimes:pdf', 'max:10240'];
         }
 
+        if ($isRecorded) {
+            $rules['recordingReference'] = ['nullable', 'string', 'max:255'];
+        }
+
+        if ($takesRecordedCopy) {
+            $rules['recordedCopy'] = ['nullable', 'file', 'mimes:pdf', 'max:10240'];
+        }
+
+        if ($takesProofOfService) {
+            $rules['proofOfService'] = ['nullable', 'file', 'mimes:pdf', 'max:10240'];
+        }
+
+        if ($isMailed) {
+            $rules['trackingNumber'] = ['nullable', 'string', 'max:100'];
+        }
+
         $this->validate($rules, [
             'customerMessage.required' => 'Write the message for the customer. It is emailed to them when you save.',
             'customerMessage.max' => 'Keep the message under 2,000 characters.',
             'customerAttachment.file' => 'The attachment did not upload. Please try again.',
             'customerAttachment.mimes' => 'The attachment must be a PDF.',
             'customerAttachment.max' => 'The attachment must be 10 MB or smaller.',
+            'recordedCopy.file' => 'The recorded copy did not upload. Please try again.',
+            'recordedCopy.mimes' => 'The recorded copy must be a PDF.',
+            'recordedCopy.max' => 'The recorded copy must be 10 MB or smaller.',
+            'proofOfService.file' => 'The proof of service did not upload. Please try again.',
+            'proofOfService.mimes' => 'The proof of service must be a PDF.',
+            'proofOfService.max' => 'The proof of service must be 10 MB or smaller.',
+            'trackingNumber.max' => 'Keep the tracking number under 100 characters.',
         ]);
+
+        $newStatus = FilingStatus::from($this->newStatus);
+        $sendsMilestone = FilingMilestone::sendsFor($this->lienFiling, $newStatus);
 
         $action = app(ChangeFilingStatus::class);
         $action->execute(
             filing: $this->lienFiling,
-            newStatus: FilingStatus::from($this->newStatus),
+            newStatus: $newStatus,
             note: $this->note ?: null,
             recordingMethod: $isRecordingTransition && $this->recordingMethod
                 ? RecordingMethod::from($this->recordingMethod)
                 : null,
             recordingProvider: $isRecordingTransition ? ($this->recordingProvider ?: null) : null,
-            recordingReference: $isRecordingTransition ? ($this->recordingReference ?: null) : null,
+            recordingReference: $isRecordingTransition || $isRecorded ? ($this->recordingReference ?: null) : null,
             recordingSubmittedAt: $isRecordingTransition && $this->recordingSubmittedAt
                 ? Carbon::parse($this->recordingSubmittedAt, config('app.display_timezone'))->utc()
                 : null,
             customerMessage: $isCustomerRequest ? $this->customerMessage : null,
             attachment: $isCustomerRequest ? $this->customerAttachment : null,
+            recordedCopy: $takesRecordedCopy ? $this->recordedCopy : null,
+            proofOfService: $takesProofOfService ? $this->proofOfService : null,
+            trackingNumber: $isMailed ? ($this->trackingNumber ?: null) : null,
         );
 
         $this->lienFiling->refresh();
         $this->hydrateRecordingFields();
-        $this->reset(['newStatus', 'note', 'customerMessage', 'customerAttachment']);
+        $this->reset(['newStatus', 'note', 'customerMessage', 'customerAttachment', 'recordedCopy', 'proofOfService', 'trackingNumber']);
 
         $recipient = $this->lienFiling->createdBy?->email;
 
-        session()->flash('success', $isCustomerRequest && $recipient
-            ? "Status updated. The message was emailed to {$recipient}."
-            : 'Status updated successfully.');
+        session()->flash('success', match (true) {
+            $isCustomerRequest && $recipient !== null => "Status updated. The message was emailed to {$recipient}.",
+            $sendsMilestone && $recipient !== null => "Status updated. We emailed {$recipient}.",
+            default => 'Status updated successfully.',
+        });
     }
 
     /**

@@ -11,6 +11,8 @@
     $rule = $page->rule;
     $a = $page->article;
     $referral = $page->requiresAttorney();
+    // How the lien is signed, from the state's data file (EREG-142); unknown says nothing.
+    $signatureLines = $referral ? [] : $page->signatureLines();
     $deadlineSections = [
         'prelim_notice' => ['title' => 'Preliminary notice deadline', 'blurb' => 'The notice that preserves lien rights before any payment problem exists.'],
         'noi' => ['title' => 'Notice of intent to lien', 'blurb' => 'The final warning before a lien is recorded.'],
@@ -423,6 +425,9 @@
         </div>
         @else
         <h2 class="text-3xl font-bold tracking-tight text-zinc-900">File your {{ $name }} mechanics lien</h2>
+        @if ($signatureLines)
+        <p class="mx-auto mt-2 max-w-2xl text-sm font-medium text-zinc-700">{{ implode(' ', $signatureLines) }}</p>
+        @endif
         <p class="mx-auto mt-4 max-w-2xl text-zinc-600">
             We calculate the {{ $name }} deadlines from your project dates, prepare the lien on the correct form, and handle recording.
             Self-serve from ${{ $page->selfServePrice() }}, or full service with recording and notices handled for you from ${{ $page->fullServicePrice() }}.

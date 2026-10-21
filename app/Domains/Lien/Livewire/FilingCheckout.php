@@ -5,6 +5,7 @@ namespace App\Domains\Lien\Livewire;
 use App\Domains\Business\Models\Business;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Services\LienPaymentService;
+use App\Domains\Lien\Services\OvernightOriginalFee;
 use App\Domains\Lien\Services\RushTier;
 use App\Enums\PaymentStatus;
 use App\Models\EmailSequence;
@@ -31,7 +32,8 @@ class FilingCheckout extends Component
 
     /**
      * What the payment charges, one row per price: the service, then any
-     * rush fee. Stored on the payment as meta['items'].
+     * rush fee, then any overnight original fee. Stored on the payment as
+     * meta['items'].
      *
      * @var list<array{price_id: int, product_key: string, variant_key: string, label: string, amount_cents: int}>
      */
@@ -73,7 +75,7 @@ class FilingCheckout extends Component
             return;
         }
 
-        $this->initializePayment($rushPrice);
+        $this->initializePayment($rushPrice, OvernightOriginalFee::priceFor($this->filing));
     }
 
     /**
@@ -113,11 +115,12 @@ class FilingCheckout extends Component
     }
 
     /**
-     * The service price, then the rush fee when one applies.
+     * The service price, then the rush fee when one applies, then the
+     * overnight original fee for a county that needs the original (EREG-142).
      *
      * @return list<array{price_id: int, product_key: string, variant_key: string, label: string, amount_cents: int}>
      */
-    protected function lineItems(Price $price, ?Price $rushPrice): array
+    protected function lineItems(Price $price, ?Price $rushPrice, ?Price $overnightPrice = null): array
     {
         $serviceLevel = $this->filing->service_level?->label();
 
@@ -139,20 +142,31 @@ class FilingCheckout extends Component
             ];
         }
 
+        if ($overnightPrice) {
+            $items[] = [
+                'price_id' => $overnightPrice->id,
+                'product_key' => $overnightPrice->product_key,
+                'variant_key' => $overnightPrice->variant_key,
+                'label' => OvernightOriginalFee::LABEL,
+                'amount_cents' => $overnightPrice->amount_cents,
+            ];
+        }
+
         return $items;
     }
 
-    protected function initializePayment(?Price $rushPrice): void
+    protected function initializePayment(?Price $rushPrice, ?Price $overnightPrice = null): void
     {
         // 1. Get pricing from single source of truth (state-aware for liens),
-        //    plus the rush fee. Recomputed on every visit; a reused payment
-        //    row or PaymentIntent is brought in line below.
+        //    plus the rush and overnight original fees. Recomputed on every
+        //    visit; a reused payment row or PaymentIntent is brought in line
+        //    below.
         $price = Price::resolveLien(
             $this->filing->documentType->slug,
             $this->filing->service_level->value,
             $this->filing->jurisdiction_state,
         );
-        $this->items = $this->lineItems($price, $rushPrice);
+        $this->items = $this->lineItems($price, $rushPrice, $overnightPrice);
         $expected = array_sum(array_column($this->items, 'amount_cents'));
         $this->amountCents = $expected;
 

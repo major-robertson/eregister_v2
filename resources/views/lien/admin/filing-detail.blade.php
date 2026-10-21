@@ -286,6 +286,15 @@
                             @endif
                         </flux:badge>
                     </div>
+
+                    {{-- From the state and county data files (EREG-142), so it is seen before drafting. --}}
+                    <div class="sm:col-span-2">
+                        <flux:text class="text-sm text-gray-500">Signature Requirements</flux:text>
+                        <flux:text class="font-medium">{{ \App\Domains\Lien\Support\NotarizationInstructions::summary($signatureRequirements) }}</flux:text>
+                        @if ($signatureRequirements['source'])
+                        <flux:text class="text-xs text-gray-500">{{ $signatureRequirements['source'] }}</flux:text>
+                        @endif
+                    </div>
                 </div>
             </div>
 

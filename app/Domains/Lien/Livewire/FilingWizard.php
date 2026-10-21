@@ -22,7 +22,9 @@ use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienProjectDeadline;
 use App\Domains\Lien\Models\LienStateRule;
 use App\Domains\Lien\Seo\NoticeOfIntentStatePage;
+use App\Domains\Lien\Services\OvernightOriginalFee;
 use App\Domains\Lien\Services\RushTier;
+use App\Domains\Lien\Support\NotarizationInstructions;
 use App\Domains\Lien\Support\PartyAddress;
 use App\Domains\Lien\Support\PropertyLookup;
 use App\Domains\Lien\Support\WizardFields;
@@ -1321,6 +1323,42 @@ class FilingWizard extends Component
     }
 
     /**
+     * How the chosen document is signed, shown on step 4 (EREG-142), or
+     * null when nothing is known: "Requires a notarized signature." where
+     * the state or county data says so; on a full-service order in a county
+     * that needs the original signed document, that line, the overnight
+     * original fee and the date the original must reach us (one business
+     * day before the submit-by date, once it is known and not yet past).
+     *
+     * @param  array<string, mixed>|null  $gate  deadlineGate()
+     * @return array{document: string, lines: list<string>, original: bool, overnight: ?Price, originalDueBy: ?CarbonImmutable}|null
+     */
+    private function signing(?array $gate): ?array
+    {
+        $requirements = NotarizationInstructions::requirements($this->filing);
+        $original = OvernightOriginalFee::applies($this->service_level, $requirements);
+
+        $lines = array_values(array_filter(
+            NotarizationInstructions::lines($requirements),
+            fn (string $line): bool => $original || $line !== NotarizationInstructions::ORIGINAL_LINE,
+        ));
+
+        if ($lines === []) {
+            return null;
+        }
+
+        $dueBy = $original ? NotarizationInstructions::originalDueBy($gate['mustSubmitBy'] ?? null) : null;
+
+        return [
+            'document' => $this->deadline->documentType->name,
+            'lines' => $lines,
+            'original' => $original,
+            'overnight' => $original ? OvernightOriginalFee::price() : null,
+            'originalDueBy' => $dueBy !== null && ! $dueBy->lessThan(now()->eastern()->startOfDay()) ? $dueBy : null,
+        ];
+    }
+
+    /**
      * The project's mechanics lien deadline row (the one with a rule, most
      * recently calculated), or null.
      */
@@ -2404,6 +2442,7 @@ class FilingWizard extends Component
             'deadlineBlocked' => $deadlineBlocked,
             'rushFee' => $deadlineBlocked ? null : $this->rushFee($deadlineGate),
             'rushUpsell' => $this->step === 4 && ! $this->requiresAttorneyReferral && ! $deadlineBlocked ? $this->rushUpsell($deadlineGate) : null,
+            'signing' => $this->step === 4 && ! $deadlineBlocked && ! $this->requiresAttorneyReferral ? $this->signing($deadlineGate) : null,
             'demandLetter' => $deadlineBlocked ? $this->demandLetterOffer() : null,
             'propertyRequired' => $this->requiresPropertyIdentification(),
             'propertyLookup' => $this->step === 1 ? PropertyLookup::forFiling($this->filing) : null,

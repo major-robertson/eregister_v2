@@ -11,6 +11,8 @@
     $blankUrl = $page->blankUrl();
     $office = $page->officePhrase();
     $documentName = $page->documentName();
+    // How the release is signed, from the state's data file (EREG-142); unknown says nothing.
+    $signatureLines = $page->lien->signatureLines('lien_release');
 @endphp
 
 <x-seo.service
@@ -140,6 +142,9 @@
 <section class="bg-white py-20">
     <div class="mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
         <h2 class="text-3xl font-bold tracking-tight text-zinc-900">Release your {{ $name }} lien</h2>
+        @if ($signatureLines)
+        <p class="mx-auto mt-2 max-w-2xl text-sm font-medium text-zinc-700">{{ implode(' ', $signatureLines) }}</p>
+        @endif
         <p class="mx-auto mt-4 max-w-2xl text-zinc-600">
             We prepare the release from your lien's recording details. Self-serve from ${{ $page->selfServePrice() }}: you review, sign and record it.
             Full service from ${{ $page->fullServicePrice() }}: we handle the recording for you.

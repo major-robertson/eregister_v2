@@ -1047,6 +1047,33 @@
                         </div>
                     @endif
 
+                    @if($signing)
+                        {{-- How the document is signed, from the state and county data (EREG-142) --}}
+                        <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 space-y-2">
+                            <div class="flex items-center gap-2 font-medium">
+                                <flux:icon name="pencil-square" class="w-4 h-4 text-zinc-500" />
+                                {{ $signing['document'] }}
+                            </div>
+                            @foreach($signing['lines'] as $line)
+                                <div class="text-sm text-zinc-600 dark:text-zinc-400">{{ $line }}</div>
+                            @endforeach
+                            @if($signing['overnight'])
+                                <div class="flex items-center justify-between font-medium">
+                                    <span>{{ \App\Domains\Lien\Services\OvernightOriginalFee::LABEL }}</span>
+                                    <span>{{ $signing['overnight']->formattedAmount() }}</span>
+                                </div>
+                            @endif
+                            @if($signing['original'])
+                                <div class="text-sm text-zinc-600 dark:text-zinc-400">
+                                    Overnight the original to us.
+                                    @if($signing['originalDueBy'])
+                                        Your original must reach us by {{ $signing['originalDueBy']->format('F j, Y') }}.
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+
                     @if($noiBlock)
                         <flux:callout color="red" icon="exclamation-circle">
                             <flux:callout.text>

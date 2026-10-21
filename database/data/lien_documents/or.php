@@ -61,6 +61,15 @@ return [
         'notary' => true,
         'notary_form' => 'jurat',
     ],
+    // How the lien and its release are signed (EREG-142): only what this file
+    // already states; null is unknown. See LienDocumentRegistry.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => true,
+        'wet_ink_original_required' => false,
+        'ron_accepted' => null,
+        'source' => 'The claim is sworn before a notary (execution: jurat). Recording notes: "E-record a clean, letter-size scan of the signed original."',
+    ],
     'service' => [
         'recipients' => ['owner', 'lender'],
         'days_after' => 20,

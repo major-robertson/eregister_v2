@@ -28,4 +28,13 @@ return [
         'The Recording Division is open Monday to Thursday and closed Fridays; do not leave a Boulder deadline to a Friday.',
         'Paper filings need a check payable to "Boulder County Clerk & Recorder"; a check to the wrong payee sends the whole package back.',
     ],
+    // How documents are signed here (EREG-142): only what this file already
+    // states; null is unknown, and a known value wins over the state's.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => null,
+        'wet_ink_original_required' => false,
+        'ron_accepted' => null,
+        'source' => 'Boulder takes e-recording through Simplifile, eRecording Partners, CSC and Indecomm (notes).',
+    ],
 ];

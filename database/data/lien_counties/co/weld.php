@@ -28,4 +28,13 @@ return [
         'Paper filings by mail go to Clerk & Recorder Recording Department, PO Box 459, Greeley, CO 80632; the county contact page lists PO Box 758, so confirm with the Recording Department (970-304-6530) before mailing.',
         'Weld asks for a 1-inch top and bottom margin; these documents have 1-inch margins all around.',
     ],
+    // How documents are signed here (EREG-142): only what this file already
+    // states; null is unknown, and a known value wins over the state's.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => null,
+        'wet_ink_original_required' => false,
+        'ron_accepted' => null,
+        'source' => 'Weld takes e-recording through Simplifile, eRecording Partners and CSC (notes).',
+    ],
 ];

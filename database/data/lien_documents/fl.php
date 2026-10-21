@@ -34,6 +34,15 @@ return [
         'notary_form' => 'jurat',
         'notary_variant' => 'fl',
     ],
+    // How the lien and its release are signed (EREG-142): only what this file
+    // already states; null is unknown. See LienDocumentRegistry.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => true,
+        'wet_ink_original_required' => null,
+        'ron_accepted' => true,
+        'source' => 'The claim is sworn before a notary (execution: jurat), and Florida notary certificates say "by means of physical presence or online notarization" (Fla. Stat. § 117.05(13); header).',
+    ],
     'service' => [
         'recipients' => ['owner'],
         'days_after' => 15,

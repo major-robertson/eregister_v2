@@ -24,4 +24,13 @@ return [
         'The Prothonotary takes cash, money orders, business checks and credit cards (2.5% fee), not personal checks.',
         'The archive\'s Butler County samples use the same docket caption as the generated claim (court, Claimant v. Owner, number and year).',
     ],
+    // How documents are signed here (EREG-142): only what this file already
+    // states; null is unknown, and a known value wins over the state's.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => null,
+        'wet_ink_original_required' => null,
+        'ron_accepted' => null,
+        'source' => null,
+    ],
 ];

@@ -176,6 +176,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Overnight Original Fee
+    |--------------------------------------------------------------------------
+    |
+    | A full-service lien or release in a county that needs the original
+    | signed document (signature_requirements.wet_ink_original_required in
+    | database/data/lien_documents or lien_counties) pays this on top of the
+    | service price for the overnight return of the original to us
+    | (App\Domains\Lien\Services\OvernightOriginalFee; never on self-serve).
+    | The amount (cents) seeds the `prices` row lien/overnight_original/standard,
+    | which checkout charges: change it with a new price row, not here alone.
+    |
+    */
+    // Proposed; Major sets it (EREG-112 decision 2).
+    'overnight_original_fee_cents' => 2500,
+
+    /*
+    |--------------------------------------------------------------------------
     | Generated Lien Documents
     |--------------------------------------------------------------------------
     |

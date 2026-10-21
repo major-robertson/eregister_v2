@@ -28,4 +28,13 @@ return [
         'Clark County lists liens among the documents that must be notarized before recording; the recorder\'s office has no notary.',
         'If a cover page is used, the document title on it must match page 1 exactly.',
     ],
+    // How documents are signed here (EREG-142): only what this file already
+    // states; null is unknown, and a known value wins over the state's.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => true,
+        'wet_ink_original_required' => null,
+        'ron_accepted' => null,
+        'source' => 'The recorder lists liens among the documents that must be notarized before recording (notes).',
+    ],
 ];

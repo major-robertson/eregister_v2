@@ -37,4 +37,13 @@ return [
         'By mail instead: the filing cover sheet and a $35 money order to the Queens County Clerk, Block Index Room 106, 88-11 Sutphin Blvd, Jamaica, NY 11435.',
         'The Queens clerk requires the block and lot on every lien and takes only private-improvement liens.',
     ],
+    // How documents are signed here (EREG-142): only what this file already
+    // states; null is unknown, and a known value wins over the state's.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => true,
+        'wet_ink_original_required' => false,
+        'ron_accepted' => null,
+        'source' => 'Liens are notarized when filed, and the clerk took A4 phone scans uploaded through EDDS in 2026 (header, notes).',
+    ],
 ];

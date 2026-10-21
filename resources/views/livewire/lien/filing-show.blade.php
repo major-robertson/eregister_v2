@@ -265,6 +265,24 @@
         @endif
     </div>
 
+    {{-- How to sign (EREG-142): while the filing is Awaiting E-Signature or Awaiting Notary.
+         TODO: link "upload the scan" to EREG-129's upload box once both are on main. --}}
+    @if($signingInstructions)
+        <x-ui.card>
+            <x-slot:header>{{ $signingInstructions['heading'] }}</x-slot:header>
+
+            <ol class="list-decimal pl-5 space-y-1 text-sm text-zinc-700">
+                @foreach($signingInstructions['steps'] as $instructionStep)
+                    <li>{{ $instructionStep }}</li>
+                @endforeach
+            </ol>
+
+            @if($signingInstructions['note'])
+                <flux:text class="mt-3 text-sm">{{ $signingInstructions['note'] }}</flux:text>
+            @endif
+        </x-ui.card>
+    @endif
+
     {{-- "Enter legal description" (EREG-136): the customer chose "I need help finding it" at order time.
          TODO: EREG-128 request mechanism replaces this panel after merge. --}}
     @if($propertyEntry)

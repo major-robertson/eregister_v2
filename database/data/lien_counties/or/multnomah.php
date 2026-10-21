@@ -31,4 +31,13 @@ return [
         'Multnomah rejected a 2026 claim of lien for an "incomplete notary acknowledgement" (the draft\'s jurat did not name the person who signed, which ORS 194.280(1)(d) requires), because its amount started on page 2, and for an oversize phone scan of the signed copy.',
         'The county e-records through CSC, Simplifile, eRecording Partners Network, Indecomm, Hopdox and ValueCheck. Mail goes to Multnomah County Recorder, PO Box 5007, Portland, OR 97208-5007, with a check payable to Multnomah County Recorder.',
     ],
+    // How documents are signed here (EREG-142): only what this file already
+    // states; null is unknown, and a known value wins over the state's.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => true,
+        'wet_ink_original_required' => false,
+        'ron_accepted' => null,
+        'source' => 'A 2026 claim was rejected for an incomplete notary acknowledgement, then e-recorded from a resized phone scan of the signed copy (header).',
+    ],
 ];

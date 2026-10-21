@@ -149,6 +149,25 @@ class PriceSeeder extends Seeder
             );
         }
 
+        // Lien overnight original fee (EREG-142): charged on top of a
+        // full-service lien or release in a county that needs the original
+        // signed document, in the same inline-amount PaymentIntent. Amount
+        // from config/lien.php `overnight_original_fee_cents`; resolved with
+        // Price::resolve('lien', 'overnight_original', 'standard').
+        Price::updateOrCreate(
+            [
+                'product_family' => 'lien',
+                'product_key' => 'overnight_original',
+                'variant_key' => 'standard',
+                'billing_type' => 'one_time',
+            ],
+            [
+                'amount_cents' => (int) config('lien.overnight_original_fee_cents', 2500),
+                'currency' => 'usd',
+                'active' => true,
+            ]
+        );
+
         // Sales & Use Tax permit registration: $199 per selected state,
         // one-time. Charged via an inline-amount PaymentIntent (amount =
         // amount_cents x state count), so the Stripe Price IDs below are

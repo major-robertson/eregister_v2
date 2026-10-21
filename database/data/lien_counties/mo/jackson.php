@@ -34,4 +34,13 @@ return [
         'The recorder wants the grantor (owner) and grantee (claimant) named on page 1 exactly as they are indexed.',
         'Circuit clerk question: RSMo § 429.080 says to file the lien with the clerk of the circuit court, here the 16th Judicial Circuit (liens on Kaw township property go to the clerk at Kansas City, § 478.483); the $21 clerk fee in the staff research note is not verified, and the court\'s civil fee schedule (16thcircuit.org/civil_fees, September 2026) lists only "Mechanic Lien $5.00" under Execution/Garnishment.',
     ],
+    // How documents are signed here (EREG-142): only what this file already
+    // states; null is unknown, and a known value wins over the state's.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => true,
+        'wet_ink_original_required' => false,
+        'ron_accepted' => null,
+        'source' => 'The July 2026 liens were e-recorded through CSC; one was rejected for an incomplete notary acknowledgement (header).',
+    ],
 ];

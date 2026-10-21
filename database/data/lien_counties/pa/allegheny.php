@@ -31,4 +31,13 @@ return [
         'After the notice of filing is served, file the affidavit of service in the same case within 20 days after service.',
         'The archive\'s Allegheny formatting list (black type, no handwriting except signatures, 8.5 x 11 pages printed on one side, every page numbered, 10-point type or larger, 20-pound white paper, no tape, staples or correction fluid, full names and addresses for every party) mixes the Department of Real Estate\'s deed rules with another county\'s lien instructions; the generated claim meets all of it with 1-inch margins.',
     ],
+    // How documents are signed here (EREG-142): only what this file already
+    // states; null is unknown, and a known value wins over the state's.
+    'signature_requirements' => [
+        'esign_accepted' => null,
+        'notary_required' => null,
+        'wet_ink_original_required' => false,
+        'ron_accepted' => null,
+        'source' => 'Claims can be e-filed pro se through the Department of Court Records portal (notes).',
+    ],
 ];

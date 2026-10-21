@@ -2,7 +2,9 @@
 
 namespace App\Domains\Lien\Seo;
 
+use App\Domains\Lien\Documents\LienDocumentRegistry;
 use App\Domains\Lien\Models\LienStateRule;
+use App\Domains\Lien\Support\NotarizationInstructions;
 use App\Support\Seo\States;
 use App\Support\Seo\Text;
 use App\Support\Seo\Urls;
@@ -389,6 +391,20 @@ final class LienStatePage
         $override = config("lien.state_pricing.{$this->code}.mechanics_lien.full_service");
 
         return (int) round(($override ?? config('lien.pricing.mechanics_lien.full_service', 29900)) / 100);
+    }
+
+    /**
+     * The signing lines for the pricing copy (EREG-142): "Requires a
+     * notarized signature." and the original-document line, from the
+     * state's signature_requirements for the lien or another kind. Unknown
+     * flags add nothing. Read from the data files on every render, not
+     * cached with the page.
+     *
+     * @return list<string>
+     */
+    public function signatureLines(string $kind = 'mechanics_lien'): array
+    {
+        return NotarizationInstructions::lines(LienDocumentRegistry::signatureRequirements($this->code, null, $kind));
     }
 
     /* --------------------------------------------------------------- depth */

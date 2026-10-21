@@ -15,9 +15,7 @@ use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienParty;
 use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienProjectDeadline;
-use App\Domains\Lien\Services\OvernightOriginalFee;
 use App\Domains\Lien\Support\NotarizationInstructions;
-use App\Mail\PaymentReceipt;
 use App\Models\Payment;
 use App\Models\Price;
 use App\Models\User;
@@ -293,14 +291,13 @@ describe('product pages', function () {
 });
 
 describe('review step', function () {
-    it('shows the notary line for a Kansas lien and no original or fee', function () {
+    it('shows the notary line for a Kansas lien and no original', function () {
         $project = notaryProject($this->business);
         [$deadline] = notaryFiling($project);
 
         notaryReviewStep($project, $deadline)
             ->assertSee('Requires a notarized signature.')
             ->assertDontSee('The county needs the original signed document')
-            ->assertDontSee(OvernightOriginalFee::LABEL)
             ->assertDontSee('Overnight the original to us');
     });
 
@@ -313,7 +310,7 @@ describe('review step', function () {
             ->assertDontSee('The county needs the original signed document');
     });
 
-    it('adds the original line, the overnight fee and the arrival date on full service in a wet-ink county', function () {
+    it('adds the original line and the arrival date, with no fee, on full service in a wet-ink county', function () {
         LienDocumentRegistry::fake('KS', NOTARY_WET_INK_JOHNSON, 'johnson');
 
         $project = notaryProject($this->business);
@@ -327,16 +324,15 @@ describe('review step', function () {
             ->assertSeeInOrder([
                 'Requires a notarized signature.',
                 'The county needs the original signed document, mailed to us.',
-                'Overnight return of your original',
-                '$25.00',
                 'Overnight the original to us.',
                 'Your original must reach us by December 4, 2026.',
-            ]);
+            ])
+            ->assertDontSee('Overnight return of your original')
+            ->assertDontSee('$25.00');
 
         $component->set('service_level', 'self_serve')
             ->assertSee('Requires a notarized signature.')
             ->assertDontSee('The county needs the original signed document')
-            ->assertDontSee(OvernightOriginalFee::LABEL)
             ->assertDontSee('Your original must reach us');
 
         $component->set('service_level', 'full_service')
@@ -351,82 +347,24 @@ describe('review step', function () {
 });
 
 describe('checkout', function () {
-    it('seeds the overnight original fee from config', function () {
-        expect(Price::resolve('lien', 'overnight_original', 'standard')->amount_cents)->toBe(2500)
-            ->and(config('lien.overnight_original_fee_cents'))->toBe(2500)
-            ->and(OvernightOriginalFee::price()->active)->toBeTrue();
-    });
-
-    it('adds the overnight original fee to a full-service order in a wet-ink county', function () {
+    it('charges a full-service order in a wet-ink county the service price alone', function () {
         LienDocumentRegistry::fake('KS', NOTARY_WET_INK_JOHNSON, 'johnson');
 
         $project = notaryProject($this->business);
         [, $filing] = notaryFiling($project, ['status' => FilingStatus::AwaitingPayment, 'must_submit_by' => '2026-12-07']);
-        $base = Price::resolve('lien', 'mechanics_lien', 'full_service');
-        $fee = Price::resolve('lien', 'overnight_original', 'standard');
 
         notaryStripe()->shouldReceive('create')
             ->once()
-            ->withArgs(fn (array $params) => $params['amount'] === 32400)
-            ->andReturn(notaryIntent('pi_overnight', 32400));
-
-        Livewire::test(FilingCheckout::class, ['filing' => $filing])
-            ->assertSet('amountCents', 32400)
-            ->assertSee('Mechanics Lien (Full Service)')
-            ->assertSee('Overnight return of your original')
-            ->assertSee('$25.00')
-            ->assertSee('$324.00');
-
-        expect(Payment::whereMorphedTo('purchasable', $filing)->sole()->meta['items'])->toEqual([
-            ['price_id' => $base->id, 'product_key' => 'mechanics_lien', 'variant_key' => 'full_service', 'label' => 'Mechanics Lien (Full Service)', 'amount_cents' => 29900],
-            ['price_id' => $fee->id, 'product_key' => 'overnight_original', 'variant_key' => 'standard', 'label' => 'Overnight return of your original', 'amount_cents' => 2500],
-        ]);
-    });
-
-    it('never charges it on self-serve', function () {
-        LienDocumentRegistry::fake('KS', NOTARY_WET_INK_JOHNSON, 'johnson');
-
-        $project = notaryProject($this->business);
-        [, $filing] = notaryFiling($project, ['status' => FilingStatus::AwaitingPayment, 'service_level' => 'self_serve']);
-
-        notaryStripe()->shouldReceive('create')->once()->andReturn(notaryIntent('pi_self', 9900));
-
-        Livewire::test(FilingCheckout::class, ['filing' => $filing])
-            ->assertSet('amountCents', 9900)
-            ->assertDontSee('Overnight return of your original');
-    });
-
-    it('does not charge it where the county takes a scan', function () {
-        $project = notaryProject($this->business);
-        [, $filing] = notaryFiling($project, ['status' => FilingStatus::AwaitingPayment, 'must_submit_by' => '2026-12-11']);
-
-        notaryStripe()->shouldReceive('create')->once()->andReturn(notaryIntent('pi_plain', 29900));
+            ->withArgs(fn (array $params) => $params['amount'] === 29900)
+            ->andReturn(notaryIntent('pi_original', 29900));
 
         Livewire::test(FilingCheckout::class, ['filing' => $filing])
             ->assertSet('amountCents', 29900)
+            ->assertSee('Mechanics Lien (Full Service)')
             ->assertDontSee('Overnight return of your original');
 
-        expect(Payment::whereMorphedTo('purchasable', $filing)->sole()->meta['items'])->toHaveCount(1);
-    });
-
-    it('lists the fee on the receipt', function () {
-        $project = notaryProject($this->business);
-        [, $filing] = notaryFiling($project, ['status' => FilingStatus::Paid, 'paid_at' => now()]);
-
-        $payment = Payment::factory()->forPurchasable($filing)->succeeded()->create([
-            'price_id' => Price::resolve('lien', 'mechanics_lien', 'full_service')->id,
-            'amount_cents' => 32400,
-            'meta' => ['items' => [
-                ['price_id' => 1, 'product_key' => 'mechanics_lien', 'variant_key' => 'full_service', 'label' => 'Mechanics Lien (Full Service)', 'amount_cents' => 29900],
-                ['price_id' => 2, 'product_key' => 'overnight_original', 'variant_key' => 'standard', 'label' => 'Overnight return of your original', 'amount_cents' => 2500],
-            ]],
-        ]);
-
-        $rendered = (new PaymentReceipt($payment))->render();
-
-        expect($rendered)->toContain('Overnight return of your original')
-            ->and($rendered)->toContain('$25.00')
-            ->and($rendered)->toContain('$324.00');
+        expect(Payment::whereMorphedTo('purchasable', $filing)->sole()->meta['items'])->toHaveCount(1)
+            ->and(Price::where('product_family', 'lien')->where('product_key', 'overnight_original')->exists())->toBeFalse();
     });
 });
 
@@ -483,29 +421,19 @@ describe('instructions', function () {
             ->and($sets['notarize_and_mail_original']['heading'])->toBe('Sign your mechanics lien in front of a notary and mail us the original')
             ->and($sets['notarize_and_mail_original']['steps'])->toContain('The county needs the original. Overnight it to us at eRegister, 4869 Brownsboro Rd STE 101-E, Louisville, KY 40207.')
             ->and($sets['notarize_and_mail_original']['steps'])->toContain('It must reach us by December 4, 2026.')
-            ->and($sets['notarize_and_mail_original']['note'])->toBeNull();
+            ->and(implode(' ', $sets['notarize_and_mail_original']['steps']))->not->toContain('$')->not->toContain('fee');
     });
 
-    it('notes the overnight fee the order paid and asks for the original promptly without a date', function () {
+    it('asks for the original promptly without a date', function () {
         LienDocumentRegistry::fake('KS', NOTARY_WET_INK_JOHNSON, 'johnson');
 
         $project = notaryProject($this->business);
         [, $filing] = notaryFiling($project, ['status' => FilingStatus::AwaitingNotary, 'paid_at' => now(), 'must_submit_by' => null]);
 
-        Payment::factory()->forPurchasable($filing)->succeeded()->create([
-            'price_id' => Price::resolve('lien', 'mechanics_lien', 'full_service')->id,
-            'amount_cents' => 32400,
-            'meta' => ['items' => [
-                ['price_id' => 1, 'product_key' => 'mechanics_lien', 'variant_key' => 'full_service', 'label' => 'Mechanics Lien (Full Service)', 'amount_cents' => 29900],
-                ['price_id' => 2, 'product_key' => 'overnight_original', 'variant_key' => 'standard', 'label' => 'Overnight return of your original', 'amount_cents' => 2500],
-            ]],
-        ]);
-
         $set = NotarizationInstructions::for($filing->fresh());
 
         expect($set['key'])->toBe('notarize_and_mail_original')
-            ->and($set['steps'])->toContain('Send it as soon as it is signed.')
-            ->and($set['note'])->toBe('Your order included $25.00 for the overnight return of your original.');
+            ->and($set['steps'])->toContain('Send it as soon as it is signed.');
     });
 
     it('shows the instructions on the filing page only while we wait on a signature', function () {

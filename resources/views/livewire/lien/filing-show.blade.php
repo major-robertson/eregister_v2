@@ -276,10 +276,6 @@
                     <li>{{ $instructionStep }}</li>
                 @endforeach
             </ol>
-
-            @if($signingInstructions['note'])
-                <flux:text class="mt-3 text-sm">{{ $signingInstructions['note'] }}</flux:text>
-            @endif
         </x-ui.card>
     @endif
 

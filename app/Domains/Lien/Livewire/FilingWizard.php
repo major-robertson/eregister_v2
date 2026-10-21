@@ -22,7 +22,6 @@ use App\Domains\Lien\Models\LienProject;
 use App\Domains\Lien\Models\LienProjectDeadline;
 use App\Domains\Lien\Models\LienStateRule;
 use App\Domains\Lien\Seo\NoticeOfIntentStatePage;
-use App\Domains\Lien\Services\OvernightOriginalFee;
 use App\Domains\Lien\Services\RushTier;
 use App\Domains\Lien\Support\NotarizationInstructions;
 use App\Domains\Lien\Support\PartyAddress;
@@ -1326,17 +1325,17 @@ class FilingWizard extends Component
      * How the chosen document is signed, shown on step 4 (EREG-142), or
      * null when nothing is known: "Requires a notarized signature." where
      * the state or county data says so; on a full-service order in a county
-     * that needs the original signed document, that line, the overnight
-     * original fee and the date the original must reach us (one business
-     * day before the submit-by date, once it is known and not yet past).
+     * that needs the original signed document, that line and the date the
+     * original must reach us (one business day before the submit-by date,
+     * once it is known and not yet past). No fee: the flat price covers it.
      *
      * @param  array<string, mixed>|null  $gate  deadlineGate()
-     * @return array{document: string, lines: list<string>, original: bool, overnight: ?Price, originalDueBy: ?CarbonImmutable}|null
+     * @return array{document: string, lines: list<string>, original: bool, originalDueBy: ?CarbonImmutable}|null
      */
     private function signing(?array $gate): ?array
     {
         $requirements = NotarizationInstructions::requirements($this->filing);
-        $original = OvernightOriginalFee::applies($this->service_level, $requirements);
+        $original = NotarizationInstructions::mailsOriginal($this->service_level, $requirements);
 
         $lines = array_values(array_filter(
             NotarizationInstructions::lines($requirements),
@@ -1353,7 +1352,6 @@ class FilingWizard extends Component
             'document' => $this->deadline->documentType->name,
             'lines' => $lines,
             'original' => $original,
-            'overnight' => $original ? OvernightOriginalFee::price() : null,
             'originalDueBy' => $dueBy !== null && ! $dueBy->lessThan(now()->eastern()->startOfDay()) ? $dueBy : null,
         ];
     }

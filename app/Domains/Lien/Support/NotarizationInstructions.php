@@ -7,8 +7,8 @@ use App\Domains\Lien\Documents\LienDocumentPayload;
 use App\Domains\Lien\Documents\LienDocumentRegistry;
 use App\Domains\Lien\Engine\BusinessDays;
 use App\Domains\Lien\Enums\FilingStatus;
+use App\Domains\Lien\Enums\ServiceLevel;
 use App\Domains\Lien\Models\LienFiling;
-use App\Domains\Lien\Services\OvernightOriginalFee;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Str;
@@ -25,6 +25,7 @@ use Illuminate\Support\Str;
  * - notarize_and_mail_original: print, sign before a notary, overnight the
  *   original to eRegister (config lien.documents.preparer) by the date it
  *   must arrive; a full-service order in a county that needs the original.
+ *   No fee: the flat price covers it.
  *
  * TODO(EREG-128): the request email to the customer uses for($filing) once
  * the request mechanism is on main.
@@ -101,6 +102,20 @@ final class NotarizationInstructions
     }
 
     /**
+     * Whether the customer mails us the signed original: a full-service
+     * order where the county needs the original signed document
+     * (wet_ink_original_required true; false or unknown is no). Never on
+     * self-serve, where the customer records it themselves.
+     *
+     * @param  array<string, mixed>  $requirements
+     */
+    public static function mailsOriginal(?string $serviceLevel, array $requirements): bool
+    {
+        return $serviceLevel === ServiceLevel::FullService->value
+            && ($requirements['wet_ink_original_required'] ?? null) === true;
+    }
+
+    /**
      * The day the signed original must reach us: one business day before
      * the date we must submit the document by.
      */
@@ -133,16 +148,15 @@ final class NotarizationInstructions
             return self::ESIGN;
         }
 
-        return OvernightOriginalFee::applies($filing->service_level?->value, $requirements)
+        return self::mailsOriginal($filing->service_level?->value, $requirements)
             ? self::NOTARIZE_AND_MAIL_ORIGINAL
             : self::NOTARIZE_AND_UPLOAD;
     }
 
     /**
-     * The instruction set for the filing: a heading and 3 to 5 short steps;
-     * the mail-in set adds a note on the overnight fee its order paid.
+     * The instruction set for the filing: a heading and 3 to 5 short steps.
      *
-     * @return array{key: string, heading: string, steps: list<string>, note: ?string}
+     * @return array{key: string, heading: string, steps: list<string>}
      */
     public static function for(LienFiling $filing): array
     {
@@ -165,7 +179,6 @@ final class NotarizationInstructions
                     'Sign where it asks you to.',
                     'You do not need to print it or see a notary.',
                 ],
-                'note' => null,
             ],
             self::NOTARIZE_AND_UPLOAD => [
                 'key' => $key,
@@ -175,7 +188,6 @@ final class NotarizationInstructions
                     'Scan every page and upload the scan to us.',
                     'Use a scanner or a scanning app. Counties can reject phone photos.',
                 ],
-                'note' => null,
             ],
             self::NOTARIZE_AND_MAIL_ORIGINAL => [
                 'key' => $key,
@@ -185,7 +197,6 @@ final class NotarizationInstructions
                     'The county needs the original. Overnight it to us at '.self::mailingAddress().'.',
                     self::arrivalStep($filing),
                 ],
-                'note' => self::overnightFeeNote($filing),
             ],
         };
     }
@@ -229,16 +240,5 @@ final class NotarizationInstructions
         return $dueBy === null
             ? 'Send it as soon as it is signed.'
             : 'It must reach us by '.$dueBy->format('F j, Y').'.';
-    }
-
-    /** What the order paid for the overnight return, from its payment's line items, or null. */
-    private static function overnightFeeNote(LienFiling $filing): ?string
-    {
-        $item = collect($filing->payment?->meta['items'] ?? [])
-            ->firstWhere('product_key', OvernightOriginalFee::PRODUCT_KEY);
-
-        return $item === null
-            ? null
-            : 'Your order included $'.number_format(((int) $item['amount_cents']) / 100, 2).' for the overnight return of your original.';
     }
 }

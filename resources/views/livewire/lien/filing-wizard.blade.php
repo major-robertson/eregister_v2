@@ -1057,12 +1057,6 @@
                             @foreach($signing['lines'] as $line)
                                 <div class="text-sm text-zinc-600 dark:text-zinc-400">{{ $line }}</div>
                             @endforeach
-                            @if($signing['overnight'])
-                                <div class="flex items-center justify-between font-medium">
-                                    <span>{{ \App\Domains\Lien\Services\OvernightOriginalFee::LABEL }}</span>
-                                    <span>{{ $signing['overnight']->formattedAmount() }}</span>
-                                </div>
-                            @endif
                             @if($signing['original'])
                                 <div class="text-sm text-zinc-600 dark:text-zinc-400">
                                     Overnight the original to us.

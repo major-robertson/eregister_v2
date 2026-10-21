@@ -1,6 +1,9 @@
 @extends('layouts.landing')
 
-@section('title', 'Lien Filing Pricing | Flat Rates, State Fees Included')
+{{-- Renders <livewire:lien.product-chooser />: load Livewire and Flux instead of marketing.js. --}}
+@section('livewire', true)
+
+@section('title', 'Lien Filing Pricing | Flat Rates, County Fees at Cost')
 @section('description', 'Flat-rate pricing for every lien service: preliminary notices from '.\App\Support\Seo\Prices::lien('prelim_notice').', intent to lien from '.\App\Support\Seo\Prices::lien('noi').', mechanics liens from '.\App\Support\Seo\Prices::lien('mechanics_lien').', and releases from '.\App\Support\Seo\Prices::lien('lien_release').'.')
 
 @php
@@ -78,7 +81,7 @@
             ['name' => 'Pricing'],
         ]" />
         <div class="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-4 py-1.5 text-sm text-amber-400">
-            State fees included
+            No hourly billing
         </div>
         <h1 class="mt-8 text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
             Lien Filing Pricing
@@ -86,7 +89,7 @@
         <p class="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
             <span class="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Flat Rates for Every Lien Service</span>
         </p>
-        <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">One flat price per filing — no hourly billing, no hidden costs. Standard state fees are included, and lien tracking is free.</p>
+        <p class="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">One flat price per filing, with no hourly billing. Full-service liens and releases add the county's recording fee at cost. Lien tracking is free.</p>
         <div class="mt-10">
             <a href="{{ route('register') }}" class="group inline-flex items-center gap-2 rounded-lg bg-[#DC2626] px-8 py-4 text-base font-semibold text-white shadow-lg transition hover:scale-105 hover:bg-[#B91C1C]">
                 Get Started
@@ -95,6 +98,13 @@
                 </svg>
             </a>
         </div>
+    </div>
+</section>
+
+{{-- What do you need to happen? Products by need, per state, with self-serve and full service compared (EREG-143) --}}
+<section id="choose" class="border-b border-zinc-200 bg-zinc-50 py-20">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <livewire:lien.product-chooser :compare="true" />
     </div>
 </section>
 
@@ -157,7 +167,7 @@
         </div>
 
         <div class="mx-auto mt-10 max-w-3xl space-y-1 text-center text-xs text-zinc-500">
-            <p>* All prices include standard state fees. Unusually high state or county fees, counties that require documents to be physically served, and similar requirements may incur additional charges.</p>
+            <p>* Prices are for our service. Full-service liens and releases add the county's recording fee at cost: at checkout when we know it, otherwise billed after recording. Rush orders and counties that need the original signed document add a fee. We show every fee before you pay.</p>
             @foreach ($stateNotes as $note)
                 <p>** {{ $note['state'] }} {{ $note['label'] }} {{ strtolower($serviceNames[$note['key']] ?? $note['key']) }}: {{ $note['price'] }}, reflecting {{ $note['state'] }}'s filing and service requirements.</p>
             @endforeach
@@ -233,12 +243,12 @@
         <div class="mt-12 space-y-4">
             <details class="group rounded-xl border border-zinc-200 bg-white">
                 <summary class="flex cursor-pointer items-center justify-between p-5 font-medium text-zinc-900 [&::-webkit-details-marker]:hidden">
-                    Do your prices include state filing fees?
+                    Do your prices include county recording fees?
                     <svg class="h-5 w-5 shrink-0 text-zinc-400 transition group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                 </summary>
-                <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">Yes — standard state fees are built into every price, so what you see is what you pay. In rare cases, unusually high state or county fees, or counties that require documents to be physically served, may incur additional charges. We'll always tell you before you pay.</div>
+                <div class="border-t border-zinc-100 px-5 py-4 text-zinc-600">No. On self-serve, you pay the county when you record. On full service, we pass the county's recording fee through at cost. When we know the fee, it is a line at checkout. When we don't, we bill it at cost after recording.</div>
             </details>
             <details class="group rounded-xl border border-zinc-200 bg-white">
                 <summary class="flex cursor-pointer items-center justify-between p-5 font-medium text-zinc-900 [&::-webkit-details-marker]:hidden">

@@ -263,6 +263,20 @@
         @endif
     @endif
 
+    @if($step === 1 && $prerequisites)
+        {{-- What the state needs before a mechanics lien (EREG-143) --}}
+        <flux:callout color="amber" icon="exclamation-triangle">
+            @foreach($prerequisites as $prerequisite)
+                <flux:callout.text>
+                    {{ $prerequisite['sentence'] }}
+                    @if($prerequisite['url'])
+                        <flux:link href="{{ $prerequisite['url'] }}">{{ $prerequisite['label'] }}</flux:link>
+                    @endif
+                </flux:callout.text>
+            @endforeach
+        </flux:callout>
+    @endif
+
     <x-ui.card>
         @if($step === 1)
             {{-- Step 1: Property Details --}}
@@ -1068,6 +1082,27 @@
                         </div>
                     @endif
 
+                    @if($countyRecording)
+                        {{-- The county's recording fee, passed through at cost, and its turnaround (EREG-143) --}}
+                        <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 space-y-2">
+                            <div class="flex items-center gap-2 font-medium">
+                                <flux:icon name="building-library" class="w-4 h-4 text-zinc-500" />
+                                Recording with the county
+                            </div>
+                            @if($countyRecording['fee'] !== null)
+                                <div class="flex items-center justify-between font-medium">
+                                    <span>{{ \App\Domains\Lien\Services\CountyRecordingFee::LABEL }}</span>
+                                    <span>${{ number_format($countyRecording['fee'] / 100, 2) }}</span>
+                                </div>
+                            @else
+                                <div class="text-sm text-zinc-600 dark:text-zinc-400">{{ \App\Domains\Lien\Services\CountyRecordingFee::UNKNOWN_LINE }}</div>
+                            @endif
+                            @if($countyRecording['turnaround'])
+                                <div class="text-sm text-zinc-600 dark:text-zinc-400">{{ $countyRecording['turnaround'] }}</div>
+                            @endif
+                        </div>
+                    @endif
+
                     @if($noiBlock)
                         <flux:callout color="red" icon="exclamation-circle">
                             <flux:callout.text>
@@ -1199,6 +1234,14 @@
                         {{-- Optional Rush: full service outside the required tiers (EREG-146) --}}
                         <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
                             <flux:checkbox wire:model.live="rushElected" :label="$rushUpsell['label']" />
+                        </div>
+                    @endif
+
+                    @if($comparison)
+                        {{-- Self-serve next to full service for this document, state and county (EREG-143) --}}
+                        <div class="space-y-2">
+                            <flux:heading>Self-serve and full service, side by side</flux:heading>
+                            <x-lien.service-comparison :rows="$comparison['rows']" :prices="$comparison['prices']" />
                         </div>
                     @endif
 

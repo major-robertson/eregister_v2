@@ -33,4 +33,8 @@ return [
         'ron_accepted' => null,
         'source' => null,
     ],
+    // The fee to record the lien or release here (EREG-143), in cents: one
+    // value for both, or keyed by kind. Only a flat fee this file states; null
+    // is unknown. $27.00 to file a mechanics' lien claim (fee_note); a release is not stated.
+    'recording_fee_cents' => ['mechanics_lien' => 2700],
 ];

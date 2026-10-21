@@ -3,9 +3,12 @@
 namespace App\Domains\Lien\Livewire;
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Lien\Documents\LienCountyKey;
 use App\Domains\Lien\Models\LienFiling;
+use App\Domains\Lien\Services\CountyRecordingFee;
 use App\Domains\Lien\Services\LienPaymentService;
 use App\Domains\Lien\Services\RushTier;
+use App\Domains\Lien\Support\RecordingTurnaround;
 use App\Enums\PaymentStatus;
 use App\Models\EmailSequence;
 use App\Models\Payment;
@@ -30,10 +33,12 @@ class FilingCheckout extends Component
     public int $amountCents = 0;
 
     /**
-     * What the payment charges, one row per price: the service, then any
-     * rush fee. Stored on the payment as meta['items'].
+     * What the payment charges, one row per charge: the service, then any
+     * rush fee, then any county recording fee (EREG-143), which has no price
+     * row (null price_id and variant_key). Stored on the payment as
+     * meta['items'].
      *
-     * @var list<array{price_id: int, product_key: string, variant_key: string, label: string, amount_cents: int}>
+     * @var list<array{price_id: ?int, product_key: string, variant_key: ?string, label: string, amount_cents: int}>
      */
     public array $items = [];
 
@@ -73,7 +78,7 @@ class FilingCheckout extends Component
             return;
         }
 
-        $this->initializePayment($rushPrice);
+        $this->initializePayment($rushPrice, CountyRecordingFee::centsFor($this->filing));
     }
 
     /**
@@ -113,11 +118,12 @@ class FilingCheckout extends Component
     }
 
     /**
-     * The service price, then the rush fee when one applies.
+     * The service price, then the rush fee when one applies, then the county
+     * recording fee where it is known (EREG-143).
      *
-     * @return list<array{price_id: int, product_key: string, variant_key: string, label: string, amount_cents: int}>
+     * @return list<array{price_id: ?int, product_key: string, variant_key: ?string, label: string, amount_cents: int}>
      */
-    protected function lineItems(Price $price, ?Price $rushPrice): array
+    protected function lineItems(Price $price, ?Price $rushPrice, ?int $recordingFeeCents = null): array
     {
         $serviceLevel = $this->filing->service_level?->label();
 
@@ -139,20 +145,25 @@ class FilingCheckout extends Component
             ];
         }
 
+        if ($recordingFeeCents !== null && $recordingFeeCents > 0) {
+            $items[] = CountyRecordingFee::item($recordingFeeCents);
+        }
+
         return $items;
     }
 
-    protected function initializePayment(?Price $rushPrice): void
+    protected function initializePayment(?Price $rushPrice, ?int $recordingFeeCents = null): void
     {
         // 1. Get pricing from single source of truth (state-aware for liens),
-        //    plus the rush fee. Recomputed on every visit; a reused payment
-        //    row or PaymentIntent is brought in line below.
+        //    plus the rush and county recording fees. Recomputed on every
+        //    visit; a reused payment row or PaymentIntent is brought in line
+        //    below.
         $price = Price::resolveLien(
             $this->filing->documentType->slug,
             $this->filing->service_level->value,
             $this->filing->jurisdiction_state,
         );
-        $this->items = $this->lineItems($price, $rushPrice);
+        $this->items = $this->lineItems($price, $rushPrice, $recordingFeeCents);
         $expected = array_sum(array_column($this->items, 'amount_cents'));
         $this->amountCents = $expected;
 
@@ -294,9 +305,16 @@ class FilingCheckout extends Component
 
     public function render(): View
     {
+        // A full-service lien or release (EREG-143): the county fee to be
+        // billed when it is not a line above, and the turnaround promise.
+        $recorded = CountyRecordingFee::applies($this->filing->service_level?->value, $this->filing->documentType?->slug);
+        $state = (string) ($this->filing->jurisdiction_state ?: $this->filing->project?->jobsite_state);
+
         return view('livewire.lien.filing-checkout', [
             'formattedPrice' => '$'.number_format($this->amountCents / 100, 2),
             'returnUrl' => route('lien.filings.payment-confirmation', $this->filing),
+            'recordingFeeLater' => $recorded && ! in_array(CountyRecordingFee::PRODUCT_KEY, array_column($this->items, 'product_key'), true),
+            'turnaround' => $recorded ? RecordingTurnaround::sentence($state, LienCountyKey::forFiling($this->filing)) : null,
         ])->layout('layouts.minimal', ['title' => 'Checkout']);
     }
 }

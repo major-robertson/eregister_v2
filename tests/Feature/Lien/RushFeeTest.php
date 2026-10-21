@@ -78,6 +78,9 @@ beforeEach(function () {
     Storage::fake('s3');
     Mail::fake();
     LienDocumentRegistry::flush();
+    // Johnson County's lien recording fee (EREG-143) is left out: these
+    // totals price the rush fee on its own (CountyRecordingFeeTest covers it).
+    LienDocumentRegistry::fake('KS', array_replace(require database_path('data/lien_counties/ks/johnson.php'), ['recording_fee_cents' => null]), 'johnson');
     config(['cashier.secret' => null]);
 
     (new PriceSeeder)->run();

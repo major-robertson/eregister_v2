@@ -140,15 +140,49 @@ final class NotarizationInstructions
 
         $requirements = self::requirements($filing);
 
-        $notarize = $filing->status === FilingStatus::AwaitingNotary
-            || ($requirements['notary_required'] ?? self::documentIsNotarized($filing))
-            || $requirements['esign_accepted'] === false;
-
-        if (! $notarize) {
+        if ($filing->status !== FilingStatus::AwaitingNotary && ! self::needsNotary($requirements, self::state($filing), $filing->documentKind())) {
             return self::ESIGN;
         }
 
-        return self::mailsOriginal($filing->service_level?->value, $requirements)
+        return self::notarizedKey($filing->service_level?->value, $requirements);
+    }
+
+    /**
+     * The instruction set an order of this document will get, before there
+     * is a filing (the service comparison, EREG-143): key() without the
+     * statuses staff set.
+     *
+     * @param  array<string, mixed>  $requirements  LienDocumentRegistry::signatureRequirements()
+     */
+    public static function keyFor(array $requirements, string $state, ?string $kind, ?string $serviceLevel): string
+    {
+        return self::needsNotary($requirements, strtoupper($state), $kind)
+            ? self::notarizedKey($serviceLevel, $requirements)
+            : self::ESIGN;
+    }
+
+    /**
+     * Whether the document is signed before a notary: where the requirements
+     * say so (unknown: where the document prints a notary certificate) or
+     * where e-signing is not accepted.
+     *
+     * @param  array<string, mixed>  $requirements
+     */
+    public static function needsNotary(array $requirements, string $state, ?string $kind): bool
+    {
+        return ($requirements['notary_required'] ?? self::documentIsNotarized($state, $kind))
+            || ($requirements['esign_accepted'] ?? null) === false;
+    }
+
+    /**
+     * A notarized signature: the original is mailed to us only on a
+     * full-service order in a county that needs it (mailsOriginal()).
+     *
+     * @param  array<string, mixed>  $requirements
+     */
+    private static function notarizedKey(?string $serviceLevel, array $requirements): string
+    {
+        return self::mailsOriginal($serviceLevel, $requirements)
             ? self::NOTARIZE_AND_MAIL_ORIGINAL
             : self::NOTARIZE_AND_UPLOAD;
     }
@@ -201,13 +235,10 @@ final class NotarizationInstructions
         };
     }
 
-    /** Whether the filing's generated document prints a notary certificate for its state. */
-    private static function documentIsNotarized(LienFiling $filing): bool
+    /** Whether the generated document of this kind prints a notary certificate in this state. */
+    private static function documentIsNotarized(string $state, ?string $kind): bool
     {
-        $kind = $filing->documentKind();
-        $state = self::state($filing);
-
-        if ($kind === null || ! LienDocumentRegistry::isSupported($state)) {
+        if ($kind === null || ! in_array($kind, LienDocumentRegistry::KINDS, true) || ! LienDocumentRegistry::isSupported($state)) {
             return false;
         }
 

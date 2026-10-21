@@ -7,7 +7,6 @@ use App\Domains\Lien\Documents\LienDocumentPayload;
 use App\Domains\Lien\Documents\LienDocumentRegistry;
 use App\Domains\Lien\Enums\NocStatus;
 use App\Domains\Lien\Models\LienProject;
-use App\Domains\Lien\Models\LienStateRule;
 use Illuminate\Validation\Rule;
 
 /**
@@ -144,7 +143,7 @@ final class WizardFields
      * Whether a field's `when` condition holds for this project. Only
      * prelim_required exists: the state requires a preliminary notice from
      * this claimant (lien_state_rules: from everyone, or from those who did
-     * not contract with the owner).
+     * not contract with the owner; LienPrerequisites::prelimRequired()).
      */
     private static function applies(?string $when, LienProject $project): bool
     {
@@ -156,12 +155,6 @@ final class WizardFields
             return false;
         }
 
-        $rule = LienStateRule::query()->find(strtoupper((string) $project->jobsite_state));
-
-        if (! $rule?->pre_notice_required) {
-            return false;
-        }
-
-        return $rule->pre_notice_required_for === 'everyone' || $project->contractedWithOwner() !== true;
+        return LienPrerequisites::prelimRequired((string) $project->jobsite_state, $project);
     }
 }

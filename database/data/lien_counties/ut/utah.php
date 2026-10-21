@@ -38,4 +38,8 @@ return [
         'ron_accepted' => null,
         'source' => 'The recorder takes documents through an independent third-party e-recording vendor (header, notes).',
     ],
+    // The fee to record the lien or release here (EREG-143), in cents: one
+    // value for both, or keyed by kind. Only a flat fee this file states; null
+    // is unknown. $40 per document, any number of pages (fee_note, notes).
+    'recording_fee_cents' => 4000,
 ];

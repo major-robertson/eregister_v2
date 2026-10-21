@@ -38,4 +38,8 @@ return [
         'ron_accepted' => null,
         'source' => 'E-recording goes through the vendors under contract with the Auditor (notes).',
     ],
+    // The fee to record the lien or release here (EREG-143), in cents: one
+    // value for both, or keyed by kind. Only a flat fee this file states; null
+    // is unknown. Unknown: $303.50 for the first page plus $1.00 per additional page (fee_note).
+    'recording_fee_cents' => null,
 ];

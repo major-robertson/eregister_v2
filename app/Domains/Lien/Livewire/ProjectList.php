@@ -3,6 +3,8 @@
 namespace App\Domains\Lien\Livewire;
 
 use App\Domains\Lien\Models\LienProject;
+use App\Domains\Lien\Support\LienProductIntent;
+use App\Domains\Lien\Support\LienProducts;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -55,8 +57,12 @@ class ProjectList extends Component
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate(15);
 
+        // The product picked in the chooser (EREG-143): pick its project.
+        $chosen = LienProductIntent::product();
+
         return view('livewire.lien.project-list', [
             'projects' => $projects,
+            'chosenProductName' => $chosen !== null ? LienProducts::name($chosen) : null,
         ])->layout('components.layouts.portal', ['title' => 'Lien Projects']);
     }
 }

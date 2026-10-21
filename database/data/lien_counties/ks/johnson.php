@@ -48,4 +48,8 @@ return [
         'ron_accepted' => null,
         'source' => 'The June 2026 lien was e-recorded with the Register of Deeds; the county asks for a complete notary certificate (header).',
     ],
+    // The fee to record the lien or release here (EREG-143), in cents: one
+    // value for both, or keyed by kind. Only a flat fee this file states; null
+    // is unknown. $17 flat for liens under K.S.A. 58-201 (notes); a release is not stated.
+    'recording_fee_cents' => ['mechanics_lien' => 1700],
 ];

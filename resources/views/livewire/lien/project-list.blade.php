@@ -13,6 +13,13 @@
         </flux:callout>
     @endif
 
+    @if($chosenProductName)
+        {{-- The product picked in the chooser (EREG-143) --}}
+        <flux:callout color="blue" icon="information-circle">
+            You picked: {{ $chosenProductName }}. Open the project it is for, or add a new project.
+        </flux:callout>
+    @endif
+
     <x-ui.card>
         <div class="mb-4">
             <flux:input

@@ -46,6 +46,19 @@ use App\Domains\Lien\Enums\DeadlineStatus;
     </flux:callout>
     @endif
 
+    @if($chosenProduct)
+    {{-- The product picked in the chooser (EREG-143) --}}
+    <div class="flex flex-col gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-sm text-blue-900">You picked: <span class="font-semibold">{{ $chosenProduct['name'] }}</span>. Start it on this project, or choose another step below.</p>
+        <div class="flex shrink-0 items-center gap-2">
+            <flux:button wire:click="dismissChosenProduct" size="sm" variant="ghost">Not now</flux:button>
+            <flux:button wire:click="startFiling({{ $chosenProduct['deadlineId'] }})" size="sm" variant="primary">
+                {{ $chosenProduct['action'] }}
+            </flux:button>
+        </div>
+    </div>
+    @endif
+
     <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         {{-- ============ LEFT: document actions ============ --}}
         <div class="min-w-0 space-y-6">

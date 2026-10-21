@@ -13,11 +13,15 @@
     $intentProduct = (! $forWaiver && ($invitation ?? null) === null) ? ($signupIntent['product'] ?? null) : null;
     $intentStateName = $intentProduct && ($signupIntent['state'] ?? null) ? config('states.'.$signupIntent['state']) : null;
     $statePrefix = $intentStateName ? $intentStateName.' ' : '';
+    // The document picked in the lien product chooser (EREG-143), if any.
+    $lienProduct = $intentProduct === 'liens' ? \App\Domains\Lien\Support\LienProductIntent::product() : null;
     $productHeading = match ($intentProduct) {
         'sales-tax' => "Create your account to start your {$statePrefix}sales tax registration",
         'resale-cert' => "Create your account to generate {$statePrefix}resale certificates",
         'llc' => 'Create your account to start your LLC',
-        'liens' => 'Create your account to protect your payment',
+        'liens' => $lienProduct
+            ? 'Create your account to start your '.$statePrefix.mb_strtolower(\App\Domains\Lien\Support\LienProducts::name($lienProduct))
+            : 'Create your account to protect your payment',
         default => null,
     };
 @endphp

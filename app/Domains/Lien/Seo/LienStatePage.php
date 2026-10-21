@@ -356,22 +356,38 @@ final class LienStatePage
 
     public function headlineLienDeadline(bool $short = false): ?string
     {
-        $rows = $this->deadlines['mechanics_lien'] ?? [];
+        return $this->headlineDeadline('mechanics_lien', $short);
+    }
+
+    /** What the mechanics lien deadline depends on: "project type", "role", or null when uniform. */
+    public function lienDeadlineVariance(): ?string
+    {
+        return $this->deadlineVariance('mechanics_lien');
+    }
+
+    /**
+     * The first deadline in the table for a document type, with what it
+     * varies by: "within 90 days after ... (varies by role)". Null when the
+     * state has no deadline rows for it.
+     */
+    public function headlineDeadline(string $documentType, bool $short = false): ?string
+    {
+        $rows = $this->deadlines[$documentType] ?? [];
         if (! $rows) {
             return null;
         }
 
         $whens = array_values(array_unique(array_column($rows, 'when')));
         $first = $short ? preg_replace('/\s*\(or .*?\)/', '', $whens[0]) : $whens[0];
-        $variance = $this->lienDeadlineVariance();
+        $variance = $this->deadlineVariance($documentType);
 
         return $variance ? "{$first} (varies by {$variance})" : $first;
     }
 
-    /** What the mechanics lien deadline depends on: "project type", "role", or null when uniform. */
-    public function lienDeadlineVariance(): ?string
+    /** What a document type's deadline depends on: "project type", "role", or null when uniform. */
+    public function deadlineVariance(string $documentType): ?string
     {
-        $rows = $this->deadlines['mechanics_lien'] ?? [];
+        $rows = $this->deadlines[$documentType] ?? [];
         if (count(array_unique(array_column($rows, 'when'))) <= 1) {
             return null;
         }

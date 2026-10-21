@@ -1811,6 +1811,15 @@
                     @endif
                     @endif
 
+                    {{-- Pass-through county recording fee (EREG-143): a payment item with no price row --}}
+                    @if (\App\Domains\Lien\Services\CountyRecordingFee::applies($filing->service_level?->value, $filing->documentType?->slug))
+                    @php $recordingFeeItem = collect($refundablePayment?->meta['items'] ?? [])->firstWhere('product_key', \App\Domains\Lien\Services\CountyRecordingFee::PRODUCT_KEY); @endphp
+                    <div class="flex items-center justify-between gap-4">
+                        <flux:text class="text-sm text-gray-500">County recording fee</flux:text>
+                        <flux:text class="font-medium text-right">{{ $recordingFeeItem ? '$'.number_format(((int) $recordingFeeItem['amount_cents']) / 100, 2).' charged' : 'Not charged: bill at cost after recording' }}</flux:text>
+                    </div>
+                    @endif
+
                     <flux:separator />
 
                     <div class="flex items-center justify-between">

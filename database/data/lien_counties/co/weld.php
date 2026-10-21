@@ -37,4 +37,8 @@ return [
         'ron_accepted' => null,
         'source' => 'Weld takes e-recording through Simplifile, eRecording Partners and CSC (notes).',
     ],
+    // The fee to record the lien or release here (EREG-143), in cents: one
+    // value for both, or keyed by kind. Only a flat fee this file states; null
+    // is unknown. $43 per document regardless of the number of pages (header).
+    'recording_fee_cents' => 4300,
 ];

@@ -74,6 +74,16 @@ class LienFilingPolicy
     }
 
     /**
+     * Determine if the user can answer a request we sent about the filing
+     * (the "What we need from you" panel on the filing page): members of the
+     * filing's business only.
+     */
+    public function answerRequest(User $user, LienFiling $filing): bool
+    {
+        return $this->belongsToBusiness($user, $filing);
+    }
+
+    /**
      * Determine if the user can checkout the filing.
      */
     public function checkout(User $user, LienFiling $filing): bool

@@ -34,17 +34,26 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Stripe\Exception\ApiErrorException;
 
 class LienFilingDetail extends Component
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, WithFileUploads;
 
     public LienFiling $lienFiling;
 
     public string $newStatus = '';
 
     public string $note = '';
+
+    /**
+     * The request emailed to the customer when moving to Awaiting Client /
+     * E-Signature / Notary (required for those three), with an optional PDF.
+     */
+    public string $customerMessage = '';
+
+    public $customerAttachment = null;
 
     public string $comment = '';
 
@@ -135,6 +144,7 @@ class LienFilingDetail extends Component
         'application_project_updated', 'application_filing_updated', 'application_parties_updated',
         'document_details_updated', 'recipient_added', 'recipient_updated',
         'esign_sent', 'esign_reminder_sent', 'esign_completed',
+        'client_request_sent', 'client_response',
     ];
 
     public function mount(string|LienFiling $lienFiling): void
@@ -268,6 +278,19 @@ class LienFilingDetail extends Component
             ->filter(fn ($event) => $event->event_type === SignatureEventType::ReminderSent)
             ->values() ?? collect();
 
+        // Requests we emailed and the customer's answers (FilingShow).
+        $clientResponses = $this->lienFiling->events()
+            ->where('event_type', 'client_response')
+            ->with('creator')
+            ->latest()
+            ->get();
+
+        // Files on both sides, keyed by media id for the links.
+        $requestFiles = $this->lienFiling->media()
+            ->whereIn('collection_name', ['requests', 'customer_uploads'])
+            ->get()
+            ->keyBy('id');
+
         return view('lien.admin.filing-detail', [
             'filing' => $this->lienFiling,
             'kanbanColumn' => KanbanColumn::forFiling($this->lienFiling),
@@ -290,6 +313,10 @@ class LienFilingDetail extends Component
             'canSendEsign' => $canSendEsign,
             'esignAwaiting' => $esignAwaiting,
             'esignReminders' => $esignReminders,
+            'clientRequest' => $this->lienFiling->client_request_json,
+            'clientRequestOpen' => $this->lienFiling->openClientRequest() !== null,
+            'clientResponses' => $clientResponses,
+            'requestFiles' => $requestFiles,
             'canRemindSigner' => $esignAwaiting && $canChangeStatus && $esignRequest->invitation_bounced_at === null,
             'signingUrl' => $esignAwaiting && $canChangeStatus && ! $esignRequest->isExpired()
                 ? $esignRequest->signingUrl()
@@ -465,6 +492,10 @@ class LienFilingDetail extends Component
 
         $isRecordingTransition = $this->newStatus === FilingStatus::SubmittedForRecording->value;
 
+        // Awaiting Client / E-Signature / Notary: the customer gets the
+        // message by email at once, so it is required.
+        $isCustomerRequest = FilingStatus::tryFrom($this->newStatus)?->isWaitingOnCustomer() ?? false;
+
         $rules = [
             'newStatus' => ['required', Rule::enum(FilingStatus::class)],
             'note' => ['nullable', 'string', 'max:1000'],
@@ -477,7 +508,18 @@ class LienFilingDetail extends Component
             $rules['recordingSubmittedAt'] = ['required', 'date'];
         }
 
-        $this->validate($rules);
+        if ($isCustomerRequest) {
+            $rules['customerMessage'] = ['required', 'string', 'max:2000'];
+            $rules['customerAttachment'] = ['nullable', 'file', 'mimes:pdf', 'max:10240'];
+        }
+
+        $this->validate($rules, [
+            'customerMessage.required' => 'Write the message for the customer. It is emailed to them when you save.',
+            'customerMessage.max' => 'Keep the message under 2,000 characters.',
+            'customerAttachment.file' => 'The attachment did not upload. Please try again.',
+            'customerAttachment.mimes' => 'The attachment must be a PDF.',
+            'customerAttachment.max' => 'The attachment must be 10 MB or smaller.',
+        ]);
 
         $action = app(ChangeFilingStatus::class);
         $action->execute(
@@ -492,13 +534,19 @@ class LienFilingDetail extends Component
             recordingSubmittedAt: $isRecordingTransition && $this->recordingSubmittedAt
                 ? Carbon::parse($this->recordingSubmittedAt, config('app.display_timezone'))->utc()
                 : null,
+            customerMessage: $isCustomerRequest ? $this->customerMessage : null,
+            attachment: $isCustomerRequest ? $this->customerAttachment : null,
         );
 
         $this->lienFiling->refresh();
         $this->hydrateRecordingFields();
-        $this->reset(['newStatus', 'note']);
+        $this->reset(['newStatus', 'note', 'customerMessage', 'customerAttachment']);
 
-        session()->flash('success', 'Status updated successfully.');
+        $recipient = $this->lienFiling->createdBy?->email;
+
+        session()->flash('success', $isCustomerRequest && $recipient
+            ? "Status updated. The message was emailed to {$recipient}."
+            : 'Status updated successfully.');
     }
 
     /**

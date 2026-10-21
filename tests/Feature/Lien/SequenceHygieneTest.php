@@ -394,17 +394,19 @@ describe('replies reach the support inbox', function () {
 });
 
 describe('the "we need information" copy', function () {
-    it('tells the customer the same thing on the filing page and in the reminder', function () {
-        $sentence = 'Please check the request we emailed you and reply to it.';
-
-        expect(FilingStatus::AwaitingClient->whatsNext())->toBe($sentence);
+    // EREG-128 put the request and an answer form on the filing page, so the
+    // status copy now points there. A filing with no stored request (moved
+    // to Awaiting Client before EREG-128) still gets the email wording, on
+    // the page and in the generic reminder.
+    it('points the filing page at the request on it, and the generic reminder at the email', function () {
+        expect(FilingStatus::AwaitingClient->whatsNext())->toBe('Read the request below and answer it here.');
 
         $context = FilingStatus::AwaitingClient->reminderContext();
-        expect($context['body'])->toContain($sentence)
+        expect($context['body'])->toContain('Please check the request we emailed you and reply to it.')
             ->and($context['cta_label'])->not->toBe('Provide Information');
     });
 
-    it('shows it on the filing page', function () {
+    it('shows the email wording on the page of a filing with no stored request', function () {
         $filing = LienFiling::factory()->forProject($this->project)->create([
             'document_type_id' => $this->prelim->id,
             'status' => FilingStatus::AwaitingClient,
@@ -417,6 +419,7 @@ describe('the "we need information" copy', function () {
 
         Livewire::test(FilingShow::class, ['filing' => $filing])
             ->assertSee('Please check the request we emailed you and reply to it.')
+            ->assertDontSee('Read the request below')
             ->assertDontSee('respond to our email');
     });
 });

@@ -87,10 +87,10 @@
             </p>
 
             {{-- What's Next --}}
-            @if($filing->status->whatsNext())
+            @if($whatsNext)
                 <div class="inline-flex items-center gap-2 text-sm text-zinc-500 bg-zinc-50 px-4 py-2 rounded-full">
                     <flux:icon name="information-circle" class="w-4 h-4" />
-                    <span>{{ $filing->status->whatsNext() }}</span>
+                    <span>{{ $whatsNext }}</span>
                 </div>
             @endif
 
@@ -112,6 +112,14 @@
                     <x-ui.action-button href="{{ route('lien.filings.checkout', $filing) }}">
                         Complete Payment
                     </x-ui.action-button>
+                </div>
+            @endif
+
+            @if($clientRequest && $filing->status->value === 'awaiting_client')
+                <div class="mt-6">
+                    <flux:button href="#client-request" variant="primary" icon="arrow-down">
+                        Answer the request
+                    </flux:button>
                 </div>
             @endif
 
@@ -139,6 +147,62 @@
             </div>
         @endif
     </div>
+
+    {{-- The request we emailed (Awaiting Client / E-Signature / Notary), answered right here. --}}
+    @if($clientRequest)
+        <div id="client-request" class="scroll-mt-6 rounded-xl border-2 border-orange-300 bg-white overflow-hidden">
+            <div class="p-6 space-y-4">
+                <div class="flex items-center gap-2">
+                    <flux:icon name="chat-bubble-left-ellipsis" class="w-5 h-5 text-orange-600" />
+                    <h2 class="text-lg font-semibold text-zinc-900">What we need from you</h2>
+                </div>
+
+                <div class="rounded-lg bg-orange-50 p-4 text-zinc-800 whitespace-pre-line">{{ $clientRequest['text'] }}</div>
+
+                <p class="text-sm text-zinc-500">
+                    Sent by {{ $clientRequestSender ? $clientRequestSender.' at eRegister' : 'eRegister' }}{{ $clientRequestSentAt ? ' on '.$clientRequestSentAt->eastern()->format('M j, Y \a\t g:i A T') : '' }}.
+                </p>
+
+                @if($clientRequestAttachment)
+                    <a href="{{ $clientRequestAttachment->getTemporaryUrl(now()->addMinutes(30)) }}"
+                       target="_blank"
+                       class="inline-flex items-center gap-2 text-sm text-blue-600 hover:underline">
+                        <flux:icon name="paper-clip" class="w-4 h-4" />
+                        {{ $clientRequestAttachment->file_name }}
+                    </a>
+                @endif
+
+                <form wire:submit="submitAnswer" class="space-y-4 border-t border-border pt-4">
+                    <flux:field>
+                        <flux:label>Your answer</flux:label>
+                        <flux:textarea wire:model="answer" rows="5" placeholder="Type your answer here." />
+                        <flux:error name="answer" />
+                    </flux:field>
+
+                    <flux:field>
+                        <flux:label>Attach a file (optional)</flux:label>
+                        <flux:file-upload wire:model="answerFile" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif">
+                            <flux:file-upload.dropzone
+                                inline
+                                heading="Drop a file here or click to browse"
+                                text="PDF, JPG, PNG or HEIC, up to 20 MB"
+                                with-progress
+                            />
+                        </flux:file-upload>
+                        <flux:error name="answerFile" />
+                    </flux:field>
+
+                    @if($answerFile)
+                        <flux:text class="text-sm">{{ $answerFile->getClientOriginalName() }}</flux:text>
+                    @endif
+
+                    <flux:button type="submit" variant="primary" icon="paper-airplane">
+                        Send answer
+                    </flux:button>
+                </form>
+            </div>
+        </div>
+    @endif
 
     {{-- Self-Serve Status Update (for non-full-service filings) --}}
     @if(!$filing->isFullService() && $filing->isPaid() && in_array($filing->status->value, ['paid', 'mailed', 'recorded']))

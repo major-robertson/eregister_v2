@@ -9,6 +9,7 @@ use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Enums\RecordingMethod;
 use App\Domains\Lien\Enums\ServiceLevel;
 use App\Domains\Lien\Exceptions\InvalidStatusTransitionException;
+use App\Mail\FilingActionRequested;
 use App\Models\EmailSequence;
 use App\Models\Payment;
 use App\Models\User;
@@ -22,9 +23,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class LienFiling extends Model implements HasMedia
 {
@@ -51,6 +55,7 @@ class LienFiling extends Model implements HasMedia
         'payload_json',
         'parties_snapshot_json',
         'document_details_json',
+        'client_request_json',
         'stripe_checkout_session_id',
         'stripe_payment_intent_id',
         'paid_at',
@@ -75,6 +80,7 @@ class LienFiling extends Model implements HasMedia
             'payload_json' => 'array',
             'parties_snapshot_json' => 'array',
             'document_details_json' => 'array',
+            'client_request_json' => 'array',
             'paid_at' => 'datetime',
             'mailed_at' => 'datetime',
             'recording_method' => RecordingMethod::class,
@@ -140,6 +146,18 @@ class LienFiling extends Model implements HasMedia
 
         $this->addMediaCollection('proofs')
             ->acceptsMimeTypes(['application/pdf', 'image/jpeg', 'image/png'])
+            ->useDisk('s3');
+
+        // A PDF an admin attaches to a request for the customer (emailed
+        // with it and linked on the filing page).
+        $this->addMediaCollection('requests')
+            ->acceptsMimeTypes(['application/pdf'])
+            ->useDisk('s3');
+
+        // Files the customer sends when answering a request. FilingShow
+        // validates the type (PDF, JPG, PNG, HEIC); no list here because
+        // phones label HEIC photos inconsistently.
+        $this->addMediaCollection('customer_uploads')
             ->useDisk('s3');
     }
 
@@ -345,6 +363,13 @@ class LienFiling extends Model implements HasMedia
     /**
      * Transition to a new status, validating the transition and creating an event.
      *
+     * Moving into a waiting status (Awaiting Client / E-Signature / Notary)
+     * with $meta['customer_message'] (and optionally
+     * $meta['attachment_media_id'], a 'requests' media id) opens a request:
+     * it is stored in client_request_json and emailed to the filing's creator
+     * at once (see ChangeFilingStatus). Leaving a waiting status closes the
+     * open request.
+     *
      * @throws InvalidStatusTransitionException
      */
     public function transitionTo(FilingStatus $newStatus, array $meta = []): void
@@ -370,6 +395,25 @@ class LienFiling extends Model implements HasMedia
             $updates['completed_at'] = now();
         }
 
+        // Leaving a waiting status closes the open request. The text stays
+        // for history (the admin page shows it with the customer's answer).
+        $request = $this->client_request_json;
+        if ($oldStatus->isWaitingOnCustomer() && is_array($request) && ($request['resolved_at'] ?? null) === null) {
+            $updates['client_request_json'] = array_merge($request, ['resolved_at' => now()->toIso8601String()]);
+        }
+
+        $opensRequest = $newStatus->isWaitingOnCustomer() && filled($meta['customer_message'] ?? null);
+        if ($opensRequest) {
+            $updates['client_request_json'] = [
+                'text' => $meta['customer_message'],
+                'requested_at' => now()->toIso8601String(),
+                'requested_by_user_id' => auth()->id(),
+                'attachment_media_id' => $meta['attachment_media_id'] ?? null,
+                'status' => $newStatus->value,
+                'resolved_at' => null,
+            ];
+        }
+
         $this->update($updates);
 
         // Create event
@@ -385,6 +429,87 @@ class LienFiling extends Model implements HasMedia
         ]);
 
         $this->syncActionReminderSequence($oldStatus, $newStatus);
+
+        if ($opensRequest) {
+            $this->sendClientRequest();
+        }
+    }
+
+    /**
+     * The request we sent the customer, while the filing still waits on it:
+     * {text, requested_at, requested_by_user_id, attachment_media_id, status,
+     * resolved_at}. Null once answered or the filing has moved on, and for
+     * filings moved to a waiting status before requests were stored.
+     */
+    public function openClientRequest(): ?array
+    {
+        $request = $this->client_request_json;
+
+        if (! is_array($request) || ($request['resolved_at'] ?? null) !== null || ! $this->status->isWaitingOnCustomer()) {
+            return null;
+        }
+
+        return $request;
+    }
+
+    /**
+     * The PDF attached to the latest request, if any. Queried rather than
+     * read from the loaded media relation, which does not pick up a file
+     * added a moment ago (the request email is built right after).
+     */
+    public function clientRequestAttachment(): ?Media
+    {
+        $mediaId = $this->client_request_json['attachment_media_id'] ?? null;
+
+        return $mediaId
+            ? $this->media()->where('collection_name', 'requests')->whereKey($mediaId)->first()
+            : null;
+    }
+
+    /**
+     * The admin who sent the latest request, if known.
+     */
+    public function clientRequestSender(): ?User
+    {
+        $userId = $this->client_request_json['requested_by_user_id'] ?? null;
+
+        return $userId ? User::find($userId) : null;
+    }
+
+    public function clientRequestSentAt(): ?Carbon
+    {
+        $requestedAt = $this->client_request_json['requested_at'] ?? null;
+
+        return $requestedAt ? Carbon::parse($requestedAt) : null;
+    }
+
+    /**
+     * Email the request just opened to the filing's creator, and log it.
+     * The mail is queued after commit, so a rolled-back change sends nothing.
+     */
+    protected function sendClientRequest(): void
+    {
+        $user = $this->createdBy ?? User::find($this->created_by_user_id);
+
+        if (! $user) {
+            return;
+        }
+
+        $request = $this->client_request_json;
+
+        $this->events()->create([
+            'business_id' => $this->business_id,
+            'event_type' => 'client_request_sent',
+            'payload_json' => [
+                'text' => $request['text'],
+                'attachment_media_id' => $request['attachment_media_id'],
+                'status' => $request['status'],
+                'sent_to' => $user->email,
+            ],
+            'created_by' => auth()->id(),
+        ]);
+
+        Mail::to($user)->queue(new FilingActionRequested($this));
     }
 
     /**

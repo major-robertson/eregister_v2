@@ -100,9 +100,11 @@ enum FilingStatus: string
             self::Draft => 'Your filing is saved as a draft.',
             self::AwaitingPayment => 'Your filing is ready. Complete payment to proceed.',
             self::Paid => 'Payment received. Your filing is being prepared.',
-            self::AwaitingClient => 'We need additional information from you to continue processing your filing.',
-            self::AwaitingEsign => 'An e-signature request has been sent to you. Please check your email.',
-            self::AwaitingNotary => 'Your document is awaiting notarization.',
+            // The three waiting statuses point at the request panel on the
+            // filing page (FilingShow), where the customer can answer.
+            self::AwaitingClient => "We've asked you for something and need it before we can continue.",
+            self::AwaitingEsign => 'Your document is ready for your e-signature.',
+            self::AwaitingNotary => 'Your document needs to be notarized.',
             self::NeedsReview => 'Your response has been received and is being reviewed by our team.',
             self::ReadyToFile => 'Your filing has been reviewed and is ready to be filed.',
             self::WaitingOnNextStep => 'Your filing is waiting for a prerequisite step to be completed.',
@@ -125,11 +127,9 @@ enum FilingStatus: string
         return match ($this) {
             self::Draft => 'Complete the form and submit for processing.',
             self::AwaitingPayment => 'Complete payment to begin processing.',
-            // Same sentence as the reminder email (reminderContext). There is
-            // no form on the filing page yet, so the reply is how they answer.
-            self::AwaitingClient => 'Please check the request we emailed you and reply to it.',
-            self::AwaitingEsign => 'Please complete the e-signature request sent to your email.',
-            self::AwaitingNotary => 'Your document will be notarized shortly.',
+            self::AwaitingClient => 'Read the request below and answer it here.',
+            self::AwaitingEsign => 'Use the button in the email or on this page to sign.',
+            self::AwaitingNotary => 'Follow the request below. You can upload the notarized copy here.',
             self::Paid, self::NeedsReview, self::ReadyToFile, self::WaitingOnNextStep, self::Hold, self::InFulfillment, self::Mailed, self::SubmittedForRecording, self::Recorded => 'We will email you when there is an update or if we need additional information.',
             self::Complete, self::Canceled, self::Refunded => null,
         };
@@ -153,8 +153,10 @@ enum FilingStatus: string
         return match ($this) {
             self::AwaitingClient => [
                 'headline' => 'We need information from you',
+                // Only for filings with no stored request (moved here before
+                // requests were saved). Otherwise FilingActionReminder quotes
+                // the request and its button reads "Answer here".
                 'body' => 'Your filing is on hold because we need additional information from you before we can continue processing it. Please check the request we emailed you and reply to it.',
-                // The button opens the filing page; there is nothing to fill in there yet.
                 'cta_label' => 'View Filing Details',
             ],
             self::AwaitingEsign => [

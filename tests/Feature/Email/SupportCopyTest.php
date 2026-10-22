@@ -1,6 +1,8 @@
 <?php
 
 use App\Domains\Business\Models\Business;
+use App\Domains\Lien\Admin\Actions\ChangeFilingStatus;
+use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Models\LienDocumentType;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienProject;
@@ -73,6 +75,21 @@ it('sends nothing at all when the customer is a test account', function () {
     expect(supportCopyBccs())->toBe([]);
 });
 
-it('is off by default', function () {
-    expect(config('mail.copy_to_support'))->toBe([]);
+it('copies the request an admin sends with Awaiting Client', function () {
+    $admin = User::factory()->create();
+    $admin->givePermissionTo(['lien.view', 'lien.update', 'lien.change_status']);
+    $this->actingAs($admin);
+
+    app(ChangeFilingStatus::class)->execute(
+        filing: $this->filing,
+        newStatus: FilingStatus::AwaitingClient,
+        customerMessage: 'Please send the signed contract.',
+    );
+
+    $request = Mail::getSymfonyTransport()->messages()
+        ->first(fn ($sent) => str_starts_with((string) $sent->getOriginalMessage()->getSubject(), 'We need information'));
+
+    expect($request)->not->toBeNull()
+        ->and(array_map(fn ($address) => $address->getAddress(), $request->getOriginalMessage()->getBcc()))
+        ->toBe(['contact@eregister.com']);
 });

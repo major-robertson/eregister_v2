@@ -10,6 +10,7 @@ use App\Domains\Lien\Enums\RecordingMethod;
 use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienFilingRecipient;
 use App\Mail\Concerns\RepliesToSupport;
+use App\Models\EmailLog;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -95,6 +96,7 @@ class FilingMilestone extends Mailable implements ShouldQueue
     public function __construct(LienFiling $filing, FilingStatus $status)
     {
         $this->afterCommit = true;
+        $this->metadata(EmailLog::about($filing));
 
         $this->status = $status->value;
         $this->userName = $filing->createdBy?->first_name ?: 'there';

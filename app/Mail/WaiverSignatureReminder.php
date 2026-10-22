@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use App\Domains\Esign\Models\SignatureRequest;
 use App\Domains\Lien\Models\LienWaiver;
+use App\Models\EmailLog;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -36,6 +37,7 @@ class WaiverSignatureReminder extends Mailable implements ShouldQueue
     public function __construct(public SignatureRequest $request, LienWaiver $waiver, int $daysWaiting)
     {
         $this->afterCommit = true;
+        $this->metadata(EmailLog::about($waiver));
 
         $this->signerName = $request->signer_name_snapshot ?: 'there';
         $this->formTitle = $waiver->render_snapshot_json['form']['title'] ?? 'Lien Waiver';

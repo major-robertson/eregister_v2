@@ -222,17 +222,32 @@
                 </div>
             </details>
 
-            {{-- Activity log: status changes and comments (a comment is a
-                 row whose from and to status match) --}}
+            {{-- Activity log: status changes, comments (a comment is a row
+                 whose from and to status match) and the emails sent about
+                 the application (EREG-154) --}}
             <div class="rounded-xl border border-border bg-white p-6">
                 <flux:heading size="md">Activity</flux:heading>
-                @if ($this->transitions->isEmpty())
+                @if ($this->activity->isEmpty())
                     <flux:text class="mt-3 text-sm text-text-secondary">
                         No status changes or comments yet. The card has been in {{ $state->current_admin_status->label() }} since the application was paid.
                     </flux:text>
                 @else
                     <ol class="mt-4 space-y-4">
-                        @foreach ($this->transitions as $transition)
+                        @foreach ($this->activity as $transition)
+                            @if ($transition instanceof \App\Models\EmailLog)
+                            <li class="flex gap-3" wire:key="email-{{ $transition->id }}">
+                                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-50">
+                                    <flux:icon name="envelope" class="size-4 text-sky-600" />
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    @include('admin.partials.sent-email-summary', ['email' => $transition])
+                                    <flux:text class="mt-1 text-xs text-text-secondary">
+                                        {{ $transition->created_at->eastern()->format('M j, Y g:ia') }}
+                                        ({{ $transition->created_at->diffForHumans() }})
+                                    </flux:text>
+                                </div>
+                            </li>
+                            @else
                             <li class="flex gap-3" wire:key="transition-{{ $transition->id }}">
                                 <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100">
                                     <flux:icon name="{{ $transition->isComment() ? 'chat-bubble-left' : $transition->to_status->icon() }}" class="size-4 text-zinc-600" />
@@ -263,9 +278,12 @@
                                     @endif
                                 </div>
                             </li>
+                            @endif
                         @endforeach
                     </ol>
                 @endif
+
+                @include('admin.partials.sent-email-modal')
             </div>
         </div>
 

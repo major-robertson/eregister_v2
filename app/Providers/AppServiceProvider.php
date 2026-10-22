@@ -15,13 +15,16 @@ use App\Domains\Lien\Policies\LienProjectPolicy;
 use App\Domains\Portal\Policies\BusinessPolicy;
 use App\Domains\Portal\Policies\FormApplicationPolicy;
 use App\Mail\BroadcastMailable;
+use App\Mail\Concerns\RepliesToSupport;
 use App\Models\EmailUnsubscribe;
 use App\Models\User;
+use App\Support\Email\LogSentEmail;
 use App\Support\Email\RecordEmailBounce;
 use App\Support\Workspaces\WorkspaceRegistry;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Mail\Events\MessageSending;
+use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -82,6 +85,33 @@ class AppServiceProvider extends ServiceProvider
         $this->configureTunnelScheme();
         $this->configureBounceCapture();
         $this->configureMailGuard();
+        $this->configureSupportCopies();
+
+        // Every email the app sends gets an email_logs row (EREG-154).
+        Event::listen(MessageSent::class, LogSentEmail::class);
+    }
+
+    /**
+     * Bcc the support inbox on the service mail named in
+     * mail.copy_to_support, so Front shows the email a customer is
+     * answering (EREG-155). Registered after the mail guard: a message the
+     * guard cancels (only test.test recipients) never reaches this listener,
+     * so it can't go out to the support inbox alone.
+     */
+    protected function configureSupportCopies(): void
+    {
+        Event::listen(function (MessageSending $event): void {
+            $class = $event->data['__laravel_mailable'] ?? null;
+            $support = config('mail.support_address');
+
+            if (! is_string($class) || blank($support)
+                || ! in_array(class_basename($class), config('mail.copy_to_support', []), true)
+                || ! in_array(RepliesToSupport::class, class_uses_recursive($class), true)) {
+                return;
+            }
+
+            $event->message->addBcc($support);
+        });
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Domains\Forms\Models\FormApplication;
+use App\Models\EmailLog;
 use App\Models\EmailSequence;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -25,6 +26,7 @@ class RegistrationUnfinishedReminder extends Mailable implements ShouldQueue
         public int $step
     ) {
         $this->afterCommit = true;
+        $this->metadata(EmailLog::about($sequence));
     }
 
     public function envelope(): Envelope

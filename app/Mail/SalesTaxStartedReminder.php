@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Domains\SalesTax\SalesTaxFollowUp;
+use App\Models\EmailLog;
 use App\Models\EmailSequence;
 use App\Models\Price;
 use Illuminate\Bus\Queueable;
@@ -28,6 +29,7 @@ class SalesTaxStartedReminder extends Mailable implements ShouldQueue
         public int $step
     ) {
         $this->afterCommit = true;
+        $this->metadata(EmailLog::about($sequence));
     }
 
     public function envelope(): Envelope

@@ -131,6 +131,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Copies To The Support Inbox
+    |--------------------------------------------------------------------------
+    |
+    | Service mail named here goes out with a Bcc to the support inbox, so
+    | Front shows the email a customer is answering (EREG-155). Mailable
+    | class names without the namespace. Only mailables that use
+    | RepliesToSupport qualify. Starts with the request an admin writes for
+    | Awaiting Client / E-Signature / Notary; add FilingActionReminder,
+    | FilingMilestone and others once Front handles these copies well.
+    |
+    */
+
+    'copy_to_support' => ['FilingActionRequested'],
+
+    /*
+    |--------------------------------------------------------------------------
     | Blocked Recipient Domains
     |--------------------------------------------------------------------------
     |

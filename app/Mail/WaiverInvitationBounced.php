@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use App\Domains\Esign\Models\SignatureRequest;
 use App\Domains\Lien\Models\LienWaiver;
+use App\Models\EmailLog;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -32,6 +33,7 @@ class WaiverInvitationBounced extends Mailable implements ShouldQueue
         public SignatureRequest $request,
     ) {
         $this->afterCommit = true;
+        $this->metadata(EmailLog::about($waiver));
 
         $this->formTitle = $waiver->render_snapshot_json['form']['title'] ?? 'Lien Waiver';
         $this->projectName = $waiver->project?->name ?? 'your project';

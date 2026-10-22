@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Models\LienFiling;
 use App\Mail\Concerns\RepliesToSupport;
+use App\Models\EmailLog;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -46,6 +47,7 @@ class FilingActionRequested extends Mailable implements ShouldQueue
     public function __construct(LienFiling $filing)
     {
         $this->afterCommit = true;
+        $this->metadata(EmailLog::about($filing));
 
         $request = $filing->client_request_json;
         $status = FilingStatus::from($request['status']);

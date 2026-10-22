@@ -2,6 +2,7 @@
 
 namespace App\Domains\Lien\Admin\Livewire;
 
+use App\Domains\Admin\Livewire\Concerns\ShowsSentEmails;
 use App\Domains\Esign\Actions\VerifySignatureChain;
 use App\Domains\Esign\Actions\VoidSignatureRequest;
 use App\Domains\Esign\Enums\SignatureEventType;
@@ -37,7 +38,10 @@ use App\Domains\Lien\Models\LienFiling;
 use App\Domains\Lien\Models\LienFilingEvent;
 use App\Domains\Lien\Models\LienStateRule;
 use App\Domains\Lien\Support\NotarizationInstructions;
+use App\Mail\FilingActionRequested;
 use App\Mail\FilingMilestone;
+use App\Mail\SignerInvitation;
+use App\Mail\SignerReminder;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -50,7 +54,7 @@ use Stripe\Exception\ApiErrorException;
 
 class LienFilingDetail extends Component
 {
-    use AuthorizesRequests, WithFileUploads;
+    use AuthorizesRequests, ShowsSentEmails, WithFileUploads;
 
     public LienFiling $lienFiling;
 
@@ -187,6 +191,19 @@ class LienFilingDetail extends Component
         'draft_sent_for_review', 'draft_approved', 'draft_changes_requested',
         'customer_emailed', 'reply_dismissed',
         LienFilingEvent::PROPERTY_ENTERED,
+    ];
+
+    /**
+     * Timeline entries that announce an email: the email's status and View
+     * link show on the entry instead of a row of their own (EREG-154).
+     *
+     * @var array<string, class-string>
+     */
+    private const ANNOUNCED_EMAILS = [
+        'client_request_sent' => FilingActionRequested::class,
+        'draft_sent_for_review' => FilingActionRequested::class,
+        'esign_sent' => SignerInvitation::class,
+        'esign_reminder_sent' => SignerReminder::class,
     ];
 
     public function mount(string|LienFiling $lienFiling): void
@@ -589,16 +606,24 @@ class LienFilingDetail extends Component
     }
 
     /**
-     * Get activity log including status changes and comments.
+     * Get activity log including status changes, comments and the emails
+     * sent about the filing or its project (deadline reminders).
      */
     public function getActivityLog(): Collection
     {
-        return $this->lienFiling->events()
+        $events = $this->lienFiling->events()
             ->whereIn('event_type', self::ACTIVITY_EVENT_TYPES)
             ->with('creator')
             ->latest()
             ->limit(50)
             ->get();
+
+        return $this->withSentEmails($events, self::ANNOUNCED_EMAILS);
+    }
+
+    protected function sentEmailRecords(): array
+    {
+        return array_values(array_filter([$this->lienFiling, $this->lienFiling->project]));
     }
 
     /**

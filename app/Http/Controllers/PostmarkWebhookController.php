@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EmailLog;
 use App\Models\EmailUnsubscribe;
 use App\Models\User;
 use App\Models\WebsiteInvitation;
@@ -19,8 +20,11 @@ use Illuminate\Support\Facades\Log;
  * Soft/transient bounces are deliberately ignored: Postmark retries those
  * itself and the address may recover.
  *
- * Configure in Postmark under Server > Webhooks with the Bounce, Spam
- * Complaint, and Subscription Change events, pointing at
+ * Delivery, Bounce and Spam Complaint events also set the status of the
+ * email they are about in the email log (EREG-154), matched on MessageID.
+ *
+ * Configure in Postmark under Server > Webhooks with the Delivery, Bounce,
+ * Spam Complaint, and Subscription Change events, pointing at
  * /webhooks/postmark?token={POSTMARK_WEBHOOK_TOKEN}. Webhooks are set per
  * message stream, so the broadcast stream (promotional mail) needs the same
  * webhook as the transactional one.
@@ -54,6 +58,10 @@ class PostmarkWebhookController extends Controller
 
         if ($recordType === 'SubscriptionChange' && is_string($email) && $email !== '') {
             $this->syncMarketingOptOut($request, $email);
+        }
+
+        if (in_array($recordType, ['Delivery', 'Bounce', 'SpamComplaint'], true)) {
+            EmailLog::recordPostmarkEvent($request->all());
         }
 
         return response()->json(['success' => true]);

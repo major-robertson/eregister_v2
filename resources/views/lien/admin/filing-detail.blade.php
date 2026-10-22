@@ -1943,8 +1943,16 @@
                 @if ($activityLog->isNotEmpty())
                 <div class="space-y-2">
                     @foreach ($activityLog as $event)
-                    <div wire:key="event-{{ $event->id }}" class="border-b border-gray-100 pb-2 last:border-0 last:pb-0">
-                        @if ($event->event_type === 'status_changed')
+                    <div wire:key="{{ $event instanceof \App\Models\EmailLog ? 'email' : 'event' }}-{{ $event->id }}" class="border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                        @if ($event instanceof \App\Models\EmailLog)
+                        <div class="flex items-start gap-2">
+                            <flux:icon name="envelope" class="mt-0.5 size-4 shrink-0 text-sky-500" />
+                            <div class="min-w-0">
+                                @include('admin.partials.sent-email-summary', ['email' => $event])
+                                <flux:text class="text-xs text-gray-400">{{ $event->created_at->eastern()->format('M j, g:i A') }}</flux:text>
+                            </div>
+                        </div>
+                        @elseif ($event->event_type === 'status_changed')
                         @php
                         $toStatus = \App\Domains\Lien\Enums\FilingStatus::tryFrom($event->payload_json['to'] ?? '');
                         $note = $event->payload_json['meta']['note'] ?? null;
@@ -2311,6 +2319,11 @@
                             </div>
                         </div>
                         @endif
+                        @if ($event->relationLoaded('sentEmail'))
+                        <div class="ml-6">
+                            @include('admin.partials.sent-email-status', ['email' => $event->getRelation('sentEmail')])
+                        </div>
+                        @endif
                     </div>
                     @endforeach
                 </div>
@@ -2318,6 +2331,8 @@
                 <flux:text class="text-gray-500">No activity recorded.</flux:text>
                 @endif
             </div>
+
+            @include('admin.partials.sent-email-modal')
 
             <!-- Lien Rights Summary Card -->
             @if ($filing->project)

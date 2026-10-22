@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Domains\Lien\Enums\FilingStatus;
 use App\Domains\Lien\Models\LienFiling;
 use App\Mail\Concerns\RepliesToSupport;
+use App\Models\EmailLog;
 use App\Models\EmailSequence;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -41,6 +42,7 @@ class FilingActionReminder extends Mailable implements ShouldQueue
         public int $step
     ) {
         $this->afterCommit = true;
+        $this->metadata(EmailLog::about($sequence));
 
         $filing = $sequence->sequenceable;
         $triggerStatus = FilingStatus::from($sequence->trigger_status);

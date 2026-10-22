@@ -18,7 +18,9 @@
         </include>
     </source>
     <php>
-        <ini name="memory_limit" value="512M"/>
+        <!-- The whole suite runs in one process and memory grows test by test;
+             at ~2,500 tests it passed 512M (main's CI, 2026-10-22). -->
+        <ini name="memory_limit" value="1G"/>
         <env name="APP_ENV" value="testing"/>
         <!-- Test requests arrive at http://localhost; keep url() and the SEO identity URLs (config app.url) in agreement. -->
         <env name="APP_URL" value="http://localhost" force="true"/>

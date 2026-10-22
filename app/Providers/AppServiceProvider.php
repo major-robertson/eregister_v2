@@ -15,6 +15,7 @@ use App\Domains\Lien\Policies\LienProjectPolicy;
 use App\Domains\Portal\Policies\BusinessPolicy;
 use App\Domains\Portal\Policies\FormApplicationPolicy;
 use App\Mail\BroadcastMailable;
+use App\Mail\Concerns\RepliesToSupport;
 use App\Models\EmailUnsubscribe;
 use App\Models\User;
 use App\Support\Email\RecordEmailBounce;
@@ -82,6 +83,30 @@ class AppServiceProvider extends ServiceProvider
         $this->configureTunnelScheme();
         $this->configureBounceCapture();
         $this->configureMailGuard();
+        $this->configureSupportCopies();
+    }
+
+    /**
+     * Bcc the support inbox on the service mail named in
+     * mail.copy_to_support, so Front shows the email a customer is
+     * answering (EREG-155). Registered after the mail guard: a message the
+     * guard cancels (only test.test recipients) never reaches this listener,
+     * so it can't go out to the support inbox alone.
+     */
+    protected function configureSupportCopies(): void
+    {
+        Event::listen(function (MessageSending $event): void {
+            $class = $event->data['__laravel_mailable'] ?? null;
+            $support = config('mail.support_address');
+
+            if (! is_string($class) || blank($support)
+                || ! in_array(class_basename($class), config('mail.copy_to_support', []), true)
+                || ! in_array(RepliesToSupport::class, class_uses_recursive($class), true)) {
+                return;
+            }
+
+            $event->message->addBcc($support);
+        });
     }
 
     /**

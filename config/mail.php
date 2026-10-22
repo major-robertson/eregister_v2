@@ -131,6 +131,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Copies To The Support Inbox
+    |--------------------------------------------------------------------------
+    |
+    | Service mail named here goes out with a Bcc to the support inbox, so
+    | Front shows the email a customer is answering (EREG-155). Mailable
+    | class names without the namespace, comma separated, for example
+    | "FilingActionRequested,FilingActionReminder". Only mailables that use
+    | RepliesToSupport qualify. Empty turns it off.
+    |
+    */
+
+    'copy_to_support' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('MAIL_COPY_TO_SUPPORT', ''))
+    ))),
+
+    /*
+    |--------------------------------------------------------------------------
     | Blocked Recipient Domains
     |--------------------------------------------------------------------------
     |

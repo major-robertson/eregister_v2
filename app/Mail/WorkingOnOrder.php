@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Mail\Concerns\RepliesToSupport;
+use App\Models\EmailLog;
 use App\Models\Payment;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -18,6 +19,7 @@ class WorkingOnOrder extends Mailable implements ShouldQueue
     public function __construct(public Payment $payment)
     {
         $this->afterCommit = true;
+        $this->metadata(EmailLog::about($payment));
     }
 
     public function envelope(): Envelope

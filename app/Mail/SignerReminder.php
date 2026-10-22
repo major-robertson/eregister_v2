@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Domains\Esign\DocumentSigningPolicy;
 use App\Domains\Esign\Models\SignatureRequest;
 use App\Mail\Concerns\RepliesToSupport;
+use App\Models\EmailLog;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -37,6 +38,7 @@ class SignerReminder extends Mailable implements ShouldQueue
     public function __construct(public SignatureRequest $request)
     {
         $this->afterCommit = true;
+        $this->metadata(EmailLog::about($request));
 
         $this->signerName = $request->signer?->first_name ?: ($request->signer_name_snapshot ?: 'there');
         $this->title = config("esign.document_types.{$request->document_signing_policy_key}.title", 'your documents');

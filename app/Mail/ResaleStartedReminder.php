@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\EmailLog;
 use App\Models\EmailSequence;
 use App\Models\Price;
 use Illuminate\Bus\Queueable;
@@ -26,6 +27,7 @@ class ResaleStartedReminder extends Mailable implements ShouldQueue
         public int $step
     ) {
         $this->afterCommit = true;
+        $this->metadata(EmailLog::about($sequence));
     }
 
     public function envelope(): Envelope

@@ -2,6 +2,7 @@
 
 namespace App\Domains\Forms\Admin\Livewire;
 
+use App\Domains\Admin\Livewire\Concerns\ShowsSentEmails;
 use App\Domains\Forms\Admin\Support\ApplicationDataDump;
 use App\Domains\Forms\Engine\AnswerFormatter;
 use App\Domains\Forms\Engine\FormRegistry;
@@ -10,6 +11,7 @@ use App\Domains\Forms\Enums\FormApplicationStateAdminStatus;
 use App\Domains\Forms\Models\FormApplication;
 use App\Domains\Forms\Models\FormApplicationState;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -18,6 +20,8 @@ use Livewire\Component;
 
 class SalesTaxApplicationStateDetail extends Component
 {
+    use ShowsSentEmails;
+
     public FormApplicationState $state;
 
     public string $newStatus = '';
@@ -130,6 +134,21 @@ class SalesTaxApplicationStateDetail extends Component
             ->get();
     }
 
+    /**
+     * Status changes, comments and the emails sent about the application
+     * (receipts, reminders, permit approved), newest first.
+     */
+    #[Computed]
+    public function activity(): Collection
+    {
+        return $this->withSentEmails($this->transitions);
+    }
+
+    protected function sentEmailRecords(): array
+    {
+        return [$this->state->application];
+    }
+
     public function changeStatus(): void
     {
         Gate::authorize('tax.change_status');
@@ -156,7 +175,7 @@ class SalesTaxApplicationStateDetail extends Component
 
         // Refresh to pick up the new denormalized status + transitions list.
         $this->state->refresh();
-        unset($this->allowedTransitions, $this->transitions);
+        unset($this->allowedTransitions, $this->transitions, $this->activity);
 
         $this->reset(['newStatus', 'comment']);
 
@@ -178,7 +197,7 @@ class SalesTaxApplicationStateDetail extends Component
 
         $this->state->addAdminComment(trim($this->newComment), Auth::user());
 
-        unset($this->transitions);
+        unset($this->transitions, $this->activity);
 
         $this->reset('newComment');
 

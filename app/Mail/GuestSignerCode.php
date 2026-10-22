@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use App\Domains\Esign\Actions\SendGuestSignerCode;
 use App\Domains\Esign\Models\SignatureRequest;
+use App\Models\EmailLog;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -24,6 +25,7 @@ class GuestSignerCode extends Mailable
         public string $code,
     ) {
         $this->afterCommit = true;
+        $this->metadata(EmailLog::about($request));
     }
 
     public function envelope(): Envelope

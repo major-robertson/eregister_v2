@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Domains\Forms\Models\FormApplication;
+use App\Models\EmailLog;
 use App\Models\Price;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
@@ -28,6 +29,7 @@ class PermitApprovedResaleOffer extends Mailable implements ShouldQueue
         public User $recipient,
     ) {
         $this->afterCommit = true;
+        $this->metadata(EmailLog::about($application));
     }
 
     public function envelope(): Envelope

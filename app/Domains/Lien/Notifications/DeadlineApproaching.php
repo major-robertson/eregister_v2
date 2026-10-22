@@ -3,6 +3,7 @@
 namespace App\Domains\Lien\Notifications;
 
 use App\Domains\Lien\Models\LienProjectDeadline;
+use App\Models\EmailLog;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -46,6 +47,10 @@ class DeadlineApproaching extends Notification implements ShouldQueue
             ->subject("{$document} due {$when}: {$project}")
             ->greeting('Hi '.($notifiable->first_name ?: 'there').',')
             ->line("Your {$document} for **{$project}** is due {$when}, on {$dueDate}.");
+
+        foreach (EmailLog::about($this->deadline) as $key => $value) {
+            $message->metadata($key, $value);
+        }
 
         if (in_array($this->deadline->documentType->slug, self::LIEN_RIGHTS_DOCUMENTS, true)) {
             $message->line('If you miss this deadline, you can lose your lien rights on this job.');

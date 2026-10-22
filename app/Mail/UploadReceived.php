@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use App\Domains\Lien\Models\LienFiling;
 use App\Mail\Concerns\RepliesToSupport;
+use App\Models\EmailLog;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -34,6 +35,7 @@ class UploadReceived extends Mailable implements ShouldQueue
     public function __construct(LienFiling $filing, string $fileName, ?User $customer)
     {
         $this->afterCommit = true;
+        $this->metadata(EmailLog::about($filing));
 
         $this->userName = $customer?->first_name ?: 'there';
         $this->fileName = $fileName;

@@ -18,11 +18,13 @@ use App\Mail\BroadcastMailable;
 use App\Mail\Concerns\RepliesToSupport;
 use App\Models\EmailUnsubscribe;
 use App\Models\User;
+use App\Support\Email\LogSentEmail;
 use App\Support\Email\RecordEmailBounce;
 use App\Support\Workspaces\WorkspaceRegistry;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Mail\Events\MessageSending;
+use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -84,6 +86,9 @@ class AppServiceProvider extends ServiceProvider
         $this->configureBounceCapture();
         $this->configureMailGuard();
         $this->configureSupportCopies();
+
+        // Every email the app sends gets an email_logs row (EREG-154).
+        Event::listen(MessageSent::class, LogSentEmail::class);
     }
 
     /**

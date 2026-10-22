@@ -135,6 +135,63 @@ describe('project edits', function () {
 
         expect($filing->fresh()->events()->where('event_type', 'application_project_updated')->count())->toBe(0);
     });
+
+    it('does not log a legal description that only differs in line endings or trailing whitespace', function () {
+        $admin = editAppAdmin();
+        $project = editAppProject();
+        $project->update(['legal_description' => "Lot 12, Block 4\nTract 5678\n"]);
+        $filing = editAppPaidFiling($project);
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->set('projectForm.legal_description', "Lot 12, Block 4\r\nTract 5678  \r\n")
+            ->set('projectForm.last_furnish_date', '2026-03-01')
+            ->call('updateProjectDetails')
+            ->assertHasNoErrors();
+
+        $event = $filing->fresh()->events()->where('event_type', 'application_project_updated')->sole();
+        expect(array_keys($event->payload_json['changes']))->toBe(['last_furnish_date']);
+        expect($event->payload_json['changes']['last_furnish_date'])->toEqual(['from' => '2026-02-01', 'to' => '2026-03-01']);
+    });
+
+    it('still logs a real legal description change with the submitted text', function () {
+        $admin = editAppAdmin();
+        $project = editAppProject();
+        $project->update(['legal_description' => "Lot 12, Block 4\nTract 5678"]);
+        $filing = editAppPaidFiling($project);
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->set('projectForm.legal_description', "Lot 13, Block 4\r\nTract 5678")
+            ->call('updateProjectDetails')
+            ->assertHasNoErrors();
+
+        $event = $filing->fresh()->events()->where('event_type', 'application_project_updated')->sole();
+        expect($event->payload_json['changes'])->toEqual([
+            'legal_description' => ['from' => "Lot 12, Block 4\nTract 5678", 'to' => "Lot 13, Block 4\r\nTract 5678"],
+        ]);
+    });
+
+    it('logs a legal description that differs only by internal spacing', function () {
+        $admin = editAppAdmin();
+        $project = editAppProject();
+        $project->update(['legal_description' => 'Lot 12, Block 4']);
+        $filing = editAppPaidFiling($project);
+
+        $this->actingAs($admin);
+
+        Livewire::test(LienFilingDetail::class, ['lienFiling' => $filing])
+            ->set('projectForm.legal_description', 'Lot 12,  Block 4')
+            ->call('updateProjectDetails')
+            ->assertHasNoErrors();
+
+        $event = $filing->fresh()->events()->where('event_type', 'application_project_updated')->sole();
+        expect($event->payload_json['changes'])->toEqual([
+            'legal_description' => ['from' => 'Lot 12, Block 4', 'to' => 'Lot 12,  Block 4'],
+        ]);
+    });
 });
 
 describe('filing edits', function () {

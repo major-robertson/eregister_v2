@@ -95,11 +95,17 @@ describe('displaying businesses', function () {
         $admin = User::factory()->create();
         $admin->assignRole('admin');
 
+        // Fixed names: the search also matches name and legal_name, and a
+        // random company name ("Flatley Inc") can contain "fl".
         Business::factory()->create([
+            'name' => 'Austin Builders',
+            'legal_name' => 'Austin Builders LLC',
             'business_address' => ['city' => 'Austin', 'state' => 'TX'],
         ]);
 
         Business::factory()->create([
+            'name' => 'Orlando Supply',
+            'legal_name' => 'Orlando Supply LLC',
             'business_address' => ['city' => 'Orlando', 'state' => 'FL'],
         ]);
 
